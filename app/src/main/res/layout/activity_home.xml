@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:fitsSystemWindows="true"
+    app:statusBarBackground="@color/mz_bg">
+
+    <!-- GŁÓWNA ZAWARTOŚĆ EKRANU -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- TOOLBAR U GÓRY -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@drawable/bg_toolbar"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:elevation="0dp"
+            android:titleTextColor="@color/mz_text"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+        <!-- TREŚĆ EKRANU -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:overScrollMode="ifContentScrolls">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <!-- HERO -->
+                <LinearLayout
+                    android:id="@+id/homeHero"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="20dp">
+
+                    <!-- Eyebrow / mały pill -->
+                    <TextView
+                        android:id="@+id/textHeroPill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:background="@drawable/bg_card_soft"
+                        android:text="⚡ Plan, oceny i widget w jednej apce"
+                        android:textColor="@color/mz_primary"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/textWelcome"
+                        android:text="mZUT v2 — Twój szybki dostęp do ZUT"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/mz_text"
+                        android:layout_marginTop="10dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/textWelcomeSub"
+                        android:text="Plan zajęć, oceny, informacje o studiach i aktualności ZUT — w jednej aplikacji, bez reklam i śledzenia."
+                        android:textSize="14sp"
+                        android:textColor="@color/mz_muted"
+                        android:layout_marginTop="6dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <!-- Pasek małych podpowiedzi / meta -->
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp">
+
+                        <TextView
+                            android:text="• Plan dzienny i tygodniowy"
+                            android:textSize="11sp"
+                            android:textColor="@color/mz_muted"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/textHeroHint"
+                        android:text="Wymaga aktywnego konta ZUT (eDziekanat / wirtualna uczelnia)."
+                        android:textSize="11sp"
+                        android:textColor="@color/mz_muted"
+                        android:layout_marginTop="6dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- NAGŁÓWEK SEKCJI KAFELKÓW -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Najważniejsze funkcje aplikacji"
+                        android:textColor="@color/mz_text"
+                        android:textStyle="bold"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Zaplanowane pod realny dzień na ZUT."
+                        android:textColor="@color/mz_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- GRID 2x2 Z KAFELKAMI -->
+                <GridLayout
+                    android:id="@+id/homeGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="2"
+                    android:columnOrderPreserved="false"
+                    android:useDefaultMargins="false">
+
+                    <!-- PLAN -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardUseCompatPadding="false"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@android:color/transparent">
+
+                        <LinearLayout
+                            android:id="@+id/tilePlan"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="140dp"
+                            android:gravity="center_vertical"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_card_primary"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="16dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <TextView
+                                android:id="@+id/tilePlanTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📅 Plan zajęć"
+                                android:textColor="@color/mz_text"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tilePlanSubtitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Widok dnia i tygodnia, z przełączaniem tygodni gestem i czytelnymi godzinami zajęć."
+                                android:textColor="@color/mz_muted"
+                                android:textSize="12sp"
+                                android:maxLines="3"
+                                android:ellipsize="end"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- OCENY -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardUseCompatPadding="false"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@android:color/transparent">
+
+                        <LinearLayout
+                            android:id="@+id/tileGrades"
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="140dp"
+                            android:gravity="center_vertical"
+                            android:background="@drawable/bg_card_primary"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="16dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⭐ Oceny"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/mz_text" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Przejrzyste zestawienie ocen z podziałem na semestry, typy zaliczeń i ECTS-y."
+                                android:textSize="12sp"
+                                android:textColor="@color/mz_muted"
+                                android:maxLines="3"
+                                android:ellipsize="end"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- INFORMACJE -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardUseCompatPadding="false"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@android:color/transparent">
+
+                        <LinearLayout
+                            android:id="@+id/tileInfo"
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="140dp"
+                            android:gravity="center_vertical"
+                            android:background="@drawable/bg_card_primary"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="16dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🎓 Informacje o studiach"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/mz_text" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Kierunek, wydział, status studenta, aktualny semestr i przebieg studiów."
+                                android:textSize="12sp"
+                                android:textColor="@color/mz_muted"
+                                android:maxLines="3"
+                                android:ellipsize="end"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- NEWS -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardUseCompatPadding="false"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@android:color/transparent">
+
+                        <LinearLayout
+                            android:id="@+id/tileNews"
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="140dp"
+                            android:gravity="center_vertical"
+                            android:background="@drawable/bg_card_primary"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="16dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📰 Aktualności ZUT"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/mz_text" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Komunikaty, ogłoszenia i wydarzenia z kanałów RSS przygotowanych dla studentów."
+                                android:textSize="12sp"
+                                android:textColor="@color/mz_muted"
+                                android:maxLines="3"
+                                android:ellipsize="end"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                </GridLayout>
+
+                <!-- SEKCJA: JAK KORZYSTAĆ Z PORTALU? -->
+                <LinearLayout
+                    android:id="@+id/homeSection"
+                    android:orientation="vertical"
+                    android:layout_marginTop="24dp"
+                    android:padding="16dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/textSectionTitle"
+                        android:text="Jak korzystać z mZUT v2?"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/mz_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/textSectionBody"
+                        android:text="Najważniejsze rzeczy znajdziesz w kafelkach powyżej: plan, oceny, informacje o studiach i aktualności. Dane są pobierane z systemów ZUT i cache’owane lokalnie, żeby całość działała szybko."
+                        android:textSize="13sp"
+                        android:textColor="@color/mz_muted"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:id="@+id/homeTips"
+                        android:orientation="vertical"
+                        android:layout_marginTop="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:text="• Filtruj przedmioty w widoku planu (np. WF, lektoraty)."
+                            android:padding="6dp"
+                            android:background="@color/mz_bg"
+                            android:textColor="@color/mz_text"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="4dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <TextView
+                            android:text="• Plan i dane są cache’owane, żeby nie męczyć API uczelni."
+                            android:padding="6dp"
+                            android:background="@color/mz_bg"
+                            android:textColor="@color/mz_text"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="4dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <TextView
+                            android:text="• Aktualności lecą z kanału RSS „studenci” z pełną treścią ogłoszeń."
+                            android:padding="6dp"
+                            android:background="@color/mz_bg"
+                            android:textColor="@color/mz_text"
+                            android:textSize="12sp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/textFooterMeta"
+                        android:text="Jeśli widzisz coś podejrzanego (brak danych, dziwne daty), zawsze zweryfikuj też w oficjalnych panelach ZUT."
+                        android:textSize="11sp"
+                        android:textColor="@color/mz_muted"
+                        android:layout_marginTop="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
+
+    <!-- NAVIGATION DRAWER -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/mz_bg"
+        android:fitsSystemWindows="true">
+
+        <include
+            layout="@layout/nav_header"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>

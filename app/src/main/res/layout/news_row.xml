@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    android:background="@drawable/bg_card_soft"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <!-- TEKST -->
+    <LinearLayout
+        android:id="@+id/newsMain"
+        android:orientation="vertical"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/newsTitle"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/mz_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/newsDate"
+            android:textSize="11sp"
+            android:textColor="@color/mz_muted"
+            android:layout_marginTop="2dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/newsSnippet"
+            android:textSize="12sp"
+            android:textColor="@color/mz_text"
+            android:layout_marginTop="4dp"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <!-- MINIATURKA -->
+    <ImageView
+        android:id="@+id/newsThumb"
+        android:layout_width="110dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/bg_thumb_rounded"
+        android:scaleType="centerCrop"
+        android:clipToOutline="true"
+        android:visibility="gone" />
+
+</LinearLayout>

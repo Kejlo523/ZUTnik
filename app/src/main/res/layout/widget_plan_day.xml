@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@drawable/bg_card_soft"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- GÓRA: Data + refresh -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widgetDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="24 listopada 2025"
+            android:textStyle="bold"
+            android:textSize="17sp"
+            android:textColor="@color/mz_text" />
+
+        <ImageView
+            android:id="@+id/widgetRefresh"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@android:drawable/ic_popup_sync"
+            android:tint="@color/mz_muted"
+            android:padding="2dp" />
+    </LinearLayout>
+
+    <!-- Podtytuł -->
+    <TextView
+        android:id="@+id/widgetSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Najbliższe zajęcia"
+        android:textSize="13sp"
+        android:textColor="@color/mz_muted"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Treść zajęć -->
+    <TextView
+        android:id="@+id/widgetContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"
+        android:lineSpacingExtra="3dp"
+        android:textColor="@color/mz_text" />
+
+</LinearLayout>

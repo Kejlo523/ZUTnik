@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stare, z szablonu -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Nowa paleta mZUT v2 -->
+    <!-- Tła -->
+    <color name="mz_bg">#050816</color>          <!-- ogólne tło -->
+    <color name="mz_bg_soft">#0B1120</color>     <!-- tło sekcji / ScrollView -->
+    <color name="mz_card">#0B1220</color>        <!-- karty / listy -->
+    <color name="mz_card_soft">#0F172A</color>   <!-- delikatniejsze tło elementów -->
+
+    <!-- Tekst -->
+    <color name="mz_text">#E5E7EB</color>
+    <color name="mz_muted">#9CA3AF</color>
+
+    <!-- Obramowania / podziały -->
+    <color name="mz_border_soft">#1F2937</color>
+    <color name="mz_border_strong">#334155</color>
+
+    <!-- Akcenty -->
+    <color name="mz_primary">#0EA5E9</color>     <!-- cyjan -->
+    <color name="mz_primary_alt">#6366F1</color> <!-- indygo -->
+    <color name="mz_accent">#22C55E</color>      <!-- zielony -->
+
+    <!-- Drobne akcenty (np. ostrzeżenia / czerwienie) -->
+    <color name="mz_danger">#F97373</color>
+    <color name="mz_danger_soft">#7F1D1D</color>
+</resources>

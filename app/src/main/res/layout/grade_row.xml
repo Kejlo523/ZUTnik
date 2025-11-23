@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    android:background="@drawable/bg_card_soft"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="6dp"
+    android:gravity="center_vertical">
+
+    <!-- Przedmiot -->
+    <TextView
+        android:id="@+id/colSubject"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:textColor="@color/mz_text"
+        android:textSize="14sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- Rodzaj W/L/P -->
+    <TextView
+        android:id="@+id/colType"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@color/mz_muted"
+        android:textSize="12sp" />
+
+    <!-- Ocena -->
+    <TextView
+        android:id="@+id/colGrade"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minWidth="40dp"
+        android:gravity="center"
+        android:textColor="@color/mz_text"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <!-- Data -->
+    <TextView
+        android:id="@+id/colDate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="end"
+        android:textColor="@color/mz_muted"
+        android:textSize="12sp" />
+
+</LinearLayout>

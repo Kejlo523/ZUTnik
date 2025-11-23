@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:overScrollMode="ifContentScrolls">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Ikona apki -->
+        <ImageView
+            android:id="@+id/appIcon"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="12dp"
+            android:src="@mipmap/ic_zut_logo_foreground"
+            android:contentDescription="@string/app_name"
+            android:scaleType="centerCrop" />
+
+        <!-- Baner / nazwa -->
+        <TextView
+            android:id="@+id/appTitle"
+            android:text="mZUT v2"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/mz_text"
+            android:layout_marginBottom="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <!-- Karta logowania -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="@drawable/bg_card_soft"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="Zaloguj się do mZUT"
+                android:textColor="@color/mz_text"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <EditText
+                android:id="@+id/editLogin"
+                android:hint="Login"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                android:textColor="@color/mz_text"
+                android:textColorHint="@color/mz_muted"
+                android:background="@color/mz_bg" />
+
+            <EditText
+                android:id="@+id/editPass"
+                android:hint="Hasło"
+                android:inputType="textPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:padding="10dp"
+                android:textColor="@color/mz_text"
+                android:textColorHint="@color/mz_muted"
+                android:background="@color/mz_bg" />
+
+            <Button
+                android:id="@+id/btnLogin"
+                android:text="Zaloguj"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/mz_primary"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:text="Dane logowania są wysyłane przez oficjalne API mZUT. Login zostanie zapamiętany na tym urządzeniu."
+                android:textSize="11sp"
+                android:textColor="@color/mz_muted"
+                android:layout_marginTop="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

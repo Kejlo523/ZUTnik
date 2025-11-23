@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:fitsSystemWindows="true"
+    app:statusBarBackground="@color/mz_bg">
+
+    <!-- GŁÓWNA ZAWARTOŚĆ EKRANU -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- TOOLBAR -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@drawable/bg_toolbar"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            android:titleTextColor="@color/mz_text"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:elevation="0dp" />
+
+        <!-- CONTENT -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="16dp">
+
+            <!-- HERO / NAGŁÓWEK -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="12dp">
+
+                <!-- pill -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⭐ Oceny i ECTS"
+                    android:textSize="11sp"
+                    android:textColor="@color/mz_primary"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:background="@drawable/bg_card_soft" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Zestawienie ocen z podziałem na semestry"
+                    android:textColor="@color/mz_text"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_marginTop="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Średnia ważona ECTS, suma punktów oraz szczegółowa lista zaliczeń."
+                    android:textColor="@color/mz_muted"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- PODSUMOWANIE: DWA KAFELKI -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <!-- ŚREDNIA OCEN -->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_card_soft"
+                    android:padding="12dp"
+                    android:layout_marginEnd="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Średnia z ocen"
+                        android:textColor="@color/mz_muted"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tvAverageValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="–"
+                        android:textColor="@color/mz_text"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:layout_marginTop="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Liczone jako średnia ważona ECTS (tylko oceny numeryczne)."
+                        android:textColor="@color/mz_text"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- SUMA ECTS -->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_card_soft"
+                    android:padding="12dp"
+                    android:layout_marginStart="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Suma ECTS"
+                        android:textColor="@color/mz_muted"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tvEctsValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/mz_text"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:layout_marginTop="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Suma punktów ECTS z ocen w wybranym semestrze."
+                        android:textColor="@color/mz_text"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- WYBÓR KIERUNKU -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Aktywny kierunek"
+                    android:textColor="@color/mz_text"
+                    android:textSize="13sp" />
+
+                <Spinner
+                    android:id="@+id/spinnerStudies"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@color/mz_bg"
+                    android:spinnerMode="dropdown" />
+            </LinearLayout>
+
+            <!-- WYBÓR SEMESTRU -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Semestr"
+                    android:textColor="@color/mz_text"
+                    android:textSize="13sp" />
+
+                <Spinner
+                    android:id="@+id/spinnerSemesters"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@color/mz_bg"
+                    android:spinnerMode="dropdown" />
+            </LinearLayout>
+
+            <!-- NAGŁÓWEK TABELI -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:background="@color/mz_bg_soft">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:text="Przedmiot"
+                    android:textColor="@color/mz_text"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Rodzaj"
+                    android:textColor="@color/mz_text"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Ocena"
+                    android:textColor="@color/mz_text"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="Data"
+                    android:textColor="@color/mz_text"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- LISTA OCEN -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listGrades"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="4dp"
+                android:overScrollMode="ifContentScrolls" />
+
+            <!-- PROGRESS -->
+            <ProgressBar
+                android:id="@+id/gradesProgress"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+            <!-- PUSTY STAN -->
+            <TextView
+                android:id="@+id/tvEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Brak ocen dla wybranego semestru."
+                android:textColor="@color/mz_muted"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- NAVIGATION DRAWER -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/mz_bg"
+        android:fitsSystemWindows="true">
+
+        <include
+            layout="@layout/nav_header"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>
