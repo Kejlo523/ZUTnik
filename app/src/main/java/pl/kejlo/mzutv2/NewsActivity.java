@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -50,6 +51,13 @@ public class NewsActivity extends AppCompatActivity {
         toolbar.setTitle("Aktualności ZUT");
 
         new LoadNewsTask().execute();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // tylko podglądamy gest, NIE blokujemy eventu
+        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
+        return super.dispatchTouchEvent(ev);
     }
 
     private class LoadNewsTask extends AsyncTask<Void, Void, Boolean> {

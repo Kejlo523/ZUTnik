@@ -7,9 +7,11 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.view.GestureDetector;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 public class PlanActivity extends AppCompatActivity {
@@ -70,6 +73,9 @@ public class PlanActivity extends AppCompatActivity {
     private Button btnNext;
     private Button btnToday;
     private Button btnFilters;
+    private Button btnRefresh;                 // NOWE
+
+    private CharSequence btnFiltersOriginalText;
 
     private TextView tvHeaderLabel;
     private TextView tvEmpty;
@@ -93,8 +99,17 @@ public class PlanActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private Set<String> hiddenSubjectKeys = new HashSet<>();
 
-    // globalny detector do swipe
-    private GestureDetector gestureDetector;
+    // linia "teraz" – przechowujemy globalnie
+    private FrameLayoutWithChildren nowLineParent;
+    private View nowLineView;
+    private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
+    private final Runnable nowLineRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateNowLinePosition();
+            scheduleNextNowLineUpdate();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +135,9 @@ public class PlanActivity extends AppCompatActivity {
         btnNext      = findViewById(R.id.btnNext);
         btnToday     = findViewById(R.id.btnToday);
         btnFilters   = findViewById(R.id.btnFilters);
+        btnRefresh   = findViewById(R.id.btnRefresh); // pamiętaj o dodaniu w XML
+
+        btnFiltersOriginalText = btnFilters.getText();
 
         tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
         tvEmpty       = findViewById(R.id.tvEmpty);
@@ -139,8 +157,9 @@ public class PlanActivity extends AppCompatActivity {
         setupViewModeButtons();
         setupNavButtons();
         setupFiltersButton();
+        setupRefreshButton();
         setupStudiesSpinner();
-        setupSwipeDetector(); // tylko JEDEN detector, globalny
+        // swipe wywalony – nie wywołujemy setupSwipeDetector()
 
         if (savedInstanceState != null) {
             viewMode = savedInstanceState.getString("viewMode", "week");
@@ -155,58 +174,23 @@ public class PlanActivity extends AppCompatActivity {
         new LoadPlanTask().execute();
     }
 
-    /**
-     * Globalny detector swipe – działa wszędzie, bo jest podpięty w dispatchTouchEvent.
-     */
-    private void setupSwipeDetector() {
-        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
-            private static final int SWIPE_THRESHOLD = 80;
-            private static final int SWIPE_VELOCITY_THRESHOLD = 80;
-
-            @Override
-            public boolean onDown(MotionEvent e) {
-                // MUSI zwracać true, żeby onFling w ogóle się odpalał
-                return true;
-            }
-
-            @Override
-            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                if (e1 == null || e2 == null) return false;
-
-                float diffX = e2.getX() - e1.getX();
-                float diffY = e2.getY() - e1.getY();
-
-                // interesuje nas poziomy swipe
-                if (Math.abs(diffX) > Math.abs(diffY)
-                        && Math.abs(diffX) > SWIPE_THRESHOLD
-                        && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-
-                    if (diffX < 0) {
-                        // lewo -> następny dzień/tydzień/miesiąc
-                        shiftCurrentDate(+1);
-                    } else {
-                        // prawo -> poprzedni
-                        shiftCurrentDate(-1);
-                    }
-                    new LoadPlanTask().execute();
-                    return true;
-                }
-                return false;
-            }
-        });
-    }
-
-    /**
-     * Przechwytujemy WSZYSTKIE eventy dotykowe aktywności
-     * i przepuszczamy przez gestureDetector, ale dalej
-     * oddajemy je normalnie do super, więc scroll itd. działa.
-     */
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (gestureDetector != null) {
-            gestureDetector.onTouchEvent(ev);
-        }
+        // tylko podglądamy gest, NIE blokujemy eventu
+        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        nowLineHandler.removeCallbacks(nowLineRunnable);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        nowLineHandler.removeCallbacks(nowLineRunnable);
     }
 
     @Override
@@ -341,6 +325,12 @@ public class PlanActivity extends AppCompatActivity {
         });
     }
 
+    private void setupRefreshButton() {
+        if (btnRefresh != null) {
+            btnRefresh.setOnClickListener(v -> new LoadPlanTask().execute());
+        }
+    }
+
     private void shiftCurrentDate(int dir) {
         if ("day".equals(viewMode)) {
             currentDate = currentDate.plusDays(dir);
@@ -377,6 +367,23 @@ public class PlanActivity extends AppCompatActivity {
         }
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if (btnFilters != null) {
+                btnFilters.setEnabled(false);
+                btnFilters.setText("Ładowanie…");
+            }
+            if (progress != null) {
+                progress.setVisibility(View.VISIBLE);
+            }
+            Toast.makeText(
+                    PlanActivity.this,
+                    "Pobieranie listy, proszę czekać…",
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+
+        @Override
         protected List<PlanRepository.SubjectFilterItem> doInBackground(Void... voids) {
             try {
                 // najpierw cache, jeśli nie wymuszamy odświeżenia
@@ -401,6 +408,14 @@ public class PlanActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<PlanRepository.SubjectFilterItem> items) {
+            if (progress != null) {
+                progress.setVisibility(View.GONE);
+            }
+            if (btnFilters != null) {
+                btnFilters.setEnabled(true);
+                btnFilters.setText(btnFiltersOriginalText);
+            }
+
             if (items == null || items.isEmpty()) {
                 if (error != null) {
                     Toast.makeText(PlanActivity.this,
@@ -442,7 +457,7 @@ public class PlanActivity extends AppCompatActivity {
                     prefs.edit().putStringSet(KEY_FILTER_HIDDEN, hiddenSubjectKeys).apply();
                     new LoadPlanTask().execute();
                 })
-                .setNeutralButton("Wyczyść filtry", (dialog, which) -> {
+                .setNeutralButton("Reset", (dialog, which) -> {
                     hiddenSubjectKeys.clear();
                     prefs.edit().remove(KEY_FILTER_HIDDEN).apply();
                     new LoadPlanTask().execute();
@@ -555,6 +570,10 @@ public class PlanActivity extends AppCompatActivity {
         protected void onPreExecute() {
             progress.setVisibility(View.VISIBLE);
             tvEmpty.setVisibility(View.GONE);
+            // zatrzymaj aktualizację linii – i tak zaraz przerysujemy
+            nowLineHandler.removeCallbacks(nowLineRunnable);
+            nowLineParent = null;
+            nowLineView   = null;
         }
 
         @Override
@@ -653,7 +672,11 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
 
+        final LocalDate today = LocalDate.now();
+
         for (PlanRepository.DayColumn col : cols) {
+
+            boolean isSelectedDay = (col.date != null && col.date.equals(currentDate));
 
             LinearLayout dayColumn = new LinearLayout(this);
             dayColumn.setOrientation(LinearLayout.VERTICAL);
@@ -677,6 +700,11 @@ public class PlanActivity extends AppCompatActivity {
                     dpToPx(DAY_HEADER_HEIGHT_DP)
             );
             tvHeader.setLayoutParams(headerLp);
+
+            if (isSelectedDay) {
+                tvHeader.setBackgroundColor(0xFF02091B); // delikatnie jaśniejsze tło dla wybranego dnia
+            }
+
             dayColumn.addView(tvHeader);
 
             // ciało z eventami
@@ -686,7 +714,7 @@ public class PlanActivity extends AppCompatActivity {
                     columnHeight
             );
             dayBody.setLayoutParams(bodyLp);
-            dayBody.setBackgroundColor(0xFF020617);
+            dayBody.setBackgroundColor(isSelectedDay ? 0xFF020918 : 0xFF020617);
             dayColumn.addView(dayBody);
 
             // poziome linie godzin – delikatne, za eventami
@@ -707,7 +735,7 @@ public class PlanActivity extends AppCompatActivity {
 
             LocalDate colDate = col.date;
 
-            // po zmierzeniu kolumny – ustawiamy top/height/left/width + czerwona linia
+            // po zmierzeniu kolumny – ustawiamy top/height/left/width + linia "teraz"
             dayBody.getViewTreeObserver().addOnGlobalLayoutListener(
                     new ViewTreeObserver.OnGlobalLayoutListener() {
                         @Override
@@ -718,9 +746,11 @@ public class PlanActivity extends AppCompatActivity {
 
                             layoutEventsInDayBody(dayBody, renderedEvents, w);
 
-                            // czerwona linia "teraz" – nad eventami
-                            if (colDate != null && ("day".equals(viewMode) || "week".equals(viewMode))) {
-                                addNowLine(dayBody, w);
+                            // linia "teraz" – tylko na DZISIEJSZYM dniu
+                            if (colDate != null
+                                    && ("day".equals(viewMode) || "week".equals(viewMode))
+                                    && colDate.equals(today)) {
+                                setupNowLine(dayBody, w);
                             }
                         }
                     });
@@ -933,29 +963,62 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
-    private void addNowLine(FrameLayoutWithChildren dayBody, int widthPx) {
-        LocalDateTime now = LocalDateTime.now();
+    /* =============== LINIA "TERAZ" =============== */
+
+    private void setupNowLine(FrameLayoutWithChildren parent, int widthPx) {
+        nowLineParent = parent;
+
+        if (nowLineView == null) {
+            nowLineView = new View(this);
+            FrameLayoutWithChildren.LayoutParams lp =
+                    new FrameLayoutWithChildren.LayoutParams(
+                            widthPx,
+                            dpToPx(1f)
+                    );
+            lp.topMargin = 0;
+            nowLineView.setLayoutParams(lp);
+            nowLineView.setBackgroundColor(0xFFF97373); // czerwona linia
+            parent.addView(nowLineView);
+            nowLineView.bringToFront();
+        }
+
+        updateNowLinePosition();
+        nowLineHandler.removeCallbacks(nowLineRunnable);
+        scheduleNextNowLineUpdate();
+    }
+
+    private void updateNowLinePosition() {
+        if (nowLineParent == null || nowLineView == null) return;
+
+        LocalTime now = LocalTime.now();
         int minutesNow = now.getHour() * 60 + now.getMinute();
         int minBound   = START_HOUR * 60;
         int maxBound   = END_HOUR   * 60;
         if (minutesNow < minBound || minutesNow > maxBound) {
+            nowLineView.setVisibility(View.GONE);
             return;
+        } else {
+            nowLineView.setVisibility(View.VISIBLE);
         }
 
         float offsetMinutes = minutesNow - minBound;
         float topPx = (offsetMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP);
 
-        View line = new View(this);
         FrameLayoutWithChildren.LayoutParams lp =
-                new FrameLayoutWithChildren.LayoutParams(
-                        widthPx,
-                        dpToPx(1f)
-                );
+                (FrameLayoutWithChildren.LayoutParams) nowLineView.getLayoutParams();
         lp.topMargin = (int) topPx;
-        line.setLayoutParams(lp);
-        line.setBackgroundColor(0xFFF97373); // czerwona linia
-        dayBody.addView(line);
-        line.bringToFront(); // NAD kwadratami
+        nowLineView.setLayoutParams(lp);
+        nowLineView.bringToFront();
+    }
+
+    private void scheduleNextNowLineUpdate() {
+        LocalTime now = LocalTime.now();
+        int msToNextMinute =
+                (60 - now.getSecond()) * 1000 - (now.getNano() / 1_000_000);
+        if (msToNextMinute < 200) {
+            msToNextMinute = 1000;
+        }
+        nowLineHandler.postDelayed(nowLineRunnable, msToNextMinute);
     }
 
     private boolean shouldHideEvent(PlanRepository.PlanEventUi ev) {
@@ -984,8 +1047,14 @@ public class PlanActivity extends AppCompatActivity {
         tv.setTextSize(11f);
         tv.setTextColor(0xFFF9FAFB);
         tv.setPadding(dpToPx(4), dpToPx(3), dpToPx(4), dpToPx(3));
-        tv.setBackgroundColor(colorForType(ev.typeClass));
         tv.setClickable(true);
+
+        // zaokrąglony, przyciemniony background
+        int color = colorForType(ev.typeClass);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(color);
+        bg.setCornerRadius(dpToPx(6)); // ZAOKRĄGLENIE
+        tv.setBackground(bg);
 
         FrameLayoutWithChildren.LayoutParams lp =
                 new FrameLayoutWithChildren.LayoutParams(

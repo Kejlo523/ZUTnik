@@ -7,6 +7,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -92,6 +93,13 @@ public class InfoActivity extends AppCompatActivity {
         }
 
         new LoadInfoTask().execute();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // tylko podglądamy gest, NIE blokujemy eventu
+        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
+        return super.dispatchTouchEvent(ev);
     }
 
     private class LoadInfoTask extends AsyncTask<Void, Void, Boolean> {

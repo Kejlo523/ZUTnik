@@ -15,20 +15,18 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.navigation.NavigationView;
 
-import org.w3c.dom.Text;
-
 public class NavDrawerHelper {
 
-    // progi dla gestów
-    private static final int SWIPE_VELOCITY_THRESHOLD = 800;
-    private static final int SWIPE_DISTANCE_THRESHOLD = 120;
+    // trochę łagodniejsze progi dla gestu
+    private static final int SWIPE_VELOCITY_THRESHOLD = 400;
+    private static final int SWIPE_DISTANCE_THRESHOLD = 80;
 
     /**
      * @param activity       aktualna Activity (HomeActivity, InfoActivity, ...)
      * @param drawerLayout   DrawerLayout z layoutu
      * @param navigationView NavigationView z headerem nav_header
      * @param toolbar        Toolbar (z hamburgerem)
-     * @param currentScreen  "home", "info", "plan", "grades", "news" – żeby wiedzieć, gdzie jesteśmy
+     * @param currentScreen  "home", "info", "plan", "grades", "news", "about"
      */
     public static void setupNavigation(
             AppCompatActivity activity,
@@ -48,7 +46,7 @@ public class NavDrawerHelper {
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // 🔥 WAŻNE: bez getHeaderView(0)!
+        // ID-ki z nav_header.xml (bez getHeaderView)
         TextView navHeaderUser = navigationView.findViewById(R.id.navHeaderUser);
         TextView navLinkHome   = navigationView.findViewById(R.id.navLinkHome);
         TextView navLinkPlan   = navigationView.findViewById(R.id.navLinkPlan);
@@ -58,13 +56,12 @@ public class NavDrawerHelper {
         TextView navLinkAbout  = navigationView.findViewById(R.id.navLinkAbout);
         TextView navLogout     = navigationView.findViewById(R.id.navLogout);
 
-        // (opcjonalnie zabezpieczenie)
         if (navHeaderUser == null || navLogout == null) {
-            // coś jest nie tak z XML (include / id), inaczej nie będzie null
+            // coś jest nie tak z XML-em – wolimy się wycofać
             return;
         }
 
-        // ustaw nazwę użytkownika
+        // nazwa użytkownika
         MzutSession s = MzutSession.getInstance();
         String username = s.getUsername();
         if (username == null || username.trim().isEmpty()) {
@@ -78,51 +75,57 @@ public class NavDrawerHelper {
         View.OnClickListener listener = v -> {
             int id = v.getId();
 
+            String targetScreen = null;
+            Class<?> targetActivity = null;
+
             if (id == R.id.navLinkHome) {
-                if ("home".equals(currentScreen)) {
-                    drawerLayout.closeDrawers();
-                } else {
-                    activity.startActivity(new Intent(activity, HomeActivity.class));
-                    drawerLayout.closeDrawers();
-                }
+                targetScreen = "home";
+                targetActivity = HomeActivity.class;
             } else if (id == R.id.navLinkInfo) {
-                if ("info".equals(currentScreen)) {
-                    drawerLayout.closeDrawers();
-                } else {
-                    activity.startActivity(new Intent(activity, InfoActivity.class));
-                    drawerLayout.closeDrawers();
-                }
+                targetScreen = "info";
+                targetActivity = InfoActivity.class;
             } else if (id == R.id.navLinkPlan) {
-                if ("plan".equals(currentScreen)) {
-                    drawerLayout.closeDrawers();
-                } else {
-                    activity.startActivity(new Intent(activity, PlanActivity.class));
-                    drawerLayout.closeDrawers();
-                }
+                targetScreen = "plan";
+                targetActivity = PlanActivity.class;
             } else if (id == R.id.navLinkGrades) {
-                if ("grades".equals(currentScreen)) {
-                    drawerLayout.closeDrawers();
-                } else {
-                    activity.startActivity(new Intent(activity, GradesActivity.class));
-                    drawerLayout.closeDrawers();
-                }
+                targetScreen = "grades";
+                targetActivity = GradesActivity.class;
             } else if (id == R.id.navLinkNews) {
-                if ("news".equals(currentScreen)) {
-                    drawerLayout.closeDrawers();
-                } else {
-                    activity.startActivity(new Intent(activity, NewsActivity.class));
-                    drawerLayout.closeDrawers();
-                }
+                targetScreen = "news";
+                targetActivity = NewsActivity.class;
             } else if (id == R.id.navLinkAbout) {
-                if ("about".equals(currentScreen)) {
-                    drawerLayout.closeDrawers();
-                } else {
-                    activity.startActivity(new Intent(activity, AboutActivity.class));
-                    drawerLayout.closeDrawers();
-                }
+                targetScreen = "about";
+                targetActivity = AboutActivity.class;
             } else if (id == R.id.navLogout) {
                 doLogout(activity);
                 drawerLayout.closeDrawers();
+                return;
+            }
+
+            if (targetActivity == null || targetScreen == null) {
+                return;
+            }
+
+            // jeśli klikamy w ten sam ekran, tylko zamykamy drawer
+            if (targetScreen.equals(currentScreen)) {
+                drawerLayout.closeDrawers();
+                return;
+            }
+
+            Intent intent = new Intent(activity, targetActivity);
+
+            // Home jako root – CLEAR_TOP/SINGLE_TOP
+            if ("home".equals(targetScreen)) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            }
+
+            activity.startActivity(intent);
+            drawerLayout.closeDrawers();
+
+            // jeśli jesteśmy na czymś innym niż Home, zamykamy aktywność,
+            // żeby stack był [Home, NowyEkran] i BACK zawsze wracał do Home
+            if (!"home".equals(currentScreen)) {
+                activity.finish();
             }
         };
 
@@ -133,52 +136,66 @@ public class NavDrawerHelper {
         navLinkNews.setOnClickListener(listener);
         navLinkAbout.setOnClickListener(listener);
         navLogout.setOnClickListener(listener);
-
-        attachSwipeToOpenClose(activity, drawerLayout);
     }
 
-    private static void attachSwipeToOpenClose(AppCompatActivity activity, DrawerLayout drawerLayout) {
-        // zakładamy, że child 0 to "główna" zawartość (LinearLayout z toolbar + content)
-        View contentView = drawerLayout.getChildAt(0);
-        if (contentView == null) return;
+    /**
+     * Wołane z dispatchTouchEvent() w Activity.
+     * Zwraca true, jeśli gest został obsłużony (otwarcie/zamknięcie szuflady).
+     */
+    public static void handleDrawerSwipe(AppCompatActivity activity,
+                                         DrawerLayout drawerLayout,
+                                         MotionEvent event) {
+        if (drawerLayout == null) return;
 
-        GestureDetector gestureDetector = new GestureDetector(activity,
-                new GestureDetector.SimpleOnGestureListener() {
-                    @Override
-                    public boolean onFling(MotionEvent e1, MotionEvent e2,
-                                           float velocityX, float velocityY) {
-                        if (e1 == null || e2 == null) return false;
+        Object tag = drawerLayout.getTag(R.id.nav_swipe_detector);
+        GestureDetector detector;
 
-                        float diffX = e2.getX() - e1.getX();
-                        float diffY = e2.getY() - e1.getY();
+        if (tag instanceof GestureDetector) {
+            detector = (GestureDetector) tag;
+        } else {
+            detector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
 
-                        // interesuje nas prawie poziomy ruch
-                        if (Math.abs(diffX) > Math.abs(diffY)
-                                && Math.abs(diffX) > SWIPE_DISTANCE_THRESHOLD
-                                && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                @Override
+                public boolean onDown(MotionEvent e) {
+                    // musi być true, żeby onFling w ogóle działał
+                    return true;
+                }
 
-                            if (diffX > 0) {
-                                // swipe w prawo -> otwórz drawer
-                                if (!drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                                    drawerLayout.openDrawer(GravityCompat.START);
-                                }
-                            } else {
-                                // swipe w lewo -> zamknij drawer
-                                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                                    drawerLayout.closeDrawer(GravityCompat.START);
-                                }
+                @Override
+                public boolean onFling(MotionEvent e1, MotionEvent e2,
+                                       float velocityX, float velocityY) {
+                    if (e1 == null || e2 == null) return false;
+
+                    float diffX = e2.getX() - e1.getX();
+                    float diffY = e2.getY() - e1.getY();
+
+                    if (Math.abs(diffX) > Math.abs(diffY)
+                            && Math.abs(diffX) > SWIPE_DISTANCE_THRESHOLD
+                            && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+
+                        if (diffX > 0) {
+                            // swipe w prawo -> otwórz
+                            if (!drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                                drawerLayout.openDrawer(GravityCompat.START);
                             }
-                            return true;
+                        } else {
+                            // swipe w lewo -> zamknij
+                            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                                drawerLayout.closeDrawer(GravityCompat.START);
+                            }
                         }
-                        return false;
+                        // tu może być true, ale i tak NIE BLOKUJEMY dispatchTouchEvent
+                        return true;
                     }
-                });
+                    return false;
+                }
+            });
 
-        contentView.setOnTouchListener((v, event) -> {
-            gestureDetector.onTouchEvent(event);
-            // zwracamy false, żeby normalne kliki / scroll dalej działały
-            return false;
-        });
+            drawerLayout.setTag(R.id.nav_swipe_detector, detector);
+        }
+
+        // Po prostu przekazujemy event – bez zwracania wyniku dalej.
+        detector.onTouchEvent(event);
     }
 
     private static void doLogout(AppCompatActivity activity) {

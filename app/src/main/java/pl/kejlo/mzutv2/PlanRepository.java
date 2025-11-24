@@ -13,12 +13,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.time.DayOfWeek;
 
 /**
  * Odpowiednik plan.php – cała logika po stronie Androida.
@@ -731,7 +733,9 @@ public class PlanRepository {
         PlanResult r = new PlanResult();
         r.viewMode = viewMode;
         r.current  = currentDate;
-        r.today    = LocalDate.now();
+
+        LocalDate today = LocalDate.now();
+        r.today = today;
 
         // album
         String album = resolveAlbumNumber();
@@ -748,21 +752,32 @@ public class PlanRepository {
         LocalDate rangeEnd   = currentDate;
 
         if ("day".equals(viewMode)) {
-            // nic – jeden dzień
+            // widok jednego dnia
             r.headerLabel = fmtPlDate(currentDate);
 
         } else if ("week".equals(viewMode)) {
-            LocalDate weekStart = currentDate;
-            int dow = weekStart.getDayOfWeek().getValue(); // 1..7
-            if (dow > 1) {
-                weekStart = weekStart.minusDays(dow - 1);
+            LocalDate weekStart;
+
+            // ✅ TYLKO jeśli JEST DZISIAJ I JEST NIEDZIELA -> pokazujemy KOLEJNY tydzień
+            if (currentDate.equals(today) && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                weekStart = currentDate.plusDays(1); // poniedziałek następnego tygodnia
+            } else {
+                // standardowo – tydzień od poniedziałku z bieżącej daty
+                weekStart = currentDate;
+                int dow = weekStart.getDayOfWeek().getValue(); // 1..7 (pon=1)
+                if (dow > 1) {
+                    weekStart = weekStart.minusDays(dow - 1);
+                }
             }
+
             LocalDate weekEnd = weekStart.plusDays(6);
             rangeStart = weekStart;
             rangeEnd   = weekEnd;
             r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM"))
                     + " – " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+
         } else {
+            // widok miesiąca
             LocalDate monthStart = currentDate.withDayOfMonth(1);
             LocalDate monthEnd   = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
             rangeStart = monthStart;
@@ -820,7 +835,7 @@ public class PlanRepository {
             r.monthGrid = buildMonthGrid(currentDate, daysWithPlan);
         }
 
-        // prev/next
+        // prev/next – dalej liczone po currentDate (bez kombinacji z niedzielą)
         LocalDate prev = currentDate;
         LocalDate next = currentDate;
         if ("day".equals(viewMode)) {

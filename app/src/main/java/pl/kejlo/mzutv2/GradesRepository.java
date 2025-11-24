@@ -90,6 +90,7 @@ public class GradesRepository {
 
     /**
      * Ładuje listę semestrów dla aktywnego kierunku (getStudies z parametrem oceny=true).
+     * Jeśli w sesji nie ma kierunków, najpierw woła loadStudies().
      */
     public List<Semester> loadSemesters() throws IOException, JSONException {
         MzutSession session = MzutSession.getInstance();
@@ -148,7 +149,19 @@ public class GradesRepository {
     }
 
     /**
-     * Ładuje oceny dla wybranego semestru (getGrade).
+     * Wersja wygodna: ładuje oceny dla podanego obiektu Semester.
+     * Deleguje do loadGradesForSemester(String listaSemestrowId).
+     */
+    public List<Grade> loadGradesForSemester(Semester semester)
+            throws IOException, JSONException {
+        if (semester == null) {
+            return Collections.emptyList();
+        }
+        return loadGradesForSemester(semester.listaSemestrowId);
+    }
+
+    /**
+     * Ładuje oceny dla wybranego semestru (getGrade) używając listaSemestrowId.
      * Klucze zgodne z oceny.php:
      *  - przedmiot / przedmiotO
      *  - formaZajec / formaZajecO

@@ -6,11 +6,11 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.GridLayout; // ⬅️ DODANY IMPORT
 
 import com.google.android.material.navigation.NavigationView;
 
@@ -24,10 +24,11 @@ public class HomeActivity extends AppCompatActivity {
     private TextView textWelcomeSub;
 
     private LinearLayout homeHero;
-    private GridLayout   homeGrid;    // ⬅️ ZMIANA: GridLayout zamiast LinearLayout
+    private LinearLayout homeShortcuts;
     private LinearLayout homeSection;
 
     private LinearLayout tilePlan, tileGrades, tileInfo, tileNews;
+    private TextView btnHeroPlan, btnHeroGrades;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +39,7 @@ public class HomeActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar        = findViewById(R.id.toolbar);
 
-        toolbar.setTitle("Pulpit Główny");
+        toolbar.setTitle("Pulpit główny");
 
         // NavDrawer – ekran startowy
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "home");
@@ -47,19 +48,29 @@ public class HomeActivity extends AppCompatActivity {
         textWelcome    = findViewById(R.id.textWelcome);
         textWelcomeSub = findViewById(R.id.textWelcomeSub);
         homeHero       = findViewById(R.id.homeHero);
-        homeGrid       = findViewById(R.id.homeGrid);   // teraz typ się zgadza
+        homeShortcuts  = findViewById(R.id.homeShortcuts);
         homeSection    = findViewById(R.id.homeSection);
 
-        // Kafelki
+        // główne przyciski
+        btnHeroPlan   = findViewById(R.id.btnHeroPlan);
+        btnHeroGrades = findViewById(R.id.btnHeroGrades);
+
+        // kafelki skrótów
         tilePlan   = findViewById(R.id.tilePlan);
         tileGrades = findViewById(R.id.tileGrades);
         tileInfo   = findViewById(R.id.tileInfo);
         tileNews   = findViewById(R.id.tileNews);
 
         setupWelcomeText();
-        setupTilesClicks();
-        setupTilesHints();
+        setupClicks();
         runIntroAnimations();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // tylko podglądamy gest, NIE blokujemy eventu
+        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
+        return super.dispatchTouchEvent(ev);
     }
 
     private void setupWelcomeText() {
@@ -78,79 +89,72 @@ public class HomeActivity extends AppCompatActivity {
         );
     }
 
-    private void setupTilesClicks() {
-        View.OnClickListener listener = v -> {
-            int id = v.getId();
-
-            if (id == R.id.tilePlan) {
+    private void setupClicks() {
+        View.OnClickListener openPlan = v ->
                 startActivity(new Intent(HomeActivity.this, PlanActivity.class));
-                return;
-            }
 
-            if (id == R.id.tileGrades) {
-                try {
-                    Intent i = new Intent(HomeActivity.this, GradesActivity.class);
-                    startActivity(i);
-                } catch (Exception e) {
-                    Toast.makeText(
-                            HomeActivity.this,
-                            "Ekran ocen nie jest jeszcze podpięty 🤔",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                }
-                return;
-            }
-
-            if (id == R.id.tileInfo) {
-                startActivity(new Intent(HomeActivity.this, InfoActivity.class));
-                return;
-            }
-
-            if (id == R.id.tileNews) {
-                try {
-                    Intent i = new Intent(HomeActivity.this, NewsActivity.class);
-                    startActivity(i);
-                } catch (Exception e) {
-                    Toast.makeText(
-                            HomeActivity.this,
-                            "Ekran aktualności nie jest jeszcze podpięty 🤔",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                }
+        View.OnClickListener openGrades = v -> {
+            try {
+                startActivity(new Intent(HomeActivity.this, GradesActivity.class));
+            } catch (Exception e) {
+                Toast.makeText(
+                        HomeActivity.this,
+                        "Ekran ocen nie jest jeszcze podpięty 🤔",
+                        Toast.LENGTH_SHORT
+                ).show();
             }
         };
 
-        tilePlan.setOnClickListener(listener);
-        tileGrades.setOnClickListener(listener);
-        tileInfo.setOnClickListener(listener);
-        tileNews.setOnClickListener(listener);
-    }
+        View.OnClickListener openInfo = v ->
+                startActivity(new Intent(HomeActivity.this, InfoActivity.class));
 
-    private void setupTilesHints() {
+        View.OnClickListener openNews = v -> {
+            try {
+                startActivity(new Intent(HomeActivity.this, NewsActivity.class));
+            } catch (Exception e) {
+                Toast.makeText(
+                        HomeActivity.this,
+                        "Ekran aktualności nie jest jeszcze podpięty 🤔",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        };
+
+        // hero buttons
+        btnHeroPlan.setOnClickListener(openPlan);
+        btnHeroGrades.setOnClickListener(openGrades);
+
+        // tiles
+        tilePlan.setOnClickListener(openPlan);
+        tileGrades.setOnClickListener(openGrades);
+        tileInfo.setOnClickListener(openInfo);
+        tileNews.setOnClickListener(openNews);
+
+        // długie tapnięcie – krótkie tipy (opcjonalnie, zostawiłem)
         tilePlan.setOnLongClickListener(v -> {
             Toast.makeText(this,
-                    "Plan zajęć: widok dnia, tygodnia, miesiąca + filtr przedmiotów.",
+                    "Plan: widok dnia, tygodnia, miesiąca + filtr przedmiotów.",
                     Toast.LENGTH_LONG).show();
             return true;
         });
 
         tileGrades.setOnLongClickListener(v -> {
             Toast.makeText(this,
-                    "Oceny: zestawienie ocen, ECTS, zaliczenia, egzaminy.",
+                    "Oceny: średnia ECTS, lista zaliczeń, egzaminy.",
                     Toast.LENGTH_LONG).show();
             return true;
         });
 
         tileInfo.setOnLongClickListener(v -> {
             Toast.makeText(this,
-                    "Informacje: kierunek, semestr, status studenta i inne dane z mZUT.",
+                    "Informacje: kierunek, semestr, status studenta.",
                     Toast.LENGTH_LONG).show();
             return true;
         });
 
         tileNews.setOnLongClickListener(v -> {
             Toast.makeText(this,
-                    "Aktualności: komunikaty i wydarzenia z RSS ZUT (studenci).",
+                    "Aktualności: komunikaty z RSS ZUT (studenci).",
                     Toast.LENGTH_LONG).show();
             return true;
         });
@@ -158,7 +162,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void runIntroAnimations() {
         animateInFromBottom(homeHero, 0);
-        animateInFromBottom(homeGrid, 60);
+        animateInFromBottom(homeShortcuts, 60);
         animateInFromBottom(homeSection, 120);
     }
 

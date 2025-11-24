@@ -158,6 +158,21 @@
                     android:paddingLeft="10dp"
                     android:paddingRight="10dp"
                     android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/btnRefresh"
+                    android:text="Odśwież"
+                    android:textSize="12sp"
+                    android:background="@drawable/bg_mode_button"
+                    android:textColor="#E5E7EB"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_marginLeft="6dp"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:textAllCaps="false" />
             </LinearLayout>
 
             <!-- NAGŁÓWEK ZAKRESU -->

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/itemRoot"
+    android:orientation="vertical"
+    android:paddingLeft="6dp"
+    android:paddingRight="6dp"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- 1. linia: tytuł przedmiotu -->
+    <TextView
+        android:id="@+id/itemTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Programowanie (L)"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="@color/mz_text" />
+
+    <!-- 2. linia: godziny + sala -->
+    <TextView
+        android:id="@+id/itemRoom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="08:15 – 09:45 · Sala 312"
+        android:textSize="11sp"
+        android:textColor="@color/mz_text" />
+
+</LinearLayout>

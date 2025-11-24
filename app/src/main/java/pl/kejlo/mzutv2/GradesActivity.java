@@ -2,6 +2,7 @@ package pl.kejlo.mzutv2;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -34,7 +35,7 @@ public class GradesActivity extends AppCompatActivity {
     private ProgressBar gradesProgress;
     private TextView tvEmpty;
 
-    // nowe kafelki z podsumowaniem
+    // kafelki z podsumowaniem
     private TextView tvAverageValue;
     private TextView tvEctsValue;
 
@@ -44,11 +45,15 @@ public class GradesActivity extends AppCompatActivity {
     private final List<Study> studies = new ArrayList<>();
     private final List<Semester> semesters = new ArrayList<>();
 
-    private ArrayAdapter<Study> studiesAdapter;
-    private ArrayAdapter<Semester> semestersAdapter;
+    private ArrayAdapter<String> studiesAdapter;
+    private ArrayAdapter<String> semestersAdapter;
 
     private LoadSemestersTask currentSemestersTask;
     private LoadGradesTask currentGradesTask;
+    private LoadInitTask currentInitTask;
+
+    // flaga jak w InfoActivity
+    private boolean studiesSpinnerInitialized = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -63,8 +68,8 @@ public class GradesActivity extends AppCompatActivity {
         spinnerStudies   = findViewById(R.id.spinnerStudies);
         spinnerSemesters = findViewById(R.id.spinnerSemesters);
         listGrades       = findViewById(R.id.listGrades);
-        gradesProgress   = findViewById(R.id.gradesProgress);    // dodaj w XML jeśli nie masz
-        tvEmpty          = findViewById(R.id.tvEmpty);           // dodaj w XML jeśli nie masz
+        gradesProgress   = findViewById(R.id.gradesProgress);
+        tvEmpty          = findViewById(R.id.tvEmpty);
 
         tvAverageValue = findViewById(R.id.tvAverageValue);
         tvEctsValue    = findViewById(R.id.tvEctsValue);
@@ -83,51 +88,176 @@ public class GradesActivity extends AppCompatActivity {
         gradesAdapter = new GradesAdapter(currentGrades);
         listGrades.setAdapter(gradesAdapter);
 
-        setupStudiesSpinner();
+        // spinner semestrów ma stałą konfigurację
         setupSemestersSpinner();
 
-        // załaduj kierunki z sesji i zainicjuj wybór
-        loadStudiesFromSessionAndInit();
+        // 🔥 zamiast loadStudiesFromSessionAndInit – robimy jak w InfoActivity:
+        // najpierw async load (studia + semestry), potem dopiero konfiguracja spinnerów
+        runInitialLoad();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // tylko podglądamy gest, NIE blokujemy eventu
+        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
+        return super.dispatchTouchEvent(ev);
     }
 
     // -----------------------
-    //   SPINNER: KIERUNEK
+    //   PIERWSZE ŁADOWANIE (jak LoadInfoTask w InfoActivity)
+    // -----------------------
+    private void runInitialLoad() {
+        if (currentInitTask != null) {
+            currentInitTask.cancel(true);
+        }
+        currentInitTask = new LoadInitTask();
+        currentInitTask.execute();
+    }
+
+    private class LoadInitTask extends AsyncTask<Void, Void, List<Semester>> {
+        private Exception error;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            showLoading(true);
+        }
+
+        @Override
+        protected List<Semester> doInBackground(Void... voids) {
+            try {
+                GradesRepository repo = new GradesRepository();
+                // repo.loadSemesters():
+                // - jeśli nie ma kierunków, woła loadStudies()
+                // - pobiera semestry dla aktywnego kierunku
+                return repo.loadSemesters();
+            } catch (Exception e) {
+                error = e;
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(List<Semester> result) {
+            super.onPostExecute(result);
+            showLoading(false);
+
+            if (error != null) {
+                Toast.makeText(
+                        GradesActivity.this,
+                        "Błąd ładowania danych: " + error.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
+                showEmptyState(true);
+                return;
+            }
+
+            // 1) zaktualizuj listę semestrów
+            semesters.clear();
+            if (result != null) {
+                semesters.addAll(result);
+            }
+
+            List<String> semNames = new ArrayList<>();
+            for (Semester s : semesters) {
+                semNames.add("Semestr " + s.nrSemestru + " (" + s.rokAkademicki + ")");
+            }
+
+            semestersAdapter.clear();
+            semestersAdapter.addAll(semNames);
+            semestersAdapter.notifyDataSetChanged();
+
+            // 2) ustaw spinner kierunków na podstawie MzutSession (jak w InfoActivity)
+            setupStudiesSpinner();
+
+            // 3) jeśli mamy semestry – wybierz ostatni i od razu załaduj oceny
+            if (!semesters.isEmpty()) {
+                int indexCurrent = semesters.size() - 1;
+                if (indexCurrent < 0) indexCurrent = 0;
+                spinnerSemesters.setSelection(indexCurrent);
+
+                Semester selected = semesters.get(indexCurrent);
+                reloadGrades(selected);
+            } else {
+                showEmptyState(true);
+            }
+        }
+    }
+
+    // -----------------------
+    //   SPINNER: KIERUNEK – jak w InfoActivity
     // -----------------------
     private void setupStudiesSpinner() {
-        studiesAdapter = new ArrayAdapter<>(
-                this,
-                R.layout.spinner_item_dark,
-                studies
-        );
-        studiesAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
-        spinnerStudies.setAdapter(studiesAdapter);
+        MzutSession session = MzutSession.getInstance();
+        List<Study> sessionStudies = session.getStudies();
 
-        spinnerStudies.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                // ustaw aktywny kierunek w sesji i przeładuj semestry
-                MzutSession session = MzutSession.getInstance();
-                if (position >= 0 && position < studies.size()) {
-                    session.setActiveStudyIndex(position);
+        // brak kierunków -> ukryj spinner
+        if (sessionStudies == null || sessionStudies.isEmpty()) {
+            spinnerStudies.setVisibility(View.GONE);
+            return;
+        }
+
+        spinnerStudies.setVisibility(View.VISIBLE);
+
+        studies.clear();
+        studies.addAll(sessionStudies);
+
+        List<String> labels = new ArrayList<>();
+        for (Study st : studies) {
+            labels.add(st.toString()); // label tak jak w InfoActivity
+        }
+
+        if (!studiesSpinnerInitialized) {
+            // pierwszy raz – tworzymy adapter i listener
+            studiesAdapter = new ArrayAdapter<>(
+                    this,
+                    R.layout.spinner_item_dark,
+                    labels
+            );
+            studiesAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
+            spinnerStudies.setAdapter(studiesAdapter);
+            studiesSpinnerInitialized = true;
+
+            int activeIndex = session.getActiveStudyIndex();
+            if (activeIndex < 0 || activeIndex >= labels.size()) activeIndex = 0;
+            spinnerStudies.setSelection(activeIndex);
+
+            spinnerStudies.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    MzutSession s = MzutSession.getInstance();
+                    if (position == s.getActiveStudyIndex()) {
+                        return; // nic się nie zmieniło
+                    }
+                    s.setActiveStudyIndex(position);
+                    // jak w InfoActivity: zmiana kierunku => przeładuj dane,
+                    // u nas: przeładuj semestry + później oceny
                     reloadSemesters();
                 }
-            }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // nic
-            }
-        });
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) { }
+            });
+        } else {
+            // kolejne wywołania – tylko odświeżamy zawartość / selection
+            studiesAdapter.clear();
+            studiesAdapter.addAll(labels);
+            studiesAdapter.notifyDataSetChanged();
+
+            int activeIndex = session.getActiveStudyIndex();
+            if (activeIndex < 0 || activeIndex >= labels.size()) activeIndex = 0;
+            spinnerStudies.setSelection(activeIndex);
+        }
     }
 
     // -----------------------
-    //   SPINNER: SEMESTR
+    //   SPINNER: SEMESTR (logika z Twojego kodu)
     // -----------------------
     private void setupSemestersSpinner() {
         semestersAdapter = new ArrayAdapter<>(
                 this,
                 R.layout.spinner_item_dark,
-                semesters
+                new ArrayList<String>()
         );
         semestersAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerSemesters.setAdapter(semestersAdapter);
@@ -149,37 +279,9 @@ public class GradesActivity extends AppCompatActivity {
     }
 
     // -----------------------
-    //   ŁADOWANIE STUDIÓW
-    // -----------------------
-    private void loadStudiesFromSessionAndInit() {
-        MzutSession session = MzutSession.getInstance();
-        List<Study> sessionStudies = session.getStudies();
-
-        if (sessionStudies == null || sessionStudies.isEmpty()) {
-            Toast.makeText(this, "Brak danych o kierunkach. Zaloguj się ponownie.", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-
-        studies.clear();
-        studies.addAll(sessionStudies);
-        studiesAdapter.notifyDataSetChanged();
-
-        int activeIndex = session.getActiveStudyIndex();
-        if (activeIndex < 0 || activeIndex >= studies.size()) {
-            activeIndex = 0;
-            session.setActiveStudyIndex(activeIndex);
-        }
-
-        spinnerStudies.setSelection(activeIndex);
-        // samo ustawienie selection odpali listener -> reloadSemesters()
-    }
-
-    // -----------------------
-    //   ŁADOWANIE SEMESTRÓW
+    //   ŁADOWANIE SEMESTRÓW (dla zmiany kierunku)
     // -----------------------
     private void reloadSemesters() {
-        // anuluj stare taski, jeśli jeszcze lecą
         if (currentSemestersTask != null) {
             currentSemestersTask.cancel(true);
         }
@@ -229,7 +331,9 @@ public class GradesActivity extends AppCompatActivity {
                         "Brak semestrów dla wybranego kierunku.",
                         Toast.LENGTH_SHORT).show();
                 semesters.clear();
+                semestersAdapter.clear();
                 semestersAdapter.notifyDataSetChanged();
+
                 currentGrades.clear();
                 gradesAdapter.notifyDataSetChanged();
                 updateSummaryCards();
@@ -239,18 +343,28 @@ public class GradesActivity extends AppCompatActivity {
 
             semesters.clear();
             semesters.addAll(result);
+
+            // budujemy labelki do spinnera
+            List<String> semNames = new ArrayList<>();
+            for (Semester s : semesters) {
+                semNames.add("Semestr " + s.nrSemestru + " (" + s.rokAkademicki + ")");
+            }
+
+            semestersAdapter.clear();
+            semestersAdapter.addAll(semNames);
             semestersAdapter.notifyDataSetChanged();
 
-            // wybierz bieżący semestr (if isCurrent)
-            int indexCurrent = 0;
-            for (int i = 0; i < semesters.size(); i++) {
-                if (semesters.get(i).isCurrent()) {
-                    indexCurrent = i;
-                    break;
-                }
-            }
+            // odśwież spinner kierunków z sesji (gdyby repo zmieniło studies/activeStudyIndex)
+            setupStudiesSpinner();
+
+            // domyślnie wybierz ostatni (najświeższy) semestr
+            int indexCurrent = semesters.size() - 1;
+            if (indexCurrent < 0) indexCurrent = 0;
             spinnerSemesters.setSelection(indexCurrent);
-            // listener spinnera odpali reloadGrades(...)
+
+            // i od razu załaduj oceny
+            Semester selected = semesters.get(indexCurrent);
+            reloadGrades(selected);
         }
     }
 
@@ -287,7 +401,10 @@ public class GradesActivity extends AppCompatActivity {
         protected List<Grade> doInBackground(Void... voids) {
             try {
                 GradesRepository repo = new GradesRepository();
-                return repo.loadGradesForSemester(semester.getListySemestrowId());
+                // w oryginalnym repo z ZIP-a jest:
+                //    List<Grade> loadGradesForSemester(Semester semester)
+                // więc przekazujemy cały obiekt, nie String
+                return repo.loadGradesForSemester(semester);
             } catch (Exception e) {
                 error = e;
                 return null;
@@ -329,25 +446,29 @@ public class GradesActivity extends AppCompatActivity {
         double sumEcts     = 0.0;
 
         for (Grade g : currentGrades) {
-            int ects = g.getWeight();   // w repo: weight = ECTS
+            // ECTS trzymasz w polu weight (double)
+            double ects = g.weight;
+            if (ects < 0) ects = 0;
             sumEcts += ects;
 
-            // próbujemy sparsować wartość oceny
-            String raw = g.getGrade();
+            // wartość oceny w stringu, np. "4.5", "5", "zal", "2.0"
+            String raw = g.grade;
             if (raw == null) continue;
 
-            raw = raw.trim().replace(",", "."); // np. 4,5 -> 4.5
+            raw = raw.trim();
+            if (raw.isEmpty()) continue;
+
+            String normalized = raw.replace(",", ".");
 
             double value;
             try {
-                value = Double.parseDouble(raw);
+                value = Double.parseDouble(normalized);
             } catch (NumberFormatException nfe) {
-                // "ZAL", "NZAL" itp. – pomijamy w średniej
+                // np. "ZAL", "NZAL" – pomijamy w średniej
                 continue;
             }
 
-            if (ects <= 0) {
-                // jeśli brak ECTS, licz jako zwykłą jednostkę
+            if (ects <= 0.0) {
                 sumWeighted += value;
                 sumWeights  += 1.0;
             } else {
@@ -361,7 +482,6 @@ public class GradesActivity extends AppCompatActivity {
             avg = sumWeighted / sumWeights;
         }
 
-        // aktualizacja UI
         if (tvAverageValue != null) {
             if (sumWeights > 0.0) {
                 tvAverageValue.setText(String.format("%.2f", avg));
@@ -371,7 +491,7 @@ public class GradesActivity extends AppCompatActivity {
         }
 
         if (tvEctsValue != null) {
-            tvEctsValue.setText(String.valueOf((int) sumEcts));
+            tvEctsValue.setText(String.valueOf((int) Math.round(sumEcts)));
         }
     }
 
@@ -382,13 +502,14 @@ public class GradesActivity extends AppCompatActivity {
         if (gradesProgress != null) {
             gradesProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
         }
-        // opcjonalnie możesz przyciemnić listę/wyłączyć kliknięcia
     }
 
     private void showEmptyState(boolean empty) {
         if (tvEmpty != null) {
             tvEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
         }
-        listGrades.setVisibility(empty ? View.GONE : View.VISIBLE);
+        if (listGrades != null) {
+            listGrades.setVisibility(empty ? View.GONE : View.VISIBLE);
+        }
     }
 }

@@ -181,7 +181,7 @@
                         android:id="@+id/aboutGithub"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="GitHub: https://github.com/kejlo/mzut-v2"
+                        android:text="GitHub: https://github.com/Kejlo523/mzut-v2"
                         android:textColor="@color/mz_primary"
                         android:textSize="13sp"
                         android:autoLink="web" />

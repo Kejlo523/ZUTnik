@@ -1,6 +1,7 @@
 package pl.kejlo.mzutv2;
 
 import android.os.Bundle;
+import android.view.MotionEvent;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -27,5 +28,12 @@ public class AboutActivity extends AppCompatActivity {
 
         // podpinamy nav drawer z identyfikatorem ekranu "about"
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "about");
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // tylko podglądamy gest, NIE blokujemy eventu
+        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
+        return super.dispatchTouchEvent(ev);
     }
 }
