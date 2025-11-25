@@ -63,8 +63,8 @@ public class GradesActivity extends AppCompatActivity {
         spinnerStudies   = findViewById(R.id.spinnerStudies);
         spinnerSemesters = findViewById(R.id.spinnerSemesters);
         listGrades       = findViewById(R.id.listGrades);
-        gradesProgress   = findViewById(R.id.gradesProgress);    // dodaj w XML jeśli nie masz
-        tvEmpty          = findViewById(R.id.tvEmpty);           // dodaj w XML jeśli nie masz
+        gradesProgress   = findViewById(R.id.gradesProgress);
+        tvEmpty          = findViewById(R.id.tvEmpty);
 
         tvAverageValue = findViewById(R.id.tvAverageValue);
         tvEctsValue    = findViewById(R.id.tvEctsValue);
