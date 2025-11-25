@@ -382,7 +382,6 @@ public class GradesActivity extends AppCompatActivity {
         if (gradesProgress != null) {
             gradesProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
         }
-        // opcjonalnie możesz przyciemnić listę/wyłączyć kliknięcia
     }
 
     private void showEmptyState(boolean empty) {
