@@ -33,27 +33,46 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:padding="16dp">
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-            <!-- HERO / NAGŁÓWEK -->
+            <!-- HERO / NAGŁÓWEK (bardziej kompaktowy) -->
             <LinearLayout
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingBottom="12dp">
+                android:paddingBottom="6dp">
 
-                <!-- pill -->
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- pill + przycisk odświeżania -->
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="⭐ Oceny i ECTS"
-                    android:textSize="11sp"
-                    android:textColor="@color/mz_primary"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp"
-                    android:background="@drawable/bg_card_soft" />
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⭐ Oceny i ECTS"
+                        android:textSize="11sp"
+                        android:textColor="@color/mz_primary"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:background="@drawable/bg_card_soft" />
+
+                    <ImageView
+                        android:id="@+id/btnGradesRefresh"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_marginStart="8dp"
+                        android:padding="2dp"
+                        android:src="@android:drawable/ic_popup_sync"
+                        android:tint="@color/mz_muted" />
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -61,25 +80,27 @@
                     android:text="Zestawienie ocen z podziałem na semestry"
                     android:textColor="@color/mz_text"
                     android:textStyle="bold"
-                    android:textSize="18sp"
-                    android:layout_marginTop="8dp" />
+                    android:textSize="16sp"
+                    android:layout_marginTop="4dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Średnia ważona ECTS, suma punktów oraz szczegółowa lista zaliczeń."
                     android:textColor="@color/mz_muted"
-                    android:textSize="12sp"
-                    android:layout_marginTop="4dp" />
+                    android:textSize="11sp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
 
-            <!-- PODSUMOWANIE: DWA KAFELKI -->
+            <!-- PODSUMOWANIE: DWA KAFELKI (niższe, ciaśniejsze) -->
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="6dp">
 
                 <!-- ŚREDNIA OCEN -->
                 <LinearLayout
@@ -88,15 +109,15 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/bg_card_soft"
-                    android:padding="12dp"
-                    android:layout_marginEnd="6dp">
+                    android:padding="8dp"
+                    android:layout_marginEnd="4dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Średnia z ocen"
                         android:textColor="@color/mz_muted"
-                        android:textSize="11sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/tvAverageValue"
@@ -105,16 +126,18 @@
                         android:text="–"
                         android:textColor="@color/mz_text"
                         android:textStyle="bold"
-                        android:textSize="20sp"
-                        android:layout_marginTop="4dp" />
+                        android:textSize="18sp"
+                        android:layout_marginTop="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Liczone jako średnia ważona ECTS (tylko oceny numeryczne)."
+                        android:text="Średnia ważona ECTS (tylko oceny numeryczne)."
                         android:textColor="@color/mz_text"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                        android:textSize="9sp"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:layout_marginTop="2dp" />
                 </LinearLayout>
 
                 <!-- SUMA ECTS -->
@@ -124,15 +147,15 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/bg_card_soft"
-                    android:padding="12dp"
-                    android:layout_marginStart="6dp">
+                    android:padding="8dp"
+                    android:layout_marginStart="4dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Suma ECTS"
                         android:textColor="@color/mz_muted"
-                        android:textSize="11sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/tvEctsValue"
@@ -141,20 +164,22 @@
                         android:text="0"
                         android:textColor="@color/mz_text"
                         android:textStyle="bold"
-                        android:textSize="20sp"
-                        android:layout_marginTop="4dp" />
+                        android:textSize="18sp"
+                        android:layout_marginTop="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Suma punktów ECTS z ocen w wybranym semestrze."
                         android:textColor="@color/mz_text"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                        android:textSize="9sp"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:layout_marginTop="2dp" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- WYBÓR KIERUNKU -->
+            <!-- WYBÓR KIERUNKU (mniej „powietrza”) -->
             <LinearLayout
                 android:orientation="vertical"
                 android:layout_width="match_parent"
@@ -165,13 +190,13 @@
                     android:layout_height="wrap_content"
                     android:text="Aktywny kierunek"
                     android:textColor="@color/mz_text"
-                    android:textSize="13sp" />
+                    android:textSize="12sp" />
 
                 <Spinner
                     android:id="@+id/spinnerStudies"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="2dp"
                     android:background="@color/mz_bg"
                     android:spinnerMode="dropdown" />
             </LinearLayout>
@@ -181,34 +206,34 @@
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
+                android:layout_marginTop="6dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Semestr"
                     android:textColor="@color/mz_text"
-                    android:textSize="13sp" />
+                    android:textSize="12sp" />
 
                 <Spinner
                     android:id="@+id/spinnerSemesters"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="2dp"
                     android:background="@color/mz_bg"
                     android:spinnerMode="dropdown" />
             </LinearLayout>
 
-            <!-- NAGŁÓWEK TABELI -->
+            <!-- NAGŁÓWEK TABELI (cieńszy) -->
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
+                android:layout_marginTop="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
                 android:background="@color/mz_bg_soft">
 
                 <TextView
@@ -217,7 +242,7 @@
                     android:layout_weight="2"
                     android:text="Przedmiot"
                     android:textColor="@color/mz_text"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -225,7 +250,7 @@
                     android:layout_weight="1"
                     android:text="Rodzaj"
                     android:textColor="@color/mz_text"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -234,7 +259,7 @@
                     android:gravity="center"
                     android:text="Ocena"
                     android:textColor="@color/mz_text"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -243,16 +268,16 @@
                     android:gravity="end"
                     android:text="Data"
                     android:textColor="@color/mz_text"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
             </LinearLayout>
 
-            <!-- LISTA OCEN -->
+            <!-- LISTA OCEN -> ma jak najwięcej miejsca (weight=1) -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/listGrades"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:overScrollMode="ifContentScrolls" />
 
             <!-- PROGRESS -->
@@ -262,7 +287,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:visibility="gone" />
 
             <!-- PUSTY STAN -->
@@ -272,9 +297,9 @@
                 android:layout_height="wrap_content"
                 android:text="Brak ocen dla wybranego semestru."
                 android:textColor="@color/mz_muted"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:gravity="center"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:visibility="gone" />
 
         </LinearLayout>

@@ -33,6 +33,21 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1️⃣ Zainicjalizuj sesję z SharedPreferences
+        MzutSession.initializeFromPreferences(this);
+        MzutSession session = MzutSession.getInstance();
+
+        // 2️⃣ Jeśli nie mamy ważnej sesji → wróć do ekranu logowania
+        if (session.getAuthKey() == null || session.getUserId() == null) {
+            Intent i = new Intent(this, LoginActivity.class);
+            // czyścimy stack, żeby nie można było wrócić "wstecz" do pustego Home
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_home);
 
         drawerLayout   = findViewById(R.id.drawerLayout);
@@ -74,7 +89,8 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupWelcomeText() {
-        MzutSession s = MzutSession.getInstance();
+        // używamy wersji z kontekstem, żeby mieć pewność, że sesja jest wczytana
+        MzutSession s = MzutSession.getInstance(this);
         String username = s.getUsername();
         if (username == null || username.trim().isEmpty()) {
             username = s.getUserId();

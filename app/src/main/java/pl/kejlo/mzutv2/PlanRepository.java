@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import android.content.Context;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -8,11 +9,14 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,15 +24,55 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.time.DayOfWeek;
 
 /**
  * Odpowiednik plan.php – cała logika po stronie Androida.
  * Tu NIC nie rysujemy – tylko liczymy dane, które potem PlanActivity narysuje.
+ *
+ * WERSJA Z CACHE:
+ * - trzymamy plan w pamięci + w jednym pliku JSON (internal storage),
+ * - w pamięci: Map<LocalDate, List<PlanEventRaw>> (po dniach),
+ * - do API idziemy:
+ *   - przy długim przytrzymaniu: po CAŁY plan,
+ *   - przy wejściu w zakres (dzień/tydzień/miesiąc), jeśli minęła godzina dla tego zakresu,
+ *   - przy krótkim kliknięciu "Odśwież" – zawsze tylko dany zakres.
  */
 public class PlanRepository {
 
     private static final String TAG = "mZUTv2-PLAN";
+
+    // ====== CACHE NA DYSKU ======
+
+    private static final String CACHE_FILE_NAME = "plan_cache_v1.json";
+
+    // TTL dla konkretnego zakresu (dzień/tydzień/miesiąc)
+    private static final long SCOPE_CACHE_TTL_MS = 60L * 60L * 1000L; // 1h
+
+    // globalny context aplikacji (opcjonalny – jak brak, to nie zapisujemy/nie czytamy pliku)
+    private static Context appContext;
+
+    // struktura pełnego cache w pamięci
+    private static class FullPlanCache {
+        String album;
+        long timestampMs; // ostatnia aktualizacja (pełna lub częściowa)
+        Map<LocalDate, List<PlanEventRaw>> byDate = new HashMap<>();
+        // info o tym, kiedy ostatni raz dany zakres był odświeżony (tylko w pamięci)
+        Map<String, Long> scopeTimestamps = new HashMap<>();
+    }
+
+    private static FullPlanCache sFullPlanCache; // singleton w pamięci procesu
+
+    // konstruktor z Context – używaj w Activity/Service
+    public PlanRepository(Context context) {
+        if (context != null) {
+            appContext = context.getApplicationContext();
+        }
+    }
+
+    // pusty konstruktor – np. używany przez widgety wcześniej
+    public PlanRepository() {
+        // jeśli appContext == null, cache na dysku jest wyłączony – repo zachowuje się "jak dawniej"
+    }
 
     /* =======================
      *   MODELE DANYCH
@@ -70,8 +114,9 @@ public class PlanRepository {
         public String startStr;   // "HH:mm"
         public String endStr;
         public String tooltip;
-        public String typeClass;  // week-event-type-...
-        public String subjectKey; // "Przedmiot||lab" / "Przedmiot||aud" / "Przedmiot||lec"
+        public String typeClass;   // week-event-type-...
+        public String typeLabel;   // np. "Laboratorium", "Egzamin", "Rektorskie", "Odwołane"
+        public String subjectKey;  // "Przedmiot||lab" / "Przedmiot||aud" / "Przedmiot||lec"
         public String teacher;
     }
 
@@ -151,6 +196,10 @@ public class PlanRepository {
 
     private static final DateTimeFormatter YMD =
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static String sCachedAlbum;
+    private static long   sCachedAlbumTs;
+    private static final long ALBUM_TTL_MS = 24L * 60L * 60L * 1000L; // np. 24h
 
     private static final String[] DNI_PL = {"Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"};
 
@@ -240,6 +289,13 @@ public class PlanRepository {
      * Pobranie numeru albumu dla aktywnego kierunku (getStudy).
      */
     private String resolveAlbumNumber() throws IOException, JSONException {
+        long now = System.currentTimeMillis();
+
+        // 1. Spróbuj z cache w pamięci (żeby nie walić w API za każdym razem)
+        if (sCachedAlbum != null && (now - sCachedAlbumTs) < ALBUM_TTL_MS) {
+            return sCachedAlbum;
+        }
+
         MzutSession session = MzutSession.getInstance();
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
@@ -258,7 +314,7 @@ public class PlanRepository {
         Study active = studies.get(idx);
         if (active.przynaleznoscId == null) return null;
 
-        // getStudy
+        // getStudy – TYLKO jeśli nie mamy albumu w cache
         HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
         params.put("token", authKey);
@@ -269,16 +325,25 @@ public class PlanRepository {
 
         String album = resp.optString("album", null);
         if (album != null) album = album.trim();
-        return (album == null || album.isEmpty()) ? null : album;
+        if (album == null || album.isEmpty()) return null;
+
+        // zapisz do cache
+        sCachedAlbum = album;
+        sCachedAlbumTs = now;
+
+        return album;
     }
+
 
     /* =======================
      *   POBRANIE PLANU Z PLAN.ZUT
      * ======================= */
 
     /**
-     * Pełen odpowiednik plan_zut_fetch_range_by_album z PHP.
-     * Zwraca listę surowych eventów w podanym zakresie (włącznie).
+     * Pobranie zakresu [rangeStart, rangeEnd] z plan.zut po numerze albumu.
+     * Używane:
+     *  - przy wchodzeniu w zakres, jeśli TTL > 1h,
+     *  - przy krótkim kliknięciu "Odśwież" (wymuszone scopeRefresh).
      */
     private List<PlanEventRaw> fetchPlanRangeByAlbum(
             String album,
@@ -340,16 +405,15 @@ public class PlanRepository {
             JSONObject e = arr.optJSONObject(i);
             if (e == null) continue;
 
-            String start = e.optString("start", null);
-            String end   = e.optString("end", null);
-            if (start == null || end == null) continue;
+            PlanEventRaw r = parsePlanEventRaw(e);
+            if (r == null) continue;
 
             // data "YYYY-MM-DD" z pola start
             String eventDateStr;
-            if (start.length() >= 10) {
-                eventDateStr = start.substring(0, 10);
+            if (r.start != null && r.start.length() >= 10) {
+                eventDateStr = r.start.substring(0, 10);
             } else {
-                LocalDateTime dt = parseIsoLocal(start);
+                LocalDateTime dt = parseIsoLocal(r.start);
                 if (dt == null) continue;
                 eventDateStr = dt.toLocalDate().format(YMD);
             }
@@ -360,37 +424,75 @@ public class PlanRepository {
                 continue;
             }
 
-            PlanEventRaw r = new PlanEventRaw();
-            r.title               = e.optString("title", "");
-            r.description         = e.optString("description", "");
-            r.start               = start;
-            r.end                 = end;
-            r.workerTitle         = e.optString("worker_title", "");
-            r.worker              = e.optString("worker", "");
-            r.lessonForm          = e.optString("lesson_form", "");
-            r.lessonFormShort     = e.optString("lesson_form_short", "");
-            r.groupName           = e.optString("group_name", "");
-            r.tokName             = e.optString("tok_name", "");
-            r.room                = e.optString("room", "");
-            r.lessonStatus        = e.optString("lesson_status", "");
-            r.lessonStatusShort   = e.optString("lesson_status_short", "");
-            r.subject             = e.optString("subject", "");
-            r.hours               = e.optString("hours", "");
-            r.color               = e.optString("color", "");
-            r.borderColor         = e.optString("borderColor", "");
-
             out.add(r);
         }
 
         return out;
     }
 
-    private List<PlanEventRaw> fetchPlanDayByAlbum(
+    /**
+     * NOWE: pobranie CAŁEGO planu dla albumu (bez parametrów start/end).
+     * Używane do pełnego przeładowania (długie przytrzymanie w UI).
+     */
+    private List<PlanEventRaw> fetchFullPlanByAlbum(
             String album,
-            LocalDate day,
             PlanDebug debug
     ) throws IOException, JSONException {
-        return fetchPlanRangeByAlbum(album, day, day, debug);
+
+        String base = "https://plan.zut.edu.pl/schedule_student.php?number=" + album;
+
+        // najpierw bez parametrów – powinno zwrócić cały zakres (październik–sierpień)
+        JSONArray arr = null;
+        try {
+            arr = httpGetJsonArray(base, debug);
+        } catch (Exception e) {
+            Log.w(TAG, "Błąd pobierania pełnego planu (" + base + "): " + e.getMessage());
+        }
+
+        // fallback – jeśli tu padnie, po prostu pusta lista.
+        if (arr == null) {
+            return new ArrayList<>();
+        }
+
+        List<PlanEventRaw> out = new ArrayList<>();
+        for (int i = 0; i < arr.length(); i++) {
+            JSONObject e = arr.optJSONObject(i);
+            if (e == null) continue;
+            PlanEventRaw r = parsePlanEventRaw(e);
+            if (r != null) {
+                out.add(r);
+            }
+        }
+        return out;
+    }
+
+    private PlanEventRaw parsePlanEventRaw(JSONObject e) {
+        if (e == null) return null;
+
+        String start = e.optString("start", null);
+        String end   = e.optString("end", null);
+        if (start == null || end == null) return null;
+
+        PlanEventRaw r = new PlanEventRaw();
+        r.title               = e.optString("title", "");
+        r.description         = e.optString("description", "");
+        r.start               = start;
+        r.end                 = end;
+        r.workerTitle         = e.optString("worker_title", "");
+        r.worker              = e.optString("worker", "");
+        r.lessonForm          = e.optString("lesson_form", "");
+        r.lessonFormShort     = e.optString("lesson_form_short", "");
+        r.groupName           = e.optString("group_name", "");
+        r.tokName             = e.optString("tok_name", "");
+        r.room                = e.optString("room", "");
+        r.lessonStatus        = e.optString("lesson_status", "");
+        r.lessonStatusShort   = e.optString("lesson_status_short", "");
+        r.subject             = e.optString("subject", "");
+        r.hours               = e.optString("hours", "");
+        r.color               = e.optString("color", "");
+        r.borderColor         = e.optString("borderColor", "");
+
+        return r;
     }
 
     /* =======================
@@ -438,6 +540,38 @@ public class PlanRepository {
             return "week-event-type-lecture";
 
         return "";
+    }
+
+    private String eventTypeLabel(PlanEventRaw e) {
+        String cls = eventTypeClass(e);
+        switch (cls) {
+            case "week-event-type-lecture":
+                return "Wykład";
+            case "week-event-type-lab":
+                return "Laboratorium";
+            case "week-event-type-auditory":
+                return "Ćwiczenia audytoryjne";
+            case "week-event-type-exam":
+                return "Egzamin";
+            case "week-event-type-cancelled":
+                return "Odwołane";
+            case "week-event-type-rector":
+                return "Dzień rektorski";
+            case "week-event-type-remote":
+                return "Zajęcia zdalne";
+            case "week-event-type-pass":
+            case "week-event-type-pass-retake":
+            case "week-event-type-pass-remote":
+            case "week-event-type-pass-remote-retake":
+                return "Zaliczenie";
+            default:
+                // fallback: jeśli mamy lessonForm
+                String form = e.lessonForm != null ? e.lessonForm.trim() : "";
+                if (!form.isEmpty()) {
+                    return form;
+                }
+                return "";
+        }
     }
 
     private static String lower(String s) {
@@ -556,6 +690,7 @@ public class PlanRepository {
             ev.put("endStr", endStr);
             ev.put("tooltip", tooltip);
             ev.put("typeClass", eventTypeClass(e));
+            ev.put("typeLabel", eventTypeLabel(e));
             ev.put("subjectKey", subjectKey);
             ev.put("teacher", teacher);
 
@@ -663,6 +798,7 @@ public class PlanRepository {
             ui.endStr     = (String) ev.get("endStr");
             ui.tooltip    = (String) ev.get("tooltip");
             ui.typeClass  = (String) ev.get("typeClass");
+            ui.typeLabel  = (String) ev.get("typeLabel");
             ui.subjectKey = (String) ev.get("subjectKey");
             ui.teacher    = (String) ev.get("teacher");
             result.add(ui);
@@ -715,16 +851,300 @@ public class PlanRepository {
     }
 
     /* =======================
+     *   CACHE – DYSK / PAMIĘĆ
+     * ======================= */
+
+    /**
+     * Tworzy klucz zakresu do scope cache:
+     *  - "day:YYYY-MM-DD"
+     *  - "week:YYYY-MM-DD" (poniedziałek tygodnia)
+     *  - "month:YYYY-MM-01"
+     */
+    private String buildScopeKey(String viewMode, LocalDate rangeStart, LocalDate rangeEnd) {
+        if ("day".equals(viewMode)) {
+            return "day:" + rangeStart.format(YMD);
+        } else if ("week".equals(viewMode)) {
+            // przyjmujemy, że rangeStart to poniedziałek
+            return "week:" + rangeStart.format(YMD);
+        } else {
+            // miesiąc – bierzemy 1. dzień miesiąca rangeStart
+            LocalDate m = rangeStart.withDayOfMonth(1);
+            return "month:" + m.format(YMD);
+        }
+    }
+
+    /**
+     * Upewnia się, że cache (pełny) istnieje i należy do odpowiedniego albumu,
+     * a następnie – jeśli trzeba – odświeża KONKRETNY zakres z API.
+     *
+     * @param album numer albumu
+     * @param rangeStart pierwszy dzień zakresu (dzień/tydzień/miesiąc)
+     * @param rangeEnd ostatni dzień zakresu
+     * @param viewMode "day"/"week"/"month"
+     * @param forceScopeRefresh jeśli true – zawsze dociąga dany zakres z API (krótkie kliknięcie "Odśwież")
+     */
+    private Map<LocalDate, List<PlanEventRaw>> ensureScopeData(
+            String album,
+            LocalDate rangeStart,
+            LocalDate rangeEnd,
+            String viewMode,
+            boolean forceScopeRefresh,
+            PlanDebug debug
+    ) throws IOException, JSONException {
+
+        long now = System.currentTimeMillis();
+
+        synchronized (PlanRepository.class) {
+
+            // 1) upewniamy się, że mamy cache w pamięci dla tego albumu
+            if (sFullPlanCache == null || album == null || !album.equals(sFullPlanCache.album)) {
+                // spróbuj wczytać z dysku
+                FullPlanCache fromDisk = readCacheFromDisk();
+                if (fromDisk != null && album != null && album.equals(fromDisk.album)) {
+                    if (fromDisk.scopeTimestamps == null) {
+                        fromDisk.scopeTimestamps = new HashMap<>();
+                    }
+                    sFullPlanCache = fromDisk;
+                } else {
+                    // brak pliku lub inny album – tworzymy pusty cache
+                    FullPlanCache newCache = new FullPlanCache();
+                    newCache.album = album;
+                    newCache.timestampMs = now;
+                    newCache.byDate = new HashMap<>();
+                    newCache.scopeTimestamps = new HashMap<>();
+                    sFullPlanCache = newCache;
+                }
+            }
+
+            if (sFullPlanCache.scopeTimestamps == null) {
+                sFullPlanCache.scopeTimestamps = new HashMap<>();
+            }
+
+            String scopeKey = buildScopeKey(viewMode, rangeStart, rangeEnd);
+            Long lastScopeMs = sFullPlanCache.scopeTimestamps.get(scopeKey);
+
+            boolean needRefresh;
+            if (forceScopeRefresh) {
+                // wymuszone przez użytkownika (krótki klik)
+                needRefresh = true;
+            } else {
+                // "co godzinę" – ale sprawdzane dopiero przy wejściu w ten zakres
+                needRefresh = (lastScopeMs == null) || ((now - lastScopeMs) > SCOPE_CACHE_TTL_MS);
+            }
+
+            if (needRefresh) {
+                List<PlanEventRaw> fresh = fetchPlanRangeByAlbum(album, rangeStart, rangeEnd, debug);
+                Map<LocalDate, List<PlanEventRaw>> tmp = groupByDay(fresh);
+
+                // podmieniamy dane dla dni w zakresie (żeby nie wisiały stare zajęcia)
+                LocalDate d = rangeStart;
+                while (!d.isAfter(rangeEnd)) {
+                    List<PlanEventRaw> list = tmp.get(d);
+                    if (list == null || list.isEmpty()) {
+                        sFullPlanCache.byDate.remove(d);
+                    } else {
+                        sFullPlanCache.byDate.put(d, list);
+                    }
+                    d = d.plusDays(1);
+                }
+
+                sFullPlanCache.scopeTimestamps.put(scopeKey, now);
+                sFullPlanCache.timestampMs = now;
+
+                // zapisujemy stan na dysk (bez scopeTimestamps – tylko byDate)
+                writeCacheToDisk(sFullPlanCache);
+            }
+
+            return sFullPlanCache.byDate;
+        }
+    }
+
+    private FullPlanCache readCacheFromDisk() {
+        if (appContext == null) return null;
+
+        FileInputStream fis = null;
+        try {
+            fis = appContext.openFileInput(CACHE_FILE_NAME);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            JSONObject root = new JSONObject(sb.toString());
+            FullPlanCache cache = new FullPlanCache();
+            cache.album = root.optString("album", null);
+            cache.timestampMs = root.optLong("timestamp", 0L);
+
+            JSONObject eventsByDate = root.optJSONObject("eventsByDate");
+            if (eventsByDate == null) return null;
+
+            Map<LocalDate, List<PlanEventRaw>> map = new HashMap<>();
+            Iterator<String> keys = eventsByDate.keys();
+            while (keys.hasNext()) {
+                String dateStr = keys.next();
+                JSONArray arr = eventsByDate.optJSONArray(dateStr);
+                if (arr == null) continue;
+
+                LocalDate d;
+                try {
+                    d = LocalDate.parse(dateStr, YMD);
+                } catch (Exception ex) {
+                    continue;
+                }
+
+                List<PlanEventRaw> dayList = new ArrayList<>();
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject obj = arr.optJSONObject(i);
+                    if (obj == null) continue;
+                    PlanEventRaw r = parsePlanEventRaw(obj);
+                    if (r != null) {
+                        dayList.add(r);
+                    }
+                }
+                map.put(d, dayList);
+            }
+
+            cache.byDate = map;
+
+// 🆕 odczyt scopeTimestamps z pliku (jeśli istnieje)
+            JSONObject scopesJson = root.optJSONObject("scopeTimestamps");
+            Map<String, Long> scopesMap = new HashMap<>();
+            if (scopesJson != null) {
+                Iterator<String> it2 = scopesJson.keys();
+                while (it2.hasNext()) {
+                    String key = it2.next();
+                    long ts = scopesJson.optLong(key, 0L);
+                    if (ts > 0L) {
+                        scopesMap.put(key, ts);
+                    }
+                }
+            }
+            cache.scopeTimestamps = scopesMap;
+
+            return cache;
+
+        } catch (Exception e) {
+            Log.w(TAG, "Nie udało się wczytać cache planu z pliku: " + e.getMessage());
+            return null;
+        } finally {
+            if (fis != null) {
+                try { fis.close(); } catch (Exception ignore) {}
+            }
+        }
+    }
+
+    private void writeCacheToDisk(FullPlanCache cache) {
+        if (appContext == null || cache == null) return;
+
+        FileOutputStream fos = null;
+        try {
+            JSONObject root = new JSONObject();
+            root.put("album", cache.album);
+            root.put("timestamp", cache.timestampMs);
+
+            // zapisujemy eventy per dzień
+            JSONObject eventsByDate = new JSONObject();
+            for (Map.Entry<LocalDate, List<PlanEventRaw>> entry : cache.byDate.entrySet()) {
+                LocalDate date = entry.getKey();
+                List<PlanEventRaw> list = entry.getValue();
+                JSONArray arr = new JSONArray();
+                if (list != null) {
+                    for (PlanEventRaw r : list) {
+                        JSONObject obj = new JSONObject();
+                        obj.put("title", r.title != null ? r.title : "");
+                        obj.put("description", r.description != null ? r.description : "");
+                        obj.put("start", r.start != null ? r.start : "");
+                        obj.put("end", r.end != null ? r.end : "");
+                        obj.put("worker_title", r.workerTitle != null ? r.workerTitle : "");
+                        obj.put("worker", r.worker != null ? r.worker : "");
+                        obj.put("lesson_form", r.lessonForm != null ? r.lessonForm : "");
+                        obj.put("lesson_form_short", r.lessonFormShort != null ? r.lessonFormShort : "");
+                        obj.put("group_name", r.groupName != null ? r.groupName : "");
+                        obj.put("tok_name", r.tokName != null ? r.tokName : "");
+                        obj.put("room", r.room != null ? r.room : "");
+                        obj.put("lesson_status", r.lessonStatus != null ? r.lessonStatus : "");
+                        obj.put("lesson_status_short", r.lessonStatusShort != null ? r.lessonStatusShort : "");
+                        obj.put("subject", r.subject != null ? r.subject : "");
+                        obj.put("hours", r.hours != null ? r.hours : "");
+                        obj.put("color", r.color != null ? r.color : "");
+                        obj.put("borderColor", r.borderColor != null ? r.borderColor : "");
+                        arr.put(obj);
+                    }
+                }
+                eventsByDate.put(date.format(YMD), arr);
+            }
+            root.put("eventsByDate", eventsByDate);
+
+            JSONObject scopesJson = new JSONObject();
+            if (cache.scopeTimestamps != null) {
+                for (Map.Entry<String, Long> e : cache.scopeTimestamps.entrySet()) {
+                    scopesJson.put(e.getKey(), e.getValue());
+                }
+            }
+            root.put("scopeTimestamps", scopesJson);
+
+            byte[] bytes = root.toString().getBytes(StandardCharsets.UTF_8);
+            fos = appContext.openFileOutput(CACHE_FILE_NAME, Context.MODE_PRIVATE);
+            fos.write(bytes);
+            fos.flush();
+
+        } catch (Exception e) {
+            Log.w(TAG, "Nie udało się zapisać cache planu do pliku: " + e.getMessage());
+        } finally {
+            if (fos != null) {
+                try { fos.close(); } catch (Exception ignore) {}
+            }
+        }
+    }
+
+    /* =======================
      *   PUBLICZNE API – PLAN
      * ======================= */
+
+    /**
+     * Główna metoda: ładuje plan dla danego widoku (day/week/month) i daty.
+     * Korzysta z cache i TTL (1h) dla konkretnego zakresu.
+     *
+     * @param viewMode "day" / "week" / "month"
+     * @param currentDate LocalDate aktualnej pozycji (jeśli null -> today)
+     */
+    public PlanResult loadPlan(String viewMode, LocalDate currentDate) throws IOException, JSONException {
+        return loadPlanInternal(viewMode, currentDate, false, false);
+    }
 
     /**
      * Główna metoda: ładuje plan dla danego widoku (day/week/month) i daty.
      *
      * @param viewMode "day" / "week" / "month"
      * @param currentDate LocalDate aktualnej pozycji (jeśli null -> today)
+     * @param forceFullRefresh jeśli true – ignoruje cache i pobiera CAŁY plan z API
+     *                         (używane przy długim przytrzymaniu przycisku odświeżania).
      */
-    public PlanResult loadPlan(String viewMode, LocalDate currentDate) throws IOException, JSONException {
+    public PlanResult loadPlan(String viewMode, LocalDate currentDate, boolean forceFullRefresh) throws IOException, JSONException {
+        return loadPlanInternal(viewMode, currentDate, forceFullRefresh, false);
+    }
+
+    /**
+     * Odświeża TYLKO bieżący zakres (dzień/tydzień/miesiąc) – bez dotykania całego planu.
+     * Używane przy krótkim kliknięciu przycisku "Odśwież".
+     */
+    public PlanResult reloadScope(String viewMode, LocalDate currentDate) throws IOException, JSONException {
+        return loadPlanInternal(viewMode, currentDate, false, true);
+    }
+
+    /**
+     * Wspólna logika:
+     *  - forceFullRefresh = true  -> pobranie całego planu (pełne przeładowanie),
+     *  - forceScopeRefresh = true -> pobranie tylko bieżącego zakresu,
+     *  - oba false                 -> zwykłe użycie cache + TTL dla zakresu.
+     */
+    private PlanResult loadPlanInternal(String viewMode,
+                                        LocalDate currentDate,
+                                        boolean forceFullRefresh,
+                                        boolean forceScopeRefresh) throws IOException, JSONException {
+
         if (currentDate == null) currentDate = LocalDate.now();
         if (!"day".equals(viewMode) && !"week".equals(viewMode) && !"month".equals(viewMode)) {
             viewMode = "week";
@@ -747,7 +1167,7 @@ public class PlanRepository {
             return r;
         }
 
-        // zakres kalendarzowy
+        // zakres kalendarzowy dla widoku
         LocalDate rangeStart = currentDate;
         LocalDate rangeEnd   = currentDate;
 
@@ -790,19 +1210,48 @@ public class PlanRepository {
         r.debug.rangeStart = rangeStart.format(YMD);
         r.debug.rangeEnd   = rangeEnd.format(YMD);
 
-        // pobranie danych z plan.zut
-        List<PlanEventRaw> entries;
-        if ("day".equals(viewMode)) {
-            entries = fetchPlanDayByAlbum(album, rangeStart, r.debug);
+        Map<LocalDate, List<PlanEventRaw>> byDate;
+
+        if (forceFullRefresh) {
+            // ====== PEŁNE PRZEŁADOWANIE PLANU ======
+            long now = System.currentTimeMillis();
+
+            List<PlanEventRaw> allEvents = fetchFullPlanByAlbum(album, r.debug);
+            Map<LocalDate, List<PlanEventRaw>> grouped = groupByDay(allEvents);
+
+            synchronized (PlanRepository.class) {
+                FullPlanCache newCache = new FullPlanCache();
+                newCache.album = album;
+                newCache.timestampMs = now;
+                newCache.byDate = grouped;
+                newCache.scopeTimestamps = new HashMap<>();
+                sFullPlanCache = newCache;
+                writeCacheToDisk(newCache);
+            }
+
+            byDate = grouped;
+
         } else {
-            entries = fetchPlanRangeByAlbum(album, rangeStart, rangeEnd, r.debug);
+            // ====== TYLKO DANY ZAKRES (z TTL) ======
+            byDate = ensureScopeData(album, rangeStart, rangeEnd, viewMode, forceScopeRefresh, r.debug);
         }
+
+        // wycinamy tylko potrzebny zakres do debug + layoutu
+        List<PlanEventRaw> entries = new ArrayList<>();
+        LocalDate iterDate = rangeStart;
+        while (!iterDate.isAfter(rangeEnd)) {
+            List<PlanEventRaw> dayList = byDate.get(iterDate);
+            if (dayList != null && !dayList.isEmpty()) {
+                entries.addAll(dayList);
+            }
+            iterDate = iterDate.plusDays(1);
+        }
+
         r.debug.entriesTotal = entries.size();
 
-        // grupowanie po dniu
-        Map<LocalDate, List<PlanEventRaw>> byDate = groupByDay(entries);
+        Map<LocalDate, List<PlanEventRaw>> byDateRange = groupByDay(entries);
         List<String> daysWithDataStr = new ArrayList<>();
-        for (LocalDate d : byDate.keySet()) {
+        for (LocalDate d : byDateRange.keySet()) {
             daysWithDataStr.add(d.format(YMD));
         }
         Collections.sort(daysWithDataStr);
@@ -821,7 +1270,7 @@ public class PlanRepository {
             for (LocalDate d : days) {
                 DayColumn col = new DayColumn();
                 col.date = d;
-                List<PlanEventRaw> rawList = byDate.getOrDefault(d, Collections.emptyList());
+                List<PlanEventRaw> rawList = byDateRange.getOrDefault(d, Collections.emptyList());
                 List<PlanEventUi> uiList = buildDayLayout(rawList);
                 if (!uiList.isEmpty()) any = true;
                 col.events = uiList;
@@ -831,7 +1280,7 @@ public class PlanRepository {
 
         } else {
             // widok month – zaznaczamy dni, w których coś jest
-            Set<LocalDate> daysWithPlan = new HashSet<>(byDate.keySet());
+            Set<LocalDate> daysWithPlan = new HashSet<>(byDateRange.keySet());
             r.monthGrid = buildMonthGrid(currentDate, daysWithPlan);
         }
 
@@ -862,8 +1311,8 @@ public class PlanRepository {
      * Odpowiednik plan_collect_all_subjects_for_filter.
      * Pobieramy CAŁY plan (dla albumu) i robimy listę unikalnych subject + type.
      *
-     * Uwaga: tutaj nie robimy rozbudowanego cache w sesji (jak PHP),
-     * ale w razie potrzeby można później dopisać do MzutSession.
+     * Uwaga: tutaj nadal używamy API USOS-owego (getPlan), jak wcześniej.
+     * Cache plan.zut (schedule_student.php) jest niezależny.
      */
     public List<SubjectFilterItem> loadSubjectsForFilter() throws IOException, JSONException {
         String album = resolveAlbumNumber();

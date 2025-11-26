@@ -6,7 +6,6 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.widget.RemoteViews;
 
@@ -20,6 +19,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * Provider widgetu "Plan dnia".
+ *
+ * Kluczowe założenia:
+ *  - korzysta z MzutSession.initializeFromPreferences(...) → poprawna sesja po ubiciu procesu,
+ *  - korzysta z PlanRepository(context) → wspólny cache planu z apką (plik + TTL),
+ *  - w onUpdate() odświeża zarówno nagłówek, jak i listę (notifyAppWidgetViewDataChanged),
+ *  - logika "dziś / jutro" jest spójna z serwisem.
+ */
 public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     public static final String ACTION_REFRESH =
@@ -28,17 +36,19 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     private static final DateTimeFormatter DATE_LABEL =
             DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("pl", "PL"));
 
-    // te same prefs co w LoginActivity / PlanActivity
-    private static final String PREFS_LOGIN       = "mzut_prefs";
-    private static final String KEY_USER_ID       = "user_id";
-    private static final String KEY_AUTH_KEY      = "auth_key";
+    // formatter do stopki „Odświeżono:”
+    private static final DateTimeFormatter TIME_LABEL =
+            DateTimeFormatter.ofPattern("HH:mm");
 
+    // prefs planu (filtry jak w PlanActivity)
     private static final String PREFS_PLAN        = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        // Systemowe odświeżenie (np. co 30 min) – od razu odświeżamy i listę, i nagłówek
         for (int appWidgetId : appWidgetIds) {
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
             updateOneWidget(context, appWidgetManager, appWidgetId);
         }
     }
@@ -61,28 +71,21 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             for (int appWidgetId : ids) {
                 // odśwież dane listy
                 mgr.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
-                // zaktualizuj header (data + subtitle)
+                // zaktualizuj header (data + subtitle + stopka)
                 updateOneWidget(context, mgr, appWidgetId);
             }
         }
     }
 
-    private static void ensureSessionFromPrefs(Context ctx) {
-        SharedPreferences prefs = ctx.getSharedPreferences(PREFS_LOGIN, Context.MODE_PRIVATE);
-        String userId = prefs.getString(KEY_USER_ID, null);
-        String authKey = prefs.getString(KEY_AUTH_KEY, null);
-
-        if (userId == null || authKey == null) {
-            return;
-        }
-
-        MzutSession session = MzutSession.getInstance();
-        if (session.getUserId() == null) {
-            session.setUserId(userId);
-        }
-        if (session.getAuthKey() == null) {
-            session.setAuthKey(authKey);
-        }
+    /**
+     * Inicjalizuje sesję z SharedPreferences (nowy MzutSession).
+     *
+     * @return true jeśli mamy userId + authKey (użytkownik zalogowany).
+     */
+    private static boolean ensureSessionFromPrefs(Context ctx) {
+        MzutSession.initializeFromPreferences(ctx);
+        MzutSession s = MzutSession.getInstance();
+        return s.getUserId() != null && s.getAuthKey() != null;
     }
 
     private void updateOneWidget(Context context,
@@ -97,67 +100,68 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         svcIntent.setData(Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME)));
         views.setRemoteAdapter(R.id.widgetList, svcIntent);
 
-        // nagłówek z datą
         LocalDate today = LocalDate.now();
-        views.setTextViewText(R.id.widgetDate, today.format(DATE_LABEL));
+        LocalDate dateToShow = today;
+        boolean showingTomorrow = false;
 
-        // subtitle: „Najbliższe za …” / „Dziś brak zajęć” / itd – liczymy tu, osobno od listy
+        // domyślny podtytuł
         String subtitleText = "Dzisiejsze zajęcia";
-        try {
-            ensureSessionFromPrefs(context);
 
-            PlanRepository repo = new PlanRepository();
-            PlanRepository.PlanResult result = repo.loadPlan("day", today);
+        // init sesji – jeśli nie ma logowania, nie wylecimy z błędem, tylko widget pokaże pusto
+        boolean hasSession = ensureSessionFromPrefs(context);
 
-            PlanRepository.DayColumn todayCol = null;
-            if (result.dayColumns != null) {
-                for (PlanRepository.DayColumn col : result.dayColumns) {
-                    if (today.equals(col.date)) {
-                        todayCol = col;
-                        break;
+        if (hasSession) {
+            try {
+                // repo z contextem -> wspólny cache z apką
+                PlanRepository repo = new PlanRepository(context.getApplicationContext());
+
+                LocalDate targetDate = today;
+
+                // wczytanie filtrów
+                Set<String> hiddenSubjectKeys = context
+                        .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
+                        .getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
+
+                LocalTime now = LocalTime.now();
+                int nowMin = now.getHour() * 60 + now.getMinute();
+
+                // ---------- PROBA: DZISIAJ ----------
+                PlanRepository.PlanResult resultToday = repo.loadPlan("day", today);
+
+                PlanRepository.DayColumn todayCol = null;
+                if (resultToday.dayColumns != null) {
+                    for (PlanRepository.DayColumn col : resultToday.dayColumns) {
+                        if (today.equals(col.date)) {
+                            todayCol = col;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (todayCol == null || todayCol.events == null) {
-                subtitleText = "Dziś brak zajęć";
-            } else {
-                SharedPreferences planPrefs =
-                        context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
-                Set<String> hiddenSubjectKeys = planPrefs.getStringSet(
-                        KEY_FILTER_HIDDEN,
-                        new HashSet<>()
-                );
-
-                List<PlanRepository.PlanEventUi> allEvents = new ArrayList<>();
-                for (PlanRepository.PlanEventUi ev : todayCol.events) {
-                    if (ev.subjectKey != null && !ev.subjectKey.isEmpty()
-                            && hiddenSubjectKeys.contains(ev.subjectKey)) {
-                        continue;
+                List<PlanRepository.PlanEventUi> allToday = new ArrayList<>();
+                if (todayCol != null && todayCol.events != null) {
+                    for (PlanRepository.PlanEventUi ev : todayCol.events) {
+                        if (ev.subjectKey != null && !ev.subjectKey.isEmpty()
+                                && hiddenSubjectKeys.contains(ev.subjectKey)) {
+                            continue;
+                        }
+                        allToday.add(ev);
                     }
-                    allEvents.add(ev);
                 }
 
-                if (allEvents.isEmpty()) {
-                    subtitleText = "Dziś brak zajęć (po filtrach)";
-                } else {
-                    Collections.sort(allEvents, (a, b) -> Integer.compare(a.startMin, b.startMin));
+                if (!allToday.isEmpty()) {
+                    Collections.sort(allToday, (a, b) -> Integer.compare(a.startMin, b.startMin));
 
-                    LocalTime now = LocalTime.now();
-                    int nowMin = now.getHour() * 60 + now.getMinute();
-
-                    // tylko przyszłe / trwające
-                    List<PlanRepository.PlanEventUi> upcoming = new ArrayList<>();
-                    for (PlanRepository.PlanEventUi ev : allEvents) {
+                    List<PlanRepository.PlanEventUi> upcomingToday = new ArrayList<>();
+                    for (PlanRepository.PlanEventUi ev : allToday) {
                         if (ev.endMin > nowMin) {
-                            upcoming.add(ev);
+                            upcomingToday.add(ev);
                         }
                     }
 
-                    if (upcoming.isEmpty()) {
-                        subtitleText = "Dziś brak dalszych zajęć";
-                    } else {
-                        PlanRepository.PlanEventUi next = upcoming.get(0);
+                    if (!upcomingToday.isEmpty()) {
+                        // są jeszcze zajęcia dzisiaj – zostajemy przy "dzisiaj"
+                        PlanRepository.PlanEventUi next = upcomingToday.get(0);
                         if (next.startMin <= nowMin) {
                             subtitleText = "Zajęcia w trakcie";
                         } else {
@@ -174,15 +178,69 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                             }
                             subtitleText = sb.toString();
                         }
+                    } else {
+                        // były dziś zajęcia, ale wszystkie już się skończyły -> spróbuj jutro
+                        String[] subtitleHolder = new String[]{subtitleText};
+                        showingTomorrow = tryTomorrowHeader(
+                                context,
+                                repo,
+                                hiddenSubjectKeys,
+                                today,
+                                subtitleHolder
+                        );
+                        if (showingTomorrow) {
+                            targetDate = today.plusDays(1);
+                            subtitleText = subtitleHolder[0];
+                        } else {
+                            subtitleText = "Brak zajęć jutro";
+                            targetDate = today.plusDays(1);
+                            showingTomorrow = true;
+                        }
+                    }
+                } else {
+                    // w ogóle brak zajęć dziś (także po filtrach) -> spróbuj jutro
+                    String[] subtitleHolder = new String[]{subtitleText};
+                    showingTomorrow = tryTomorrowHeader(
+                            context,
+                            repo,
+                            hiddenSubjectKeys,
+                            today,
+                            subtitleHolder
+                    );
+                    if (showingTomorrow) {
+                        targetDate = today.plusDays(1);
+                        subtitleText = subtitleHolder[0];
+                    } else {
+                        subtitleText = "Brak zajęć jutro";
+                        targetDate = today.plusDays(1);
+                        showingTomorrow = true;
                     }
                 }
-            }
 
-        } catch (Exception ignored) {
-            // w razie błędu zostanie domyślne "Dzisiejsze zajęcia"
+                dateToShow = targetDate;
+
+            } catch (Exception ignored) {
+                // w razie błędu zostanie domyślne "Dzisiejsze zajęcia" i dzisiejsza data
+            }
+        } else {
+            // brak sesji – sugerujemy zalogowanie
+            subtitleText = "Zaloguj się w aplikacji mZUT";
         }
 
+        // nagłówek z datą (ew. (jutro))
+        String dateLabel = dateToShow.format(DATE_LABEL);
+        if (showingTomorrow) {
+            dateLabel += " (jutro)";
+        }
+        views.setTextViewText(R.id.widgetDate, dateLabel);
         views.setTextViewText(R.id.widgetSubtitle, subtitleText);
+
+        // stopka: kiedy ostatnio odświeżono widget
+        LocalTime nowTime = LocalTime.now();
+        views.setTextViewText(
+                R.id.widgetLastRefresh,
+                "Odświeżono: " + nowTime.format(TIME_LABEL)
+        );
 
         // kliknięcie w cały widget -> PlanActivity
         Intent openIntent = new Intent(context, PlanActivity.class);
@@ -218,5 +276,52 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         views.setPendingIntentTemplate(R.id.widgetList, rowPI);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    /**
+     * Próbuje przygotować subtitle dla jutra.
+     * Zwraca true, jeśli jutro są jakiekolwiek zajęcia (po filtrach).
+     * outSubtitle[0] – ustawia tekst podtytułu ("Jutrzejsze zajęcia" albo "Brak zajęć jutro").
+     */
+    private boolean tryTomorrowHeader(Context context,
+                                      PlanRepository repo,
+                                      Set<String> hiddenSubjectKeys,
+                                      LocalDate today,
+                                      String[] outSubtitle) throws Exception {
+
+        LocalDate tomorrow = today.plusDays(1);
+        PlanRepository.PlanResult resultTomorrow = repo.loadPlan("day", tomorrow);
+
+        PlanRepository.DayColumn tomorrowCol = null;
+        if (resultTomorrow.dayColumns != null) {
+            for (PlanRepository.DayColumn col : resultTomorrow.dayColumns) {
+                if (tomorrow.equals(col.date)) {
+                    tomorrowCol = col;
+                    break;
+                }
+            }
+        }
+
+        if (tomorrowCol == null || tomorrowCol.events == null) {
+            outSubtitle[0] = "Brak zajęć jutro";
+            return false;
+        }
+
+        List<PlanRepository.PlanEventUi> allTomorrow = new ArrayList<>();
+        for (PlanRepository.PlanEventUi ev : tomorrowCol.events) {
+            if (ev.subjectKey != null && !ev.subjectKey.isEmpty()
+                    && hiddenSubjectKeys.contains(ev.subjectKey)) {
+                continue;
+            }
+            allTomorrow.add(ev);
+        }
+
+        if (allTomorrow.isEmpty()) {
+            outSubtitle[0] = "Brak zajęć jutro";
+            return false;
+        }
+
+        outSubtitle[0] = "Jutrzejsze zajęcia";
+        return true;
     }
 }

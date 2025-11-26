@@ -33,29 +33,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!-- WYBÓR KIERUNKU -->
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingBottom="4dp">
-
-                <TextView
-                    android:id="@+id/tvStudyLabel"
-                    android:text="Aktywny kierunek"
-                    android:textColor="#E5E7EB"
-                    android:textSize="13sp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-
-                <Spinner
-                    android:id="@+id/spinnerStudies"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="#020617"
-                    android:spinnerMode="dropdown" />
-            </LinearLayout>
-
             <!-- PRZEŁĄCZNIK WIDOKÓW -->
             <LinearLayout
                 android:id="@+id/layoutViewModesRow"
@@ -104,86 +81,118 @@
                     android:textAllCaps="false" />
             </LinearLayout>
 
-            <!-- NAWIGACJA DATY -->
+            <!-- NAGŁÓWEK ZAKRESU + AKCJE W PRAWYM GÓRNYM ROGU -->
             <LinearLayout
-                android:id="@+id/layoutNavRow"
+                android:id="@+id/layoutHeaderActionsRow"
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:paddingBottom="4dp">
 
-                <LinearLayout
-                    android:orientation="horizontal"
+                <TextView
+                    android:id="@+id/tvHeaderLabel"
+                    android:text="-"
+                    android:textSize="14sp"
+                    android:textColor="#E5E7EB"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1">
+                    android:layout_weight="1" />
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
 
                     <Button
-                        android:id="@+id/btnPrev"
-                        android:text="&lt;"
-                        android:textSize="18sp"
+                        android:id="@+id/btnToday"
+                        android:text="Dziś"
+                        android:textSize="12sp"
                         android:background="@drawable/bg_mode_button"
                         android:textColor="#E5E7EB"
-                        android:minWidth="0dp"
                         android:minHeight="0dp"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
+                        android:minWidth="0dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
                         android:textAllCaps="false" />
 
                     <Button
-                        android:id="@+id/btnNext"
-                        android:text="&gt;"
-                        android:textSize="18sp"
+                        android:id="@+id/btnRefresh"
+                        android:text="Odśwież"
+                        android:textSize="12sp"
                         android:background="@drawable/bg_mode_button"
                         android:textColor="#E5E7EB"
-                        android:minWidth="0dp"
                         android:minHeight="0dp"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
+                        android:minWidth="0dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
                         android:layout_marginLeft="6dp"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        android:textAllCaps="false" />
+
+                    <Button
+                        android:id="@+id/btnFilters"
+                        android:text="Filtr przedmiotów"
+                        android:textSize="11sp"
+                        android:background="@drawable/bg_mode_button"
+                        android:textColor="#E5E7EB"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginLeft="6dp"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
                         android:textAllCaps="false" />
                 </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnToday"
-                    android:text="Dziś"
-                    android:textSize="12sp"
-                    android:background="@drawable/bg_mode_button"
-                    android:textColor="#E5E7EB"
-                    android:minHeight="0dp"
-                    android:minWidth="0dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:paddingLeft="10dp"
-                    android:paddingRight="10dp"
-                    android:textAllCaps="false" />
-
-                <Button
-                    android:id="@+id/btnRefresh"
-                    android:text="Odśwież"
-                    android:textSize="12sp"
-                    android:background="@drawable/bg_mode_button"
-                    android:textColor="#E5E7EB"
-                    android:minHeight="0dp"
-                    android:minWidth="0dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginLeft="6dp"
-                    android:paddingLeft="10dp"
-                    android:paddingRight="10dp"
-                    android:textAllCaps="false" />
             </LinearLayout>
 
-            <!-- NAGŁÓWEK ZAKRESU -->
-            <TextView
-                android:id="@+id/tvHeaderLabel"
-                android:text="-"
-                android:textSize="14sp"
-                android:textColor="#E5E7EB"
+            <!-- NAWIGACJA: STRZAŁKA LEWO / PRAWO NAD KALENDARZEM -->
+            <LinearLayout
+                android:id="@+id/layoutArrowsTop"
+                android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp" />
+                android:paddingBottom="6dp"
+                android:gravity="center_vertical">
+
+                <!-- LEWY PRZYCISK – DOLEGA DO LEWEJ KRAWĘDZI -->
+                <Button
+                    android:id="@+id/btnPrev"
+                    android:text="&lt;"
+                    android:textSize="18sp"
+                    android:background="@drawable/bg_mode_button"
+                    android:textColor="#E5E7EB"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:textAllCaps="false"
+                    android:layout_marginStart="0dp" />
+
+                <!-- PUSTA PRZESTRZEŃ -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <!-- PRAWY PRZYCISK – DOLEGA DO PRAWEJ KRAWĘDZI -->
+                <Button
+                    android:id="@+id/btnNext"
+                    android:text="&gt;"
+                    android:textSize="18sp"
+                    android:background="@drawable/bg_mode_button"
+                    android:textColor="#E5E7EB"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:textAllCaps="false"
+                    android:layout_marginEnd="0dp" />
+
+            </LinearLayout>
 
             <!-- SCROLL NA PLAN -->
             <ScrollView
@@ -246,28 +255,6 @@
                             android:layout_height="wrap_content"
                             android:columnCount="7"
                             android:useDefaultMargins="false" />
-                    </LinearLayout>
-
-                    <!-- FILTRY -->
-                    <LinearLayout
-                        android:id="@+id/layoutFiltersRow"
-                        android:orientation="horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:layout_marginTop="8dp">
-
-                        <Button
-                            android:id="@+id/btnFilters"
-                            android:text="Filtr przedmiotów"
-                            android:textSize="11sp"
-                            android:background="@drawable/bg_mode_button"
-                            android:textColor="#E5E7EB"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:paddingLeft="10dp"
-                            android:paddingRight="10dp"
-                            android:textAllCaps="false" />
                     </LinearLayout>
 
                 </LinearLayout>

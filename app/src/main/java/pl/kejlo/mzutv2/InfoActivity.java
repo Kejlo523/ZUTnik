@@ -4,7 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -19,14 +19,26 @@ import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class InfoActivity extends AppCompatActivity {
 
+    // ===== CACHE KONFIG =====
+    private static final String PREFS_INFO_CACHE        = "mzut_info_cache";
+    private static final String KEY_INFO_DETAILS_JSON   = "info_details_json";
+    private static final String KEY_INFO_HISTORY_JSON   = "info_history_json";
+    private static final String KEY_INFO_TIMESTAMP      = "info_timestamp";
+    private static final long   INFO_CACHE_TTL_MS       = 7L * 24L * 60L * 60L * 1000L; // 7 dni
+
     private DrawerLayout drawerLayout;
 
     private ImageView imageAvatar;
+    private ImageView btnInfoRefresh;
     private NavigationView navigationView;
     private Toolbar toolbar;
 
@@ -41,6 +53,8 @@ public class InfoActivity extends AppCompatActivity {
     private Spinner spinnerStudies;
     private boolean spinnerInitialized = false;
 
+    private LoadInfoTask currentTask;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,13 +66,13 @@ public class InfoActivity extends AppCompatActivity {
 
         toolbar.setTitle("Dane Studenta");
 
-        // 🔹 uniwersalny nav_header – ekran "info"
+        // uniwersalny nav_header – ekran "info"
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "info");
 
         tvName   = findViewById(R.id.tvInfoName);
         tvUserId = findViewById(R.id.tvInfoUserId);
-        imageAvatar = findViewById(R.id.imageInfoAvatar);
-
+        imageAvatar    = findViewById(R.id.imageInfoAvatar);
+        btnInfoRefresh = findViewById(R.id.btnInfoRefresh);
 
         tvAlbum        = findViewById(R.id.tvInfoAlbum);
         tvWydzial      = findViewById(R.id.tvInfoWydzial);
@@ -84,7 +98,7 @@ public class InfoActivity extends AppCompatActivity {
         tvName.setText(username != null ? username : "Student");
         tvUserId.setText("ID użytkownika: " + (s.getUserId() != null ? s.getUserId() : "-"));
 
-        // 🔹 avatar
+        // avatar
         String imageUrl = s.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             new LoadImageTask(imageAvatar).execute(imageUrl);
@@ -92,7 +106,23 @@ public class InfoActivity extends AppCompatActivity {
             imageAvatar.setVisibility(View.GONE);
         }
 
-        new LoadInfoTask().execute();
+        // 1) spróbuj załadować z cache i od razu pokazać
+        loadInfoFromCacheIfAvailable();
+
+        // 2) spinner kierunków (może być dostępny bez requestu po innych ekranach)
+        setupStudiesSpinner();
+
+        // 3) jeśli cache jest stary / brak cache -> odpal network
+        if (shouldFetchFromNetwork()) {
+            startInfoLoad(false);
+        }
+
+        // 4) ikonka odświeżania – force reload
+        if (btnInfoRefresh != null) {
+            btnInfoRefresh.setOnClickListener(v -> {
+                startInfoLoad(true);
+            });
+        }
     }
 
     @Override
@@ -100,6 +130,19 @@ public class InfoActivity extends AppCompatActivity {
         // tylko podglądamy gest, NIE blokujemy eventu
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
+    }
+
+    // ====== ŁADOWANIE Z SIECI ======
+
+    private void startInfoLoad(boolean forceReload) {
+        // forceReload po prostu ignoruje TTL – zawsze fetch
+        Toast.makeText(this, "Synchronizuję…", Toast.LENGTH_SHORT).show();
+
+        if (currentTask != null) {
+            currentTask.cancel(true);
+        }
+        currentTask = new LoadInfoTask();
+        currentTask.execute();
     }
 
     private class LoadInfoTask extends AsyncTask<Void, Void, Boolean> {
@@ -143,10 +186,144 @@ public class InfoActivity extends AppCompatActivity {
             }
 
             bindHistory(history);
-            setupStudiesSpinner();
+            setupStudiesSpinner(); // żeby np. po pierwszym zalogowaniu pojawiły się kierunki
+
+            // zapis do cache po udanym odświeżeniu
+            saveInfoToCache(details, history);
         }
     }
 
+    // ====== CACHE – logika ======
+
+    /**
+     * Czy powinniśmy dociągnąć dane z sieci (cache pusty lub starszy niż 7 dni)?
+     */
+    private boolean shouldFetchFromNetwork() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
+        long ts = prefs.getLong(KEY_INFO_TIMESTAMP, 0L);
+        if (ts == 0L) return true;
+
+        long now = System.currentTimeMillis();
+        return (now - ts) > INFO_CACHE_TTL_MS;
+    }
+
+    /**
+     * Wczytanie danych z cache (jeśli są) i zbindowanie ich do widoków.
+     */
+    private void loadInfoFromCacheIfAvailable() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
+        String detailsJson = prefs.getString(KEY_INFO_DETAILS_JSON, null);
+        String historyJson = prefs.getString(KEY_INFO_HISTORY_JSON, null);
+
+        if (detailsJson == null && historyJson == null) {
+            return; // pierwszy start, brak cache
+        }
+
+        // szczegóły
+        if (detailsJson != null) {
+            try {
+                JSONObject obj = new JSONObject(detailsJson);
+                setOrHide(tvAlbum,        obj.optString("album", null));
+                setOrHide(tvWydzial,      obj.optString("wydzial", null));
+                setOrHide(tvKierunek,     obj.optString("kierunek", null));
+                setOrHide(tvForma,        obj.optString("forma", null));
+                setOrHide(tvPoziom,       obj.optString("poziom", null));
+                setOrHide(tvSpecjalnosc,  obj.optString("specjalnosc", null));
+                setOrHide(tvSpecjalizacja,obj.optString("specjalizacja", null));
+                setOrHide(tvStatus,       obj.optString("status", null));
+                setOrHide(tvRok,          obj.optString("rokAkademicki", null));
+                setOrHide(tvSemestr,      obj.optString("semestrLabel", null));
+            } catch (JSONException e) {
+                // w razie błędu po prostu zignoruj cache
+            }
+        }
+
+        // historia
+        if (historyJson != null) {
+            try {
+                JSONArray arr = new JSONArray(historyJson);
+                bindHistoryFromCache(arr);
+            } catch (JSONException e) {
+                // fallback: pokaż brak
+                bindHistory(null);
+            }
+        }
+    }
+
+    /**
+     * Zapisuje do cache to, co właśnie pobraliśmy z API.
+     */
+    private void saveInfoToCache(StudiesInfoRepository.StudyDetails d,
+                                 List<StudiesInfoRepository.StudyHistoryItem> history) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
+        JSONObject detailsObj = new JSONObject();
+        JSONArray historyArr = new JSONArray();
+
+        try {
+            if (d != null) {
+                detailsObj.put("album",         d.album != null ? d.album : "");
+                detailsObj.put("wydzial",       d.wydzial != null ? d.wydzial : "");
+                detailsObj.put("kierunek",      d.kierunek != null ? d.kierunek : "");
+                detailsObj.put("forma",         d.forma != null ? d.forma : "");
+                detailsObj.put("poziom",        d.poziom != null ? d.poziom : "");
+                detailsObj.put("specjalnosc",   d.specjalnosc != null ? d.specjalnosc : "");
+                detailsObj.put("specjalizacja", d.specjalizacja != null ? d.specjalizacja : "");
+                detailsObj.put("status",        d.status != null ? d.status : "");
+                detailsObj.put("rokAkademicki", d.rokAkademicki != null ? d.rokAkademicki : "");
+                detailsObj.put("semestrLabel",  d.semestrLabel != null ? d.semestrLabel : "");
+            }
+
+            if (history != null) {
+                for (StudiesInfoRepository.StudyHistoryItem item : history) {
+                    if (item == null) continue;
+                    JSONObject h = new JSONObject();
+                    h.put("label",  item.label  != null ? item.label  : "");
+                    h.put("status", item.status != null ? item.status : "");
+                    historyArr.put(h);
+                }
+            }
+
+            prefs.edit()
+                    .putString(KEY_INFO_DETAILS_JSON, detailsObj.toString())
+                    .putString(KEY_INFO_HISTORY_JSON, historyArr.toString())
+                    .putLong(KEY_INFO_TIMESTAMP, System.currentTimeMillis())
+                    .apply();
+
+        } catch (JSONException e) {
+            // w razie czego – brak cache nie jest krytyczny
+        }
+    }
+
+    /**
+     * Tworzy widoki historii na podstawie JSON-a z cache.
+     */
+    private void bindHistoryFromCache(JSONArray arr) {
+        historyContainer.removeAllViews();
+        if (arr == null || arr.length() == 0) {
+            TextView tv = new TextView(this);
+            tv.setText("Brak przebiegu studiów.");
+            tv.setTextColor(0xFF9CA3AF);
+            tv.setTextSize(12);
+            historyContainer.addView(tv);
+            return;
+        }
+
+        for (int i = 0; i < arr.length(); i++) {
+            JSONObject obj = arr.optJSONObject(i);
+            if (obj == null) continue;
+            String label = obj.optString("label", "");
+            String status = obj.optString("status", "");
+
+            TextView tv = new TextView(this);
+            tv.setText(label + " – " + status);
+            tv.setTextColor(0xFFE5E7EB);
+            tv.setTextSize(13);
+            tv.setPadding(0, 6, 0, 6);
+            historyContainer.addView(tv);
+        }
+    }
+
+    // ====== SPINNER KIERUNKÓW ======
 
     private void setupStudiesSpinner() {
         MzutSession session = MzutSession.getInstance();
@@ -160,13 +337,13 @@ public class InfoActivity extends AppCompatActivity {
 
         List<String> labels = new ArrayList<>();
         for (Study st : studies) {
-            labels.add(st.toString()); // tu już jest ładny label z GradesRepository
+            labels.add(st.toString()); // ładny label
         }
 
         if (!spinnerInitialized) {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(
                     this,
-                    R.layout.spinner_item_dark,              // biały tekst
+                    R.layout.spinner_item_dark,
                     labels
             );
             adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
@@ -185,7 +362,8 @@ public class InfoActivity extends AppCompatActivity {
                         return;
                     }
                     s.setActiveStudyIndex(position);
-                    new LoadInfoTask().execute();
+                    // zmiana aktywnego kierunku -> odśwież dane (i cache)
+                    startInfoLoad(true);
                 }
 
                 @Override
@@ -198,10 +376,12 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
+    // ====== BINDOWANIE DANYCH Z API (bez zmian w logice) ======
+
     private void bindDetails(StudiesInfoRepository.StudyDetails d) {
         setOrHide(tvAlbum,        d.album);
         setOrHide(tvWydzial,      d.wydzial);
-        setOrHide(tvKierunek,     d.kierunek);      // 🔹 tu jest nazwa kierunku na ekranie
+        setOrHide(tvKierunek,     d.kierunek);
         setOrHide(tvForma,        d.forma);
         setOrHide(tvPoziom,       d.poziom);
         setOrHide(tvSpecjalnosc,  d.specjalnosc);
@@ -241,6 +421,8 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
+    // ====== AVATAR ======
+
     private static class LoadImageTask extends android.os.AsyncTask<String, Void, android.graphics.Bitmap> {
         private final android.widget.ImageView target;
 
@@ -275,5 +457,4 @@ public class InfoActivity extends AppCompatActivity {
             }
         }
     }
-
 }

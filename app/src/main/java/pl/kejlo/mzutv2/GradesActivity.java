@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -20,10 +21,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.navigation.NavigationView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class GradesActivity extends AppCompatActivity {
+
+    // cache ocen – ważny 7 dni
+    private static final long GRADES_CACHE_TTL_MS =
+            7L * 24L * 60L * 60L * 1000L; // 7 dni
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -38,6 +47,9 @@ public class GradesActivity extends AppCompatActivity {
     // kafelki z podsumowaniem
     private TextView tvAverageValue;
     private TextView tvEctsValue;
+
+    // przycisk odświeżania (ikonka)
+    private View btnGradesRefresh;
 
     private GradesAdapter gradesAdapter;
     private final List<Grade> currentGrades = new ArrayList<>();
@@ -74,6 +86,8 @@ public class GradesActivity extends AppCompatActivity {
         tvAverageValue = findViewById(R.id.tvAverageValue);
         tvEctsValue    = findViewById(R.id.tvEctsValue);
 
+        btnGradesRefresh = findViewById(R.id.btnGradesRefresh);
+
         // --- toolbar / tytuł ---
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -91,8 +105,28 @@ public class GradesActivity extends AppCompatActivity {
         // spinner semestrów ma stałą konfigurację
         setupSemestersSpinner();
 
-        // 🔥 zamiast loadStudiesFromSessionAndInit – robimy jak w InfoActivity:
-        // najpierw async load (studia + semestry), potem dopiero konfiguracja spinnerów
+        // 🔁 przycisk odświeżania ocen – ZAWSZE wali w sieć, ignoruje TTL cache
+        if (btnGradesRefresh != null) {
+            btnGradesRefresh.setOnClickListener(v -> {
+                Toast.makeText(
+                        GradesActivity.this,
+                        "Odświeżam oceny i ECTS…",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                int pos = spinnerSemesters.getSelectedItemPosition();
+                if (pos >= 0 && pos < semesters.size()) {
+                    Semester selected = semesters.get(pos);
+                    // twarde odświeżenie – ignoruje cache, zawsze robi request
+                    reloadGrades(selected, true);
+                } else {
+                    // jakby z jakiegoś powodu nie było semestrów – przeładuj wszystko
+                    reloadSemesters();
+                }
+            });
+        }
+
+        // 🔥 pierwsze ładowanie (studia + semestry + oceny)
         runInitialLoad();
     }
 
@@ -104,7 +138,7 @@ public class GradesActivity extends AppCompatActivity {
     }
 
     // -----------------------
-    //   PIERWSZE ŁADOWANIE (jak LoadInfoTask w InfoActivity)
+    //   PIERWSZE ŁADOWANIE
     // -----------------------
     private void runInitialLoad() {
         if (currentInitTask != null) {
@@ -129,7 +163,7 @@ public class GradesActivity extends AppCompatActivity {
                 GradesRepository repo = new GradesRepository();
                 // repo.loadSemesters():
                 // - jeśli nie ma kierunków, woła loadStudies()
-                // - pobiera semestry dla aktywnego kierunku
+                // - pobiera semestry dla aktywnego kierunku (repo ma własny cache)
                 return repo.loadSemesters();
             } catch (Exception e) {
                 error = e;
@@ -167,17 +201,17 @@ public class GradesActivity extends AppCompatActivity {
             semestersAdapter.addAll(semNames);
             semestersAdapter.notifyDataSetChanged();
 
-            // 2) ustaw spinner kierunków na podstawie MzutSession (jak w InfoActivity)
+            // 2) spinner kierunków na podstawie MzutSession
             setupStudiesSpinner();
 
-            // 3) jeśli mamy semestry – wybierz ostatni i od razu załaduj oceny
+            // 3) jeśli mamy semestry – wybierz ostatni i załaduj oceny (z cache jeśli świeże)
             if (!semesters.isEmpty()) {
                 int indexCurrent = semesters.size() - 1;
                 if (indexCurrent < 0) indexCurrent = 0;
                 spinnerSemesters.setSelection(indexCurrent);
 
                 Semester selected = semesters.get(indexCurrent);
-                reloadGrades(selected);
+                reloadGrades(selected, false);
             } else {
                 showEmptyState(true);
             }
@@ -185,7 +219,7 @@ public class GradesActivity extends AppCompatActivity {
     }
 
     // -----------------------
-    //   SPINNER: KIERUNEK – jak w InfoActivity
+    //   SPINNER: KIERUNEK
     // -----------------------
     private void setupStudiesSpinner() {
         MzutSession session = MzutSession.getInstance();
@@ -230,8 +264,7 @@ public class GradesActivity extends AppCompatActivity {
                         return; // nic się nie zmieniło
                     }
                     s.setActiveStudyIndex(position);
-                    // jak w InfoActivity: zmiana kierunku => przeładuj dane,
-                    // u nas: przeładuj semestry + później oceny
+                    // zmiana kierunku => przeładuj semestry (repo samo użyje cache getStudies)
                     reloadSemesters();
                 }
 
@@ -239,7 +272,7 @@ public class GradesActivity extends AppCompatActivity {
                 public void onNothingSelected(AdapterView<?> parent) { }
             });
         } else {
-            // kolejne wywołania – tylko odświeżamy zawartość / selection
+            // kolejne wywołania – odświeżamy zawartość / selection
             studiesAdapter.clear();
             studiesAdapter.addAll(labels);
             studiesAdapter.notifyDataSetChanged();
@@ -251,13 +284,13 @@ public class GradesActivity extends AppCompatActivity {
     }
 
     // -----------------------
-    //   SPINNER: SEMESTR (logika z Twojego kodu)
+    //   SPINNER: SEMESTR
     // -----------------------
     private void setupSemestersSpinner() {
         semestersAdapter = new ArrayAdapter<>(
                 this,
                 R.layout.spinner_item_dark,
-                new ArrayList<String>()
+                new ArrayList<>()
         );
         semestersAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerSemesters.setAdapter(semestersAdapter);
@@ -267,7 +300,8 @@ public class GradesActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position >= 0 && position < semesters.size()) {
                     Semester selected = semesters.get(position);
-                    reloadGrades(selected);
+                    // normalne przełączanie semestru – użyj cache jeżeli jest świeży
+                    reloadGrades(selected, false);
                 }
             }
 
@@ -362,33 +396,58 @@ public class GradesActivity extends AppCompatActivity {
             if (indexCurrent < 0) indexCurrent = 0;
             spinnerSemesters.setSelection(indexCurrent);
 
-            // i od razu załaduj oceny
+            // i od razu załaduj oceny (tu: korzystamy z cache, jeśli jest)
             Semester selected = semesters.get(indexCurrent);
-            reloadGrades(selected);
+            reloadGrades(selected, false);
         }
     }
 
     // -----------------------
-    //   ŁADOWANIE OCEN
+    //   ŁADOWANIE OCEN + CACHE
     // -----------------------
     private void reloadGrades(Semester semester) {
+        reloadGrades(semester, false);
+    }
+
+    /**
+     * @param forceNetwork true  -> PRZYCISK ODŚWIEŻANIA – zawsze idzie w sieć (ignoruje TTL)
+     *                     false -> zwykłe przełączanie semestru / pierwsze ładowanie – używa cache 7 dni
+     */
+    private void reloadGrades(Semester semester, boolean forceNetwork) {
         if (semester == null) return;
 
+        // 1) Zwykły tryb (bez wymuszenia) – najpierw spróbuj z cache. Jeśli jest świeży -> NIE idź w sieć.
+        if (!forceNetwork) {
+            List<Grade> cached = loadGradesFromCache(semester, false);
+            if (cached != null && !cached.isEmpty()) {
+                currentGrades.clear();
+                currentGrades.addAll(cached);
+                gradesAdapter.notifyDataSetChanged();
+                showEmptyState(false);
+                updateSummaryCards();
+                // cache świeży -> nie robimy requestu
+                return;
+            }
+        }
+
+        // 2) Tryb forceNetwork (przycisk) lub brak cache -> sieć w tle
         if (currentGradesTask != null) {
             currentGradesTask.cancel(true);
         }
 
-        currentGradesTask = new LoadGradesTask(semester);
+        currentGradesTask = new LoadGradesTask(semester, forceNetwork);
         currentGradesTask.execute();
     }
 
     private class LoadGradesTask extends AsyncTask<Void, Void, List<Grade>> {
 
         private final Semester semester;
+        private final boolean forceNetwork;
         private Exception error;
 
-        LoadGradesTask(Semester semester) {
+        LoadGradesTask(Semester semester, boolean forceNetwork) {
             this.semester = semester;
+            this.forceNetwork = forceNetwork;
         }
 
         @Override
@@ -401,9 +460,7 @@ public class GradesActivity extends AppCompatActivity {
         protected List<Grade> doInBackground(Void... voids) {
             try {
                 GradesRepository repo = new GradesRepository();
-                // w oryginalnym repo z ZIP-a jest:
-                //    List<Grade> loadGradesForSemester(Semester semester)
-                // więc przekazujemy cały obiekt, nie String
+                // zawsze idzie w sieć – repo.loadGradesForSemester -> getGrade
                 return repo.loadGradesForSemester(semester);
             } catch (Exception e) {
                 error = e;
@@ -417,6 +474,27 @@ public class GradesActivity extends AppCompatActivity {
             showLoading(false);
 
             if (error != null) {
+                // przy błędzie spróbuj użyć cache nawet jeśli jest przeterminowany
+                List<Grade> cached = loadGradesFromCache(semester, true);
+                if (cached != null && !cached.isEmpty()) {
+                    currentGrades.clear();
+                    currentGrades.addAll(cached);
+                    gradesAdapter.notifyDataSetChanged();
+                    showEmptyState(false);
+                    updateSummaryCards();
+
+                    if (forceNetwork) {
+                        Toast.makeText(GradesActivity.this,
+                                "Nie udało się odświeżyć ocen. Pokazuję ostatnio zapisane dane.",
+                                Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(GradesActivity.this,
+                                "Nie udało się pobrać ocen. Pokazuję ostatnio zapisane dane.",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    return;
+                }
+
                 Toast.makeText(GradesActivity.this,
                         "Błąd pobierania ocen: " + error.getMessage(),
                         Toast.LENGTH_LONG).show();
@@ -427,6 +505,8 @@ public class GradesActivity extends AppCompatActivity {
             currentGrades.clear();
             if (grades != null) {
                 currentGrades.addAll(grades);
+                // zapis do cache – tylko gdy sukces
+                saveGradesToCache(semester, grades);
             }
             gradesAdapter.notifyDataSetChanged();
 
@@ -492,6 +572,94 @@ public class GradesActivity extends AppCompatActivity {
 
         if (tvEctsValue != null) {
             tvEctsValue.setText(String.valueOf((int) Math.round(sumEcts)));
+        }
+    }
+
+    // -----------------------
+    //   CACHE: zapis / odczyt ocen
+    // -----------------------
+    private SharedPreferences getGradesCachePrefs() {
+        return getSharedPreferences("grades_cache", MODE_PRIVATE);
+    }
+
+    private String buildCacheKey(Semester semester) {
+        MzutSession s = MzutSession.getInstance();
+        String userId = s.getUserId();
+        if (userId == null) userId = "unknown";
+        String semId = semester != null ? semester.listaSemestrowId : null;
+        if (semId == null) semId = "no_sem";
+        return userId + "_" + semId;
+    }
+
+    private void saveGradesToCache(Semester semester, List<Grade> grades) {
+        if (semester == null || grades == null) return;
+
+        try {
+            JSONArray arr = new JSONArray();
+            for (Grade g : grades) {
+                JSONObject o = new JSONObject();
+                o.put("subjectName", g.subjectName);
+                o.put("grade",       g.grade);
+                o.put("weight",      g.weight);
+                o.put("type",        g.type);
+                o.put("teacher",     g.teacher);
+                o.put("date",        g.date);
+                arr.put(o);
+            }
+
+            JSONObject wrapper = new JSONObject();
+            wrapper.put("timestamp", System.currentTimeMillis());
+            wrapper.put("grades", arr);
+
+            String key = buildCacheKey(semester);
+            getGradesCachePrefs()
+                    .edit()
+                    .putString(key, wrapper.toString())
+                    .apply();
+        } catch (JSONException e) {
+            // nic nie robimy – cache jest opcjonalny
+        }
+    }
+
+    /**
+     * @param ignoreTtl jeśli true – ignorujemy 7-dniowy TTL (używane jako fallback przy błędzie sieci).
+     */
+    private List<Grade> loadGradesFromCache(Semester semester, boolean ignoreTtl) {
+        if (semester == null) return null;
+
+        String key = buildCacheKey(semester);
+        String json = getGradesCachePrefs().getString(key, null);
+        if (json == null) return null;
+
+        try {
+            JSONObject wrapper = new JSONObject(json);
+            long ts = wrapper.optLong("timestamp", 0L);
+            long now = System.currentTimeMillis();
+
+            if (!ignoreTtl && ts > 0 && (now - ts) > GRADES_CACHE_TTL_MS) {
+                // przeterminowany cache
+                return null;
+            }
+
+            JSONArray arr = wrapper.optJSONArray("grades");
+            if (arr == null) return null;
+
+            List<Grade> result = new ArrayList<>();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                Grade g = new Grade();
+                g.subjectName = o.optString("subjectName", "");
+                g.grade       = o.optString("grade", "");
+                g.weight      = o.optDouble("weight", 0.0);
+                g.type        = o.optString("type", "");
+                g.teacher     = o.optString("teacher", "");
+                g.date        = o.optString("date", "");
+                result.add(g);
+            }
+
+            return result;
+        } catch (JSONException e) {
+            return null;
         }
     }
 

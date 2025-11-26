@@ -6,20 +6,33 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class NewsActivity extends AppCompatActivity {
+
+    // ===== CACHE =====
+    private static final String PREFS_NEWS_CACHE      = "mzut_news_cache";
+    private static final String KEY_NEWS_LIST_JSON    = "news_list_json";
+    private static final String KEY_NEWS_TIMESTAMP    = "news_timestamp";
+    // cache max. tydzień – po tym czasie zawsze odświeżamy z sieci
+    private static final long   NEWS_CACHE_TTL_MS     = 7L * 24L * 60L * 60L * 1000L; // 7 dni
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -28,9 +41,13 @@ public class NewsActivity extends AppCompatActivity {
     private RecyclerView listNews;
     private ProgressBar progress;
     private TextView tvEmpty;
+    private ImageView btnNewsRefresh;
 
     private final NewsRepository repo = new NewsRepository();
     private final List<NewsItem> items = new ArrayList<>();
+
+    private NewsAdapter adapter;
+    private LoadNewsTask currentTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,14 +60,34 @@ public class NewsActivity extends AppCompatActivity {
 
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "news");
 
-        listNews = findViewById(R.id.listNews);
-        progress = findViewById(R.id.newsProgress);
-        tvEmpty  = findViewById(R.id.tvNewsEmpty);
+        listNews      = findViewById(R.id.listNews);
+        progress      = findViewById(R.id.newsProgress);
+        tvEmpty       = findViewById(R.id.tvNewsEmpty);
+        btnNewsRefresh= findViewById(R.id.btnNewsRefresh);
 
         listNews.setLayoutManager(new LinearLayoutManager(this));
         toolbar.setTitle("Aktualności ZUT");
 
-        new LoadNewsTask().execute();
+        adapter = new NewsAdapter(this, items);
+        listNews.setAdapter(adapter);
+
+        // 1) spróbuj pokazać z cache
+        loadNewsFromCacheIfAvailable();
+
+        // 2) jeśli cache jest stary / brak – pobierz z sieci
+        if (shouldFetchFromNetwork()) {
+            startLoadNews(false);
+        }
+
+        // 3) ręczne odświeżenie – zawsze wymusza pobranie z sieci
+        if (btnNewsRefresh != null) {
+            btnNewsRefresh.setOnClickListener(v -> {
+                Toast.makeText(NewsActivity.this,
+                        "Pobieram najnowsze dane…",
+                        Toast.LENGTH_SHORT).show();
+                startLoadNews(true);
+            });
+        }
     }
 
     @Override
@@ -58,6 +95,18 @@ public class NewsActivity extends AppCompatActivity {
         // tylko podglądamy gest, NIE blokujemy eventu
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
+    }
+
+    // ===== START ŁADOWANIA =====
+
+    private void startLoadNews(boolean forceReload) {
+        if (currentTask != null) {
+            currentTask.cancel(true);
+        }
+        // forceReload na razie nie jest potrzebne w środku – samo uruchomienie taska
+        // i tak odpala pobieranie z sieci i nadpisuje cache
+        currentTask = new LoadNewsTask();
+        currentTask.execute();
     }
 
     private class LoadNewsTask extends AsyncTask<Void, Void, Boolean> {
@@ -86,7 +135,9 @@ public class NewsActivity extends AppCompatActivity {
             progress.setVisibility(View.GONE);
 
             if (!ok || loaded == null) {
-                tvEmpty.setVisibility(View.VISIBLE);
+                if (items.isEmpty()) {
+                    tvEmpty.setVisibility(View.VISIBLE);
+                }
                 if (error != null) {
                     Toast.makeText(NewsActivity.this,
                             "Błąd pobierania RSS: " + error.getMessage(),
@@ -97,6 +148,7 @@ public class NewsActivity extends AppCompatActivity {
 
             items.clear();
             items.addAll(loaded);
+            adapter.notifyDataSetChanged();
 
             if (items.isEmpty()) {
                 tvEmpty.setVisibility(View.VISIBLE);
@@ -104,7 +156,92 @@ public class NewsActivity extends AppCompatActivity {
                 tvEmpty.setVisibility(View.GONE);
             }
 
-            listNews.setAdapter(new NewsAdapter(NewsActivity.this, items));
+            // zapis do cache po udanym pobraniu
+            saveNewsToCache(loaded);
+        }
+    }
+
+    // ===== CACHE: logika =====
+
+    private boolean shouldFetchFromNetwork() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE);
+        long ts = prefs.getLong(KEY_NEWS_TIMESTAMP, 0L);
+        if (ts == 0L) return true;
+        long now = System.currentTimeMillis();
+        return (now - ts) > NEWS_CACHE_TTL_MS;
+    }
+
+    private void loadNewsFromCacheIfAvailable() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE);
+        String json = prefs.getString(KEY_NEWS_LIST_JSON, null);
+        if (json == null || json.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            JSONArray arr = new JSONArray(json);
+            items.clear();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.optJSONObject(i);
+                if (obj == null) continue;
+
+                NewsItem ni = new NewsItem();
+                ni.id              = obj.optInt("id", i);
+                ni.title           = obj.optString("title", "");
+                ni.link            = obj.optString("link", null);
+                ni.pubDateRaw      = obj.optString("pubDateRaw", null);
+                ni.date            = obj.optString("date", "");
+                ni.snippet         = obj.optString("snippet", "");
+                ni.descriptionHtml = obj.optString("descriptionHtml", null);
+                ni.descriptionText = obj.optString("descriptionText", "");
+                ni.contentHtml     = obj.optString("contentHtml", null);
+                ni.thumbUrl        = obj.optString("thumbUrl", null);
+
+                items.add(ni);
+            }
+            adapter.notifyDataSetChanged();
+
+            if (items.isEmpty()) {
+                tvEmpty.setVisibility(View.VISIBLE);
+            } else {
+                tvEmpty.setVisibility(View.GONE);
+            }
+
+        } catch (JSONException e) {
+            // w razie błędu cache po prostu ignorujemy
+        }
+    }
+
+    private void saveNewsToCache(List<NewsItem> list) {
+        if (list == null) return;
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE);
+        JSONArray arr = new JSONArray();
+
+        try {
+            for (NewsItem n : list) {
+                if (n == null) continue;
+                JSONObject obj = new JSONObject();
+                obj.put("id",              n.id);
+                obj.put("title",           n.title != null ? n.title : "");
+                obj.put("link",            n.link != null ? n.link : "");
+                obj.put("pubDateRaw",      n.pubDateRaw != null ? n.pubDateRaw : "");
+                obj.put("date",            n.date != null ? n.date : "");
+                obj.put("snippet",         n.snippet != null ? n.snippet : "");
+                obj.put("descriptionHtml", n.descriptionHtml != null ? n.descriptionHtml : "");
+                obj.put("descriptionText", n.descriptionText != null ? n.descriptionText : "");
+                obj.put("contentHtml",     n.contentHtml != null ? n.contentHtml : "");
+                obj.put("thumbUrl",        n.thumbUrl != null ? n.thumbUrl : "");
+                arr.put(obj);
+            }
+
+            prefs.edit()
+                    .putString(KEY_NEWS_LIST_JSON, arr.toString())
+                    .putLong(KEY_NEWS_TIMESTAMP, System.currentTimeMillis())
+                    .apply();
+
+        } catch (JSONException e) {
+            // jeśli coś pójdzie nie tak – trudno, brak cache nie zabija
         }
     }
 }

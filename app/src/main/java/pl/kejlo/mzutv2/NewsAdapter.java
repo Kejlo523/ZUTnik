@@ -45,16 +45,25 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         h.date.setText(n.date);
         h.snippet.setText(n.snippet);
 
-        // miniaturka po prawej
+        // miniaturka po prawej – najpierw CACHE
         if (n.thumbUrl != null && !n.thumbUrl.trim().isEmpty()) {
             h.thumb.setVisibility(View.VISIBLE);
-            h.thumb.setImageDrawable(null);
             h.thumb.setTag(n.thumbUrl);
-            new ThumbLoader(h.thumb, n.thumbUrl)
-                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, n.thumbUrl);
+
+            // 1️⃣ spróbuj z pamięci
+            Bitmap cached = ImageMemoryCache.get(n.thumbUrl);
+            if (cached != null) {
+                h.thumb.setImageBitmap(cached);
+            } else {
+                // 2️⃣ brak w cache – wyczyść i pobierz raz
+                h.thumb.setImageDrawable(null);
+                new ThumbLoader(h.thumb, n.thumbUrl)
+                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, n.thumbUrl);
+            }
         } else {
             h.thumb.setVisibility(View.GONE);
             h.thumb.setTag(null);
+            h.thumb.setImageDrawable(null);
         }
 
         // klik – przejście do szczegółów w apce
@@ -75,7 +84,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         return items.size();
     }
 
-    // ładowanie miniatury – bardzo prosty loader
+    // ładowanie miniatury – z dopięciem do ImageMemoryCache
     private static class ThumbLoader extends AsyncTask<String, Void, Bitmap> {
         private final WeakReference<ImageView> imageViewRef;
         private final String url;
@@ -88,6 +97,13 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         @Override
         protected Bitmap doInBackground(String... params) {
             String src = params[0];
+
+            // 1️⃣ jeszcze raz spróbuj cache (gdyby ktoś inny już pobrał)
+            Bitmap fromCache = ImageMemoryCache.get(src);
+            if (fromCache != null) {
+                return fromCache;
+            }
+
             HttpURLConnection conn = null;
             InputStream is = null;
             try {
@@ -100,7 +116,13 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
                 int code = conn.getResponseCode();
                 if (code != 200) return null;
                 is = conn.getInputStream();
-                return BitmapFactory.decodeStream(is);
+                Bitmap bmp = BitmapFactory.decodeStream(is);
+
+                // 2️⃣ zapis do cache
+                if (bmp != null) {
+                    ImageMemoryCache.put(src, bmp);
+                }
+                return bmp;
             } catch (Exception ignore) {
                 return null;
             } finally {

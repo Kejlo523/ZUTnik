@@ -6,6 +6,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
@@ -17,21 +18,14 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.Comparator;
 import java.util.ArrayList;
@@ -63,9 +57,6 @@ public class PlanActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private Toolbar toolbar;
 
-    private Spinner spinnerStudies;
-    private boolean spinnerInitialized = false;
-
     private Button btnViewDay;
     private Button btnViewWeek;
     private Button btnViewMonth;
@@ -73,7 +64,7 @@ public class PlanActivity extends AppCompatActivity {
     private Button btnNext;
     private Button btnToday;
     private Button btnFilters;
-    private Button btnRefresh;                 // NOWE
+    private Button btnRefresh;
 
     private CharSequence btnFiltersOriginalText;
 
@@ -93,13 +84,13 @@ public class PlanActivity extends AppCompatActivity {
     private String viewMode = "week";
     private LocalDate currentDate = LocalDate.now();
 
-    private final PlanRepository planRepository = new PlanRepository();
+    private PlanRepository planRepository;
     private final DateTimeFormatter YMD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private SharedPreferences prefs;
     private Set<String> hiddenSubjectKeys = new HashSet<>();
 
-    // linia "teraz" – przechowujemy globalnie
+    // linia "teraz"
     private FrameLayoutWithChildren nowLineParent;
     private View nowLineView;
     private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
@@ -114,7 +105,24 @@ public class PlanActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1️⃣ Wczytaj sesję z SharedPreferences
+        MzutSession.initializeFromPreferences(this);
+        MzutSession session = MzutSession.getInstance();
+
+        // 2️⃣ Jeśli nie ma sesji (brak userId/authKey) → wróć do logowania
+        if (session.getAuthKey() == null || session.getUserId() == null) {
+            Intent i = new Intent(this, LoginActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            finish();
+            return;
+        }
+
+        // 3️⃣ Dopiero teraz layout
         setContentView(R.layout.activity_plan);
+
+        planRepository = new PlanRepository(getApplicationContext());
 
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         hiddenSubjectKeys = new HashSet<>(prefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>()));
@@ -126,8 +134,6 @@ public class PlanActivity extends AppCompatActivity {
         toolbar.setTitle("Plan zajęć");
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "plan");
 
-        spinnerStudies = findViewById(R.id.spinnerStudies);
-
         btnViewDay   = findViewById(R.id.btnViewDay);
         btnViewWeek  = findViewById(R.id.btnViewWeek);
         btnViewMonth = findViewById(R.id.btnViewMonth);
@@ -135,7 +141,7 @@ public class PlanActivity extends AppCompatActivity {
         btnNext      = findViewById(R.id.btnNext);
         btnToday     = findViewById(R.id.btnToday);
         btnFilters   = findViewById(R.id.btnFilters);
-        btnRefresh   = findViewById(R.id.btnRefresh); // pamiętaj o dodaniu w XML
+        btnRefresh   = findViewById(R.id.btnRefresh);
 
         btnFiltersOriginalText = btnFilters.getText();
 
@@ -158,8 +164,6 @@ public class PlanActivity extends AppCompatActivity {
         setupNavButtons();
         setupFiltersButton();
         setupRefreshButton();
-        setupStudiesSpinner();
-        // swipe wywalony – nie wywołujemy setupSwipeDetector()
 
         if (savedInstanceState != null) {
             viewMode = savedInstanceState.getString("viewMode", "week");
@@ -175,8 +179,18 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // po powrocie z tła – odśwież linię "teraz" jeśli istnieje
+        if (nowLineParent != null && nowLineView != null) {
+            updateNowLinePosition();
+            nowLineHandler.removeCallbacks(nowLineRunnable);
+            scheduleNextNowLineUpdate();
+        }
+    }
+
+    @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        // tylko podglądamy gest, NIE blokujemy eventu
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
     }
@@ -203,81 +217,6 @@ public class PlanActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         return super.onOptionsItemSelected(item);
-    }
-
-    /* =============== STUDIA =============== */
-
-    private void setupStudiesSpinner() {
-        MzutSession session = MzutSession.getInstance();
-        if (session.getStudies() == null || session.getStudies().isEmpty()) {
-            new LoadStudiesTask().execute();
-        } else {
-            initStudiesSpinner(session.getStudies());
-        }
-    }
-
-    private void initStudiesSpinner(List<Study> studies) {
-        if (studies == null) studies = Collections.emptyList();
-
-        List<String> labels = new ArrayList<>();
-        for (Study s : studies) {
-            labels.add(s.toString());
-        }
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                R.layout.spinner_item_dark,
-                labels
-        );
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
-        spinnerStudies.setAdapter(adapter);
-        spinnerInitialized = true;
-
-        final MzutSession session = MzutSession.getInstance();
-        int activeIndex = session.getActiveStudyIndex();
-        if (activeIndex < 0 || activeIndex >= labels.size()) activeIndex = 0;
-        spinnerStudies.setSelection(activeIndex);
-
-        spinnerStudies.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (!spinnerInitialized) return;
-                if (position == session.getActiveStudyIndex()) return;
-                session.setActiveStudyIndex(position);
-                new LoadPlanTask().execute();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) { }
-        });
-    }
-
-    private class LoadStudiesTask extends AsyncTask<Void, Void, List<Study>> {
-        Exception error;
-
-        @Override
-        protected List<Study> doInBackground(Void... voids) {
-            try {
-                GradesRepository repo = new GradesRepository();
-                return repo.loadStudies();
-            } catch (Exception e) {
-                error = e;
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(List<Study> studies) {
-            if (studies == null || studies.isEmpty()) {
-                if (error != null) {
-                    Toast.makeText(PlanActivity.this,
-                            "Błąd ładowania listy kierunków: " + error.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                }
-                return;
-            }
-            initStudiesSpinner(studies);
-        }
     }
 
     /* =============== TRYB DZIEN/ TYDZ / MIESIAC =============== */
@@ -327,7 +266,8 @@ public class PlanActivity extends AppCompatActivity {
 
     private void setupRefreshButton() {
         if (btnRefresh != null) {
-            btnRefresh.setOnClickListener(v -> new LoadPlanTask().execute());
+            // wymuszone odświeżenie – leci do API z forceRefresh = true
+            btnRefresh.setOnClickListener(v -> new LoadPlanTask(true).execute());
         }
     }
 
@@ -346,7 +286,6 @@ public class PlanActivity extends AppCompatActivity {
     private void setupFiltersButton() {
         btnFilters.setOnClickListener(v -> new LoadSubjectsForFilterTask(false).execute());
 
-        // długie przytrzymanie: czyści cache listy przedmiotów
         btnFilters.setOnLongClickListener(v -> {
             clearFilterCache();
             Toast.makeText(
@@ -386,7 +325,6 @@ public class PlanActivity extends AppCompatActivity {
         @Override
         protected List<PlanRepository.SubjectFilterItem> doInBackground(Void... voids) {
             try {
-                // najpierw cache, jeśli nie wymuszamy odświeżenia
                 if (!forceRefresh) {
                     List<PlanRepository.SubjectFilterItem> cached = loadFilterCache();
                     if (cached != null && !cached.isEmpty()) {
@@ -394,7 +332,6 @@ public class PlanActivity extends AppCompatActivity {
                     }
                 }
 
-                // brak cache lub wymuszone odświeżenie -> pobierz z repo
                 List<PlanRepository.SubjectFilterItem> fresh = planRepository.loadSubjectsForFilter();
                 if (fresh != null && !fresh.isEmpty()) {
                     saveFilterCache(fresh);
@@ -474,17 +411,17 @@ public class PlanActivity extends AppCompatActivity {
 
         long now = System.currentTimeMillis();
         if (now - ts > FILTER_CACHE_TTL_MS) {
-            return null; // cache przeterminowany
+            return null;
         }
 
         String json = prefs.getString(KEY_FILTER_CACHE_JSON, null);
         if (json == null || json.isEmpty()) return null;
 
         try {
-            JSONArray arr = new JSONArray(json);
+            org.json.JSONArray arr = new org.json.JSONArray(json);
             List<PlanRepository.SubjectFilterItem> items = new ArrayList<>();
             for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.getJSONObject(i);
+                org.json.JSONObject obj = arr.getJSONObject(i);
                 PlanRepository.SubjectFilterItem it = new PlanRepository.SubjectFilterItem();
                 it.label     = obj.optString("label", "");
                 it.typeLabel = obj.optString("typeLabel", "");
@@ -492,16 +429,16 @@ public class PlanActivity extends AppCompatActivity {
                 items.add(it);
             }
             return items;
-        } catch (JSONException e) {
+        } catch (org.json.JSONException e) {
             return null;
         }
     }
 
     private void saveFilterCache(List<PlanRepository.SubjectFilterItem> items) {
         try {
-            JSONArray arr = new JSONArray();
+            org.json.JSONArray arr = new org.json.JSONArray();
             for (PlanRepository.SubjectFilterItem it : items) {
-                JSONObject obj = new JSONObject();
+                org.json.JSONObject obj = new org.json.JSONObject();
                 obj.put("label", it.label != null ? it.label : "");
                 obj.put("typeLabel", it.typeLabel != null ? it.typeLabel : "");
                 obj.put("filterKey", it.filterKey != null ? it.filterKey : "");
@@ -511,7 +448,7 @@ public class PlanActivity extends AppCompatActivity {
                     .putString(KEY_FILTER_CACHE_JSON, arr.toString())
                     .putLong(KEY_FILTER_CACHE_TS, System.currentTimeMillis())
                     .apply();
-        } catch (JSONException ignored) {
+        } catch (org.json.JSONException ignored) {
         }
     }
 
@@ -565,12 +502,20 @@ public class PlanActivity extends AppCompatActivity {
 
     private class LoadPlanTask extends AsyncTask<Void, Void, PlanRepository.PlanResult> {
         Exception error;
+        private final boolean forceRefresh;
+
+        LoadPlanTask() {
+            this(false);
+        }
+
+        LoadPlanTask(boolean forceRefresh) {
+            this.forceRefresh = forceRefresh;
+        }
 
         @Override
         protected void onPreExecute() {
             progress.setVisibility(View.VISIBLE);
             tvEmpty.setVisibility(View.GONE);
-            // zatrzymaj aktualizację linii – i tak zaraz przerysujemy
             nowLineHandler.removeCallbacks(nowLineRunnable);
             nowLineParent = null;
             nowLineView   = null;
@@ -579,7 +524,7 @@ public class PlanActivity extends AppCompatActivity {
         @Override
         protected PlanRepository.PlanResult doInBackground(Void... voids) {
             try {
-                return planRepository.loadPlan(viewMode, currentDate);
+                return planRepository.loadPlan(viewMode, currentDate, forceRefresh);
             } catch (Exception e) {
                 error = e;
                 return null;
@@ -637,7 +582,6 @@ public class PlanActivity extends AppCompatActivity {
         List<PlanRepository.DayColumn> cols =
                 result.dayColumns != null ? result.dayColumns : Collections.emptyList();
 
-        // ukrywanie soboty i niedzieli, jeśli obie nie mają żadnych zajęć (tylko w widoku tygodnia)
         if ("week".equals(viewMode) && cols.size() >= 7) {
             int satIndex = -1;
             int sunIndex = -1;
@@ -688,7 +632,6 @@ public class PlanActivity extends AppCompatActivity {
             dayLp.setMargins(dpToPx(2), 0, dpToPx(2), 0);
             dayColumn.setLayoutParams(dayLp);
 
-            // Nagłówek dnia (stała wysokość)
             TextView tvHeader = new TextView(this);
             tvHeader.setText(formatDayHeader(col.date));
             tvHeader.setTextColor(0xFFE5E7EB);
@@ -702,12 +645,11 @@ public class PlanActivity extends AppCompatActivity {
             tvHeader.setLayoutParams(headerLp);
 
             if (isSelectedDay) {
-                tvHeader.setBackgroundColor(0xFF02091B); // delikatnie jaśniejsze tło dla wybranego dnia
+                tvHeader.setBackgroundColor(0xFF02091B);
             }
 
             dayColumn.addView(tvHeader);
 
-            // ciało z eventami
             FrameLayoutWithChildren dayBody = new FrameLayoutWithChildren(this);
             LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -717,10 +659,8 @@ public class PlanActivity extends AppCompatActivity {
             dayBody.setBackgroundColor(isSelectedDay ? 0xFF020918 : 0xFF020617);
             dayColumn.addView(dayBody);
 
-            // poziome linie godzin – delikatne, za eventami
             addHourLines(dayBody);
 
-            // eventy do narysowania
             List<PlanRepository.PlanEventUi> events =
                     col.events != null ? col.events : Collections.emptyList();
 
@@ -735,7 +675,6 @@ public class PlanActivity extends AppCompatActivity {
 
             LocalDate colDate = col.date;
 
-            // po zmierzeniu kolumny – ustawiamy top/height/left/width + linia "teraz"
             dayBody.getViewTreeObserver().addOnGlobalLayoutListener(
                     new ViewTreeObserver.OnGlobalLayoutListener() {
                         @Override
@@ -746,7 +685,6 @@ public class PlanActivity extends AppCompatActivity {
 
                             layoutEventsInDayBody(dayBody, renderedEvents, w);
 
-                            // linia "teraz" – tylko na DZISIEJSZYM dniu
                             if (colDate != null
                                     && ("day".equals(viewMode) || "week".equals(viewMode))
                                     && colDate.equals(today)) {
@@ -760,7 +698,6 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     private void addHourLines(FrameLayoutWithChildren dayBody) {
-        // linia na początku każdej godziny od START_HOUR do END_HOUR-1
         for (int h = START_HOUR; h < END_HOUR; h++) {
             int minutesFromStart = (h - START_HOUR) * 60;
             float topPx = (minutesFromStart / 60f) * dpToPx(HOUR_HEIGHT_DP);
@@ -773,7 +710,6 @@ public class PlanActivity extends AppCompatActivity {
                     );
             lp.topMargin = (int) topPx;
             line.setLayoutParams(lp);
-            // delikatna linia, półprzezroczysta, ZA eventami (bo dodawana wcześniej)
             line.setBackgroundColor(0x331F2937);
             dayBody.addView(line);
         }
@@ -797,10 +733,8 @@ public class PlanActivity extends AppCompatActivity {
 
         if (renderedEvents.isEmpty()) return;
 
-        // sortujemy po starcie
         renderedEvents.sort(Comparator.comparingInt(o -> o.ev.startMin));
 
-        // budowa klastrów (dowolny overlap)
         List<List<RenderedEvent>> clusters = new ArrayList<>();
         List<RenderedEvent> currentCluster = new ArrayList<>();
         int clusterEnd = -1;
@@ -813,7 +747,7 @@ public class PlanActivity extends AppCompatActivity {
                 currentCluster.add(re);
                 clusterEnd = e;
             } else {
-                if (s < clusterEnd) { // nakłada się w czasie -> ten sam klaster
+                if (s < clusterEnd) {
                     currentCluster.add(re);
                     if (e > clusterEnd) clusterEnd = e;
                 } else {
@@ -829,12 +763,11 @@ public class PlanActivity extends AppCompatActivity {
         }
 
         int marginPx = dpToPx(2);
-        int overlapOffset = dpToPx(6); // lekkie przesunięcie przy małym overlapie
+        int overlapOffset = dpToPx(6);
 
         for (List<RenderedEvent> cluster : clusters) {
             if (cluster.isEmpty()) continue;
 
-            // sprawdzamy, czy w klastrze są "prawdziwe" kolizje (overlap >= 20 minut)
             boolean hasRealCollision = false;
             for (int i = 0; i < cluster.size(); i++) {
                 for (int j = i + 1; j < cluster.size(); j++) {
@@ -852,14 +785,12 @@ public class PlanActivity extends AppCompatActivity {
                 if (hasRealCollision) break;
             }
 
-            // Jeśli brak prawdziwych kolizji -> pełna szerokość + lekkie przesunięcia
             if (!hasRealCollision) {
                 int clusterSize = cluster.size();
 
                 int maxOffset = overlapOffset * (clusterSize - 1);
                 int availableWidth = widthPx - 2 * marginPx - maxOffset;
                 if (availableWidth < dpToPx(40)) {
-                    // awaryjnie – nie ściskamy za mocno
                     availableWidth = widthPx - 2 * marginPx;
                     maxOffset = 0;
                 }
@@ -897,10 +828,8 @@ public class PlanActivity extends AppCompatActivity {
                     re.view.setLayoutParams(lp);
                 }
 
-                continue; // nie robimy lane’ów dla tego klastra
+                continue;
             }
-
-            // --- klasyczny lane-algorithm dla "dużych" kolizji ---
 
             List<Integer> laneEnd = new ArrayList<>();
             int[] laneOf = new int[cluster.size()];
@@ -977,7 +906,7 @@ public class PlanActivity extends AppCompatActivity {
                     );
             lp.topMargin = 0;
             nowLineView.setLayoutParams(lp);
-            nowLineView.setBackgroundColor(0xFFF97373); // czerwona linia
+            nowLineView.setBackgroundColor(0xFFF97373);
             parent.addView(nowLineView);
             nowLineView.bringToFront();
         }
@@ -1049,11 +978,10 @@ public class PlanActivity extends AppCompatActivity {
         tv.setPadding(dpToPx(4), dpToPx(3), dpToPx(4), dpToPx(3));
         tv.setClickable(true);
 
-        // zaokrąglony, przyciemniony background
         int color = colorForType(ev.typeClass);
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(color);
-        bg.setCornerRadius(dpToPx(6)); // ZAOKRĄGLENIE
+        bg.setCornerRadius(dpToPx(6));
         tv.setBackground(bg);
 
         FrameLayoutWithChildren.LayoutParams lp =
@@ -1071,38 +999,28 @@ public class PlanActivity extends AppCompatActivity {
     private int colorForType(String typeClass) {
         if (typeClass == null) typeClass = "";
 
-        // mocno przyciemnione, nadal pełna alfa (bez przezroczystości)
         switch (typeClass) {
-
-            case "week-event-type-lecture":      // wykład
-                return 0xFF1E3A8A; // ciemny niebieski
-
-            case "week-event-type-lab":          // laboratoria
-                return 0xFF064E3B; // ciemny zielony
-
-            case "week-event-type-auditory":     // ćwiczenia audytoryjne
-                return 0xFF3730A3; // ciemny fiolet/indigo
-
-            case "week-event-type-exam":         // egzamin
-                return 0xFF7F1D1D; // ciemny czerwony
-
+            case "week-event-type-lecture":
+                return 0xFF1E3A8A;
+            case "week-event-type-lab":
+                return 0xFF064E3B;
+            case "week-event-type-auditory":
+                return 0xFF3730A3;
+            case "week-event-type-exam":
+                return 0xFF7F1D1D;
             case "week-event-type-cancelled":
-                return 0xFF374151; // szary
-
+                return 0xFF374151;
             case "week-event-type-rector":
-                return 0xFF78350F; // ciemny pomarańcz/brąz
-
+                return 0xFF78350F;
             case "week-event-type-remote":
-                return 0xFF1E40AF; // ciemny niebieski (zdalne)
-
+                return 0xFF1E40AF;
             case "week-event-type-pass":
             case "week-event-type-pass-retake":
             case "week-event-type-pass-remote":
             case "week-event-type-pass-remote-retake":
-                return 0xFF166534; // ciemny zielony
-
+                return 0xFF166534;
             default:
-                return 0xFF1D4ED8; // ciemny niebieski domyślny
+                return 0xFF1D4ED8;
         }
     }
 
@@ -1119,6 +1037,9 @@ public class PlanActivity extends AppCompatActivity {
         }
         if (ev.teacher != null && !ev.teacher.isEmpty()) {
             msg.append("\nProwadzący: ").append(ev.teacher);
+        }
+        if (ev.typeLabel != null && !ev.typeLabel.isEmpty()) {
+            msg.append("\n\n").append(ev.typeLabel);
         }
 
         new AlertDialog.Builder(this)
@@ -1141,7 +1062,7 @@ public class PlanActivity extends AppCompatActivity {
             case SUNDAY:
             default:        shortName = "Nd"; break;
         }
-        return shortName + "\n" + date.format(DateTimeFormatter.ofPattern("dd.MM"));
+        return shortName + "\n" + date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"));
     }
 
     /* =============== RYSOWANIE MIESIĄCA =============== */

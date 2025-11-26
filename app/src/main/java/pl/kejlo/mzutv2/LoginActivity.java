@@ -20,12 +20,10 @@ import java.util.Map;
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "mZUTv2";
-    private static final String PREFS_NAME      = "mzut_prefs";
-    private static final String KEY_LAST_LOGIN  = "last_login";
-    private static final String KEY_USER_ID     = "user_id";
-    private static final String KEY_AUTH_KEY    = "auth_key";
-    private static final String KEY_USERNAME    = "username";
-    private static final String KEY_IMAGE_URL   = "image_url";
+
+    // Zostawiamy tylko to, co lokalne dla ekranu logowania
+    private static final String PREFS_NAME     = "mzut_prefs";
+    private static final String KEY_LAST_LOGIN = "last_login";
 
     private EditText editLogin;
     private EditText editPass;
@@ -35,36 +33,27 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 🔹 AUTO-LOGIN: jeśli mamy zapisany authKey + userId → wchodzimy od razu do HomeActivity
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String savedAuth   = prefs.getString(KEY_AUTH_KEY, null);
-        String savedUserId = prefs.getString(KEY_USER_ID, null);
-        String savedUsername = prefs.getString(KEY_USERNAME, null);
-        String savedImageUrl = prefs.getString(KEY_IMAGE_URL, null);
+        // 1️⃣ Spróbuj wczytać sesję z SharedPreferences (nowy MzutSession)
+        MzutSession.initializeFromPreferences(this);
+        MzutSession session = MzutSession.getInstance();
 
-        if (savedAuth != null && !savedAuth.isEmpty() &&
-                savedUserId != null && !savedUserId.isEmpty()) {
-
-            MzutSession s = MzutSession.getInstance();
-            s.setUserId(savedUserId);
-            s.setAuthKey(savedAuth);
-            s.setUsername(savedUsername);
-            s.setImageUrl(savedImageUrl);
-
+        // Jeśli mamy zapisane userId + authKey → od razu idziemy do HomeActivity
+        if (session.getAuthKey() != null && session.getUserId() != null) {
             Intent i = new Intent(LoginActivity.this, HomeActivity.class);
             startActivity(i);
             finish();
             return;
         }
 
-        // jeśli nie ma zapisanej sesji → normalny ekran logowania
+        // 2️⃣ Jeśli nie ma sesji → standardowy ekran logowania
         setContentView(R.layout.activity_login);
 
         editLogin = findViewById(R.id.editLogin);
         editPass  = findViewById(R.id.editPass);
         btnLogin  = findViewById(R.id.btnLogin);
 
-        // wstaw ostatni login
+        // Wstaw ostatni login (podpowiedź)
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String lastLogin = prefs.getString(KEY_LAST_LOGIN, "");
         if (!lastLogin.isEmpty()) {
             editLogin.setText(lastLogin);
@@ -165,21 +154,10 @@ public class LoginActivity extends AppCompatActivity {
                     + userId + "&tokenJpg="
                     + auth.optString("tokenJpg", tokenJpg);
 
-            // zapis do sesji w RAM
-            MzutSession s = MzutSession.getInstance();
-            s.setUserId(userId);
-            s.setUsername(username);
-            s.setAuthKey(authKey);
-            s.setImageUrl(imageUrl);
-
-            // zapis do SharedPreferences (auto-login następnym razem)
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            prefs.edit()
-                    .putString(KEY_USER_ID, userId)
-                    .putString(KEY_AUTH_KEY, authKey)
-                    .putString(KEY_USERNAME, username)
-                    .putString(KEY_IMAGE_URL, imageUrl)
-                    .apply();
+            // 3️⃣ Zapis do sesji (RAM) + zapis trwały przez MzutSession
+            MzutSession session = MzutSession.getInstance(LoginActivity.this);
+            session.updateUser(userId, username, authKey, imageUrl);
+            session.saveToPreferences(LoginActivity.this);
 
             Toast.makeText(LoginActivity.this,
                     "Zalogowano jako " + username,

@@ -26,11 +26,11 @@
 
         <ImageView
             android:id="@+id/widgetRefresh"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:src="@android:drawable/ic_popup_sync"
             android:tint="@color/mz_muted"
-            android:padding="2dp" />
+            android:padding="1dp" />
     </LinearLayout>
 
     <!-- Podtytuł -->
@@ -54,5 +54,16 @@
         android:dividerHeight="2dp"
         android:paddingTop="0dp"
         android:paddingBottom="0dp" />
+
+    <!-- Stopka: mało widoczna informacja o ostatnim odświeżeniu -->
+    <TextView
+        android:id="@+id/widgetLastRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Odświeżono: --:--"
+        android:textSize="9sp"
+        android:textColor="@color/mz_muted"
+        android:alpha="0.7"
+        android:layout_marginTop="4dp" />
 
 </LinearLayout>

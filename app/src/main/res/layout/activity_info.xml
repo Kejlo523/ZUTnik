@@ -48,18 +48,33 @@
                     android:layout_height="wrap_content"
                     android:paddingBottom="16dp">
 
-                    <!-- mały pill -->
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        android:paddingTop="6dp"
-                        android:paddingBottom="6dp"
-                        android:background="@drawable/bg_card_soft"
-                        android:text="🎓 Dane Studenta"
-                        android:textColor="@color/mz_primary"
-                        android:textSize="11sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="6dp"
+                            android:background="@drawable/bg_card_soft"
+                            android:text="🎓 Dane Studenta"
+                            android:textColor="@color/mz_primary"
+                            android:textSize="11sp" />
+
+                        <ImageView
+                            android:id="@+id/btnInfoRefresh"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_marginStart="8dp"
+                            android:padding="2dp"
+                            android:src="@android:drawable/ic_popup_sync"
+                            android:tint="@color/mz_muted" />
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvInfoTitle"
