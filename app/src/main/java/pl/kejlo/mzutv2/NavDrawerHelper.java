@@ -17,17 +17,12 @@ import com.google.android.material.navigation.NavigationView;
 
 public class NavDrawerHelper {
 
-    // trochę łagodniejsze progi dla gestu
+    // Slightly more forgiving thresholds for swipe gesture
     private static final int SWIPE_VELOCITY_THRESHOLD = 400;
     private static final int SWIPE_DISTANCE_THRESHOLD = 80;
 
-    /**
-     * @param activity       aktualna Activity (HomeActivity, InfoActivity, ...)
-     * @param drawerLayout   DrawerLayout z layoutu
-     * @param navigationView NavigationView z headerem nav_header
-     * @param toolbar        Toolbar (z hamburgerem)
-     * @param currentScreen  "home", "info", "plan", "grades", "news", "about"
-     */
+    // Sets up navigation drawer for the given screen
+    // currentScreen: "home", "info", "plan", "grades", "news", "about"
     public static void setupNavigation(
             AppCompatActivity activity,
             DrawerLayout drawerLayout,
@@ -35,7 +30,7 @@ public class NavDrawerHelper {
             Toolbar toolbar,
             String currentScreen
     ) {
-        // hamburger
+        // Hamburger icon
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 activity,
                 drawerLayout,
@@ -46,22 +41,22 @@ public class NavDrawerHelper {
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // ID-ki z nav_header.xml (bez getHeaderView)
+        // IDs from nav_header.xml (no getHeaderView)
         TextView navHeaderUser = navigationView.findViewById(R.id.navHeaderUser);
-        TextView navLinkHome   = navigationView.findViewById(R.id.navLinkHome);
-        TextView navLinkPlan   = navigationView.findViewById(R.id.navLinkPlan);
+        TextView navLinkHome = navigationView.findViewById(R.id.navLinkHome);
+        TextView navLinkPlan = navigationView.findViewById(R.id.navLinkPlan);
         TextView navLinkGrades = navigationView.findViewById(R.id.navLinkGrades);
-        TextView navLinkInfo   = navigationView.findViewById(R.id.navLinkInfo);
-        TextView navLinkNews   = navigationView.findViewById(R.id.navLinkNews);
-        TextView navLinkAbout  = navigationView.findViewById(R.id.navLinkAbout);
-        TextView navLogout     = navigationView.findViewById(R.id.navLogout);
+        TextView navLinkInfo = navigationView.findViewById(R.id.navLinkInfo);
+        TextView navLinkNews = navigationView.findViewById(R.id.navLinkNews);
+        TextView navLinkAbout = navigationView.findViewById(R.id.navLinkAbout);
+        TextView navLogout = navigationView.findViewById(R.id.navLogout);
 
         if (navHeaderUser == null || navLogout == null) {
-            // coś jest nie tak z XML-em – wolimy się wycofać
+            // Something is wrong with the XML, better bail out
             return;
         }
 
-        // nazwa użytkownika
+        // User name in header
         MzutSession s = MzutSession.getInstance();
         String username = s.getUsername();
         if (username == null || username.trim().isEmpty()) {
@@ -106,7 +101,7 @@ public class NavDrawerHelper {
                 return;
             }
 
-            // jeśli klikamy w ten sam ekran, tylko zamykamy drawer
+            // If the same screen is selected, just close the drawer
             if (targetScreen.equals(currentScreen)) {
                 drawerLayout.closeDrawers();
                 return;
@@ -114,7 +109,7 @@ public class NavDrawerHelper {
 
             Intent intent = new Intent(activity, targetActivity);
 
-            // Home jako root – CLEAR_TOP/SINGLE_TOP
+            // Home as root – CLEAR_TOP/SINGLE_TOP
             if ("home".equals(targetScreen)) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             }
@@ -122,8 +117,7 @@ public class NavDrawerHelper {
             activity.startActivity(intent);
             drawerLayout.closeDrawers();
 
-            // jeśli jesteśmy na czymś innym niż Home, zamykamy aktywność,
-            // żeby stack był [Home, NowyEkran] i BACK zawsze wracał do Home
+            // If we are not on Home, finish the current activity so the stack is [Home, NewScreen]
             if (!"home".equals(currentScreen)) {
                 activity.finish();
             }
@@ -138,14 +132,14 @@ public class NavDrawerHelper {
         navLogout.setOnClickListener(listener);
     }
 
-    /**
-     * Wołane z dispatchTouchEvent() w Activity.
-     * Zwraca true, jeśli gest został obsłużony (otwarcie/zamknięcie szuflady).
-     */
+    // Called from dispatchTouchEvent() in Activity.
+    // Does not block the event, only reacts to swipe gestures.
     public static void handleDrawerSwipe(AppCompatActivity activity,
                                          DrawerLayout drawerLayout,
                                          MotionEvent event) {
-        if (drawerLayout == null) return;
+        if (drawerLayout == null) {
+            return;
+        }
 
         Object tag = drawerLayout.getTag(R.id.nav_swipe_detector);
         GestureDetector detector;
@@ -157,14 +151,16 @@ public class NavDrawerHelper {
 
                 @Override
                 public boolean onDown(MotionEvent e) {
-                    // musi być true, żeby onFling w ogóle działał
+                    // Must return true for onFling to be triggered
                     return true;
                 }
 
                 @Override
                 public boolean onFling(MotionEvent e1, MotionEvent e2,
                                        float velocityX, float velocityY) {
-                    if (e1 == null || e2 == null) return false;
+                    if (e1 == null || e2 == null) {
+                        return false;
+                    }
 
                     float diffX = e2.getX() - e1.getX();
                     float diffY = e2.getY() - e1.getY();
@@ -174,17 +170,17 @@ public class NavDrawerHelper {
                             && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
 
                         if (diffX > 0) {
-                            // swipe w prawo -> otwórz
+                            // Swipe right → open drawer
                             if (!drawerLayout.isDrawerOpen(GravityCompat.START)) {
                                 drawerLayout.openDrawer(GravityCompat.START);
                             }
                         } else {
-                            // swipe w lewo -> zamknij
+                            // Swipe left → close drawer
                             if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
                                 drawerLayout.closeDrawer(GravityCompat.START);
                             }
                         }
-                        // tu może być true, ale i tak NIE BLOKUJEMY dispatchTouchEvent
+                        // We can safely return true here but do not block dispatchTouchEvent
                         return true;
                     }
                     return false;
@@ -194,7 +190,7 @@ public class NavDrawerHelper {
             drawerLayout.setTag(R.id.nav_swipe_detector, detector);
         }
 
-        // Po prostu przekazujemy event – bez zwracania wyniku dalej.
+        // Forward the event to the gesture detector without interrupting further dispatch
         detector.onTouchEvent(event);
     }
 

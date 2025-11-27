@@ -45,17 +45,17 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         h.date.setText(n.date);
         h.snippet.setText(n.snippet);
 
-        // miniaturka po prawej – najpierw CACHE
+        // Thumbnail on the right – try memory cache first
         if (n.thumbUrl != null && !n.thumbUrl.trim().isEmpty()) {
             h.thumb.setVisibility(View.VISIBLE);
             h.thumb.setTag(n.thumbUrl);
 
-            // 1️⃣ spróbuj z pamięci
+            // First, try to load from memory cache
             Bitmap cached = ImageMemoryCache.get(n.thumbUrl);
             if (cached != null) {
                 h.thumb.setImageBitmap(cached);
             } else {
-                // 2️⃣ brak w cache – wyczyść i pobierz raz
+                // Not in cache – clear and load once
                 h.thumb.setImageDrawable(null);
                 new ThumbLoader(h.thumb, n.thumbUrl)
                         .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, n.thumbUrl);
@@ -66,7 +66,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
             h.thumb.setImageDrawable(null);
         }
 
-        // klik – przejście do szczegółów w apce
+        // Click opens details screen in the app
         h.itemView.setOnClickListener(v -> {
             Intent i = new Intent(ctx, NewsDetailActivity.class);
             i.putExtra("id", n.id);
@@ -84,7 +84,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         return items.size();
     }
 
-    // ładowanie miniatury – z dopięciem do ImageMemoryCache
+    // Thumbnail loader with ImageMemoryCache integration
     private static class ThumbLoader extends AsyncTask<String, Void, Bitmap> {
         private final WeakReference<ImageView> imageViewRef;
         private final String url;
@@ -98,7 +98,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         protected Bitmap doInBackground(String... params) {
             String src = params[0];
 
-            // 1️⃣ jeszcze raz spróbuj cache (gdyby ktoś inny już pobrał)
+            // Try cache again (in case another loader already fetched it)
             Bitmap fromCache = ImageMemoryCache.get(src);
             if (fromCache != null) {
                 return fromCache;
@@ -114,11 +114,13 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
                 conn.setInstanceFollowRedirects(true);
                 conn.setRequestProperty("User-Agent", "mZUTv2-Android-Img/1.0");
                 int code = conn.getResponseCode();
-                if (code != 200) return null;
+                if (code != 200) {
+                    return null;
+                }
                 is = conn.getInputStream();
                 Bitmap bmp = BitmapFactory.decodeStream(is);
 
-                // 2️⃣ zapis do cache
+                // Store in cache on success
                 if (bmp != null) {
                     ImageMemoryCache.put(src, bmp);
                 }
@@ -127,7 +129,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
                 return null;
             } finally {
                 if (is != null) {
-                    try { is.close(); } catch (Exception ignored) {}
+                    try {
+                        is.close();
+                    } catch (Exception ignored) {
+                    }
                 }
                 if (conn != null) {
                     conn.disconnect();
@@ -137,12 +142,21 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
-            if (bitmap == null) return;
+            if (bitmap == null) {
+                return;
+            }
             ImageView iv = imageViewRef.get();
-            if (iv == null) return;
+            if (iv == null) {
+                return;
+            }
             Object tag = iv.getTag();
-            if (!(tag instanceof String)) return;
-            if (!url.equals(tag)) return; // recykling wierszy
+            if (!(tag instanceof String)) {
+                return;
+            }
+            if (!url.equals(tag)) {
+                // Row was recycled for another item
+                return;
+            }
             iv.setImageBitmap(bitmap);
         }
     }
@@ -153,10 +167,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
         ViewHolder(@NonNull View v) {
             super(v);
-            title   = v.findViewById(R.id.newsTitle);
-            date    = v.findViewById(R.id.newsDate);
+            title = v.findViewById(R.id.newsTitle);
+            date = v.findViewById(R.id.newsDate);
             snippet = v.findViewById(R.id.newsSnippet);
-            thumb   = v.findViewById(R.id.newsThumb);
+            thumb = v.findViewById(R.id.newsThumb);
         }
     }
 }

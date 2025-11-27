@@ -12,21 +12,20 @@ import java.util.List;
 
 public class GradesRepository {
 
-    // ============================
-    //  HELPER
-    // ============================
-
+    // Returns the first non-empty string from the provided arguments
     private String firstNonEmpty(String... args) {
-        if (args == null) return "";
+        if (args == null) {
+            return "";
+        }
         for (String s : args) {
-            if (s != null && !s.trim().isEmpty()) return s.trim();
+            if (s != null && !s.trim().isEmpty()) {
+                return s.trim();
+            }
         }
         return "";
     }
 
-    // ============================
-    //  CACHE: STUDIES
-    // ============================
+    // Cache for studies
 
     private static final long STUDIES_TTL_MS =
             7L * 24L * 60L * 60L * 1000L;
@@ -39,9 +38,7 @@ public class GradesRepository {
 
     private static StudiesCacheEntry sStudiesCache = null;
 
-    // ============================
-    //  CACHE: SEMESTERS
-    // ============================
+    // Cache for semesters
 
     private static final long SEMESTERS_TTL_MS =
             7L * 24L * 60L * 60L * 1000L;
@@ -54,22 +51,21 @@ public class GradesRepository {
 
     private static SemesterCacheEntry sSemCache = null;
 
-    // ============================
-    //  ŁADOWANIE KIERUNKÓW + CACHE
-    // ============================
+    // Loading studies with cache
 
     public List<Study> loadStudies() throws IOException, JSONException {
         MzutSession session = MzutSession.getInstance();
 
-        String userId  = session.getUserId();
+        String userId = session.getUserId();
         String authKey = session.getAuthKey();
 
-        if (userId == null || authKey == null)
+        if (userId == null || authKey == null) {
             return Collections.emptyList();
+        }
 
         long now = System.currentTimeMillis();
 
-        // 1) CACHE (globalny dla userId)
+        // 1) Global cache for this userId
         if (sStudiesCache != null &&
                 sStudiesCache.userId != null &&
                 sStudiesCache.userId.equals(userId) &&
@@ -79,9 +75,9 @@ public class GradesRepository {
             return sStudiesCache.list;
         }
 
-        // 2) CACHE z MzutSession
+        // 2) Cache from MzutSession
         if (session.getStudies() != null && !session.getStudies().isEmpty()) {
-            // ale zapisujemy też do naszego RAM cache
+            // Also write to in-memory cache
             StudiesCacheEntry ce = new StudiesCacheEntry();
             ce.ts = now;
             ce.userId = userId;
@@ -91,7 +87,7 @@ public class GradesRepository {
             return ce.list;
         }
 
-        // 3) BRAK CACHE → API
+        // 3) No cache call API
         HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
         params.put("token", authKey);
@@ -114,63 +110,70 @@ public class GradesRepository {
             Study s = new Study();
             s.przynaleznoscId = row.optString("przynaleznoscId", null);
 
-            String nazwa  = row.optString("nazwa", "").trim();
+            String nazwa = row.optString("nazwa", "").trim();
             String poziom = row.optString("poziom", "").trim();
 
             String label = nazwa;
             if (!poziom.isEmpty()) {
-                if (!label.isEmpty()) label += " ";
+                if (!label.isEmpty()) {
+                    label += " ";
+                }
                 label += "(" + poziom + ")";
             }
-            if (label.isEmpty()) label = s.przynaleznoscId;
+            if (label.isEmpty()) {
+                label = s.przynaleznoscId;
+            }
 
             s.label = label;
             studies.add(s);
         }
 
-        // zapisz do cache RAM
+        // Save to in-memory cache
         StudiesCacheEntry ce = new StudiesCacheEntry();
         ce.ts = now;
         ce.userId = userId;
         ce.list = studies;
         sStudiesCache = ce;
 
-        // zapis do MzutSession
+        // Save to session
         session.setStudies(studies);
         session.setActiveStudyIndex(0);
 
         return studies;
     }
 
-    // ============================
-    //  ŁADOWANIE SEMESTRÓW + CACHE
-    // ============================
+    // Loading semesters with cache
 
     public List<Semester> loadSemesters() throws IOException, JSONException {
         MzutSession session = MzutSession.getInstance();
 
-        // 1) kierunki z cache/session
+        // 1) Get studies from cache/session
         List<Study> studies = session.getStudies();
-        if (studies == null || studies.isEmpty())
+        if (studies == null || studies.isEmpty()) {
             studies = loadStudies();
+        }
 
-        if (studies == null || studies.isEmpty())
+        if (studies == null || studies.isEmpty()) {
             return Collections.emptyList();
+        }
 
         int idx = session.getActiveStudyIndex();
-        if (idx < 0 || idx >= studies.size()) idx = 0;
+        if (idx < 0 || idx >= studies.size()) {
+            idx = 0;
+        }
 
         Study active = studies.get(idx);
 
-        String userId  = session.getUserId();
+        String userId = session.getUserId();
         String authKey = session.getAuthKey();
 
-        if (userId == null || authKey == null || active.przynaleznoscId == null)
+        if (userId == null || authKey == null || active.przynaleznoscId == null) {
             return Collections.emptyList();
+        }
 
         long now = System.currentTimeMillis();
 
-        // 2) CACHE semestrów
+        // 2) Semester cache
         if (sSemCache != null &&
                 sSemCache.przynaleznoscId != null &&
                 sSemCache.przynaleznoscId.equals(active.przynaleznoscId) &&
@@ -187,8 +190,9 @@ public class GradesRepository {
         params.put("oceny", "true");
 
         JSONObject resp = MzutApi.callApi("getStudies", params);
-        if (resp == null || !resp.has("Przebieg"))
+        if (resp == null || !resp.has("Przebieg")) {
             return Collections.emptyList();
+        }
 
         Object block = resp.get("Przebieg");
         JSONArray arr = block instanceof JSONArray
@@ -202,14 +206,14 @@ public class GradesRepository {
 
             Semester s = new Semester();
             s.listaSemestrowId = row.optString("listaSemestrowId", null);
-            s.nrSemestru       = row.optString("nrSemestru", "");
-            s.pora             = row.optString("pora", "");
-            s.rokAkademicki    = row.optString("rokAkademicki", "");
-            s.status           = row.optString("status", row.optString("statusO", ""));
+            s.nrSemestru = row.optString("nrSemestru", "");
+            s.pora = row.optString("pora", "");
+            s.rokAkademicki = row.optString("rokAkademicki", "");
+            s.status = row.optString("status", row.optString("statusO", ""));
             list.add(s);
         }
 
-        // zapis cache
+        // Save semester cache
         SemesterCacheEntry ce2 = new SemesterCacheEntry();
         ce2.ts = now;
         ce2.przynaleznoscId = active.przynaleznoscId;
@@ -219,13 +223,13 @@ public class GradesRepository {
         return list;
     }
 
-    // ============================
-    //  ŁADOWANIE OCEN (bez cache)
-    // ============================
+    // Loading grades (no cache in this class)
 
     public List<Grade> loadGradesForSemester(Semester semester)
             throws IOException, JSONException {
-        if (semester == null) return Collections.emptyList();
+        if (semester == null) {
+            return Collections.emptyList();
+        }
         return loadGradesForSemester(semester.listaSemestrowId);
     }
 
@@ -233,11 +237,12 @@ public class GradesRepository {
             throws IOException, JSONException {
 
         MzutSession session = MzutSession.getInstance();
-        String userId  = session.getUserId();
+        String userId = session.getUserId();
         String authKey = session.getAuthKey();
 
-        if (userId == null || authKey == null || listaSemestrowId == null)
+        if (userId == null || authKey == null || listaSemestrowId == null) {
             return Collections.emptyList();
+        }
 
         HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
@@ -245,8 +250,9 @@ public class GradesRepository {
         params.put("listaSemestrowId", listaSemestrowId);
 
         JSONObject resp = MzutApi.callApi("getGrade", params);
-        if (resp == null || !resp.has("Ocena"))
+        if (resp == null || !resp.has("Ocena")) {
             return Collections.emptyList();
+        }
 
         Object block = resp.get("Ocena");
         JSONArray arr = block instanceof JSONArray
@@ -271,15 +277,17 @@ public class GradesRepository {
             );
 
             if (!forma.isEmpty()) {
-                if (!przedmiot.isEmpty()) przedmiot += " ";
+                if (!przedmiot.isEmpty()) {
+                    przedmiot += " ";
+                }
                 przedmiot += "(" + forma + ")";
             }
 
             g.subjectName = przedmiot;
-            g.grade       = row.optString("ocena", "");
-            g.weight      = row.optDouble("ects", 0.0);
-            g.type        = forma;
-            g.teacher     = row.optString("pracownik", "");
+            g.grade = row.optString("ocena", "");
+            g.weight = row.optDouble("ects", 0.0);
+            g.type = forma;
+            g.teacher = row.optString("pracownik", "");
 
             String termin = firstNonEmpty(
                     row.optString("termin", ""),

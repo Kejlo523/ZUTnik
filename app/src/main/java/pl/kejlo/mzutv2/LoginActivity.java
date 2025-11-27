@@ -21,7 +21,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "mZUTv2";
 
-    // Zostawiamy tylko to, co lokalne dla ekranu logowania
+    // Keep only what is local to the login screen
     private static final String PREFS_NAME     = "mzut_prefs";
     private static final String KEY_LAST_LOGIN = "last_login";
 
@@ -33,11 +33,11 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1️⃣ Spróbuj wczytać sesję z SharedPreferences (nowy MzutSession)
+        // Try to load session from SharedPreferences (new MzutSession)
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
-        // Jeśli mamy zapisane userId + authKey → od razu idziemy do HomeActivity
+        // If we already have userId + authKey, go directly to HomeActivity
         if (session.getAuthKey() != null && session.getUserId() != null) {
             Intent i = new Intent(LoginActivity.this, HomeActivity.class);
             startActivity(i);
@@ -45,14 +45,14 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // 2️⃣ Jeśli nie ma sesji → standardowy ekran logowania
+        // If there is no active session, show the standard login screen
         setContentView(R.layout.activity_login);
 
         editLogin = findViewById(R.id.editLogin);
-        editPass  = findViewById(R.id.editPass);
-        btnLogin  = findViewById(R.id.btnLogin);
+        editPass = findViewById(R.id.editPass);
+        btnLogin = findViewById(R.id.btnLogin);
 
-        // Wstaw ostatni login (podpowiedź)
+        // Pre-fill the last used login as a hint
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String lastLogin = prefs.getString(KEY_LAST_LOGIN, "");
         if (!lastLogin.isEmpty()) {
@@ -64,18 +64,18 @@ public class LoginActivity extends AppCompatActivity {
 
     private void doLogin() {
         String login = editLogin.getText().toString().trim();
-        String pass  = editPass.getText().toString().trim();
+        String pass = editPass.getText().toString().trim();
 
         if (login.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, "Wpisz login i hasło!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // zapamiętaj login (do podpowiedzi)
+        // Remember the login for future hints
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(KEY_LAST_LOGIN, login).apply();
 
-        String token    = MzutTokenGenerator.generateToken(login, pass);
+        String token = MzutTokenGenerator.generateToken(login, pass);
         String tokenJpg = MzutTokenGenerator.generateToken(login, null);
 
         Log.d(TAG, "Generated token: " + token);
@@ -134,34 +134,40 @@ public class LoginActivity extends AppCompatActivity {
 
             if (!"OK".equalsIgnoreCase(status)) {
                 if ("SYSTEM ERROR".equalsIgnoreCase(status)) {
-                    Toast.makeText(LoginActivity.this,
+                    Toast.makeText(
+                            LoginActivity.this,
                             "Błąd systemu ZUT (SYSTEM ERROR).",
-                            Toast.LENGTH_LONG).show();
+                            Toast.LENGTH_LONG
+                    ).show();
                 } else {
-                    Toast.makeText(LoginActivity.this,
+                    Toast.makeText(
+                            LoginActivity.this,
                             "Nieprawidłowy login lub hasło.",
-                            Toast.LENGTH_LONG).show();
+                            Toast.LENGTH_LONG
+                    ).show();
                 }
                 return;
             }
 
-            String userId   = auth.optString("login", login);
-            String first    = auth.optString("pierwszeImie", "");
-            String last     = auth.optString("nazwisko", "");
+            String userId = auth.optString("login", login);
+            String first = auth.optString("pierwszeImie", "");
+            String last = auth.optString("nazwisko", "");
             String username = (first + " " + last).trim();
-            String authKey  = auth.optString("token", token);
+            String authKey = auth.optString("token", token);
             String imageUrl = "https://www.zut.edu.pl/app-json-proxy/image/?userId="
                     + userId + "&tokenJpg="
                     + auth.optString("tokenJpg", tokenJpg);
 
-            // 3️⃣ Zapis do sesji (RAM) + zapis trwały przez MzutSession
+            // Save to in-memory session and persist via MzutSession
             MzutSession session = MzutSession.getInstance(LoginActivity.this);
             session.updateUser(userId, username, authKey, imageUrl);
             session.saveToPreferences(LoginActivity.this);
 
-            Toast.makeText(LoginActivity.this,
+            Toast.makeText(
+                    LoginActivity.this,
                     "Zalogowano jako " + username,
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_LONG
+            ).show();
 
             Intent i = new Intent(LoginActivity.this, HomeActivity.class);
             startActivity(i);

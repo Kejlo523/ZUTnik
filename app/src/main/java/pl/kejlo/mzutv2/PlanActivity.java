@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -43,13 +42,12 @@ public class PlanActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
-    // cache listy przedmiotów do filtra
     private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
-    private static final String KEY_FILTER_CACHE_TS   = "plan_filters_cache_ts";
-    private static final long  FILTER_CACHE_TTL_MS   = 30L * 24L * 60L * 60L * 1000L; // ok. 30 dni
+    private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
+    private static final long FILTER_CACHE_TTL_MS = 30L * 24L * 60L * 60L * 1000L;
 
     private static final int START_HOUR = 6;
-    private static final int END_HOUR   = 22;
+    private static final int END_HOUR = 22;
     private static final float HOUR_HEIGHT_DP = 48f;
     private static final float DAY_HEADER_HEIGHT_DP = 32f;
 
@@ -90,7 +88,6 @@ public class PlanActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private Set<String> hiddenSubjectKeys = new HashSet<>();
 
-    // linia "teraz"
     private FrameLayoutWithChildren nowLineParent;
     private View nowLineView;
     private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
@@ -106,11 +103,9 @@ public class PlanActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1️⃣ Wczytaj sesję z SharedPreferences
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
-        // 2️⃣ Jeśli nie ma sesji (brak userId/authKey) → wróć do logowania
         if (session.getAuthKey() == null || session.getUserId() == null) {
             Intent i = new Intent(this, LoginActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -119,7 +114,6 @@ public class PlanActivity extends AppCompatActivity {
             return;
         }
 
-        // 3️⃣ Dopiero teraz layout
         setContentView(R.layout.activity_plan);
 
         planRepository = new PlanRepository(getApplicationContext());
@@ -127,34 +121,34 @@ public class PlanActivity extends AppCompatActivity {
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         hiddenSubjectKeys = new HashSet<>(prefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>()));
 
-        drawerLayout   = findViewById(R.id.drawerLayout);
+        drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
-        toolbar        = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
 
         toolbar.setTitle("Plan zajęć");
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "plan");
 
-        btnViewDay   = findViewById(R.id.btnViewDay);
-        btnViewWeek  = findViewById(R.id.btnViewWeek);
+        btnViewDay = findViewById(R.id.btnViewDay);
+        btnViewWeek = findViewById(R.id.btnViewWeek);
         btnViewMonth = findViewById(R.id.btnViewMonth);
-        btnPrev      = findViewById(R.id.btnPrev);
-        btnNext      = findViewById(R.id.btnNext);
-        btnToday     = findViewById(R.id.btnToday);
-        btnFilters   = findViewById(R.id.btnFilters);
-        btnRefresh   = findViewById(R.id.btnRefresh);
+        btnPrev = findViewById(R.id.btnPrev);
+        btnNext = findViewById(R.id.btnNext);
+        btnToday = findViewById(R.id.btnToday);
+        btnFilters = findViewById(R.id.btnFilters);
+        btnRefresh = findViewById(R.id.btnRefresh);
 
         btnFiltersOriginalText = btnFilters.getText();
 
         tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
-        tvEmpty       = findViewById(R.id.tvEmpty);
+        tvEmpty = findViewById(R.id.tvEmpty);
 
-        layoutWeekRoot   = findViewById(R.id.layoutWeekRoot);
+        layoutWeekRoot = findViewById(R.id.layoutWeekRoot);
         layoutTimeColumn = findViewById(R.id.layoutTimeColumn);
-        layoutWeekDays   = findViewById(R.id.layoutWeekDays);
+        layoutWeekDays = findViewById(R.id.layoutWeekDays);
 
-        layoutMonthRoot     = findViewById(R.id.layoutMonthRoot);
+        layoutMonthRoot = findViewById(R.id.layoutMonthRoot);
         layoutMonthWeekdays = findViewById(R.id.layoutMonthWeekdays);
-        gridMonth           = findViewById(R.id.gridMonth);
+        gridMonth = findViewById(R.id.gridMonth);
 
         progress = findViewById(R.id.planProgress);
 
@@ -171,7 +165,8 @@ public class PlanActivity extends AppCompatActivity {
             if (dateStr != null) {
                 try {
                     currentDate = LocalDate.parse(dateStr, YMD);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         }
 
@@ -181,7 +176,6 @@ public class PlanActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // po powrocie z tła – odśwież linię "teraz" jeśli istnieje
         if (nowLineParent != null && nowLineView != null) {
             updateNowLinePosition();
             nowLineHandler.removeCallbacks(nowLineRunnable);
@@ -219,8 +213,6 @@ public class PlanActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    /* =============== TRYB DZIEN/ TYDZ / MIESIAC =============== */
-
     private void setupViewModeButtons() {
         View.OnClickListener modeClick = v -> {
             if (v == btnViewDay) {
@@ -254,7 +246,7 @@ public class PlanActivity extends AppCompatActivity {
         });
 
         btnNext.setOnClickListener(v -> {
-            shiftCurrentDate(+1);
+            shiftCurrentDate(1);
             new LoadPlanTask().execute();
         });
 
@@ -266,7 +258,6 @@ public class PlanActivity extends AppCompatActivity {
 
     private void setupRefreshButton() {
         if (btnRefresh != null) {
-            // wymuszone odświeżenie – leci do API z forceRefresh = true
             btnRefresh.setOnClickListener(v -> new LoadPlanTask(true).execute());
         }
     }
@@ -281,8 +272,6 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
-    /* =============== FILTRY =============== */
-
     private void setupFiltersButton() {
         btnFilters.setOnClickListener(v -> new LoadSubjectsForFilterTask(false).execute());
 
@@ -290,7 +279,8 @@ public class PlanActivity extends AppCompatActivity {
             clearFilterCache();
             Toast.makeText(
                     PlanActivity.this,
-                    "Cache listy przedmiotów wyczyszczony.\nPrzy następnym otwarciu zostanie pobrana nowa lista.",
+                    "Cache listy przedmiotów wyczyszczony. " +
+                            "Przy następnym otwarciu zostanie pobrana nowa lista.",
                     Toast.LENGTH_LONG
             ).show();
             return true;
@@ -307,7 +297,6 @@ public class PlanActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            super.onPreExecute();
             if (btnFilters != null) {
                 btnFilters.setEnabled(false);
                 btnFilters.setText("Ładowanie…");
@@ -315,11 +304,6 @@ public class PlanActivity extends AppCompatActivity {
             if (progress != null) {
                 progress.setVisibility(View.VISIBLE);
             }
-            Toast.makeText(
-                    PlanActivity.this,
-                    "Pobieranie listy, proszę czekać…",
-                    Toast.LENGTH_SHORT
-            ).show();
         }
 
         @Override
@@ -355,13 +339,17 @@ public class PlanActivity extends AppCompatActivity {
 
             if (items == null || items.isEmpty()) {
                 if (error != null) {
-                    Toast.makeText(PlanActivity.this,
+                    Toast.makeText(
+                            PlanActivity.this,
                             "Błąd ładowania listy przedmiotów: " + error.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                            Toast.LENGTH_LONG
+                    ).show();
                 } else {
-                    Toast.makeText(PlanActivity.this,
+                    Toast.makeText(
+                            PlanActivity.this,
                             "Brak przedmiotów do filtrowania.",
-                            Toast.LENGTH_SHORT).show();
+                            Toast.LENGTH_SHORT
+                    ).show();
                 }
                 return;
             }
@@ -403,8 +391,6 @@ public class PlanActivity extends AppCompatActivity {
                 .show();
     }
 
-    // --- CACHE LISTY PRZEDMIOTÓW ---
-
     private List<PlanRepository.SubjectFilterItem> loadFilterCache() {
         long ts = prefs.getLong(KEY_FILTER_CACHE_TS, 0L);
         if (ts == 0L) return null;
@@ -423,7 +409,7 @@ public class PlanActivity extends AppCompatActivity {
             for (int i = 0; i < arr.length(); i++) {
                 org.json.JSONObject obj = arr.getJSONObject(i);
                 PlanRepository.SubjectFilterItem it = new PlanRepository.SubjectFilterItem();
-                it.label     = obj.optString("label", "");
+                it.label = obj.optString("label", "");
                 it.typeLabel = obj.optString("typeLabel", "");
                 it.filterKey = obj.optString("filterKey", "");
                 items.add(it);
@@ -458,8 +444,6 @@ public class PlanActivity extends AppCompatActivity {
                 .remove(KEY_FILTER_CACHE_TS)
                 .apply();
     }
-
-    /* =============== GODZINY I NAGŁÓWKI =============== */
 
     private void setupTimeColumn() {
         layoutTimeColumn.removeAllViews();
@@ -498,8 +482,6 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
-    /* =============== ŁADOWANIE PLANU =============== */
-
     private class LoadPlanTask extends AsyncTask<Void, Void, PlanRepository.PlanResult> {
         Exception error;
         private final boolean forceRefresh;
@@ -518,7 +500,7 @@ public class PlanActivity extends AppCompatActivity {
             tvEmpty.setVisibility(View.GONE);
             nowLineHandler.removeCallbacks(nowLineRunnable);
             nowLineParent = null;
-            nowLineView   = null;
+            nowLineView = null;
         }
 
         @Override
@@ -544,7 +526,7 @@ public class PlanActivity extends AppCompatActivity {
             }
 
             currentDate = result.current;
-            viewMode    = result.viewMode != null ? result.viewMode : viewMode;
+            viewMode = result.viewMode != null ? result.viewMode : viewMode;
 
             updateViewModeButtonsUi();
             tvHeaderLabel.setText(result.headerLabel != null ? result.headerLabel : "");
@@ -568,16 +550,14 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
-    /* =============== RYSOWANIE DAY/WEEK  =============== */
-
     private void renderWeekOrDay(PlanRepository.PlanResult result) {
         layoutWeekRoot.setVisibility(View.VISIBLE);
         layoutMonthRoot.setVisibility(View.GONE);
 
         layoutWeekDays.removeAllViews();
 
-        final float totalHours = END_HOUR - START_HOUR;
-        final int columnHeight = (int) (dpToPx(HOUR_HEIGHT_DP) * totalHours);
+        float totalHours = END_HOUR - START_HOUR;
+        int columnHeight = (int) (dpToPx(HOUR_HEIGHT_DP) * totalHours);
 
         List<PlanRepository.DayColumn> cols =
                 result.dayColumns != null ? result.dayColumns : Collections.emptyList();
@@ -616,11 +596,10 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
 
-        final LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now();
 
         for (PlanRepository.DayColumn col : cols) {
-
-            boolean isSelectedDay = (col.date != null && col.date.equals(currentDate));
+            boolean isSelectedDay = col.date != null && col.date.equals(currentDate);
 
             LinearLayout dayColumn = new LinearLayout(this);
             dayColumn.setOrientation(LinearLayout.VERTICAL);
@@ -718,6 +697,7 @@ public class PlanActivity extends AppCompatActivity {
     private static class RenderedEvent {
         final PlanRepository.PlanEventUi ev;
         final View view;
+
         RenderedEvent(PlanRepository.PlanEventUi e, View v) {
             this.ev = e;
             this.view = v;
@@ -729,7 +709,7 @@ public class PlanActivity extends AppCompatActivity {
                                        int widthPx) {
 
         int calStart = START_HOUR * 60;
-        int calEnd   = END_HOUR   * 60;
+        int calEnd = END_HOUR * 60;
 
         if (renderedEvents.isEmpty()) return;
 
@@ -795,11 +775,11 @@ public class PlanActivity extends AppCompatActivity {
                     maxOffset = 0;
                 }
 
-                for (int i = 0; i < cluster.size(); i++) {
+                for (int i = 0; i < clusterSize; i++) {
                     RenderedEvent re = cluster.get(i);
 
                     int startMin = re.ev.startMin;
-                    int endMin   = re.ev.endMin;
+                    int endMin = re.ev.endMin;
 
                     if (endMin <= calStart || startMin >= calEnd) {
                         re.view.setVisibility(View.GONE);
@@ -807,8 +787,8 @@ public class PlanActivity extends AppCompatActivity {
                     }
 
                     int startClamped = Math.max(startMin, calStart);
-                    int endClamped   = Math.min(endMin, calEnd);
-                    int duration     = Math.max(endClamped - startClamped, 15);
+                    int endClamped = Math.min(endMin, calEnd);
+                    int duration = Math.max(endClamped - startClamped, 15);
 
                     float offsetMinutes = startClamped - calStart;
                     float topPx = (offsetMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP);
@@ -821,9 +801,9 @@ public class PlanActivity extends AppCompatActivity {
                             (FrameLayoutWithChildren.LayoutParams) re.view.getLayoutParams();
 
                     lp.topMargin = (int) topPx;
-                    lp.height    = (int) heightPx;
+                    lp.height = (int) heightPx;
                     lp.leftMargin = marginPx + i * overlapOffset;
-                    lp.width      = availableWidth;
+                    lp.width = availableWidth;
 
                     re.view.setLayoutParams(lp);
                 }
@@ -861,7 +841,7 @@ public class PlanActivity extends AppCompatActivity {
                 int laneIdx = laneOf[i];
 
                 int startMin = re.ev.startMin;
-                int endMin   = re.ev.endMin;
+                int endMin = re.ev.endMin;
 
                 if (endMin <= calStart || startMin >= calEnd) {
                     re.view.setVisibility(View.GONE);
@@ -869,8 +849,8 @@ public class PlanActivity extends AppCompatActivity {
                 }
 
                 int startClamped = Math.max(startMin, calStart);
-                int endClamped   = Math.min(endMin, calEnd);
-                int duration     = Math.max(endClamped - startClamped, 15);
+                int endClamped = Math.min(endMin, calEnd);
+                int duration = Math.max(endClamped - startClamped, 15);
 
                 float offsetMinutes = startClamped - calStart;
                 float topPx = (offsetMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP);
@@ -883,16 +863,14 @@ public class PlanActivity extends AppCompatActivity {
                         (FrameLayoutWithChildren.LayoutParams) re.view.getLayoutParams();
 
                 lp.topMargin = (int) topPx;
-                lp.height    = (int) heightPx;
+                lp.height = (int) heightPx;
                 lp.leftMargin = (int) (marginPx + laneIdx * laneWidth);
-                lp.width      = (int) (laneWidth - 2 * marginPx);
+                lp.width = (int) (laneWidth - 2 * marginPx);
 
                 re.view.setLayoutParams(lp);
             }
         }
     }
-
-    /* =============== LINIA "TERAZ" =============== */
 
     private void setupNowLine(FrameLayoutWithChildren parent, int widthPx) {
         nowLineParent = parent;
@@ -921,8 +899,8 @@ public class PlanActivity extends AppCompatActivity {
 
         LocalTime now = LocalTime.now();
         int minutesNow = now.getHour() * 60 + now.getMinute();
-        int minBound   = START_HOUR * 60;
-        int maxBound   = END_HOUR   * 60;
+        int minBound = START_HOUR * 60;
+        int maxBound = END_HOUR * 60;
         if (minutesNow < minBound || minutesNow > maxBound) {
             nowLineView.setVisibility(View.GONE);
             return;
@@ -1053,19 +1031,31 @@ public class PlanActivity extends AppCompatActivity {
         if (date == null) return "";
         String shortName;
         switch (date.getDayOfWeek()) {
-            case MONDAY:    shortName = "Pn"; break;
-            case TUESDAY:   shortName = "Wt"; break;
-            case WEDNESDAY: shortName = "Śr"; break;
-            case THURSDAY:  shortName = "Cz"; break;
-            case FRIDAY:    shortName = "Pt"; break;
-            case SATURDAY:  shortName = "Sb"; break;
+            case MONDAY:
+                shortName = "Pn";
+                break;
+            case TUESDAY:
+                shortName = "Wt";
+                break;
+            case WEDNESDAY:
+                shortName = "Śr";
+                break;
+            case THURSDAY:
+                shortName = "Cz";
+                break;
+            case FRIDAY:
+                shortName = "Pt";
+                break;
+            case SATURDAY:
+                shortName = "Sb";
+                break;
             case SUNDAY:
-            default:        shortName = "Nd"; break;
+            default:
+                shortName = "Nd";
+                break;
         }
         return shortName + "\n" + date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"));
     }
-
-    /* =============== RYSOWANIE MIESIĄCA =============== */
 
     private void renderMonth(PlanRepository.PlanResult result) {
         layoutWeekRoot.setVisibility(View.GONE);
@@ -1131,8 +1121,6 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
     }
-
-    /* =============== POMOCNICZE =============== */
 
     private int dpToPx(float dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);

@@ -34,14 +34,14 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1️⃣ Zainicjalizuj sesję z SharedPreferences
+        // Initialize session from SharedPreferences
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
-        // 2️⃣ Jeśli nie mamy ważnej sesji → wróć do ekranu logowania
+        // If there is no valid session, go back to the login screen
         if (session.getAuthKey() == null || session.getUserId() == null) {
             Intent i = new Intent(this, LoginActivity.class);
-            // czyścimy stack, żeby nie można było wrócić "wstecz" do pustego Home
+            // Clear the back stack so the user cannot return to an empty Home screen
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
             finish();
@@ -50,31 +50,31 @@ public class HomeActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_home);
 
-        drawerLayout   = findViewById(R.id.drawerLayout);
+        drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
-        toolbar        = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
 
         toolbar.setTitle("Pulpit główny");
 
-        // NavDrawer – ekran startowy
+        // Navigation drawer – home screen
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "home");
 
-        // HERO / sekcje
-        textWelcome    = findViewById(R.id.textWelcome);
+        // Hero / sections
+        textWelcome = findViewById(R.id.textWelcome);
         textWelcomeSub = findViewById(R.id.textWelcomeSub);
-        homeHero       = findViewById(R.id.homeHero);
-        homeShortcuts  = findViewById(R.id.homeShortcuts);
-        homeSection    = findViewById(R.id.homeSection);
+        homeHero = findViewById(R.id.homeHero);
+        homeShortcuts = findViewById(R.id.homeShortcuts);
+        homeSection = findViewById(R.id.homeSection);
 
-        // główne przyciski
-        btnHeroPlan   = findViewById(R.id.btnHeroPlan);
+        // Main buttons
+        btnHeroPlan = findViewById(R.id.btnHeroPlan);
         btnHeroGrades = findViewById(R.id.btnHeroGrades);
 
-        // kafelki skrótów
-        tilePlan   = findViewById(R.id.tilePlan);
+        // Shortcut tiles
+        tilePlan = findViewById(R.id.tilePlan);
         tileGrades = findViewById(R.id.tileGrades);
-        tileInfo   = findViewById(R.id.tileInfo);
-        tileNews   = findViewById(R.id.tileNews);
+        tileInfo = findViewById(R.id.tileInfo);
+        tileNews = findViewById(R.id.tileNews);
 
         setupWelcomeText();
         setupClicks();
@@ -83,13 +83,13 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        // tylko podglądamy gest, NIE blokujemy eventu
+        // Only observe the gesture, do not block the event
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
     }
 
     private void setupWelcomeText() {
-        // używamy wersji z kontekstem, żeby mieć pewność, że sesja jest wczytana
+        // Use the version with context to ensure the session is loaded
         MzutSession s = MzutSession.getInstance(this);
         String username = s.getUsername();
         if (username == null || username.trim().isEmpty()) {
@@ -98,7 +98,7 @@ public class HomeActivity extends AppCompatActivity {
         if (username == null || username.trim().isEmpty()) {
             username = "Student";
         }
-        textWelcome.setText("Witaj, " + username + " 👋");
+        textWelcome.setText("Witaj, " + username);
 
         textWelcomeSub.setText(
                 "Szybki dostęp do planu, ocen, informacji o studiach i aktualności z ZUT – w jednym miejscu."
@@ -115,7 +115,7 @@ public class HomeActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Toast.makeText(
                         HomeActivity.this,
-                        "Ekran ocen nie jest jeszcze podpięty 🤔",
+                        "Ekran ocen nie jest jeszcze podpięty.",
                         Toast.LENGTH_SHORT
                 ).show();
             }
@@ -130,48 +130,56 @@ public class HomeActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Toast.makeText(
                         HomeActivity.this,
-                        "Ekran aktualności nie jest jeszcze podpięty 🤔",
+                        "Ekran aktualności nie jest jeszcze podpięty.",
                         Toast.LENGTH_SHORT
                 ).show();
             }
         };
 
-        // hero buttons
+        // Hero buttons
         btnHeroPlan.setOnClickListener(openPlan);
         btnHeroGrades.setOnClickListener(openGrades);
 
-        // tiles
+        // Tiles
         tilePlan.setOnClickListener(openPlan);
         tileGrades.setOnClickListener(openGrades);
         tileInfo.setOnClickListener(openInfo);
         tileNews.setOnClickListener(openNews);
 
-        // długie tapnięcie – krótkie tipy (opcjonalnie, zostawiłem)
+        // Long press tips (optional)
         tilePlan.setOnLongClickListener(v -> {
-            Toast.makeText(this,
+            Toast.makeText(
+                    this,
                     "Plan: widok dnia, tygodnia, miesiąca + filtr przedmiotów.",
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_LONG
+            ).show();
             return true;
         });
 
         tileGrades.setOnLongClickListener(v -> {
-            Toast.makeText(this,
+            Toast.makeText(
+                    this,
                     "Oceny: średnia ECTS, lista zaliczeń, egzaminy.",
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_LONG
+            ).show();
             return true;
         });
 
         tileInfo.setOnLongClickListener(v -> {
-            Toast.makeText(this,
+            Toast.makeText(
+                    this,
                     "Informacje: kierunek, semestr, status studenta.",
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_LONG
+            ).show();
             return true;
         });
 
         tileNews.setOnLongClickListener(v -> {
-            Toast.makeText(this,
+            Toast.makeText(
+                    this,
                     "Aktualności: komunikaty z RSS ZUT (studenci).",
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_LONG
+            ).show();
             return true;
         });
     }
@@ -183,7 +191,9 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void animateInFromBottom(View v, long delayMs) {
-        if (v == null) return;
+        if (v == null) {
+            return;
+        }
         v.setAlpha(0f);
         v.setTranslationY(16f);
         v.animate()

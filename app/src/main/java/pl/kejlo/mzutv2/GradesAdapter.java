@@ -34,7 +34,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         h.colGrade.setText(g.grade);
         h.colDate.setText(g.date);
 
-        // ---------- styl pigułki ----------
+        // Grade pill style
         String raw = g.grade != null ? g.grade.trim() : "";
         String lower = raw.toLowerCase();
 
@@ -42,7 +42,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         boolean isPass = false;
 
         if (!isFail && !raw.isEmpty()) {
-            // spróbuj zinterpretować jako liczbę
+            // Try to interpret the grade as a number
             String normalized = raw.replace(",", ".");
             try {
                 double val = Double.parseDouble(normalized);
@@ -50,7 +50,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
                     isPass = true;
                 }
             } catch (NumberFormatException e) {
-                // np. "zal"
+                // Non-numeric grade like "zal"
                 if ("zal".equalsIgnoreCase(lower) || "z".equalsIgnoreCase(lower)) {
                     isPass = true;
                 }
@@ -59,12 +59,12 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
 
         if (isFail) {
             h.colGrade.setBackgroundResource(R.drawable.bg_grade_fail);
-            h.colGrade.setTextColor(0xFFDC2626); // czerwony
+            h.colGrade.setTextColor(0xFFDC2626); // red
         } else if (isPass) {
             h.colGrade.setBackgroundResource(R.drawable.bg_grade_pass);
-            h.colGrade.setTextColor(0xFF22C55E); // zielony
+            h.colGrade.setTextColor(0xFF22C55E); // green
         } else {
-            // brak oceny / inne – reset stylu
+            // No grade or other value – reset style
             h.colGrade.setBackground(null);
             h.colGrade.setTextColor(0xFFFFFFFF);
         }
@@ -81,9 +81,9 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         public ViewHolder(@NonNull View v) {
             super(v);
             colSubject = v.findViewById(R.id.colSubject);
-            colType    = v.findViewById(R.id.colType);
-            colGrade   = v.findViewById(R.id.colGrade);
-            colDate    = v.findViewById(R.id.colDate);
+            colType = v.findViewById(R.id.colType);
+            colGrade = v.findViewById(R.id.colGrade);
+            colDate = v.findViewById(R.id.colDate);
         }
     }
 }

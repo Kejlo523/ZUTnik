@@ -25,60 +25,46 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-/**
- * Odpowiednik plan.php – cała logika po stronie Androida.
- * Tu NIC nie rysujemy – tylko liczymy dane, które potem PlanActivity narysuje.
- *
- * WERSJA Z CACHE:
- * - trzymamy plan w pamięci + w jednym pliku JSON (internal storage),
- * - w pamięci: Map<LocalDate, List<PlanEventRaw>> (po dniach),
- * - do API idziemy:
- *   - przy długim przytrzymaniu: po CAŁY plan,
- *   - przy wejściu w zakres (dzień/tydzień/miesiąc), jeśli minęła godzina dla tego zakresu,
- *   - przy krótkim kliknięciu "Odśwież" – zawsze tylko dany zakres.
- */
 public class PlanRepository {
 
     private static final String TAG = "mZUTv2-PLAN";
 
-    // ====== CACHE NA DYSKU ======
+    // Cache on disk
 
     private static final String CACHE_FILE_NAME = "plan_cache_v1.json";
 
-    // TTL dla konkretnego zakresu (dzień/tydzień/miesiąc)
+    // TTL for a specific scope (day/week/month)
     private static final long SCOPE_CACHE_TTL_MS = 60L * 60L * 1000L; // 1h
 
-    // globalny context aplikacji (opcjonalny – jak brak, to nie zapisujemy/nie czytamy pliku)
+    // Global application context (optional – when null, file cache is disabled)
     private static Context appContext;
 
-    // struktura pełnego cache w pamięci
+    // In-memory cache structure for the full schedule
     private static class FullPlanCache {
         String album;
-        long timestampMs; // ostatnia aktualizacja (pełna lub częściowa)
+        long timestampMs; // last update (full or partial)
         Map<LocalDate, List<PlanEventRaw>> byDate = new HashMap<>();
-        // info o tym, kiedy ostatni raz dany zakres był odświeżony (tylko w pamięci)
+        // Tracks when a given scope was last refreshed (memory-only)
         Map<String, Long> scopeTimestamps = new HashMap<>();
     }
 
-    private static FullPlanCache sFullPlanCache; // singleton w pamięci procesu
+    private static FullPlanCache sFullPlanCache;
 
-    // konstruktor z Context – używaj w Activity/Service
+    // Constructors
+
     public PlanRepository(Context context) {
         if (context != null) {
             appContext = context.getApplicationContext();
         }
     }
 
-    // pusty konstruktor – np. używany przez widgety wcześniej
     public PlanRepository() {
-        // jeśli appContext == null, cache na dysku jest wyłączony – repo zachowuje się "jak dawniej"
+        // If appContext is null, disk cache is disabled – behavior falls back to in-memory only
     }
 
-    /* =======================
-     *   MODELE DANYCH
-     * ======================= */
+    // Data models
 
-    /** Surowy event z plan.zut – 1:1 z JSONem. */
+    // Raw event from plan.zut – direct JSON mapping
     public static class PlanEventRaw {
         public String title;
         public String description;
@@ -99,48 +85,48 @@ public class PlanRepository {
         public String borderColor;
     }
 
-    /** Event przygotowany do rysowania (day/week) – z pozycją/top/width itd. */
+    // UI-ready event (day/week view) – with positioning info
     public static class PlanEventUi {
-        public int startMin;   // minuty od północy
+        public int startMin;   // minutes from midnight
         public int endMin;
         public float topPx;
         public float heightPx;
         public float leftPct;
         public float widthPct;
 
-        public String title;      // "Przedmiot (L/A/W)"
+        public String title;      // "Subject (L/A/W)"
         public String room;
         public String group;
         public String startStr;   // "HH:mm"
         public String endStr;
         public String tooltip;
         public String typeClass;   // week-event-type-...
-        public String typeLabel;   // np. "Laboratorium", "Egzamin", "Rektorskie", "Odwołane"
-        public String subjectKey;  // "Przedmiot||lab" / "Przedmiot||aud" / "Przedmiot||lec"
+        public String typeLabel;   // e.g. "Laboratorium", "Egzamin", "Rektorskie", "Odwołane"
+        public String subjectKey;  // "Subject||lab" / "Subject||aud" / "Subject||lec"
         public String teacher;
     }
 
-    /** Plan jednego dnia w widoku tygodniowym/dziennym. */
+    // One day column for week/day view
     public static class DayColumn {
         public LocalDate date;
         public List<PlanEventUi> events = new ArrayList<>();
     }
 
-    /** Element kalendarza miesiąca. */
+    // One cell in the month calendar grid
     public static class MonthCell {
         public LocalDate date;
         public boolean hasPlan;
     }
 
-    /** Jeden wiersz listy „filtrów przedmiotów”. */
+    // One item in the subject filter list
     public static class SubjectFilterItem {
-        public String label;      // nazwa przedmiotu
+        public String label;      // subject name
         public String typeKey;    // lab / aud / lec
         public String typeLabel;  // "Laboratorium" / "Audytoryjne" / "Wykład"
         public String filterKey;  // label||typeKey
     }
 
-    /** Debug – odpowiednik $PLAN_DEBUG. */
+    // Debug info (equivalent of $PLAN_DEBUG)
     public static class PlanDebug {
         public String album;
         public String view;
@@ -159,7 +145,7 @@ public class PlanRepository {
         public List<RequestDebug> requests = new ArrayList<>();
     }
 
-    /** Wynik jednego ładowania planu (day/week/month). */
+    // Result of loading a schedule for a given view (day/week/month)
     public static class PlanResult {
         public String viewMode;        // "day" / "week" / "month"
         public LocalDate current;
@@ -173,20 +159,18 @@ public class PlanRepository {
         // month:
         public List<List<MonthCell>> monthGrid = new ArrayList<>();
 
-        // daty do nawigacji:
+        // navigation dates:
         public LocalDate prev;
         public LocalDate next;
         public LocalDate today;
 
-        // opis nagłówka (jak w PHP: day_label/week_label/month_label)
+        // header text (as in PHP: day_label/week_label/month_label)
         public String headerLabel;
 
         public PlanDebug debug = new PlanDebug();
     }
 
-    /* =======================
-     *   FORMATERY DAT
-     * ======================= */
+    // Date formatters
 
     private static final DateTimeFormatter ISO_LOCAL_DT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -198,8 +182,8 @@ public class PlanRepository {
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static String sCachedAlbum;
-    private static long   sCachedAlbumTs;
-    private static final long ALBUM_TTL_MS = 24L * 60L * 60L * 1000L; // np. 24h
+    private static long sCachedAlbumTs;
+    private static final long ALBUM_TTL_MS = 24L * 60L * 60L * 1000L; // 24h
 
     private static final String[] DNI_PL = {"Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"};
 
@@ -210,14 +194,14 @@ public class PlanRepository {
     }
 
     private static LocalDateTime parseIsoLocal(String iso) {
-        if (iso == null || iso.trim().isEmpty()) return null;
+        if (iso == null || iso.trim().isEmpty()) {
+            return null;
+        }
         try {
-            // Próba 1: z offsetem czasu
             OffsetDateTime odt = OffsetDateTime.parse(iso);
             return odt.toLocalDateTime();
         } catch (Exception ignored) { }
         try {
-            // Próba 2: bez offsetu
             return LocalDateTime.parse(iso, ISO_LOCAL_DT);
         } catch (Exception e) {
             Log.w(TAG, "Nie udało się sparsować daty: " + iso, e);
@@ -229,13 +213,9 @@ public class PlanRepository {
         return dt.getHour() * 60 + dt.getMinute();
     }
 
-    /* =======================
-     *   POMOCNICZE – API ZUT
-     * ======================= */
+    // Helpers – ZUT API (plan.zut)
 
-    /**
-     * Wywołanie GET na plan.zut.edu.pl i zwrot JSON-a jako JSONArray.
-     */
+    // Simple GET to plan.zut.edu.pl that returns a JSONArray
     private JSONArray httpGetJsonArray(String urlStr, PlanDebug debug) throws IOException, JSONException {
         HttpURLConnection conn = null;
         InputStream is = null;
@@ -280,18 +260,22 @@ public class PlanRepository {
             debug.requests.add(rd);
             throw e;
         } finally {
-            if (is != null) try { is.close(); } catch (Exception ignore) {}
-            if (conn != null) conn.disconnect();
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (Exception ignore) { }
+            }
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
-    /**
-     * Pobranie numeru albumu dla aktywnego kierunku (getStudy).
-     */
+    // Fetches album number for active study (getStudy)
     private String resolveAlbumNumber() throws IOException, JSONException {
         long now = System.currentTimeMillis();
 
-        // 1. Spróbuj z cache w pamięci (żeby nie walić w API za każdym razem)
+        // 1) Try in-memory cache (avoid hitting API too often)
         if (sCachedAlbum != null && (now - sCachedAlbumTs) < ALBUM_TTL_MS) {
             return sCachedAlbum;
         }
@@ -299,52 +283,61 @@ public class PlanRepository {
         MzutSession session = MzutSession.getInstance();
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
-        if (userId == null || authKey == null) return null;
+        if (userId == null || authKey == null) {
+            return null;
+        }
 
-        // jaki kierunek jest aktywny?
+        // Determine active study
         List<Study> studies = session.getStudies();
         if (studies == null || studies.isEmpty()) {
             GradesRepository gr = new GradesRepository();
             studies = gr.loadStudies();
         }
-        if (studies == null || studies.isEmpty()) return null;
+        if (studies == null || studies.isEmpty()) {
+            return null;
+        }
 
         int idx = session.getActiveStudyIndex();
-        if (idx < 0 || idx >= studies.size()) idx = 0;
+        if (idx < 0 || idx >= studies.size()) {
+            idx = 0;
+        }
         Study active = studies.get(idx);
-        if (active.przynaleznoscId == null) return null;
+        if (active.przynaleznoscId == null) {
+            return null;
+        }
 
-        // getStudy – TYLKO jeśli nie mamy albumu w cache
+        // getStudy – only if album is not already cached
         HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
         params.put("token", authKey);
         params.put("przynaleznoscId", active.przynaleznoscId);
 
         JSONObject resp = MzutApi.callApi("getStudy", params);
-        if (resp == null) return null;
+        if (resp == null) {
+            return null;
+        }
 
         String album = resp.optString("album", null);
-        if (album != null) album = album.trim();
-        if (album == null || album.isEmpty()) return null;
+        if (album != null) {
+            album = album.trim();
+        }
+        if (album == null || album.isEmpty()) {
+            return null;
+        }
 
-        // zapisz do cache
+        // Save to cache
         sCachedAlbum = album;
         sCachedAlbumTs = now;
 
         return album;
     }
 
+    // Fetching schedule from plan.zut
 
-    /* =======================
-     *   POBRANIE PLANU Z PLAN.ZUT
-     * ======================= */
-
-    /**
-     * Pobranie zakresu [rangeStart, rangeEnd] z plan.zut po numerze albumu.
-     * Używane:
-     *  - przy wchodzeniu w zakres, jeśli TTL > 1h,
-     *  - przy krótkim kliknięciu "Odśwież" (wymuszone scopeRefresh).
-     */
+    // Fetches [rangeStart, rangeEnd] from plan.zut by album number.
+    // Used:
+    // - when entering a scope and TTL > 1h,
+    // - on short "Refresh" press (forces scope refresh).
     private List<PlanEventRaw> fetchPlanRangeByAlbum(
             String album,
             LocalDate rangeStart,
@@ -352,27 +345,23 @@ public class PlanRepository {
             PlanDebug debug
     ) throws IOException, JSONException {
 
-        // zakres kalendarzowy do filtrowania
         LocalDate filterStart = rangeStart;
         LocalDate filterEnd = rangeEnd;
 
-        // zakres do API
         LocalDateTime apiStart;
         LocalDateTime apiEnd;
         if (rangeStart.equals(rangeEnd)) {
-            // widok jednego dnia – [D 00:00, (D+1) 23:59]
             apiStart = rangeStart.atStartOfDay();
             apiEnd = rangeEnd.plusDays(1).atTime(23, 59, 59);
         } else {
-            // wielodniowy
             apiStart = filterStart.atStartOfDay();
             apiEnd = filterEnd.plusDays(1).atTime(23, 59, 59);
         }
 
         String startA = apiStart.toLocalDate().format(YMD) + "T00:00:00";
-        String endA   = apiEnd.toLocalDate().format(YMD)   + "T23:59:59";
+        String endA = apiEnd.toLocalDate().format(YMD) + "T23:59:59";
         String startB = apiStart.atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();
-        String endB   = apiEnd.atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();
+        String endB = apiEnd.atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();
 
         String base = "https://plan.zut.edu.pl/schedule_student.php?number=" + album;
 
@@ -390,35 +379,40 @@ public class PlanRepository {
                     break;
                 }
             } catch (Exception e) {
-                // próbujemy kolejny wariant
                 Log.w(TAG, "Błąd pobierania plan.zut (" + u + "): " + e.getMessage());
             }
         }
 
         List<PlanEventRaw> out = new ArrayList<>();
-        if (arr == null) return out;
+        if (arr == null) {
+            return out;
+        }
 
         String filterStartStr = filterStart.format(YMD);
-        String filterEndStr   = filterEnd.format(YMD);
+        String filterEndStr = filterEnd.format(YMD);
 
         for (int i = 0; i < arr.length(); i++) {
             JSONObject e = arr.optJSONObject(i);
-            if (e == null) continue;
+            if (e == null) {
+                continue;
+            }
 
             PlanEventRaw r = parsePlanEventRaw(e);
-            if (r == null) continue;
+            if (r == null) {
+                continue;
+            }
 
-            // data "YYYY-MM-DD" z pola start
             String eventDateStr;
             if (r.start != null && r.start.length() >= 10) {
                 eventDateStr = r.start.substring(0, 10);
             } else {
                 LocalDateTime dt = parseIsoLocal(r.start);
-                if (dt == null) continue;
+                if (dt == null) {
+                    continue;
+                }
                 eventDateStr = dt.toLocalDate().format(YMD);
             }
 
-            // poza zakresem?
             if (eventDateStr.compareTo(filterStartStr) < 0
                     || eventDateStr.compareTo(filterEndStr) > 0) {
                 continue;
@@ -430,10 +424,8 @@ public class PlanRepository {
         return out;
     }
 
-    /**
-     * NOWE: pobranie CAŁEGO planu dla albumu (bez parametrów start/end).
-     * Używane do pełnego przeładowania (długie przytrzymanie w UI).
-     */
+    // Fetches the entire schedule for a given album (no start/end params).
+    // Used for full reload (long-press refresh in UI).
     private List<PlanEventRaw> fetchFullPlanByAlbum(
             String album,
             PlanDebug debug
@@ -441,7 +433,6 @@ public class PlanRepository {
 
         String base = "https://plan.zut.edu.pl/schedule_student.php?number=" + album;
 
-        // najpierw bez parametrów – powinno zwrócić cały zakres (październik–sierpień)
         JSONArray arr = null;
         try {
             arr = httpGetJsonArray(base, debug);
@@ -449,7 +440,6 @@ public class PlanRepository {
             Log.w(TAG, "Błąd pobierania pełnego planu (" + base + "): " + e.getMessage());
         }
 
-        // fallback – jeśli tu padnie, po prostu pusta lista.
         if (arr == null) {
             return new ArrayList<>();
         }
@@ -457,7 +447,9 @@ public class PlanRepository {
         List<PlanEventRaw> out = new ArrayList<>();
         for (int i = 0; i < arr.length(); i++) {
             JSONObject e = arr.optJSONObject(i);
-            if (e == null) continue;
+            if (e == null) {
+                continue;
+            }
             PlanEventRaw r = parsePlanEventRaw(e);
             if (r != null) {
                 out.add(r);
@@ -467,47 +459,49 @@ public class PlanRepository {
     }
 
     private PlanEventRaw parsePlanEventRaw(JSONObject e) {
-        if (e == null) return null;
+        if (e == null) {
+            return null;
+        }
 
         String start = e.optString("start", null);
-        String end   = e.optString("end", null);
-        if (start == null || end == null) return null;
+        String end = e.optString("end", null);
+        if (start == null || end == null) {
+            return null;
+        }
 
         PlanEventRaw r = new PlanEventRaw();
-        r.title               = e.optString("title", "");
-        r.description         = e.optString("description", "");
-        r.start               = start;
-        r.end                 = end;
-        r.workerTitle         = e.optString("worker_title", "");
-        r.worker              = e.optString("worker", "");
-        r.lessonForm          = e.optString("lesson_form", "");
-        r.lessonFormShort     = e.optString("lesson_form_short", "");
-        r.groupName           = e.optString("group_name", "");
-        r.tokName             = e.optString("tok_name", "");
-        r.room                = e.optString("room", "");
-        r.lessonStatus        = e.optString("lesson_status", "");
-        r.lessonStatusShort   = e.optString("lesson_status_short", "");
-        r.subject             = e.optString("subject", "");
-        r.hours               = e.optString("hours", "");
-        r.color               = e.optString("color", "");
-        r.borderColor         = e.optString("borderColor", "");
+        r.title = e.optString("title", "");
+        r.description = e.optString("description", "");
+        r.start = start;
+        r.end = end;
+        r.workerTitle = e.optString("worker_title", "");
+        r.worker = e.optString("worker", "");
+        r.lessonForm = e.optString("lesson_form", "");
+        r.lessonFormShort = e.optString("lesson_form_short", "");
+        r.groupName = e.optString("group_name", "");
+        r.tokName = e.optString("tok_name", "");
+        r.room = e.optString("room", "");
+        r.lessonStatus = e.optString("lesson_status", "");
+        r.lessonStatusShort = e.optString("lesson_status_short", "");
+        r.subject = e.optString("subject", "");
+        r.hours = e.optString("hours", "");
+        r.color = e.optString("color", "");
+        r.borderColor = e.optString("borderColor", "");
 
         return r;
     }
 
-    /* =======================
-     *   KLASYFIKACJA TYPU ZAJĘĆ
-     * ======================= */
+    // Event type classification
 
     private String eventTypeClass(PlanEventRaw e) {
         String statusShort = lower(e.lessonStatusShort);
-        String formFull    = lower(e.lessonForm);
-        String formShort   = lower(e.lessonFormShort);
-        String subject     = lower(e.subject != null && !e.subject.isEmpty() ? e.subject : e.title);
+        String formFull = lower(e.lessonForm);
+        String formShort = lower(e.lessonFormShort);
+        String subject = lower(e.subject != null && !e.subject.isEmpty() ? e.subject : e.title);
 
-        if ("e".equals(statusShort))  return "week-event-type-exam";
-        if ("o".equals(statusShort))  return "week-event-type-cancelled";
-        if ("r".equals(statusShort))  return "week-event-type-rector";
+        if ("e".equals(statusShort)) return "week-event-type-exam";
+        if ("o".equals(statusShort)) return "week-event-type-cancelled";
+        if ("r".equals(statusShort)) return "week-event-type-rector";
         if ("zz".equals(statusShort)) return "week-event-type-remote";
 
         String hay = formFull + " " + subject;
@@ -515,29 +509,37 @@ public class PlanRepository {
         if (hay.contains("odwołane")) return "week-event-type-cancelled";
         if (hay.contains("rektorskie")) return "week-event-type-rector";
 
-        if (hay.contains("zajęcia zdalne") || hay.contains("zdalne"))
+        if (hay.contains("zajęcia zdalne") || hay.contains("zdalne")) {
             return "week-event-type-remote";
+        }
 
-        if (hay.contains("zaliczenie zdalne poprawkowe"))
+        if (hay.contains("zaliczenie zdalne poprawkowe")) {
             return "week-event-type-pass-remote-retake";
+        }
 
-        if (hay.contains("zaliczenie zdalne"))
+        if (hay.contains("zaliczenie zdalne")) {
             return "week-event-type-pass-remote";
+        }
 
-        if (hay.contains("zaliczenie poprawkow") || hay.contains("zaliczenie poprawkowe"))
+        if (hay.contains("zaliczenie poprawkow") || hay.contains("zaliczenie poprawkowe")) {
             return "week-event-type-pass-retake";
+        }
 
-        if (hay.contains("zaliczenie"))
+        if (hay.contains("zaliczenie")) {
             return "week-event-type-pass";
+        }
 
-        if (hay.contains("laboratorium") || "l".equals(formShort))
+        if (hay.contains("laboratorium") || "l".equals(formShort)) {
             return "week-event-type-lab";
+        }
 
-        if (hay.contains("audytoryjne") || "a".equals(formShort))
+        if (hay.contains("audytoryjne") || "a".equals(formShort)) {
             return "week-event-type-auditory";
+        }
 
-        if (hay.contains("wykład") || "w".equals(formShort))
+        if (hay.contains("wykład") || "w".equals(formShort)) {
             return "week-event-type-lecture";
+        }
 
         return "";
     }
@@ -565,7 +567,6 @@ public class PlanRepository {
             case "week-event-type-pass-remote-retake":
                 return "Zaliczenie";
             default:
-                // fallback: jeśli mamy lessonForm
                 String form = e.lessonForm != null ? e.lessonForm.trim() : "";
                 if (!form.isEmpty()) {
                     return form;
@@ -578,12 +579,10 @@ public class PlanRepository {
         return (s == null) ? "" : s.toLowerCase(Locale.ROOT);
     }
 
-    /* =======================
-     *   BUDOWANIE STRUKTUR: BY DATE + CLUSTERS
-     * ======================= */
+    // Building structures: by-date map and clusters
 
     private static final int START_HOUR = 6;
-    private static final int END_HOUR   = 22;
+    private static final int END_HOUR = 22;
     private static final float HOUR_HEIGHT_PX = 48f;
 
     private Map<LocalDate, List<PlanEventRaw>> groupByDay(List<PlanEventRaw> events) {
@@ -591,17 +590,20 @@ public class PlanRepository {
 
         for (PlanEventRaw e : events) {
             LocalDateTime dtStart = parseIsoLocal(e.start);
-            if (dtStart == null) continue;
+            if (dtStart == null) {
+                continue;
+            }
             LocalDate d = dtStart.toLocalDate();
             byDate.computeIfAbsent(d, k -> new ArrayList<>()).add(e);
         }
 
-        // sort po godzinie
         for (List<PlanEventRaw> list : byDate.values()) {
             list.sort((a, b) -> {
                 LocalDateTime da = parseIsoLocal(a.start);
                 LocalDateTime db = parseIsoLocal(b.start);
-                if (da == null || db == null) return 0;
+                if (da == null || db == null) {
+                    return 0;
+                }
                 return da.compareTo(db);
             });
         }
@@ -609,37 +611,42 @@ public class PlanRepository {
         return byDate;
     }
 
-    /**
-     * Dla jednego dnia przygotowuje listę PlanEventUi – z top/height oraz
-     * lane’ami i widthPct/leftPct (jak w PHP w klastrach).
-     */
+    // For a single day, builds a list of PlanEventUi with top/height and lane layout
     private List<PlanEventUi> buildDayLayout(List<PlanEventRaw> list) {
         List<PlanEventUi> result = new ArrayList<>();
-        if (list == null || list.isEmpty()) return result;
+        if (list == null || list.isEmpty()) {
+            return result;
+        }
 
         List<Map<String, Object>> events = new ArrayList<>();
 
         for (PlanEventRaw e : list) {
             LocalDateTime dtS = parseIsoLocal(e.start);
             LocalDateTime dtE = parseIsoLocal(e.end);
-            if (dtS == null || dtE == null) continue;
+            if (dtS == null || dtE == null) {
+                continue;
+            }
 
             int startMin = minutesFromMidnight(dtS);
-            int endMin   = minutesFromMidnight(dtE);
+            int endMin = minutesFromMidnight(dtE);
 
             int calStart = START_HOUR * 60;
-            int calEnd   = END_HOUR   * 60;
+            int calEnd = END_HOUR * 60;
 
-            if (endMin <= calStart || startMin >= calEnd) continue;
+            if (endMin <= calStart || startMin >= calEnd) {
+                continue;
+            }
 
             int startClamped = Math.max(startMin, calStart);
-            int endClamped   = Math.min(endMin, calEnd);
+            int endClamped = Math.min(endMin, calEnd);
             int duration = Math.max(endClamped - startClamped, 15);
 
             int offsetMin = startClamped - calStart;
-            float topPx   = (offsetMin / 60f) * HOUR_HEIGHT_PX;
-            float heightPx= (duration  / 60f) * HOUR_HEIGHT_PX;
-            if (heightPx < 22) heightPx = 22;
+            float topPx = (offsetMin / 60f) * HOUR_HEIGHT_PX;
+            float heightPx = (duration / 60f) * HOUR_HEIGHT_PX;
+            if (heightPx < 22) {
+                heightPx = 22;
+            }
 
             String subjectName = (e.subject != null && !e.subject.isEmpty())
                     ? e.subject
@@ -651,14 +658,14 @@ public class PlanRepository {
                 fullTitle += " (" + formShort + ")";
             }
 
-            String room  = e.room != null ? e.room : "";
+            String room = e.room != null ? e.room : "";
             String group = e.groupName != null ? e.groupName : "";
             String teacher = (e.workerTitle != null && !e.workerTitle.isEmpty())
                     ? e.workerTitle
                     : (e.worker != null ? e.worker : "");
 
             String startStr = dtS.format(HOUR_MIN);
-            String endStr   = dtE.format(HOUR_MIN);
+            String endStr = dtE.format(HOUR_MIN);
 
             String tooltip = fullTitle
                     + " | " + startStr + " - " + endStr
@@ -666,12 +673,15 @@ public class PlanRepository {
                     + (group.isEmpty() ? "" : " | grupa: " + group)
                     + (teacher.isEmpty() ? "" : " | " + teacher);
 
-            // typKey do filtra
             String formShortLower = lower(formShort);
             String typeKey = null;
-            if ("l".equals(formShortLower)) typeKey = "lab";
-            else if ("a".equals(formShortLower)) typeKey = "aud";
-            else if ("w".equals(formShortLower)) typeKey = "lec";
+            if ("l".equals(formShortLower)) {
+                typeKey = "lab";
+            } else if ("a".equals(formShortLower)) {
+                typeKey = "aud";
+            } else if ("w".equals(formShortLower)) {
+                typeKey = "lec";
+            }
 
             String subjectKey = "";
             if (!subjectName.isEmpty() && typeKey != null) {
@@ -697,7 +707,6 @@ public class PlanRepository {
             events.add(ev);
         }
 
-        // sort po początku (jak w PHP)
         events.sort((a, b) -> {
             int sA = (int) a.get("startMin");
             int sB = (int) b.get("startMin");
@@ -709,14 +718,13 @@ public class PlanRepository {
             return Integer.compare(sA, sB);
         });
 
-        // podział na klastry
-        List<List<Map<String,Object>>> clusters = new ArrayList<>();
-        List<Map<String,Object>> currentCluster = new ArrayList<>();
+        List<List<Map<String, Object>>> clusters = new ArrayList<>();
+        List<Map<String, Object>> currentCluster = new ArrayList<>();
         Integer clusterEnd = null;
 
-        for (Map<String,Object> ev : events) {
+        for (Map<String, Object> ev : events) {
             int startMin = (int) ev.get("startMin");
-            int endMin   = (int) ev.get("endMin");
+            int endMin = (int) ev.get("endMin");
 
             if (currentCluster.isEmpty()) {
                 currentCluster.add(ev);
@@ -740,15 +748,14 @@ public class PlanRepository {
             clusters.add(currentCluster);
         }
 
-        // lanes w klastrach
-        List<Map<String,Object>> finalEvents = new ArrayList<>();
+        List<Map<String, Object>> finalEvents = new ArrayList<>();
 
-        for (List<Map<String,Object>> cluster : clusters) {
-            List<Integer> lanes = new ArrayList<>(); // laneIndex -> lastEndMin
+        for (List<Map<String, Object>> cluster : clusters) {
+            List<Integer> lanes = new ArrayList<>();
 
-            for (Map<String,Object> ev : cluster) {
+            for (Map<String, Object> ev : cluster) {
                 int startMin = (int) ev.get("startMin");
-                int endMin   = (int) ev.get("endMin");
+                int endMin = (int) ev.get("endMin");
 
                 boolean assigned = false;
                 for (int laneIdx = 0; laneIdx < lanes.size(); laneIdx++) {
@@ -770,7 +777,7 @@ public class PlanRepository {
             int laneCount = Math.max(1, lanes.size());
             float laneWidth = 100f / laneCount;
 
-            for (Map<String,Object> ev : cluster) {
+            for (Map<String, Object> ev : cluster) {
                 int laneIdx = (int) ev.get("lane");
                 float leftPct = laneIdx * laneWidth;
                 float widthPct = laneWidth;
@@ -782,43 +789,40 @@ public class PlanRepository {
             }
         }
 
-        // zrzut do PlanEventUi
-        for (Map<String,Object> ev : finalEvents) {
+        for (Map<String, Object> ev : finalEvents) {
             PlanEventUi ui = new PlanEventUi();
-            ui.startMin   = (int) ev.get("startMin");
-            ui.endMin     = (int) ev.get("endMin");
-            ui.topPx      = (float) ev.get("topPx");
-            ui.heightPx   = (float) ev.get("heightPx");
-            ui.leftPct    = (float) ev.get("leftPct");
-            ui.widthPct   = (float) ev.get("widthPct");
-            ui.title      = (String) ev.get("title");
-            ui.room       = (String) ev.get("room");
-            ui.group      = (String) ev.get("group");
-            ui.startStr   = (String) ev.get("startStr");
-            ui.endStr     = (String) ev.get("endStr");
-            ui.tooltip    = (String) ev.get("tooltip");
-            ui.typeClass  = (String) ev.get("typeClass");
-            ui.typeLabel  = (String) ev.get("typeLabel");
+            ui.startMin = (int) ev.get("startMin");
+            ui.endMin = (int) ev.get("endMin");
+            ui.topPx = (float) ev.get("topPx");
+            ui.heightPx = (float) ev.get("heightPx");
+            ui.leftPct = (float) ev.get("leftPct");
+            ui.widthPct = (float) ev.get("widthPct");
+            ui.title = (String) ev.get("title");
+            ui.room = (String) ev.get("room");
+            ui.group = (String) ev.get("group");
+            ui.startStr = (String) ev.get("startStr");
+            ui.endStr = (String) ev.get("endStr");
+            ui.tooltip = (String) ev.get("tooltip");
+            ui.typeClass = (String) ev.get("typeClass");
+            ui.typeLabel = (String) ev.get("typeLabel");
             ui.subjectKey = (String) ev.get("subjectKey");
-            ui.teacher    = (String) ev.get("teacher");
+            ui.teacher = (String) ev.get("teacher");
             result.add(ui);
         }
 
         return result;
     }
 
-    /* =======================
-     *   MIESIĄC – SIATKA
-     * ======================= */
+    // Month grid
 
     private List<List<MonthCell>> buildMonthGrid(LocalDate monthDate, Set<LocalDate> daysWithPlan) {
         List<List<MonthCell>> grid = new ArrayList<>();
 
         LocalDate monthStart = monthDate.withDayOfMonth(1);
-        LocalDate monthEnd   = monthDate.withDayOfMonth(monthDate.lengthOfMonth());
+        LocalDate monthEnd = monthDate.withDayOfMonth(monthDate.lengthOfMonth());
 
         LocalDate cursor = monthStart;
-        int firstDow = cursor.getDayOfWeek().getValue(); // 1..7 (pon=1)
+        int firstDow = cursor.getDayOfWeek().getValue(); // 1..7 (Mon=1)
         int col = firstDow - 1;
 
         List<MonthCell> week = new ArrayList<>(Collections.nCopies(7, null));
@@ -838,10 +842,12 @@ public class PlanRepository {
             cursor = cursor.plusDays(1);
         }
 
-        // ostatni tydzień
         boolean any = false;
         for (MonthCell c : week) {
-            if (c != null) { any = true; break; }
+            if (c != null) {
+                any = true;
+                break;
+            }
         }
         if (any) {
             grid.add(new ArrayList<>(week));
@@ -850,39 +856,31 @@ public class PlanRepository {
         return grid;
     }
 
-    /* =======================
-     *   CACHE – DYSK / PAMIĘĆ
-     * ======================= */
+    // Cache – disk / memory
 
-    /**
-     * Tworzy klucz zakresu do scope cache:
-     *  - "day:YYYY-MM-DD"
-     *  - "week:YYYY-MM-DD" (poniedziałek tygodnia)
-     *  - "month:YYYY-MM-01"
-     */
+    // Builds scope key for cache:
+    //  - "day:YYYY-MM-DD"
+    //  - "week:YYYY-MM-DD" (Monday of the week)
+    //  - "month:YYYY-MM-01"
     private String buildScopeKey(String viewMode, LocalDate rangeStart, LocalDate rangeEnd) {
         if ("day".equals(viewMode)) {
             return "day:" + rangeStart.format(YMD);
         } else if ("week".equals(viewMode)) {
-            // przyjmujemy, że rangeStart to poniedziałek
             return "week:" + rangeStart.format(YMD);
         } else {
-            // miesiąc – bierzemy 1. dzień miesiąca rangeStart
             LocalDate m = rangeStart.withDayOfMonth(1);
             return "month:" + m.format(YMD);
         }
     }
 
-    /**
-     * Upewnia się, że cache (pełny) istnieje i należy do odpowiedniego albumu,
-     * a następnie – jeśli trzeba – odświeża KONKRETNY zakres z API.
-     *
-     * @param album numer albumu
-     * @param rangeStart pierwszy dzień zakresu (dzień/tydzień/miesiąc)
-     * @param rangeEnd ostatni dzień zakresu
-     * @param viewMode "day"/"week"/"month"
-     * @param forceScopeRefresh jeśli true – zawsze dociąga dany zakres z API (krótkie kliknięcie "Odśwież")
-     */
+    // Ensures in-memory cache exists and belongs to the correct album.
+    // If needed, refreshes a specific scope from API.
+    //
+    // album              album number
+    // rangeStart         first day of scope
+    // rangeEnd           last day of scope
+    // viewMode           "day"/"week"/"month"
+    // forceScopeRefresh  true -> always refresh this scope (short tap "Refresh")
     private Map<LocalDate, List<PlanEventRaw>> ensureScopeData(
             String album,
             LocalDate rangeStart,
@@ -896,9 +894,7 @@ public class PlanRepository {
 
         synchronized (PlanRepository.class) {
 
-            // 1) upewniamy się, że mamy cache w pamięci dla tego albumu
             if (sFullPlanCache == null || album == null || !album.equals(sFullPlanCache.album)) {
-                // spróbuj wczytać z dysku
                 FullPlanCache fromDisk = readCacheFromDisk();
                 if (fromDisk != null && album != null && album.equals(fromDisk.album)) {
                     if (fromDisk.scopeTimestamps == null) {
@@ -906,7 +902,6 @@ public class PlanRepository {
                     }
                     sFullPlanCache = fromDisk;
                 } else {
-                    // brak pliku lub inny album – tworzymy pusty cache
                     FullPlanCache newCache = new FullPlanCache();
                     newCache.album = album;
                     newCache.timestampMs = now;
@@ -925,33 +920,42 @@ public class PlanRepository {
 
             boolean needRefresh;
             if (forceScopeRefresh) {
-                // wymuszone przez użytkownika (krótki klik)
                 needRefresh = true;
             } else {
-                // "co godzinę" – ale sprawdzane dopiero przy wejściu w ten zakres
                 needRefresh = (lastScopeMs == null) || ((now - lastScopeMs) > SCOPE_CACHE_TTL_MS);
             }
 
             if (needRefresh) {
                 List<PlanEventRaw> fresh = fetchPlanRangeByAlbum(album, rangeStart, rangeEnd, debug);
+
+                // If the API returned an empty list for this range,
+                // keep the existing cache as-is and treat it as a temporary error / missing data
+                // rather than "definitely no classes".
+                if (fresh == null || fresh.isEmpty()) {
+                    Log.w(TAG, "Brak danych z plan.zut dla zakresu "
+                            + rangeStart + " - " + rangeEnd + " (view=" + viewMode + "). "
+                            + "Pozostawiam istniejący cache bez zmian.");
+                    // Important: do not update scopeTimestamps – we want to retry refresh later
+                    return sFullPlanCache.byDate;
+                }
+
                 Map<LocalDate, List<PlanEventRaw>> tmp = groupByDay(fresh);
 
-                // podmieniamy dane dla dni w zakresie (żeby nie wisiały stare zajęcia)
+                // Replace data only for days that actually have new entries;
+                // do not wipe days that might have valid data when the API temporarily returned less.
                 LocalDate d = rangeStart;
                 while (!d.isAfter(rangeEnd)) {
                     List<PlanEventRaw> list = tmp.get(d);
-                    if (list == null || list.isEmpty()) {
-                        sFullPlanCache.byDate.remove(d);
-                    } else {
+                    if (list != null && !list.isEmpty()) {
                         sFullPlanCache.byDate.put(d, list);
                     }
+                    // If list is null or empty, keep whatever is currently in the cache
                     d = d.plusDays(1);
                 }
 
                 sFullPlanCache.scopeTimestamps.put(scopeKey, now);
                 sFullPlanCache.timestampMs = now;
 
-                // zapisujemy stan na dysk (bez scopeTimestamps – tylko byDate)
                 writeCacheToDisk(sFullPlanCache);
             }
 
@@ -960,7 +964,9 @@ public class PlanRepository {
     }
 
     private FullPlanCache readCacheFromDisk() {
-        if (appContext == null) return null;
+        if (appContext == null) {
+            return null;
+        }
 
         FileInputStream fis = null;
         try {
@@ -978,14 +984,18 @@ public class PlanRepository {
             cache.timestampMs = root.optLong("timestamp", 0L);
 
             JSONObject eventsByDate = root.optJSONObject("eventsByDate");
-            if (eventsByDate == null) return null;
+            if (eventsByDate == null) {
+                return null;
+            }
 
             Map<LocalDate, List<PlanEventRaw>> map = new HashMap<>();
             Iterator<String> keys = eventsByDate.keys();
             while (keys.hasNext()) {
                 String dateStr = keys.next();
                 JSONArray arr = eventsByDate.optJSONArray(dateStr);
-                if (arr == null) continue;
+                if (arr == null) {
+                    continue;
+                }
 
                 LocalDate d;
                 try {
@@ -997,7 +1007,9 @@ public class PlanRepository {
                 List<PlanEventRaw> dayList = new ArrayList<>();
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject obj = arr.optJSONObject(i);
-                    if (obj == null) continue;
+                    if (obj == null) {
+                        continue;
+                    }
                     PlanEventRaw r = parsePlanEventRaw(obj);
                     if (r != null) {
                         dayList.add(r);
@@ -1008,7 +1020,6 @@ public class PlanRepository {
 
             cache.byDate = map;
 
-// 🆕 odczyt scopeTimestamps z pliku (jeśli istnieje)
             JSONObject scopesJson = root.optJSONObject("scopeTimestamps");
             Map<String, Long> scopesMap = new HashMap<>();
             if (scopesJson != null) {
@@ -1030,13 +1041,17 @@ public class PlanRepository {
             return null;
         } finally {
             if (fis != null) {
-                try { fis.close(); } catch (Exception ignore) {}
+                try {
+                    fis.close();
+                } catch (Exception ignore) { }
             }
         }
     }
 
     private void writeCacheToDisk(FullPlanCache cache) {
-        if (appContext == null || cache == null) return;
+        if (appContext == null || cache == null) {
+            return;
+        }
 
         FileOutputStream fos = null;
         try {
@@ -1044,7 +1059,6 @@ public class PlanRepository {
             root.put("album", cache.album);
             root.put("timestamp", cache.timestampMs);
 
-            // zapisujemy eventy per dzień
             JSONObject eventsByDate = new JSONObject();
             for (Map.Entry<LocalDate, List<PlanEventRaw>> entry : cache.byDate.entrySet()) {
                 LocalDate date = entry.getKey();
@@ -1094,97 +1108,83 @@ public class PlanRepository {
             Log.w(TAG, "Nie udało się zapisać cache planu do pliku: " + e.getMessage());
         } finally {
             if (fos != null) {
-                try { fos.close(); } catch (Exception ignore) {}
+                try {
+                    fos.close();
+                } catch (Exception ignore) { }
             }
         }
     }
 
-    /* =======================
-     *   PUBLICZNE API – PLAN
-     * ======================= */
+    // Public API – schedule loading
 
-    /**
-     * Główna metoda: ładuje plan dla danego widoku (day/week/month) i daty.
-     * Korzysta z cache i TTL (1h) dla konkretnego zakresu.
-     *
-     * @param viewMode "day" / "week" / "month"
-     * @param currentDate LocalDate aktualnej pozycji (jeśli null -> today)
-     */
+    // Main entry: loads schedule for the given view (day/week/month) and date.
+    // Uses cache and scope TTL (1h).
     public PlanResult loadPlan(String viewMode, LocalDate currentDate) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, false, false);
     }
 
-    /**
-     * Główna metoda: ładuje plan dla danego widoku (day/week/month) i daty.
-     *
-     * @param viewMode "day" / "week" / "month"
-     * @param currentDate LocalDate aktualnej pozycji (jeśli null -> today)
-     * @param forceFullRefresh jeśli true – ignoruje cache i pobiera CAŁY plan z API
-     *                         (używane przy długim przytrzymaniu przycisku odświeżania).
-     */
+    // Main entry: loads schedule for the given view (day/week/month) and date.
+    //
+    // viewMode          "day" / "week" / "month"
+    // currentDate       current position (if null -> today)
+    // forceFullRefresh  true -> ignore cache and fetch the entire schedule
+    //                    (used on long-press refresh).
     public PlanResult loadPlan(String viewMode, LocalDate currentDate, boolean forceFullRefresh) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, forceFullRefresh, false);
     }
 
-    /**
-     * Odświeża TYLKO bieżący zakres (dzień/tydzień/miesiąc) – bez dotykania całego planu.
-     * Używane przy krótkim kliknięciu przycisku "Odśwież".
-     */
+    // Refreshes only the current scope (day/week/month) without touching the whole plan.
+    // Used for short press on "Refresh" button.
     public PlanResult reloadScope(String viewMode, LocalDate currentDate) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, false, true);
     }
 
-    /**
-     * Wspólna logika:
-     *  - forceFullRefresh = true  -> pobranie całego planu (pełne przeładowanie),
-     *  - forceScopeRefresh = true -> pobranie tylko bieżącego zakresu,
-     *  - oba false                 -> zwykłe użycie cache + TTL dla zakresu.
-     */
+    // Shared logic:
+    //  - forceFullRefresh  = true  -> full schedule reload,
+    //  - forceScopeRefresh = true  -> only current scope reload,
+    //  - both false                -> cache + scope TTL.
     private PlanResult loadPlanInternal(String viewMode,
                                         LocalDate currentDate,
                                         boolean forceFullRefresh,
                                         boolean forceScopeRefresh) throws IOException, JSONException {
 
-        if (currentDate == null) currentDate = LocalDate.now();
+        if (currentDate == null) {
+            currentDate = LocalDate.now();
+        }
         if (!"day".equals(viewMode) && !"week".equals(viewMode) && !"month".equals(viewMode)) {
             viewMode = "week";
         }
 
         PlanResult r = new PlanResult();
         r.viewMode = viewMode;
-        r.current  = currentDate;
+        r.current = currentDate;
 
         LocalDate today = LocalDate.now();
         r.today = today;
 
-        // album
         String album = resolveAlbumNumber();
         r.debug.album = album;
-        r.debug.view  = viewMode;
+        r.debug.view = viewMode;
 
         if (album == null) {
-            // brak albumu – nie da się pobrać planu
             return r;
         }
 
-        // zakres kalendarzowy dla widoku
         LocalDate rangeStart = currentDate;
-        LocalDate rangeEnd   = currentDate;
+        LocalDate rangeEnd = currentDate;
 
         if ("day".equals(viewMode)) {
-            // widok jednego dnia
             r.headerLabel = fmtPlDate(currentDate);
 
         } else if ("week".equals(viewMode)) {
             LocalDate weekStart;
 
-            // ✅ TYLKO jeśli JEST DZISIAJ I JEST NIEDZIELA -> pokazujemy KOLEJNY tydzień
+            // For Sunday "today" we show the next week by default
             if (currentDate.equals(today) && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                weekStart = currentDate.plusDays(1); // poniedziałek następnego tygodnia
+                weekStart = currentDate.plusDays(1);
             } else {
-                // standardowo – tydzień od poniedziałku z bieżącej daty
                 weekStart = currentDate;
-                int dow = weekStart.getDayOfWeek().getValue(); // 1..7 (pon=1)
+                int dow = weekStart.getDayOfWeek().getValue(); // 1..7 (Mon=1)
                 if (dow > 1) {
                     weekStart = weekStart.minusDays(dow - 1);
                 }
@@ -1192,28 +1192,26 @@ public class PlanRepository {
 
             LocalDate weekEnd = weekStart.plusDays(6);
             rangeStart = weekStart;
-            rangeEnd   = weekEnd;
+            rangeEnd = weekEnd;
             r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM"))
                     + " – " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 
         } else {
-            // widok miesiąca
             LocalDate monthStart = currentDate.withDayOfMonth(1);
-            LocalDate monthEnd   = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
+            LocalDate monthEnd = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
             rangeStart = monthStart;
-            rangeEnd   = monthEnd;
+            rangeEnd = monthEnd;
             r.headerLabel = monthStart.getMonth().name() + " " + monthStart.getYear();
         }
 
         r.rangeStart = rangeStart;
-        r.rangeEnd   = rangeEnd;
+        r.rangeEnd = rangeEnd;
         r.debug.rangeStart = rangeStart.format(YMD);
-        r.debug.rangeEnd   = rangeEnd.format(YMD);
+        r.debug.rangeEnd = rangeEnd.format(YMD);
 
         Map<LocalDate, List<PlanEventRaw>> byDate;
 
         if (forceFullRefresh) {
-            // ====== PEŁNE PRZEŁADOWANIE PLANU ======
             long now = System.currentTimeMillis();
 
             List<PlanEventRaw> allEvents = fetchFullPlanByAlbum(album, r.debug);
@@ -1232,11 +1230,9 @@ public class PlanRepository {
             byDate = grouped;
 
         } else {
-            // ====== TYLKO DANY ZAKRES (z TTL) ======
             byDate = ensureScopeData(album, rangeStart, rangeEnd, viewMode, forceScopeRefresh, r.debug);
         }
 
-        // wycinamy tylko potrzebny zakres do debug + layoutu
         List<PlanEventRaw> entries = new ArrayList<>();
         LocalDate iterDate = rangeStart;
         while (!iterDate.isAfter(rangeEnd)) {
@@ -1257,7 +1253,6 @@ public class PlanRepository {
         Collections.sort(daysWithDataStr);
         r.debug.daysWithData = daysWithDataStr;
 
-        // widok day/week
         if ("day".equals(viewMode) || "week".equals(viewMode)) {
             List<LocalDate> days = new ArrayList<>();
             LocalDate iter = rangeStart;
@@ -1272,19 +1267,19 @@ public class PlanRepository {
                 col.date = d;
                 List<PlanEventRaw> rawList = byDateRange.getOrDefault(d, Collections.emptyList());
                 List<PlanEventUi> uiList = buildDayLayout(rawList);
-                if (!uiList.isEmpty()) any = true;
+                if (!uiList.isEmpty()) {
+                    any = true;
+                }
                 col.events = uiList;
                 r.dayColumns.add(col);
             }
             r.hasAnyEventsInRange = any;
 
         } else {
-            // widok month – zaznaczamy dni, w których coś jest
             Set<LocalDate> daysWithPlan = new HashSet<>(byDateRange.keySet());
             r.monthGrid = buildMonthGrid(currentDate, daysWithPlan);
         }
 
-        // prev/next – dalej liczone po currentDate (bez kombinacji z niedzielą)
         LocalDate prev = currentDate;
         LocalDate next = currentDate;
         if ("day".equals(viewMode)) {
@@ -1303,31 +1298,24 @@ public class PlanRepository {
         return r;
     }
 
-    /* =======================
-     *   FILTR PRZEDMIOTÓW (Lab/Aud/Wykład)
-     * ======================= */
-
-    /**
-     * Odpowiednik plan_collect_all_subjects_for_filter.
-     * Pobieramy CAŁY plan (dla albumu) i robimy listę unikalnych subject + type.
-     *
-     * Uwaga: tutaj nadal używamy API USOS-owego (getPlan), jak wcześniej.
-     * Cache plan.zut (schedule_student.php) jest niezależny.
-     */
     public List<SubjectFilterItem> loadSubjectsForFilter() throws IOException, JSONException {
         String album = resolveAlbumNumber();
-        if (album == null) return Collections.emptyList();
+        if (album == null) {
+            return Collections.emptyList();
+        }
 
         PlanDebug debug = new PlanDebug();
 
-        // tak jak w PHP: najpierw getPlan bez day, potem każdy dzień z osobna
+        // Same as in PHP: first call getPlan without "day", then fetch each day separately
         MzutSession s = MzutSession.getInstance();
-        String userId  = s.getUserId();
+        String userId = s.getUserId();
         String authKey = s.getAuthKey();
-        if (userId == null || authKey == null) return Collections.emptyList();
+        if (userId == null || authKey == null) {
+            return Collections.emptyList();
+        }
 
-        // krok 1: getPlan (lista dni; to w PHP)
-        HashMap<String,String> params = new HashMap<>();
+        // Step 1: getPlan (list of days, like in PHP)
+        HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
         params.put("token", authKey);
         JSONObject daysResp = MzutApi.callApi("getPlan", params);
@@ -1345,43 +1333,53 @@ public class PlanRepository {
         }
 
         // dataZajec -> dayKey
-        Map<String,String> daysList = new HashMap<>(); // "Y-m-d" -> "20112025"
+        // example mapping: "Y-m-d" -> "20112025"
+        Map<String, String> daysList = new HashMap<>();
         for (int i = 0; i < arr.length(); i++) {
             JSONObject row = arr.getJSONObject(i);
             String data = row.optString("dataZajec", "");
-            if (data.isEmpty()) continue;
+            if (data.isEmpty()) {
+                continue;
+            }
 
             String dataClean = data.replace('.', '-');
             LocalDate d = null;
-            // próby formatu
+
+            // Try to parse using different date formats
             try {
                 if (dataClean.matches("\\d{4}-\\d{2}-\\d{2}")) {
                     d = LocalDate.parse(dataClean);
                 } else {
-                    // 20-11-2025
                     DateTimeFormatter f = DateTimeFormatter.ofPattern("dd-MM-yyyy");
                     d = LocalDate.parse(dataClean, f);
                 }
-            } catch (Exception ignore) { }
-            if (d == null) continue;
+            } catch (Exception ignore) {
+            }
+
+            if (d == null) {
+                continue;
+            }
 
             String dateStr = d.format(YMD);
-            String dayKey  = data.replace(".", "");
+            String dayKey = data.replace(".", "");
             dayKey = dayKey.replace("-", "");
             daysList.put(dateStr, dayKey);
         }
 
-        Map<String, Map<String,String>> subjectsAll = new TreeMap<>();
+        Map<String, Map<String, String>> subjectsAll = new TreeMap<>();
 
-        // krok 2: każdy dzień osobno (getPlan z parametrem "day")
+        // Step 2: fetch each day separately (getPlan with "day" parameter)
         for (String dateStr : daysList.keySet()) {
             String dayKey = daysList.get(dateStr);
-            HashMap<String,String> paramsDay = new HashMap<>();
+            HashMap<String, String> paramsDay = new HashMap<>();
             paramsDay.put("login", userId);
             paramsDay.put("token", authKey);
             paramsDay.put("day", dayKey);
+
             JSONObject planResp = MzutApi.callApi("getPlan", paramsDay);
-            if (planResp == null || !planResp.has("Plan")) continue;
+            if (planResp == null || !planResp.has("Plan")) {
+                continue;
+            }
 
             Object block2 = planResp.get("Plan");
             JSONArray arr2;
@@ -1394,13 +1392,22 @@ public class PlanRepository {
 
             for (int i = 0; i < arr2.length(); i++) {
                 JSONObject row = arr2.getJSONObject(i);
-                String subject = row.optString("przedmiot",
-                        row.optString("przedmiotO", "")).trim();
-                if (subject.isEmpty()) continue;
 
-                String forma = row.optString("formaZajec",
-                        row.optString("formaZajecO", "")).trim().toLowerCase(Locale.ROOT);
-                if (forma.isEmpty()) continue;
+                String subject = row.optString(
+                        "przedmiot",
+                        row.optString("przedmiotO", "")
+                ).trim();
+                if (subject.isEmpty()) {
+                    continue;
+                }
+
+                String forma = row.optString(
+                        "formaZajec",
+                        row.optString("formaZajecO", "")
+                ).trim().toLowerCase(Locale.ROOT);
+                if (forma.isEmpty()) {
+                    continue;
+                }
 
                 String typeKey = null;
                 if (forma.contains("laboratorium")) {
@@ -1410,25 +1417,31 @@ public class PlanRepository {
                 } else if (forma.contains("wykład")) {
                     typeKey = "lec";
                 }
-                if (typeKey == null) continue;
 
-                Map<String,String> types = subjectsAll.get(subject);
+                if (typeKey == null) {
+                    continue;
+                }
+
+                Map<String, String> types = subjectsAll.get(subject);
                 if (types == null) {
                     types = new HashMap<>();
                     subjectsAll.put(subject, types);
                 }
+
                 String filterKey = subject + "||" + typeKey;
                 types.put(typeKey, filterKey);
             }
         }
 
         List<SubjectFilterItem> items = new ArrayList<>();
-        for (Map.Entry<String, Map<String,String>> entry : subjectsAll.entrySet()) {
+        for (Map.Entry<String, Map<String, String>> entry : subjectsAll.entrySet()) {
             String subject = entry.getKey();
-            Map<String,String> types = entry.getValue();
-            for (Map.Entry<String,String> t : types.entrySet()) {
+            Map<String, String> types = entry.getValue();
+
+            for (Map.Entry<String, String> t : types.entrySet()) {
                 String typeKey = t.getKey();
                 String filterKey = t.getValue();
+
                 String typeLabel;
                 switch (typeKey) {
                     case "lab":
@@ -1441,9 +1454,10 @@ public class PlanRepository {
                         typeLabel = "Wykład";
                         break;
                 }
+
                 SubjectFilterItem si = new SubjectFilterItem();
-                si.label     = subject;
-                si.typeKey   = typeKey;
+                si.label = subject;
+                si.typeKey = typeKey;
                 si.typeLabel = typeLabel;
                 si.filterKey = filterKey;
                 items.add(si);

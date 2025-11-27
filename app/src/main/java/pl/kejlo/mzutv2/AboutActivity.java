@@ -20,19 +20,19 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
-        drawerLayout   = findViewById(R.id.drawerLayout);
+        drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
-        toolbar        = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
 
         toolbar.setTitle("O aplikacji");
 
-        // podpinamy nav drawer z identyfikatorem ekranu "about"
+        // Attach the navigation drawer and register this screen as "about"
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "about");
     }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        // tylko podglądamy gest, NIE blokujemy eventu
+        // Observe the gesture without blocking the event
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
     }

@@ -28,12 +28,12 @@ import java.util.List;
 
 public class InfoActivity extends AppCompatActivity {
 
-    // ===== CACHE KONFIG =====
-    private static final String PREFS_INFO_CACHE        = "mzut_info_cache";
-    private static final String KEY_INFO_DETAILS_JSON   = "info_details_json";
-    private static final String KEY_INFO_HISTORY_JSON   = "info_history_json";
-    private static final String KEY_INFO_TIMESTAMP      = "info_timestamp";
-    private static final long   INFO_CACHE_TTL_MS       = 7L * 24L * 60L * 60L * 1000L; // 7 dni
+    // Cache configuration
+    private static final String PREFS_INFO_CACHE      = "mzut_info_cache";
+    private static final String KEY_INFO_DETAILS_JSON = "info_details_json";
+    private static final String KEY_INFO_HISTORY_JSON = "info_history_json";
+    private static final String KEY_INFO_TIMESTAMP    = "info_timestamp";
+    private static final long INFO_CACHE_TTL_MS       = 7L * 24L * 60L * 60L * 1000L; // 7 days
 
     private DrawerLayout drawerLayout;
 
@@ -60,35 +60,35 @@ public class InfoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_info);
 
-        drawerLayout   = findViewById(R.id.drawerLayout);
+        drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
-        toolbar        = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
 
         toolbar.setTitle("Dane Studenta");
 
-        // uniwersalny nav_header – ekran "info"
+        // Navigation drawer for the "info" screen
         NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "info");
 
-        tvName   = findViewById(R.id.tvInfoName);
+        tvName = findViewById(R.id.tvInfoName);
         tvUserId = findViewById(R.id.tvInfoUserId);
-        imageAvatar    = findViewById(R.id.imageInfoAvatar);
+        imageAvatar = findViewById(R.id.imageInfoAvatar);
         btnInfoRefresh = findViewById(R.id.btnInfoRefresh);
 
-        tvAlbum        = findViewById(R.id.tvInfoAlbum);
-        tvWydzial      = findViewById(R.id.tvInfoWydzial);
-        tvKierunek     = findViewById(R.id.tvInfoKierunek);
-        tvForma        = findViewById(R.id.tvInfoForma);
-        tvPoziom       = findViewById(R.id.tvInfoPoziom);
-        tvSpecjalnosc  = findViewById(R.id.tvInfoSpecjalnosc);
-        tvSpecjalizacja= findViewById(R.id.tvInfoSpecjalizacja);
-        tvStatus       = findViewById(R.id.tvInfoStatus);
-        tvRok          = findViewById(R.id.tvInfoRok);
-        tvSemestr      = findViewById(R.id.tvInfoSemestr);
+        tvAlbum = findViewById(R.id.tvInfoAlbum);
+        tvWydzial = findViewById(R.id.tvInfoWydzial);
+        tvKierunek = findViewById(R.id.tvInfoKierunek);
+        tvForma = findViewById(R.id.tvInfoForma);
+        tvPoziom = findViewById(R.id.tvInfoPoziom);
+        tvSpecjalnosc = findViewById(R.id.tvInfoSpecjalnosc);
+        tvSpecjalizacja = findViewById(R.id.tvInfoSpecjalizacja);
+        tvStatus = findViewById(R.id.tvInfoStatus);
+        tvRok = findViewById(R.id.tvInfoRok);
+        tvSemestr = findViewById(R.id.tvInfoSemestr);
 
         historyContainer = findViewById(R.id.infoHistoryContainer);
-        progress         = findViewById(R.id.infoProgress);
-        infoContentRoot  = findViewById(R.id.infoContent);
-        spinnerStudies   = findViewById(R.id.spinnerStudies);
+        progress = findViewById(R.id.infoProgress);
+        infoContentRoot = findViewById(R.id.infoContent);
+        spinnerStudies = findViewById(R.id.spinnerStudies);
 
         MzutSession s = MzutSession.getInstance();
         String username = s.getUsername();
@@ -98,7 +98,7 @@ public class InfoActivity extends AppCompatActivity {
         tvName.setText(username != null ? username : "Student");
         tvUserId.setText("ID użytkownika: " + (s.getUserId() != null ? s.getUserId() : "-"));
 
-        // avatar
+        // Avatar image
         String imageUrl = s.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             new LoadImageTask(imageAvatar).execute(imageUrl);
@@ -106,18 +106,18 @@ public class InfoActivity extends AppCompatActivity {
             imageAvatar.setVisibility(View.GONE);
         }
 
-        // 1) spróbuj załadować z cache i od razu pokazać
+        // 1) Try to load from cache and bind immediately if possible
         loadInfoFromCacheIfAvailable();
 
-        // 2) spinner kierunków (może być dostępny bez requestu po innych ekranach)
+        // 2) Setup studies spinner (may already be available from other screens)
         setupStudiesSpinner();
 
-        // 3) jeśli cache jest stary / brak cache -> odpal network
+        // 3) If cache is missing or outdated, fetch from network
         if (shouldFetchFromNetwork()) {
             startInfoLoad(false);
         }
 
-        // 4) ikonka odświeżania – force reload
+        // 4) Refresh icon – forces reload
         if (btnInfoRefresh != null) {
             btnInfoRefresh.setOnClickListener(v -> {
                 startInfoLoad(true);
@@ -127,15 +127,15 @@ public class InfoActivity extends AppCompatActivity {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        // tylko podglądamy gest, NIE blokujemy eventu
+        // Only observe the gesture, do not block the event
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
     }
 
-    // ====== ŁADOWANIE Z SIECI ======
+    // Network loading
 
     private void startInfoLoad(boolean forceReload) {
-        // forceReload po prostu ignoruje TTL – zawsze fetch
+        // forceReload simply ignores TTL at the call site and always fetches
         Toast.makeText(this, "Synchronizuję…", Toast.LENGTH_SHORT).show();
 
         if (currentTask != null) {
@@ -175,9 +175,11 @@ public class InfoActivity extends AppCompatActivity {
             infoContentRoot.setAlpha(1f);
 
             if (!ok) {
-                Toast.makeText(InfoActivity.this,
+                Toast.makeText(
+                        InfoActivity.this,
                         "Błąd ładowania danych: " + (error != null ? error.getMessage() : ""),
-                        Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_LONG
+                ).show();
                 return;
             }
 
@@ -186,73 +188,71 @@ public class InfoActivity extends AppCompatActivity {
             }
 
             bindHistory(history);
-            setupStudiesSpinner(); // żeby np. po pierwszym zalogowaniu pojawiły się kierunki
+            // Ensure studies spinner is updated, e.g. after the first login
+            setupStudiesSpinner();
 
-            // zapis do cache po udanym odświeżeniu
+            // Save to cache after successful refresh
             saveInfoToCache(details, history);
         }
     }
 
-    // ====== CACHE – logika ======
+    // Cache logic
 
-    /**
-     * Czy powinniśmy dociągnąć dane z sieci (cache pusty lub starszy niż 7 dni)?
-     */
+    // Returns true if data should be fetched from the network
+    // (cache is empty or older than 7 days).
     private boolean shouldFetchFromNetwork() {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
         long ts = prefs.getLong(KEY_INFO_TIMESTAMP, 0L);
-        if (ts == 0L) return true;
+        if (ts == 0L) {
+            return true;
+        }
 
         long now = System.currentTimeMillis();
         return (now - ts) > INFO_CACHE_TTL_MS;
     }
 
-    /**
-     * Wczytanie danych z cache (jeśli są) i zbindowanie ich do widoków.
-     */
+    // Loads data from cache (if available) and binds it to the views.
     private void loadInfoFromCacheIfAvailable() {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
         String detailsJson = prefs.getString(KEY_INFO_DETAILS_JSON, null);
         String historyJson = prefs.getString(KEY_INFO_HISTORY_JSON, null);
 
         if (detailsJson == null && historyJson == null) {
-            return; // pierwszy start, brak cache
+            return; // First start, no cache yet
         }
 
-        // szczegóły
+        // Details
         if (detailsJson != null) {
             try {
                 JSONObject obj = new JSONObject(detailsJson);
-                setOrHide(tvAlbum,        obj.optString("album", null));
-                setOrHide(tvWydzial,      obj.optString("wydzial", null));
-                setOrHide(tvKierunek,     obj.optString("kierunek", null));
-                setOrHide(tvForma,        obj.optString("forma", null));
-                setOrHide(tvPoziom,       obj.optString("poziom", null));
-                setOrHide(tvSpecjalnosc,  obj.optString("specjalnosc", null));
-                setOrHide(tvSpecjalizacja,obj.optString("specjalizacja", null));
-                setOrHide(tvStatus,       obj.optString("status", null));
-                setOrHide(tvRok,          obj.optString("rokAkademicki", null));
-                setOrHide(tvSemestr,      obj.optString("semestrLabel", null));
+                setOrHide(tvAlbum,         obj.optString("album", null));
+                setOrHide(tvWydzial,       obj.optString("wydzial", null));
+                setOrHide(tvKierunek,      obj.optString("kierunek", null));
+                setOrHide(tvForma,         obj.optString("forma", null));
+                setOrHide(tvPoziom,        obj.optString("poziom", null));
+                setOrHide(tvSpecjalnosc,   obj.optString("specjalnosc", null));
+                setOrHide(tvSpecjalizacja, obj.optString("specjalizacja", null));
+                setOrHide(tvStatus,        obj.optString("status", null));
+                setOrHide(tvRok,           obj.optString("rokAkademicki", null));
+                setOrHide(tvSemestr,       obj.optString("semestrLabel", null));
             } catch (JSONException e) {
-                // w razie błędu po prostu zignoruj cache
+                // On error just ignore cache
             }
         }
 
-        // historia
+        // History
         if (historyJson != null) {
             try {
                 JSONArray arr = new JSONArray(historyJson);
                 bindHistoryFromCache(arr);
             } catch (JSONException e) {
-                // fallback: pokaż brak
+                // Fallback: show empty history message
                 bindHistory(null);
             }
         }
     }
 
-    /**
-     * Zapisuje do cache to, co właśnie pobraliśmy z API.
-     */
+    // Saves the data fetched from the API into cache.
     private void saveInfoToCache(StudiesInfoRepository.StudyDetails d,
                                  List<StudiesInfoRepository.StudyHistoryItem> history) {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
@@ -275,7 +275,9 @@ public class InfoActivity extends AppCompatActivity {
 
             if (history != null) {
                 for (StudiesInfoRepository.StudyHistoryItem item : history) {
-                    if (item == null) continue;
+                    if (item == null) {
+                        continue;
+                    }
                     JSONObject h = new JSONObject();
                     h.put("label",  item.label  != null ? item.label  : "");
                     h.put("status", item.status != null ? item.status : "");
@@ -290,13 +292,11 @@ public class InfoActivity extends AppCompatActivity {
                     .apply();
 
         } catch (JSONException e) {
-            // w razie czego – brak cache nie jest krytyczny
+            // Cache is optional, ignore errors
         }
     }
 
-    /**
-     * Tworzy widoki historii na podstawie JSON-a z cache.
-     */
+    // Creates history views based on cached JSON.
     private void bindHistoryFromCache(JSONArray arr) {
         historyContainer.removeAllViews();
         if (arr == null || arr.length() == 0) {
@@ -310,7 +310,9 @@ public class InfoActivity extends AppCompatActivity {
 
         for (int i = 0; i < arr.length(); i++) {
             JSONObject obj = arr.optJSONObject(i);
-            if (obj == null) continue;
+            if (obj == null) {
+                continue;
+            }
             String label = obj.optString("label", "");
             String status = obj.optString("status", "");
 
@@ -323,7 +325,7 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
-    // ====== SPINNER KIERUNKÓW ======
+    // Studies spinner
 
     private void setupStudiesSpinner() {
         MzutSession session = MzutSession.getInstance();
@@ -337,7 +339,7 @@ public class InfoActivity extends AppCompatActivity {
 
         List<String> labels = new ArrayList<>();
         for (Study st : studies) {
-            labels.add(st.toString()); // ładny label
+            labels.add(st.toString());
         }
 
         if (!spinnerInitialized) {
@@ -351,7 +353,9 @@ public class InfoActivity extends AppCompatActivity {
             spinnerInitialized = true;
 
             int activeIndex = session.getActiveStudyIndex();
-            if (activeIndex < 0 || activeIndex >= labels.size()) activeIndex = 0;
+            if (activeIndex < 0 || activeIndex >= labels.size()) {
+                activeIndex = 0;
+            }
             spinnerStudies.setSelection(activeIndex);
 
             spinnerStudies.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -362,33 +366,36 @@ public class InfoActivity extends AppCompatActivity {
                         return;
                     }
                     s.setActiveStudyIndex(position);
-                    // zmiana aktywnego kierunku -> odśwież dane (i cache)
+                    // Changing the active study triggers a refresh (and cache update)
                     startInfoLoad(true);
                 }
 
                 @Override
-                public void onNothingSelected(AdapterView<?> parent) { }
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
             });
         } else {
             int activeIndex = session.getActiveStudyIndex();
-            if (activeIndex < 0 || activeIndex >= labels.size()) activeIndex = 0;
+            if (activeIndex < 0 || activeIndex >= labels.size()) {
+                activeIndex = 0;
+            }
             spinnerStudies.setSelection(activeIndex);
         }
     }
 
-    // ====== BINDOWANIE DANYCH Z API (bez zmian w logice) ======
+    // Binding data from API
 
     private void bindDetails(StudiesInfoRepository.StudyDetails d) {
-        setOrHide(tvAlbum,        d.album);
-        setOrHide(tvWydzial,      d.wydzial);
-        setOrHide(tvKierunek,     d.kierunek);
-        setOrHide(tvForma,        d.forma);
-        setOrHide(tvPoziom,       d.poziom);
-        setOrHide(tvSpecjalnosc,  d.specjalnosc);
-        setOrHide(tvSpecjalizacja,d.specjalizacja);
-        setOrHide(tvStatus,       d.status);
-        setOrHide(tvRok,          d.rokAkademicki);
-        setOrHide(tvSemestr,      d.semestrLabel);
+        setOrHide(tvAlbum,         d.album);
+        setOrHide(tvWydzial,       d.wydzial);
+        setOrHide(tvKierunek,      d.kierunek);
+        setOrHide(tvForma,         d.forma);
+        setOrHide(tvPoziom,        d.poziom);
+        setOrHide(tvSpecjalnosc,   d.specjalnosc);
+        setOrHide(tvSpecjalizacja, d.specjalizacja);
+        setOrHide(tvStatus,        d.status);
+        setOrHide(tvRok,           d.rokAkademicki);
+        setOrHide(tvSemestr,       d.semestrLabel);
     }
 
     private void bindHistory(List<StudiesInfoRepository.StudyHistoryItem> history) {
@@ -421,7 +428,7 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
-    // ====== AVATAR ======
+    // Avatar loading
 
     private static class LoadImageTask extends android.os.AsyncTask<String, Void, android.graphics.Bitmap> {
         private final android.widget.ImageView target;

@@ -25,12 +25,12 @@ public class NewsDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_news_detail);
 
-        toolbar   = findViewById(R.id.toolbarDetail);
-        tvTitle   = findViewById(R.id.tvNewsDetailTitle);
-        tvDate    = findViewById(R.id.tvNewsDetailDate);
-        tvSource  = findViewById(R.id.tvNewsDetailSource);
-        tvFallback= findViewById(R.id.tvNewsDetailFallback);
-        webView   = findViewById(R.id.webNewsDetail);
+        toolbar = findViewById(R.id.toolbarDetail);
+        tvTitle = findViewById(R.id.tvNewsDetailTitle);
+        tvDate = findViewById(R.id.tvNewsDetailDate);
+        tvSource = findViewById(R.id.tvNewsDetailSource);
+        tvFallback = findViewById(R.id.tvNewsDetailFallback);
+        webView = findViewById(R.id.webNewsDetail);
 
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -39,10 +39,10 @@ public class NewsDetailActivity extends AppCompatActivity {
         }
 
         Intent i = getIntent();
-        String title         = i.getStringExtra("title");
-        String date          = i.getStringExtra("date");
-        String link          = i.getStringExtra("link");
-        String contentHtml   = i.getStringExtra("contentHtml");
+        String title = i.getStringExtra("title");
+        String date = i.getStringExtra("date");
+        String link = i.getStringExtra("link");
+        String contentHtml = i.getStringExtra("contentHtml");
         String descriptionTx = i.getStringExtra("descriptionText");
 
         tvTitle.setText(!TextUtils.isEmpty(title) ? title : "");
@@ -59,11 +59,11 @@ public class NewsDetailActivity extends AppCompatActivity {
         }
 
         if (!TextUtils.isEmpty(contentHtml)) {
-            // 1. poprawiamy ścieżki do obrazków
+            // 1) Fix image paths
             String fixed = fixImagePaths(contentHtml);
-            // 2. czyścimy inline-style (background, color:white itd.)
+            // 2) Clean inline styles (background, color:white, etc.)
             String cleaned = cleanHtmlStyles(fixed);
-            // 3. owijamy w ciemny motyw
+            // 3) Wrap in dark theme template
             String styled = wrapInDarkTemplate(cleaned);
 
             webView.setBackgroundColor(Color.TRANSPARENT);
@@ -85,7 +85,7 @@ public class NewsDetailActivity extends AppCompatActivity {
             tvFallback.setVisibility(TextView.GONE);
 
         } else if (!TextUtils.isEmpty(descriptionTx)) {
-            // fallback – sam tekst (z descriptionText)
+            // Fallback – plain text from descriptionText
             webView.setVisibility(WebView.GONE);
             tvFallback.setVisibility(TextView.VISIBLE);
             tvFallback.setText(descriptionTx);
@@ -106,12 +106,11 @@ public class NewsDetailActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * Zamiana relative src="fileadmin/..." na absolutne URL-e ZUT,
-     * dokładnie jak w news.php.
-     */
+    // Replace relative src="fileadmin/..." with absolute ZUT URLs
     private String fixImagePaths(String html) {
-        if (html == null) return "";
+        if (html == null) {
+            return "";
+        }
         String out = html;
 
         // src="/fileadmin/..."
@@ -129,53 +128,52 @@ public class NewsDetailActivity extends AppCompatActivity {
         return out;
     }
 
-    /**
-     * Czyści nieprzyjemne style inline: background, background-color, color:white,
-     * żeby nie robiły białych plam na ciemnym motywie.
-     */
+    // Remove unwanted inline styles (background, white text, etc.) for dark mode
     private String cleanHtmlStyles(String html) {
-        if (html == null) return "";
+        if (html == null) {
+            return "";
+        }
 
         String out = html;
 
-        // wywal wszystkie background-y
+        // Remove all backgrounds
         out = out.replaceAll("background[^:>]*:\\s*[^;\"']+;?", "");
         out = out.replaceAll("background-color:\\s*[^;\"']+;?", "");
 
-        // wywal ustawienie koloru na biały
+        // Remove white text color
         out = out.replaceAll("color:\\s*#?fff[^;>]*;?", "");
         out = out.replaceAll("color:\\s*white[^;>]*;?", "");
 
-        // czasem po czyszczeniu zostają puste style=""
+        // Remove empty style attributes
         out = out.replaceAll("style=\"\\s*\"", "");
 
         return out;
     }
 
-    /**
-     * Dokleja <html><head> z naszym CSS-em (ciemne tło, jasny tekst itd.).
-     */
+    // Wrap content in a simple dark-themed HTML template
     private String wrapInDarkTemplate(String innerHtml) {
-        if (innerHtml == null) innerHtml = "";
+        if (innerHtml == null) {
+            innerHtml = "";
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("<!DOCTYPE html><html><head>")
                 .append("<meta charset=\"utf-8\"/>")
                 .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>")
                 .append("<style>")
-                // ogólne
+                // base
                 .append("body{margin:0;padding:0 0 16px 0;background:#020617;color:#e5e7eb;font-family:sans-serif;font-size:13px;line-height:1.5;}")
                 .append("p{margin:6px 0;}")
                 .append("a{color:#60a5fa;text-decoration:none;}")
                 .append("a:hover{text-decoration:underline;}")
-                // obrazki
+                // images
                 .append("img{max-width:100%;height:auto;border-radius:12px;border:1px solid #111827;margin:8px 0;}")
-                // listy
+                // lists
                 .append("ul,ol{margin:6px 0 6px 20px;}")
-                // tabele
+                // tables
                 .append("table{border-collapse:collapse;width:100%;margin:6px 0;border:1px solid #111827;}")
                 .append("td,th{border:1px solid #111827;padding:4px;font-size:12px;}")
-                // nagłówki
+                // headings
                 .append("h1,h2,h3,h4{margin:8px 0;font-weight:600;color:#f9fafb;}")
                 .append("</style>")
                 .append("</head><body>")

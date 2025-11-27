@@ -19,15 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Provider widgetu "Plan dnia".
- *
- * Kluczowe założenia:
- *  - korzysta z MzutSession.initializeFromPreferences(...) → poprawna sesja po ubiciu procesu,
- *  - korzysta z PlanRepository(context) → wspólny cache planu z apką (plik + TTL),
- *  - w onUpdate() odświeża zarówno nagłówek, jak i listę (notifyAppWidgetViewDataChanged),
- *  - logika "dziś / jutro" jest spójna z serwisem.
- */
+// Home screen provider for the "day plan" widget.
 public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     public static final String ACTION_REFRESH =
@@ -36,17 +28,17 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     private static final DateTimeFormatter DATE_LABEL =
             DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("pl", "PL"));
 
-    // formatter do stopki „Odświeżono:”
+    // Time label in footer ("Odświeżono:")
     private static final DateTimeFormatter TIME_LABEL =
             DateTimeFormatter.ofPattern("HH:mm");
 
-    // prefs planu (filtry jak w PlanActivity)
-    private static final String PREFS_PLAN        = "mzut_plan";
+    // Plan preferences (filters as in PlanActivity)
+    private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        // Systemowe odświeżenie (np. co 30 min) – od razu odświeżamy i listę, i nagłówek
+        // System update (e.g. every 30 minutes) – refresh list and header immediately
         for (int appWidgetId : appWidgetIds) {
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
             updateOneWidget(context, appWidgetManager, appWidgetId);
@@ -69,19 +61,16 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             }
 
             for (int appWidgetId : ids) {
-                // odśwież dane listy
+                // Refresh list data
                 mgr.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
-                // zaktualizuj header (data + subtitle + stopka)
+                // Refresh header (date + subtitle + footer)
                 updateOneWidget(context, mgr, appWidgetId);
             }
         }
     }
 
-    /**
-     * Inicjalizuje sesję z SharedPreferences (nowy MzutSession).
-     *
-     * @return true jeśli mamy userId + authKey (użytkownik zalogowany).
-     */
+    // Initializes session from SharedPreferences (new MzutSession).
+    // Returns true if we have userId + authKey (user is logged in).
     private static boolean ensureSessionFromPrefs(Context ctx) {
         MzutSession.initializeFromPreferences(ctx);
         MzutSession s = MzutSession.getInstance();
@@ -94,7 +83,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day);
 
-        // podpięcie RemoteViewsService z danymi listy
+        // Attach RemoteViewsService that provides the list data
         Intent svcIntent = new Intent(context, PlanDayWidgetService.class);
         svcIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
         svcIntent.setData(Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME)));
@@ -104,20 +93,20 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         LocalDate dateToShow = today;
         boolean showingTomorrow = false;
 
-        // domyślny podtytuł
+        // Default subtitle
         String subtitleText = "Dzisiejsze zajęcia";
 
-        // init sesji – jeśli nie ma logowania, nie wylecimy z błędem, tylko widget pokaże pusto
+        // Initialize session – if there is no login, widget stays empty instead of crashing
         boolean hasSession = ensureSessionFromPrefs(context);
 
         if (hasSession) {
             try {
-                // repo z contextem -> wspólny cache z apką
+                // Repository with context -> shared cache with main app
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
 
                 LocalDate targetDate = today;
 
-                // wczytanie filtrów
+                // Load filters
                 Set<String> hiddenSubjectKeys = context
                         .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
                         .getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
@@ -125,7 +114,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 LocalTime now = LocalTime.now();
                 int nowMin = now.getHour() * 60 + now.getMinute();
 
-                // ---------- PROBA: DZISIAJ ----------
+                // First attempt: today
                 PlanRepository.PlanResult resultToday = repo.loadPlan("day", today);
 
                 PlanRepository.DayColumn todayCol = null;
@@ -160,7 +149,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                     }
 
                     if (!upcomingToday.isEmpty()) {
-                        // są jeszcze zajęcia dzisiaj – zostajemy przy "dzisiaj"
+                        // There are still classes today – keep "today" view
                         PlanRepository.PlanEventUi next = upcomingToday.get(0);
                         if (next.startMin <= nowMin) {
                             subtitleText = "Zajęcia w trakcie";
@@ -172,14 +161,16 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                             StringBuilder sb = new StringBuilder("Najbliższe za ");
                             if (h > 0) {
                                 sb.append(h).append(" h");
-                                if (m > 0) sb.append(" ").append(m).append(" min");
+                                if (m > 0) {
+                                    sb.append(" ").append(m).append(" min");
+                                }
                             } else {
                                 sb.append(m).append(" min");
                             }
                             subtitleText = sb.toString();
                         }
                     } else {
-                        // były dziś zajęcia, ale wszystkie już się skończyły -> spróbuj jutro
+                        // There were classes today, but all finished -> try tomorrow
                         String[] subtitleHolder = new String[]{subtitleText};
                         showingTomorrow = tryTomorrowHeader(
                                 context,
@@ -198,7 +189,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         }
                     }
                 } else {
-                    // w ogóle brak zajęć dziś (także po filtrach) -> spróbuj jutro
+                    // No classes today at all (also after filters) -> try tomorrow
                     String[] subtitleHolder = new String[]{subtitleText};
                     showingTomorrow = tryTomorrowHeader(
                             context,
@@ -220,14 +211,14 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 dateToShow = targetDate;
 
             } catch (Exception ignored) {
-                // w razie błędu zostanie domyślne "Dzisiejsze zajęcia" i dzisiejsza data
+                // On error keep default "Dzisiejsze zajęcia" and today's date
             }
         } else {
-            // brak sesji – sugerujemy zalogowanie
+            // No session – suggest logging in
             subtitleText = "Zaloguj się w aplikacji mZUT";
         }
 
-        // nagłówek z datą (ew. (jutro))
+        // Header date (optionally with "(jutro)")
         String dateLabel = dateToShow.format(DATE_LABEL);
         if (showingTomorrow) {
             dateLabel += " (jutro)";
@@ -235,14 +226,14 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         views.setTextViewText(R.id.widgetDate, dateLabel);
         views.setTextViewText(R.id.widgetSubtitle, subtitleText);
 
-        // stopka: kiedy ostatnio odświeżono widget
+        // Footer: last refresh time
         LocalTime nowTime = LocalTime.now();
         views.setTextViewText(
                 R.id.widgetLastRefresh,
                 "Odświeżono: " + nowTime.format(TIME_LABEL)
         );
 
-        // kliknięcie w cały widget -> PlanActivity
+        // Click on whole widget -> open PlanActivity
         Intent openIntent = new Intent(context, PlanActivity.class);
         PendingIntent piOpen = PendingIntent.getActivity(
                 context,
@@ -252,7 +243,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widgetRoot, piOpen);
 
-        // kliknięcie w ikonkę refresh -> broadcast ACTION_REFRESH
+        // Click on refresh icon -> broadcast ACTION_REFRESH
         Intent refreshIntent = new Intent(context, PlanDayWidgetProvider.class);
         refreshIntent.setAction(ACTION_REFRESH);
         refreshIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[]{appWidgetId});
@@ -265,7 +256,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widgetRefresh, piRefresh);
 
-        // kliknięcie w pojedynczy wiersz listy -> PlanActivity (szablon)
+        // Click on a single list row -> open PlanActivity (template)
         Intent rowIntent = new Intent(context, PlanActivity.class);
         PendingIntent rowPI = PendingIntent.getActivity(
                 context,
@@ -278,11 +269,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 
-    /**
-     * Próbuje przygotować subtitle dla jutra.
-     * Zwraca true, jeśli jutro są jakiekolwiek zajęcia (po filtrach).
-     * outSubtitle[0] – ustawia tekst podtytułu ("Jutrzejsze zajęcia" albo "Brak zajęć jutro").
-     */
+    // Prepares subtitle for tomorrow.
+    // Returns true if there are any classes tomorrow (after filters).
+    // outSubtitle[0] is set to "Jutrzejsze zajęcia" or "Brak zajęć jutro".
     private boolean tryTomorrowHeader(Context context,
                                       PlanRepository repo,
                                       Set<String> hiddenSubjectKeys,

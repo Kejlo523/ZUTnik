@@ -15,16 +15,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * RemoteViewsService dla ListView w widgetcie planu dnia.
- * - wczytuje sesję z SharedPreferences (MzutSession.initializeFromPreferences),
- * - respektuje filtry z PlanActivity,
- * - wyrzuca zajęcia, które już się skończyły (dla DZISIAJ),
- * - jeśli na dzisiaj nie ma już nic -> pokazuje zajęcia JUTRO.
- */
+// RemoteViewsService for the day-plan widget ListView.
 public class PlanDayWidgetService extends RemoteViewsService {
 
-    // prefs planu (jak w PlanActivity)
+    // Plan prefs (same as in PlanActivity)
     private static final String PREFS_PLAN        = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
@@ -33,11 +27,8 @@ public class PlanDayWidgetService extends RemoteViewsService {
         return new PlanDayFactory(getApplicationContext());
     }
 
-    /**
-     * Inicjalizuje sesję z SharedPreferences (nowy MzutSession).
-     *
-     * @return true jeśli mamy userId + authKey (użytkownik zalogowany).
-     */
+    // Initializes session from SharedPreferences (new MzutSession).
+    // Returns true if we have userId + authKey (user is logged in).
     private static boolean ensureSessionFromPrefs(Context ctx) {
         MzutSession.initializeFromPreferences(ctx);
         MzutSession s = MzutSession.getInstance();
@@ -55,7 +46,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
         @Override
         public void onCreate() {
-            // nic – dane ładowane w onDataSetChanged
+            // No-op – data is loaded in onDataSetChanged
         }
 
         @Override
@@ -64,10 +55,10 @@ public class PlanDayWidgetService extends RemoteViewsService {
             try {
                 events.clear();
 
-                // 1. Przywróć sesję (po ubiciu procesu)
+                // Restore session after process kill
                 boolean hasSession = ensureSessionFromPrefs(context);
                 if (!hasSession) {
-                    // brak zalogowanego użytkownika -> brak danych w widgetcie
+                    // No logged in user -> no data in widget
                     return;
                 }
 
@@ -78,14 +69,14 @@ public class PlanDayWidgetService extends RemoteViewsService {
                         new HashSet<>()
                 );
 
-                // repo z contextem -> wspólny cache z apką
+                // Repository with context -> shared cache with the main app
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
                 LocalDate today = LocalDate.now();
 
                 LocalTime now = LocalTime.now();
                 int nowMin = now.getHour() * 60 + now.getMinute();
 
-                // ---------- PROBA: DZISIAJ ----------
+                // First attempt: today
                 PlanRepository.PlanResult resultToday = repo.loadPlan("day", today);
 
                 PlanRepository.DayColumn todayCol = null;
@@ -103,7 +94,8 @@ public class PlanDayWidgetService extends RemoteViewsService {
                     for (PlanRepository.PlanEventUi ev : todayCol.events) {
                         if (ev.subjectKey != null && !ev.subjectKey.isEmpty()
                                 && hiddenSubjectKeys.contains(ev.subjectKey)) {
-                            continue; // ukryty przez filtr
+                            // Hidden by filter
+                            continue;
                         }
                         todayAll.add(ev);
                     }
@@ -112,7 +104,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
                 if (!todayAll.isEmpty()) {
                     Collections.sort(todayAll, (a, b) -> Integer.compare(a.startMin, b.startMin));
 
-                    // wyrzuć zajęcia, które się już skończyły – tylko dla DZISIEJSZEGO dnia
+                    // Drop events that already finished – only for today
                     List<PlanRepository.PlanEventUi> upcomingToday = new ArrayList<>();
                     for (PlanRepository.PlanEventUi ev : todayAll) {
                         if (ev.endMin > nowMin) {
@@ -122,11 +114,12 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
                     if (!upcomingToday.isEmpty()) {
                         events.addAll(upcomingToday);
-                        return; // zostały zajęcia dziś – kończymy
+                        // There are still classes today – stop here
+                        return;
                     }
                 }
 
-                // ---------- JESLI NA DZISIAJ NIC -> PROBA: JUTRO ----------
+                // If there is nothing for today -> try tomorrow
                 LocalDate tomorrow = today.plusDays(1);
 
                 PlanRepository.PlanResult resultTomorrow = repo.loadPlan("day", tomorrow);
@@ -142,7 +135,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
                 }
 
                 if (tomorrowCol == null || tomorrowCol.events == null) {
-                    // jutro nie ma żadnych zajęć – lista pozostanie pusta
+                    // No classes tomorrow – list stays empty
                     return;
                 }
 
@@ -150,19 +143,20 @@ public class PlanDayWidgetService extends RemoteViewsService {
                 for (PlanRepository.PlanEventUi ev : tomorrowCol.events) {
                     if (ev.subjectKey != null && !ev.subjectKey.isEmpty()
                             && hiddenSubjectKeys.contains(ev.subjectKey)) {
-                        continue; // ukryty przez filtr
+                        // Hidden by filter
+                        continue;
                     }
                     tomorrowAll.add(ev);
                 }
 
                 if (tomorrowAll.isEmpty()) {
-                    // jutro wszystko przefiltrowane
+                    // Everything filtered out for tomorrow
                     return;
                 }
 
                 Collections.sort(tomorrowAll, (a, b) -> Integer.compare(a.startMin, b.startMin));
 
-                // DLA JUTRA – NIE robimy filtra po czasie, bo wszystko i tak jest w przyszłości
+                // For tomorrow we do not filter by time – everything is in the future anyway
                 events.addAll(tomorrowAll);
 
             } catch (Exception e) {
@@ -195,11 +189,11 @@ public class PlanDayWidgetService extends RemoteViewsService {
                     R.layout.widget_plan_day_item
             );
 
-            // Linia 1: tytuł
+            // Line 1: title
             String title = ev.title != null ? ev.title : "";
             rv.setTextViewText(R.id.itemTitle, title);
 
-            // Linia 2: godziny + sala
+            // Line 2: time range + room
             StringBuilder line2 = new StringBuilder();
             line2.append(ev.startStr)
                     .append("–")
@@ -209,11 +203,11 @@ public class PlanDayWidgetService extends RemoteViewsService {
             }
             rv.setTextViewText(R.id.itemRoom, line2.toString());
 
-            // kolor paska po lewej wg typu (jak w PlanActivity)
+            // Color strip on the left by type (same mapping as in PlanActivity)
             int color = colorForType(ev.typeClass);
             rv.setInt(R.id.itemColorStrip, "setBackgroundColor", color);
 
-            // kliknięcie w wiersz – po prostu otwiera PlanActivity
+            // Row click -> just open PlanActivity
             Intent fillIntent = new Intent();
             rv.setOnClickFillInIntent(R.id.itemRoot, fillIntent);
 
@@ -222,7 +216,8 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
         @Override
         public RemoteViews getLoadingView() {
-            return null; // domyślna
+            // Use default loading view
+            return null;
         }
 
         @Override
@@ -241,16 +236,18 @@ public class PlanDayWidgetService extends RemoteViewsService {
         }
 
         private int colorForType(String typeClass) {
-            if (typeClass == null) typeClass = "";
+            if (typeClass == null) {
+                typeClass = "";
+            }
 
             switch (typeClass) {
-                case "week-event-type-lecture":      // wykład
+                case "week-event-type-lecture":
                     return 0xFF1E3A8A;
-                case "week-event-type-lab":          // laboratoria
+                case "week-event-type-lab":
                     return 0xFF064E3B;
-                case "week-event-type-auditory":     // ćwiczenia audytoryjne
+                case "week-event-type-auditory":
                     return 0xFF3730A3;
-                case "week-event-type-exam":         // egzamin
+                case "week-event-type-exam":
                     return 0xFF7F1D1D;
                 case "week-event-type-cancelled":
                     return 0xFF374151;
