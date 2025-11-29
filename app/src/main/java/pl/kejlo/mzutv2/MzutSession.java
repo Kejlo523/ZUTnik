@@ -5,29 +5,33 @@ import android.content.SharedPreferences;
 
 import java.util.List;
 
-// Central user session.
-//
-// - Keeps session data in RAM
-// - Can load/save itself to SharedPreferences
-// - After process kill we still have:
-//   - userId
-//   - authKey
-//   - username
-//   - imageUrl
-//   - activeStudyIndex
-//
-// Notes:
-// - In Activities / Services / Widgets prefer calling getInstance(context)
-// - The old getInstance() remains, but should be used less over time
-public class MzutSession {
+/**
+ * Central user session.
+ *
+ * - Keeps session data in RAM
+ * - Can load/save itself to SharedPreferences
+ * - After process kill we still have:
+ *   - userId
+ *   - authKey
+ *   - username
+ *   - imageUrl
+ *   - activeStudyIndex
+ *
+ * Notes:
+ * - In Activities / Services / Widgets prefer calling getInstance(context)
+ * - The old getInstance() remains, but should be used less over time
+ */
+public final class MzutSession {
 
-    // Singleton
+    // region Singleton
 
     private static MzutSession instance;
 
-    // Old version – does NOT load from SharedPreferences.
-    // Safe only if getInstance(context) / initializeFromPreferences(context)
-    // has been called earlier.
+    /**
+     * Old version – does NOT load from SharedPreferences.
+     * Safe only if getInstance(context) / initializeFromPreferences(context)
+     * has been called earlier.
+     */
     public static synchronized MzutSession getInstance() {
         if (instance == null) {
             instance = new MzutSession();
@@ -35,47 +39,66 @@ public class MzutSession {
         return instance;
     }
 
-    // Preferred method – loads session from SharedPreferences if the singleton
-    // does not exist yet.
+    /**
+     * Preferred method – loads session from SharedPreferences if the singleton
+     * does not exist yet.
+     */
     public static synchronized MzutSession getInstance(Context context) {
         if (instance == null) {
             instance = new MzutSession();
-            instance.loadFromPreferences(context.getApplicationContext());
+            instance.loadFromPreferences(context);
         }
         return instance;
     }
 
-    // Can be called e.g. in onCreate() of HomeActivity / PlanActivity / widget service
-    // when we only want to ensure that data from SharedPreferences is loaded.
+    /**
+     * Can be called e.g. in onCreate() of HomeActivity / PlanActivity / widget service
+     * when we only want to ensure that data from SharedPreferences is loaded.
+     */
     public static synchronized void initializeFromPreferences(Context context) {
         if (instance == null) {
             instance = new MzutSession();
         }
-        instance.loadFromPreferences(context.getApplicationContext());
+        instance.loadFromPreferences(context);
     }
 
-    // Clears in-memory session and stored data in SharedPreferences.
-    // Useful on logout.
+    /**
+     * Clears in-memory session and stored data in SharedPreferences.
+     * Useful on logout.
+     */
     public static synchronized void clear(Context context) {
         // Clear singleton
         instance = null;
 
         // Clear SharedPreferences
-        Context appCtx = context.getApplicationContext();
-        SharedPreferences prefs = appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPreferences(context);
         prefs.edit().clear().apply();
     }
 
-    // SharedPreferences keys
+    // endregion
 
-    private static final String PREFS_NAME          = "mzut_prefs";
+    // region SharedPreferences
+
+    private static final String PREFS_NAME = "mzut_prefs";
+
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_AUTH_KEY = "auth_key";
     private static final String KEY_USERNAME = "username";
     private static final String KEY_IMAGE_URL = "image_url";
     private static final String KEY_ACTIVE_STUDY_INDEX = "active_study_idx";
 
-    // Session data in RAM
+    /**
+     * Returns SharedPreferences used by the session.
+     * Always uses application context to avoid leaking Activity.
+     */
+    private static SharedPreferences getPreferences(Context context) {
+        Context appContext = context.getApplicationContext();
+        return appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
+    // endregion
+
+    // region Session data in RAM
 
     // User data
     private String userId;
@@ -84,21 +107,28 @@ public class MzutSession {
     private String imageUrl;
 
     // Studies data (similar to $_SESSION['STUDIES'], ACTIVE_STUDY_IDX)
+    // Not persisted in SharedPreferences – kept only in RAM.
     private List<Study> studies;
     private int activeStudyIndex = 0;
 
-    // Private constructor
+    // endregion
+
+    // region Construction
 
     private MzutSession() {
         // Real initialization is done via loadFromPreferences()
     }
 
-    // Public API – loading / saving
+    // endregion
 
-    // Loads session data from SharedPreferences into this instance.
-    // Does not create a new singleton – uses the current one (this).
+    // region Public API – loading / saving
+
+    /**
+     * Loads session data from SharedPreferences into this instance.
+     * Does not create a new singleton – uses the current one (this).
+     */
     private void loadFromPreferences(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPreferences(context);
 
         this.userId = prefs.getString(KEY_USER_ID, null);
         this.authKey = prefs.getString(KEY_AUTH_KEY, null);
@@ -107,11 +137,12 @@ public class MzutSession {
         this.activeStudyIndex = prefs.getInt(KEY_ACTIVE_STUDY_INDEX, 0);
     }
 
-    // Saves the current session state to SharedPreferences.
-    // Call after login / study change / profile update.
+    /**
+     * Saves the current session state to SharedPreferences.
+     * Call after login / study change / profile update.
+     */
     public void saveToPreferences(Context context) {
-        Context appCtx = context.getApplicationContext();
-        SharedPreferences prefs = appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPreferences(context);
 
         SharedPreferences.Editor e = prefs.edit();
         e.putString(KEY_USER_ID, userId);
@@ -122,8 +153,10 @@ public class MzutSession {
         e.apply();
     }
 
-    // Convenient method for setting the entire user at once.
-    // Used for example in LoginActivity after successful login.
+    /**
+     * Convenient method for setting the entire user at once.
+     * Used for example in LoginActivity after successful login.
+     */
     public void updateUser(String userId, String username, String authKey, String imageUrl) {
         this.userId = userId;
         this.username = username;
@@ -131,7 +164,9 @@ public class MzutSession {
         this.imageUrl = imageUrl;
     }
 
-    // Getters / setters
+    // endregion
+
+    // region Getters / setters
 
     public String getUserId() {
         return userId;
@@ -180,4 +215,6 @@ public class MzutSession {
     public void setActiveStudyIndex(int activeStudyIndex) {
         this.activeStudyIndex = activeStudyIndex;
     }
+
+    // endregion
 }

@@ -21,7 +21,6 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             android:titleTextColor="@color/mz_text"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
@@ -55,7 +54,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⭐ Oceny i ECTS"
+                        android:text="@string/grades_header_pill"
                         android:textSize="11sp"
                         android:textColor="@color/mz_primary"
                         android:paddingStart="12dp"
@@ -77,7 +76,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Zestawienie ocen z podziałem na semestry"
+                    android:text="@string/grades_hero_title"
                     android:textColor="@color/mz_text"
                     android:textStyle="bold"
                     android:textSize="16sp"
@@ -86,7 +85,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Średnia ważona ECTS, suma punktów oraz szczegółowa lista zaliczeń."
+                    android:text="@string/grades_hero_subtitle"
                     android:textColor="@color/mz_muted"
                     android:textSize="11sp"
                     android:maxLines="2"
@@ -115,7 +114,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Średnia z ocen"
+                        android:text="@string/grades_summary_average_label"
                         android:textColor="@color/mz_muted"
                         android:textSize="10sp" />
 
@@ -123,7 +122,7 @@
                         android:id="@+id/tvAverageValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="–"
+                        android:text="@string/grades_average_placeholder"
                         android:textColor="@color/mz_text"
                         android:textStyle="bold"
                         android:textSize="18sp"
@@ -132,7 +131,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Średnia ważona ECTS (tylko oceny numeryczne)."
+                        android:text="@string/grades_summary_average_description"
                         android:textColor="@color/mz_text"
                         android:textSize="9sp"
                         android:maxLines="2"
@@ -153,7 +152,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Suma ECTS"
+                        android:text="@string/grades_summary_ects_label"
                         android:textColor="@color/mz_muted"
                         android:textSize="10sp" />
 
@@ -170,7 +169,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Suma punktów ECTS z ocen w wybranym semestrze."
+                        android:text="@string/grades_summary_ects_description"
                         android:textColor="@color/mz_text"
                         android:textSize="9sp"
                         android:maxLines="2"
@@ -188,7 +187,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Aktywny kierunek"
+                    android:text="@string/grades_study_label"
                     android:textColor="@color/mz_text"
                     android:textSize="12sp" />
 
@@ -211,7 +210,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Semestr"
+                    android:text="@string/grades_semester_caption"
                     android:textColor="@color/mz_text"
                     android:textSize="12sp" />
 
@@ -240,7 +239,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="2"
-                    android:text="Przedmiot"
+                    android:text="@string/grades_table_header_subject"
                     android:textColor="@color/mz_text"
                     android:textSize="11sp" />
 
@@ -248,7 +247,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Rodzaj"
+                    android:text="@string/grades_table_header_type"
                     android:textColor="@color/mz_text"
                     android:textSize="11sp" />
 
@@ -257,7 +256,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="Ocena"
+                    android:text="@string/grades_table_header_grade"
                     android:textColor="@color/mz_text"
                     android:textSize="11sp" />
 
@@ -266,7 +265,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="end"
-                    android:text="Data"
+                    android:text="@string/grades_table_header_date"
                     android:textColor="@color/mz_text"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -295,7 +294,7 @@
                 android:id="@+id/tvEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Brak ocen dla wybranego semestru."
+                android:text="@string/grades_empty_state"
                 android:textColor="@color/mz_muted"
                 android:textSize="12sp"
                 android:gravity="center"

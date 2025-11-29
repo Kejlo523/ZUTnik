@@ -94,7 +94,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         boolean showingTomorrow = false;
 
         // Default subtitle
-        String subtitleText = "Dzisiejsze zajęcia";
+        String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
 
         // Initialize session – if there is no login, widget stays empty instead of crashing
         boolean hasSession = ensureSessionFromPrefs(context);
@@ -152,21 +152,35 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         // There are still classes today – keep "today" view
                         PlanRepository.PlanEventUi next = upcomingToday.get(0);
                         if (next.startMin <= nowMin) {
-                            subtitleText = "Zajęcia w trakcie";
+                            subtitleText = context.getString(R.string.plan_widget_subtitle_in_progress);
                         } else {
                             int diffMin = next.startMin - nowMin;
                             int h = diffMin / 60;
                             int m = diffMin % 60;
 
-                            StringBuilder sb = new StringBuilder("Najbliższe za ");
+                            StringBuilder sb = new StringBuilder(
+                                    context.getString(R.string.plan_widget_subtitle_next_prefix)
+                            );
+
                             if (h > 0) {
-                                sb.append(h).append(" h");
+                                sb.append(" ")
+                                        .append(h)
+                                        .append(" ")
+                                        .append(context.getString(R.string.plan_widget_hours_suffix));
+
                                 if (m > 0) {
-                                    sb.append(" ").append(m).append(" min");
+                                    sb.append(" ")
+                                            .append(m)
+                                            .append(" ")
+                                            .append(context.getString(R.string.plan_widget_minutes_suffix));
                                 }
                             } else {
-                                sb.append(m).append(" min");
+                                sb.append(" ")
+                                        .append(m)
+                                        .append(" ")
+                                        .append(context.getString(R.string.plan_widget_minutes_suffix));
                             }
+
                             subtitleText = sb.toString();
                         }
                     } else {
@@ -183,7 +197,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                             targetDate = today.plusDays(1);
                             subtitleText = subtitleHolder[0];
                         } else {
-                            subtitleText = "Brak zajęć jutro";
+                            subtitleText = context.getString(
+                                    R.string.plan_widget_subtitle_no_classes_tomorrow
+                            );
                             targetDate = today.plusDays(1);
                             showingTomorrow = true;
                         }
@@ -202,7 +218,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         targetDate = today.plusDays(1);
                         subtitleText = subtitleHolder[0];
                     } else {
-                        subtitleText = "Brak zajęć jutro";
+                        subtitleText = context.getString(
+                                R.string.plan_widget_subtitle_no_classes_tomorrow
+                        );
                         targetDate = today.plusDays(1);
                         showingTomorrow = true;
                     }
@@ -211,27 +229,26 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 dateToShow = targetDate;
 
             } catch (Exception ignored) {
-                // On error keep default "Dzisiejsze zajęcia" and today's date
+                // On error keep default "today" subtitle and today's date
             }
         } else {
             // No session – suggest logging in
-            subtitleText = "Zaloguj się w aplikacji mZUT";
+            subtitleText = context.getString(R.string.plan_widget_subtitle_login_required);
         }
 
         // Header date (optionally with "(jutro)")
         String dateLabel = dateToShow.format(DATE_LABEL);
         if (showingTomorrow) {
-            dateLabel += " (jutro)";
+            dateLabel += " " + context.getString(R.string.plan_widget_date_tomorrow_suffix);
         }
         views.setTextViewText(R.id.widgetDate, dateLabel);
         views.setTextViewText(R.id.widgetSubtitle, subtitleText);
 
         // Footer: last refresh time
         LocalTime nowTime = LocalTime.now();
-        views.setTextViewText(
-                R.id.widgetLastRefresh,
-                "Odświeżono: " + nowTime.format(TIME_LABEL)
-        );
+        String refreshedLabel = context.getString(R.string.plan_widget_refreshed_prefix)
+                + " " + nowTime.format(TIME_LABEL);
+        views.setTextViewText(R.id.widgetLastRefresh, refreshedLabel);
 
         // Click on whole widget -> open PlanActivity
         Intent openIntent = new Intent(context, PlanActivity.class);
@@ -292,7 +309,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         }
 
         if (tomorrowCol == null || tomorrowCol.events == null) {
-            outSubtitle[0] = "Brak zajęć jutro";
+            outSubtitle[0] = context.getString(
+                    R.string.plan_widget_subtitle_no_classes_tomorrow
+            );
             return false;
         }
 
@@ -306,11 +325,13 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         }
 
         if (allTomorrow.isEmpty()) {
-            outSubtitle[0] = "Brak zajęć jutro";
+            outSubtitle[0] = context.getString(
+                    R.string.plan_widget_subtitle_no_classes_tomorrow
+            );
             return false;
         }
 
-        outSubtitle[0] = "Jutrzejsze zajęcia";
+        outSubtitle[0] = context.getString(R.string.plan_widget_subtitle_tomorrow);
         return true;
     }
 }

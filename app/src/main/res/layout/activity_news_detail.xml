@@ -13,7 +13,6 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@drawable/bg_toolbar"
         android:titleTextColor="@color/mz_text"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:elevation="0dp" />
@@ -31,7 +30,7 @@
             android:id="@+id/tvNewsDetailTag"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📰 Aktualność ZUT"
+            android:text="@string/news_detail_tag"
             android:textSize="11sp"
             android:textColor="@color/mz_primary"
             android:paddingStart="12dp"

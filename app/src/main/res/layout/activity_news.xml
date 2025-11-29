@@ -21,11 +21,10 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
-            android:title="Aktualności ZUT"
+            android:title="@string/news_title"
             android:titleTextColor="@color/mz_text"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             android:elevation="0dp" />
 
         <!-- TREŚĆ -->
@@ -53,7 +52,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📰 Aktualności ZUT"
+                        android:text="@string/news_header_pill"
                         android:textSize="11sp"
                         android:textColor="@color/mz_primary"
                         android:paddingStart="12dp"
@@ -73,7 +72,7 @@
                 </LinearLayout>
 
                 <TextView
-                    android:text="Kanał ogłoszeń dla studentów"
+                    android:text="@string/news_header_title"
                     android:textColor="@color/mz_text"
                     android:textStyle="bold"
                     android:textSize="18sp"
@@ -83,7 +82,7 @@
 
                 <TextView
                     android:id="@+id/tvNewsInfo"
-                    android:text="Źródło RSS: studenci ZUT"
+                    android:text="@string/news_header_source_info"
                     android:textColor="@color/mz_muted"
                     android:textSize="12sp"
                     android:layout_marginTop="4dp"
@@ -113,7 +112,7 @@
             <!-- PUSTY STAN -->
             <TextView
                 android:id="@+id/tvNewsEmpty"
-                android:text="Brak aktualności lub problem z pobraniem kanału RSS."
+                android:text="@string/news_empty_state"
                 android:textColor="@color/mz_muted"
                 android:textSize="13sp"
                 android:visibility="gone"

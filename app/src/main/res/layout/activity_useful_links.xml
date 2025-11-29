@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:fitsSystemWindows="true"
+    app:statusBarBackground="@color/mz_bg">
+
+    <!-- GŁÓWNA ZAWARTOŚĆ EKRANU -->
+    <LinearLayout
+        android:id="@+id/drawerContentRoot"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- TOOLBAR -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@drawable/bg_toolbar"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:elevation="0dp"
+            android:titleTextColor="@color/mz_text" />
+
+        <!-- TREŚĆ -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:padding="16dp">
+
+            <!-- HERO -->
+            <LinearLayout
+                android:id="@+id/linksHeaderCard"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_soft"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/textLinksPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:background="@drawable/bg_card_primary"
+                    android:text="@string/useful_links_pill"
+                    android:textColor="@color/mz_text"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/textLinksTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/useful_links_header_title"
+                    android:textColor="@color/mz_text"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textLinksSub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/useful_links_header_sub"
+                    android:textColor="@color/mz_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="16dp" />
+
+            <!-- NAGŁÓWEK SEKCJI -->
+            <TextView
+                android:id="@+id/textLinksSectionTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/useful_links_section_title"
+                android:textColor="@color/mz_text"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- LISTA -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listLinks"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+
+            <!-- PUSTY STAN -->
+            <TextView
+                android:id="@+id/tvLinksEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:padding="12dp"
+                android:gravity="center"
+                android:text="@string/useful_links_empty"
+                android:textColor="@color/mz_muted"
+                android:textSize="12sp"
+                android:background="@drawable/bg_card_soft"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- NAVIGATION DRAWER -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/mz_bg"
+        android:fitsSystemWindows="true">
+
+        <include
+            layout="@layout/nav_header"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -20,7 +20,6 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             android:titleTextColor="@color/mz_text"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
@@ -55,7 +54,7 @@
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
                         android:background="@drawable/bg_card_soft"
-                        android:text="ℹ️ Informacje o aplikacji"
+                        android:text="@string/about_header_pill"
                         android:textColor="@color/mz_primary"
                         android:textSize="11sp" />
 
@@ -64,7 +63,7 @@
                         android:id="@+id/aboutTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="mZUT v2"
+                        android:text="@string/app_name"
                         android:textSize="22sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
@@ -75,7 +74,7 @@
                         android:id="@+id/aboutSubtitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Nieoficjalna aplikacja mobilna dla studentów ZUT, z planem zajęć, ocenami, informacjami o studiach i widżetem dziennym — bez reklam i śledzenia."
+                        android:text="@string/about_subtitle"
                         android:textSize="14sp"
                         android:textColor="@color/mz_muted"
                         android:layout_marginTop="6dp" />
@@ -93,7 +92,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Projekt i autor"
+                        android:text="@string/about_section_project_title"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
@@ -104,7 +103,7 @@
                         android:id="@+id/aboutAuthor"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Autorem aplikacji jest Jędrzej Nowak."
+                        android:text="@string/about_author_line"
                         android:textSize="13sp"
                         android:textColor="@color/mz_primary"
                         android:layout_marginBottom="6dp" />
@@ -112,7 +111,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="mZUT v2 został stworzony jako nieoficjalna, lekka alternatywa do szybkiego podglądu planu, ocen i informacji o studiach na ZUT, bez konieczności przeklikiwania się przez ciężkie panele www."
+                        android:text="@string/about_project_description_1"
                         android:textSize="13sp"
                         android:textColor="@color/mz_muted"
                         android:layout_marginBottom="6dp" />
@@ -120,7 +119,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Aplikacja wykorzystuje publicznie dostępne systemy i API uczelni, a dane logowania pozostają na Twoim urządzeniu."
+                        android:text="@string/about_project_description_2"
                         android:textSize="13sp"
                         android:textColor="@color/mz_muted" />
                 </LinearLayout>
@@ -137,7 +136,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Kontakt i linki"
+                        android:text="@string/about_section_contact_title"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
@@ -148,7 +147,7 @@
                         android:id="@+id/aboutEmail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="E-mail: kejlo@endozero.pl"
+                        android:text="@string/about_contact_email"
                         android:textColor="@color/mz_primary"
                         android:textSize="13sp"
                         android:autoLink="email"
@@ -159,7 +158,7 @@
                         android:id="@+id/aboutWebsite"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Strona: endozero.pl"
+                        android:text="@string/about_contact_website"
                         android:textColor="@color/mz_primary"
                         android:textSize="13sp"
                         android:autoLink="web"
@@ -170,7 +169,7 @@
                         android:id="@+id/aboutAppPage"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Strona aplikacji: mzut.endozero.pl"
+                        android:text="@string/about_contact_app_website"
                         android:textColor="@color/mz_primary"
                         android:textSize="13sp"
                         android:autoLink="web"
@@ -181,7 +180,7 @@
                         android:id="@+id/aboutGithub"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="GitHub: https://github.com/Kejlo523/mzut-v2"
+                        android:text="@string/about_contact_github"
                         android:textColor="@color/mz_primary"
                         android:textSize="13sp"
                         android:autoLink="web" />
@@ -199,7 +198,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Prywatność i dane"
+                        android:text="@string/about_section_privacy_title"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
@@ -208,7 +207,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="mZUT v2 nie korzysta z zewnętrznych systemów analityki (Google Analytics, Firebase Analytics itp.), nie wyświetla reklam oraz nie śledzi Twoich działań w aplikacji."
+                        android:text="@string/about_privacy_text_1"
                         android:textSize="13sp"
                         android:textColor="@color/mz_muted"
                         android:layout_marginBottom="6dp" />
@@ -216,7 +215,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Dane logowania wykorzystywane są wyłącznie do uwierzytelnienia w systemach uczelni i przechowywane lokalnie na urządzeniu. Żadne dane nie są wysyłane na serwery autora aplikacji."
+                        android:text="@string/about_privacy_text_2"
                         android:textSize="13sp"
                         android:textColor="@color/mz_muted" />
                 </LinearLayout>
@@ -225,7 +224,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="mZUT v2 jest projektem nieoficjalnym i nie jest aplikacją wydaną przez Zachodniopomorski Uniwersytet Technologiczny."
+                    android:text="@string/about_footer_disclaimer"
                     android:textSize="11sp"
                     android:textColor="@color/mz_muted"
                     android:layout_marginTop="4dp"

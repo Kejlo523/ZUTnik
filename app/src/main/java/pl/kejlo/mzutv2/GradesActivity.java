@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -30,9 +31,14 @@ import java.util.List;
 
 public class GradesActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
     // Grades cache – valid for 7 days
     private static final long GRADES_CACHE_TTL_MS =
             7L * 24L * 60L * 60L * 1000L; // 7 days
+    private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -72,7 +78,6 @@ public class GradesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_grades);
 
-        // --- init views ---
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
@@ -88,14 +93,20 @@ public class GradesActivity extends AppCompatActivity {
 
         btnGradesRefresh = findViewById(R.id.btnGradesRefresh);
 
-        // toolbar / title
+        // Toolbar / title
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Oceny");
+            getSupportActionBar().setTitle(R.string.grades_title);
         }
 
-        // nav drawer (active screen: grades)
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "grades");
+        // Nav drawer (active screen: grades)
+        NavDrawerHelper.setupNavigation(
+                this,
+                drawerLayout,
+                navigationView,
+                toolbar,
+                NavDrawerHelper.Screen.GRADES
+        );
 
         // RecyclerView
         listGrades.setLayoutManager(new LinearLayoutManager(this));
@@ -110,7 +121,7 @@ public class GradesActivity extends AppCompatActivity {
             btnGradesRefresh.setOnClickListener(v -> {
                 Toast.makeText(
                         GradesActivity.this,
-                        "Odświeżam oceny i ECTS…",
+                        R.string.grades_refresh_toast,
                         Toast.LENGTH_SHORT
                 ).show();
 
@@ -177,9 +188,10 @@ public class GradesActivity extends AppCompatActivity {
             showLoading(false);
 
             if (error != null) {
+                String message = error.getMessage() != null ? error.getMessage() : "";
                 Toast.makeText(
                         GradesActivity.this,
-                        "Błąd ładowania danych: " + error.getMessage(),
+                        getString(R.string.grades_error_initial_load, message),
                         Toast.LENGTH_LONG
                 ).show();
                 showEmptyState(true);
@@ -194,7 +206,13 @@ public class GradesActivity extends AppCompatActivity {
 
             List<String> semNames = new ArrayList<>();
             for (Semester s : semesters) {
-                semNames.add("Semestr " + s.nrSemestru + " (" + s.rokAkademicki + ")");
+                semNames.add(
+                        getString(
+                                R.string.grades_semester_label,
+                                s.nrSemestru,
+                                s.rokAkademicki
+                        )
+                );
             }
 
             semestersAdapter.clear();
@@ -304,7 +322,12 @@ public class GradesActivity extends AppCompatActivity {
 
         spinnerSemesters.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(
+                    AdapterView<?> parent,
+                    View view,
+                    int position,
+                    long id
+            ) {
                 if (position >= 0 && position < semesters.size()) {
                     Semester selected = semesters.get(position);
                     // Normal semester switch – use cache if it is still fresh
@@ -361,9 +384,10 @@ public class GradesActivity extends AppCompatActivity {
             showLoading(false);
 
             if (error != null) {
+                String message = error.getMessage() != null ? error.getMessage() : "";
                 Toast.makeText(
                         GradesActivity.this,
-                        "Błąd pobierania semestrów: " + error.getMessage(),
+                        getString(R.string.grades_error_loading_semesters, message),
                         Toast.LENGTH_LONG
                 ).show();
                 return;
@@ -372,7 +396,7 @@ public class GradesActivity extends AppCompatActivity {
             if (result == null || result.isEmpty()) {
                 Toast.makeText(
                         GradesActivity.this,
-                        "Brak semestrów dla wybranego kierunku.",
+                        R.string.grades_no_semesters_for_study,
                         Toast.LENGTH_SHORT
                 ).show();
                 semesters.clear();
@@ -392,7 +416,13 @@ public class GradesActivity extends AppCompatActivity {
             // Build labels for the semester spinner
             List<String> semNames = new ArrayList<>();
             for (Semester s : semesters) {
-                semNames.add("Semestr " + s.nrSemestru + " (" + s.rokAkademicki + ")");
+                semNames.add(
+                        getString(
+                                R.string.grades_semester_label,
+                                s.nrSemestru,
+                                s.rokAkademicki
+                        )
+                );
             }
 
             semestersAdapter.clear();
@@ -498,25 +528,22 @@ public class GradesActivity extends AppCompatActivity {
                     showEmptyState(false);
                     updateSummaryCards();
 
-                    if (forceNetwork) {
-                        Toast.makeText(
-                                GradesActivity.this,
-                                "Nie udało się odświeżyć ocen. Pokazuję ostatnio zapisane dane.",
-                                Toast.LENGTH_LONG
-                        ).show();
-                    } else {
-                        Toast.makeText(
-                                GradesActivity.this,
-                                "Nie udało się pobrać ocen. Pokazuję ostatnio zapisane dane.",
-                                Toast.LENGTH_LONG
-                        ).show();
-                    }
+                    int msgId = forceNetwork
+                            ? R.string.grades_refresh_network_failed_using_cache
+                            : R.string.grades_load_network_failed_using_cache;
+
+                    Toast.makeText(
+                            GradesActivity.this,
+                            msgId,
+                            Toast.LENGTH_LONG
+                    ).show();
                     return;
                 }
 
+                String message = error.getMessage() != null ? error.getMessage() : "";
                 Toast.makeText(
                         GradesActivity.this,
-                        "Błąd pobierania ocen: " + error.getMessage(),
+                        getString(R.string.grades_error_loading_grades, message),
                         Toast.LENGTH_LONG
                 ).show();
                 showEmptyState(true);
@@ -593,7 +620,7 @@ public class GradesActivity extends AppCompatActivity {
             if (sumWeights > 0.0) {
                 tvAverageValue.setText(String.format("%.2f", avg));
             } else {
-                tvAverageValue.setText("–");
+                tvAverageValue.setText(R.string.grades_average_placeholder);
             }
         }
 
@@ -606,7 +633,7 @@ public class GradesActivity extends AppCompatActivity {
     //   CACHE: SAVE / LOAD GRADES
     // -----------------------
     private SharedPreferences getGradesCachePrefs() {
-        return getSharedPreferences("grades_cache", MODE_PRIVATE);
+        return getSharedPreferences(GRADES_CACHE_PREFS_NAME, MODE_PRIVATE);
     }
 
     private String buildCacheKey(Semester semester) {

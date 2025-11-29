@@ -1,35 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Stare, z szablonu -->
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-
-    <!-- Nowa paleta mZUT v2 -->
+    <!-- Nowa paleta mZUT v2 – JASNY MOTYW -->
     <!-- Tła -->
-    <color name="mz_bg">#050816</color>          <!-- ogólne tło -->
-    <color name="mz_bg_soft">#0B1120</color>     <!-- tło sekcji / ScrollView -->
-    <color name="mz_card">#0B1220</color>        <!-- karty / listy -->
-    <color name="mz_card_soft">#0F172A</color>   <!-- delikatniejsze tło elementów -->
+    <!-- ogólne tło -->
+    <color name="mz_bg">#F9FAFB</color>
+    <!-- tło sekcji / ScrollView -->
+    <color name="mz_bg_soft">#F3F4F6</color>
+    <!-- karty / listy -->
+    <color name="mz_card">#FFFFFF</color>
+    <!-- delikatniejsze tło elementów -->
+    <color name="mz_card_soft">#E5E7EB</color>
 
     <!-- Tekst -->
-    <color name="mz_text">#E5E7EB</color>
-    <color name="mz_muted">#9CA3AF</color>
+    <color name="mz_text">#111827</color>
+    <color name="mz_muted">#6B7280</color>
 
     <!-- Obramowania / podziały -->
-    <color name="mz_border_soft">#1F2937</color>
-    <color name="mz_border_strong">#334155</color>
+    <color name="mz_border_soft">#E5E7EB</color>
+    <color name="mz_border_strong">#D1D5DB</color>
 
     <!-- Akcenty -->
-    <color name="mz_primary">#0EA5E9</color>     <!-- cyjan -->
-    <color name="mz_primary_alt">#6366F1</color> <!-- indygo -->
-    <color name="mz_accent">#22C55E</color>      <!-- zielony -->
+    <color name="mz_primary">#0EA5E9</color>      <!-- cyjan -->
+    <color name="mz_primary_alt">#6366F1</color>  <!-- indygo -->
+    <color name="mz_accent">#16A34A</color>      <!-- zielony lekko jaśniejszy -->
 
     <!-- Drobne akcenty (np. ostrzeżenia / czerwienie) -->
-    <color name="mz_danger">#F97373</color>
-    <color name="mz_danger_soft">#7F1D1D</color>
+    <color name="mz_danger">#DC2626</color>
+    <color name="mz_danger_soft">#FEE2E2</color>
+
+    <!-- Toolbar gradient (jasny) -->
+    <color name="mz_toolbar_grad_start">#FFFFFF</color>
+    <color name="mz_toolbar_grad_end">#F3F4F6</color>
+
+    <!-- PLAN / timetable specyficzne -->
+    <color name="plan_time_column_text">@color/mz_muted</color>
+    <color name="plan_month_weekday_text">@color/mz_muted</color>
+    <!-- delikatna linia godzin -->
+    <color name="plan_hour_line">#E5E7EB</color>
+
+    <color name="plan_week_header_text">@color/mz_text</color>
+    <!-- zaznaczony nagłówek dnia -->
+    <color name="plan_week_header_selected_bg">#DBEAFE</color>
+    <!-- tło kolumny dnia -->
+    <color name="plan_week_day_bg">@color/mz_bg</color>
+    <!-- tło wybranego dnia -->
+    <color name="plan_week_day_selected_bg">#EFF6FF</color>
+
+    <color name="plan_now_line">@color/mz_danger</color>
+
+    <color name="plan_event_text">@color/mz_text</color>
+
+    <!-- Miesiąc -->
+    <!-- komórka z zajęciami -->
+    <color name="plan_month_cell_with_events_bg">#DBEAFE</color>
+    <!-- zwykła komórka -->
+    <color name="plan_month_cell_bg">@color/mz_card</color>
+    <color name="plan_month_day_number">@color/mz_text</color>
+    <color name="plan_month_day_hint">@color/mz_muted</color>
+
+    <!-- Typy zajęć – jaśniejsze, ale w tych samych klimatach -->
+    <color name="plan_event_lecture_bg">#BFDBFE</color>    <!-- niebieski jasny -->
+    <color name="plan_event_lab_bg">#BBF7D0</color>        <!-- zielony jasny -->
+    <color name="plan_event_auditory_bg">#E0E7FF</color>   <!-- indygo jasny -->
+    <color name="plan_event_exam_bg">#FECACA</color>       <!-- czerwony jasny -->
+    <color name="plan_event_cancelled_bg">#E5E7EB</color>  <!-- szary -->
+    <color name="plan_event_rector_bg">#FDE68A</color>     <!-- żółty / pomarańczowy jasny -->
+    <color name="plan_event_remote_bg">#C7D2FE</color>     <!-- niebieskawy -->
+    <color name="plan_event_pass_bg">#BBF7D0</color>       <!-- jak lab / zaliczenie -->
+    <color name="plan_event_default_bg">#DBEAFE</color>    <!-- domyślny jasny niebieski -->
+
 </resources>

@@ -19,7 +19,7 @@ import java.util.Set;
 public class PlanDayWidgetService extends RemoteViewsService {
 
     // Plan prefs (same as in PlanActivity)
-    private static final String PREFS_PLAN        = "mzut_plan";
+    private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
     @Override

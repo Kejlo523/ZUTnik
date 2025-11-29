@@ -27,29 +27,81 @@ import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
+import androidx.core.content.ContextCompat;
+import androidx.annotation.ColorRes;
 
 public class PlanActivity extends AppCompatActivity {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
+    // region Enums
+
+    /**
+     * Logical view modes for the timetable.
+     */
+    private enum ViewMode {
+        DAY("day"),
+        WEEK("week"),
+        MONTH("month");
+
+        private final String id;
+
+        ViewMode(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public static ViewMode fromId(String id) {
+            if (id == null) {
+                return WEEK; // sensible default
+            }
+            for (ViewMode m : values()) {
+                if (m.id.equals(id)) {
+                    return m;
+                }
+            }
+            return WEEK;
+        }
+    }
+
+    // endregion
+
+    // region Preferences / cache
 
     private static final String PREFS_NAME = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
     private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
     private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
-    private static final long FILTER_CACHE_TTL_MS = 30L * 24L * 60L * 60L * 1000L;
+    private static final long FILTER_CACHE_TTL_MS =
+            30L * 24L * 60L * 60L * 1000L; // 30 dni
+
+    // endregion
+
+    // region Layout config
 
     private static final int START_HOUR = 6;
     private static final int END_HOUR = 22;
     private static final float HOUR_HEIGHT_DP = 48f;
     private static final float DAY_HEADER_HEIGHT_DP = 32f;
+
+    // endregion
+
+    // region Views
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -79,7 +131,14 @@ public class PlanActivity extends AppCompatActivity {
 
     private ProgressBar progress;
 
-    private String viewMode = "week";
+    private FrameLayoutWithChildren nowLineParent;
+    private View nowLineView;
+
+    // endregion
+
+    // region State & helpers
+
+    private String viewModeId = ViewMode.WEEK.getId();
     private LocalDate currentDate = LocalDate.now();
 
     private PlanRepository planRepository;
@@ -88,8 +147,6 @@ public class PlanActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private Set<String> hiddenSubjectKeys = new HashSet<>();
 
-    private FrameLayoutWithChildren nowLineParent;
-    private View nowLineView;
     private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
     private final Runnable nowLineRunnable = new Runnable() {
         @Override
@@ -99,13 +156,17 @@ public class PlanActivity extends AppCompatActivity {
         }
     };
 
+    // endregion
+
+    // region Lifecycle
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Ensure session is valid
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
-
         if (session.getAuthKey() == null || session.getUserId() == null) {
             Intent i = new Intent(this, LoginActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -117,7 +178,6 @@ public class PlanActivity extends AppCompatActivity {
         setContentView(R.layout.activity_plan);
 
         planRepository = new PlanRepository(getApplicationContext());
-
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         hiddenSubjectKeys = new HashSet<>(prefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>()));
 
@@ -125,8 +185,14 @@ public class PlanActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
 
-        toolbar.setTitle("Plan zajęć");
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "plan");
+        toolbar.setTitle(R.string.plan_title);
+        NavDrawerHelper.setupNavigation(
+                this,
+                drawerLayout,
+                navigationView,
+                toolbar,
+                NavDrawerHelper.Screen.PLAN
+        );
 
         btnViewDay = findViewById(R.id.btnViewDay);
         btnViewWeek = findViewById(R.id.btnViewWeek);
@@ -160,7 +226,9 @@ public class PlanActivity extends AppCompatActivity {
         setupRefreshButton();
 
         if (savedInstanceState != null) {
-            viewMode = savedInstanceState.getString("viewMode", "week");
+            String vm = savedInstanceState.getString("viewMode", viewModeId);
+            viewModeId = vm != null ? vm : ViewMode.WEEK.getId();
+
             String dateStr = savedInstanceState.getString("currentDate", null);
             if (dateStr != null) {
                 try {
@@ -204,7 +272,7 @@ public class PlanActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString("viewMode", viewMode);
+        outState.putString("viewMode", viewModeId);
         outState.putString("currentDate", currentDate.format(YMD));
     }
 
@@ -213,14 +281,44 @@ public class PlanActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    // endregion
+
+    // region View mode helpers
+
+    private ViewMode getCurrentViewMode() {
+        return ViewMode.fromId(viewModeId);
+    }
+
+    private void setCurrentViewMode(ViewMode mode) {
+        if (mode != null) {
+            viewModeId = mode.getId();
+        }
+    }
+
+    private boolean isDayMode() {
+        return getCurrentViewMode() == ViewMode.DAY;
+    }
+
+    private boolean isWeekMode() {
+        return getCurrentViewMode() == ViewMode.WEEK;
+    }
+
+    private boolean isMonthMode() {
+        return getCurrentViewMode() == ViewMode.MONTH;
+    }
+
+    // endregion
+
+    // region UI setup
+
     private void setupViewModeButtons() {
         View.OnClickListener modeClick = v -> {
             if (v == btnViewDay) {
-                viewMode = "day";
+                setCurrentViewMode(ViewMode.DAY);
             } else if (v == btnViewWeek) {
-                viewMode = "week";
+                setCurrentViewMode(ViewMode.WEEK);
             } else if (v == btnViewMonth) {
-                viewMode = "month";
+                setCurrentViewMode(ViewMode.MONTH);
             }
             updateViewModeButtonsUi();
             new LoadPlanTask().execute();
@@ -234,9 +332,10 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     private void updateViewModeButtonsUi() {
-        btnViewDay.setAlpha("day".equals(viewMode) ? 1f : 0.6f);
-        btnViewWeek.setAlpha("week".equals(viewMode) ? 1f : 0.6f);
-        btnViewMonth.setAlpha("month".equals(viewMode) ? 1f : 0.6f);
+        ViewMode mode = getCurrentViewMode();
+        btnViewDay.setAlpha(mode == ViewMode.DAY ? 1f : 0.6f);
+        btnViewWeek.setAlpha(mode == ViewMode.WEEK ? 1f : 0.6f);
+        btnViewMonth.setAlpha(mode == ViewMode.MONTH ? 1f : 0.6f);
     }
 
     private void setupNavButtons() {
@@ -263,9 +362,10 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     private void shiftCurrentDate(int dir) {
-        if ("day".equals(viewMode)) {
+        ViewMode mode = getCurrentViewMode();
+        if (mode == ViewMode.DAY) {
             currentDate = currentDate.plusDays(dir);
-        } else if ("week".equals(viewMode)) {
+        } else if (mode == ViewMode.WEEK) {
             currentDate = currentDate.plusWeeks(dir);
         } else {
             currentDate = currentDate.plusMonths(dir);
@@ -279,13 +379,61 @@ public class PlanActivity extends AppCompatActivity {
             clearFilterCache();
             Toast.makeText(
                     PlanActivity.this,
-                    "Cache listy przedmiotów wyczyszczony. " +
-                            "Przy następnym otwarciu zostanie pobrana nowa lista.",
+                    R.string.plan_filters_cache_cleared,
                     Toast.LENGTH_LONG
             ).show();
             return true;
         });
     }
+
+    private void setupTimeColumn() {
+        layoutTimeColumn.removeAllViews();
+        for (int h = START_HOUR; h < END_HOUR; h++) {
+            TextView tv = new TextView(this);
+            tv.setText(String.format("%02d:00", h));
+            tv.setTextColor(ContextCompat.getColor(this, R.color.plan_time_column_text));
+            tv.setTextSize(11f);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dpToPx(HOUR_HEIGHT_DP)
+            );
+            tv.setGravity(Gravity.END | Gravity.TOP);
+            tv.setPadding(0, dpToPx(2), dpToPx(4), 0);
+            tv.setLayoutParams(lp);
+            layoutTimeColumn.addView(tv);
+        }
+    }
+
+    private void setupWeekdayHeadersForMonth() {
+        layoutMonthWeekdays.removeAllViews();
+        String[] days = {
+                getString(R.string.plan_month_weekday_mon),
+                getString(R.string.plan_month_weekday_tue),
+                getString(R.string.plan_month_weekday_wed),
+                getString(R.string.plan_month_weekday_thu),
+                getString(R.string.plan_month_weekday_fri),
+                getString(R.string.plan_month_weekday_sat),
+                getString(R.string.plan_month_weekday_sun)
+        };
+        for (String d : days) {
+            TextView tv = new TextView(this);
+            tv.setText(d);
+            tv.setTextColor(ContextCompat.getColor(this, R.color.plan_month_weekday_text));
+            tv.setTextSize(11f);
+            tv.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+            );
+            tv.setLayoutParams(lp);
+            layoutMonthWeekdays.addView(tv);
+        }
+    }
+
+    // endregion
+
+    // region Filters (subjects)
 
     private class LoadSubjectsForFilterTask extends AsyncTask<Void, Void, List<PlanRepository.SubjectFilterItem>> {
         Exception error;
@@ -299,7 +447,7 @@ public class PlanActivity extends AppCompatActivity {
         protected void onPreExecute() {
             if (btnFilters != null) {
                 btnFilters.setEnabled(false);
-                btnFilters.setText("Ładowanie…");
+                btnFilters.setText(R.string.plan_filters_loading);
             }
             if (progress != null) {
                 progress.setVisibility(View.VISIBLE);
@@ -316,7 +464,8 @@ public class PlanActivity extends AppCompatActivity {
                     }
                 }
 
-                List<PlanRepository.SubjectFilterItem> fresh = planRepository.loadSubjectsForFilter();
+                List<PlanRepository.SubjectFilterItem> fresh =
+                        planRepository.loadSubjectsForFilter();
                 if (fresh != null && !fresh.isEmpty()) {
                     saveFilterCache(fresh);
                 }
@@ -339,15 +488,16 @@ public class PlanActivity extends AppCompatActivity {
 
             if (items == null || items.isEmpty()) {
                 if (error != null) {
+                    String msg = error.getMessage() != null ? error.getMessage() : "";
                     Toast.makeText(
                             PlanActivity.this,
-                            "Błąd ładowania listy przedmiotów: " + error.getMessage(),
+                            getString(R.string.plan_filters_error, msg),
                             Toast.LENGTH_LONG
                     ).show();
                 } else {
                     Toast.makeText(
                             PlanActivity.this,
-                            "Brak przedmiotów do filtrowania.",
+                            R.string.plan_filters_empty,
                             Toast.LENGTH_SHORT
                     ).show();
                 }
@@ -363,16 +513,18 @@ public class PlanActivity extends AppCompatActivity {
 
         for (int i = 0; i < items.size(); i++) {
             PlanRepository.SubjectFilterItem it = items.get(i);
-            labels[i] = it.label + " (" + it.typeLabel + ")";
+            String label = it.label != null ? it.label : "";
+            String typeLabel = it.typeLabel != null ? it.typeLabel : "";
+            labels[i] = label + " (" + typeLabel + ")";
             checked[i] = hiddenSubjectKeys.contains(it.filterKey);
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Filtr przedmiotów – wyklucz z widoku")
+                .setTitle(R.string.plan_filters_dialog_title)
                 .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
                     checked[which] = isChecked;
                 })
-                .setPositiveButton("Zastosuj", (dialog, which) -> {
+                .setPositiveButton(R.string.plan_filters_apply, (dialog, which) -> {
                     hiddenSubjectKeys.clear();
                     for (int i = 0; i < items.size(); i++) {
                         if (checked[i]) {
@@ -382,18 +534,20 @@ public class PlanActivity extends AppCompatActivity {
                     prefs.edit().putStringSet(KEY_FILTER_HIDDEN, hiddenSubjectKeys).apply();
                     new LoadPlanTask().execute();
                 })
-                .setNeutralButton("Reset", (dialog, which) -> {
+                .setNeutralButton(R.string.plan_filters_reset, (dialog, which) -> {
                     hiddenSubjectKeys.clear();
                     prefs.edit().remove(KEY_FILTER_HIDDEN).apply();
                     new LoadPlanTask().execute();
                 })
-                .setNegativeButton("Anuluj", null)
+                .setNegativeButton(R.string.plan_filters_cancel, null)
                 .show();
     }
 
     private List<PlanRepository.SubjectFilterItem> loadFilterCache() {
         long ts = prefs.getLong(KEY_FILTER_CACHE_TS, 0L);
-        if (ts == 0L) return null;
+        if (ts == 0L) {
+            return null;
+        }
 
         long now = System.currentTimeMillis();
         if (now - ts > FILTER_CACHE_TTL_MS) {
@@ -401,7 +555,9 @@ public class PlanActivity extends AppCompatActivity {
         }
 
         String json = prefs.getString(KEY_FILTER_CACHE_JSON, null);
-        if (json == null || json.isEmpty()) return null;
+        if (json == null || json.isEmpty()) {
+            return null;
+        }
 
         try {
             org.json.JSONArray arr = new org.json.JSONArray(json);
@@ -435,6 +591,7 @@ public class PlanActivity extends AppCompatActivity {
                     .putLong(KEY_FILTER_CACHE_TS, System.currentTimeMillis())
                     .apply();
         } catch (org.json.JSONException ignored) {
+            // cache optional
         }
     }
 
@@ -445,42 +602,9 @@ public class PlanActivity extends AppCompatActivity {
                 .apply();
     }
 
-    private void setupTimeColumn() {
-        layoutTimeColumn.removeAllViews();
-        for (int h = START_HOUR; h < END_HOUR; h++) {
-            TextView tv = new TextView(this);
-            tv.setText(String.format("%02d:00", h));
-            tv.setTextColor(0xFF9CA3AF);
-            tv.setTextSize(11f);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    dpToPx(HOUR_HEIGHT_DP)
-            );
-            tv.setGravity(Gravity.END | Gravity.TOP);
-            tv.setPadding(0, dpToPx(2), dpToPx(4), 0);
-            tv.setLayoutParams(lp);
-            layoutTimeColumn.addView(tv);
-        }
-    }
+    // endregion
 
-    private void setupWeekdayHeadersForMonth() {
-        layoutMonthWeekdays.removeAllViews();
-        String[] dni = {"Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nd"};
-        for (String d : dni) {
-            TextView tv = new TextView(this);
-            tv.setText(d);
-            tv.setTextColor(0xFF9CA3AF);
-            tv.setTextSize(11f);
-            tv.setGravity(Gravity.CENTER);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    0,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    1f
-            );
-            tv.setLayoutParams(lp);
-            layoutMonthWeekdays.addView(tv);
-        }
-    }
+    // region Plan loading
 
     private class LoadPlanTask extends AsyncTask<Void, Void, PlanRepository.PlanResult> {
         Exception error;
@@ -506,7 +630,7 @@ public class PlanActivity extends AppCompatActivity {
         @Override
         protected PlanRepository.PlanResult doInBackground(Void... voids) {
             try {
-                return planRepository.loadPlan(viewMode, currentDate, forceRefresh);
+                return planRepository.loadPlan(viewModeId, currentDate, forceRefresh);
             } catch (Exception e) {
                 error = e;
                 return null;
@@ -519,36 +643,46 @@ public class PlanActivity extends AppCompatActivity {
 
             if (result == null) {
                 tvEmpty.setVisibility(View.VISIBLE);
-                tvEmpty.setText(error != null
-                        ? "Błąd ładowania planu: " + error.getMessage()
-                        : "Błąd ładowania planu.");
+                String msg = "";
+                if (error != null && error.getMessage() != null) {
+                    msg = getString(R.string.plan_error_loading_plan_with_message, error.getMessage());
+                } else {
+                    msg = getString(R.string.plan_error_loading_plan_generic);
+                }
+                tvEmpty.setText(msg);
                 return;
             }
 
             currentDate = result.current;
-            viewMode = result.viewMode != null ? result.viewMode : viewMode;
+            if (result.viewMode != null) {
+                viewModeId = result.viewMode;
+            }
 
             updateViewModeButtonsUi();
             tvHeaderLabel.setText(result.headerLabel != null ? result.headerLabel : "");
 
-            if ("day".equals(viewMode) || "week".equals(viewMode)) {
+            if (isDayMode() || isWeekMode()) {
                 renderWeekOrDay(result);
             } else {
                 renderMonth(result);
             }
 
-            if (("day".equals(viewMode) || "week".equals(viewMode)) && !result.hasAnyEventsInRange) {
+            if ((isDayMode() || isWeekMode()) && !result.hasAnyEventsInRange) {
                 tvEmpty.setVisibility(View.VISIBLE);
-                tvEmpty.setText("Brak zajęć w wybranym zakresie.");
-            } else if ("month".equals(viewMode)
+                tvEmpty.setText(R.string.plan_no_classes_in_range);
+            } else if (isMonthMode()
                     && (result.monthGrid == null || result.monthGrid.isEmpty())) {
                 tvEmpty.setVisibility(View.VISIBLE);
-                tvEmpty.setText("Brak danych planu dla tego miesiąca.");
+                tvEmpty.setText(R.string.plan_no_data_for_month);
             } else {
                 tvEmpty.setVisibility(View.GONE);
             }
         }
     }
+
+    // endregion
+
+    // region Week / day rendering
 
     private void renderWeekOrDay(PlanRepository.PlanResult result) {
         layoutWeekRoot.setVisibility(View.VISIBLE);
@@ -562,7 +696,8 @@ public class PlanActivity extends AppCompatActivity {
         List<PlanRepository.DayColumn> cols =
                 result.dayColumns != null ? result.dayColumns : Collections.emptyList();
 
-        if ("week".equals(viewMode) && cols.size() >= 7) {
+        // Optional: hide Sat/Sun if they have no events in week view
+        if (isWeekMode() && cols.size() >= 7) {
             int satIndex = -1;
             int sunIndex = -1;
             boolean satHasEvents = false;
@@ -570,7 +705,9 @@ public class PlanActivity extends AppCompatActivity {
 
             for (int i = 0; i < cols.size(); i++) {
                 PlanRepository.DayColumn col = cols.get(i);
-                if (col == null || col.date == null) continue;
+                if (col == null || col.date == null) {
+                    continue;
+                }
 
                 switch (col.date.getDayOfWeek()) {
                     case SATURDAY:
@@ -613,7 +750,7 @@ public class PlanActivity extends AppCompatActivity {
 
             TextView tvHeader = new TextView(this);
             tvHeader.setText(formatDayHeader(col.date));
-            tvHeader.setTextColor(0xFFE5E7EB);
+            tvHeader.setTextColor(ContextCompat.getColor(this, R.color.plan_week_header_text));
             tvHeader.setTextSize(12f);
             tvHeader.setGravity(Gravity.CENTER);
             tvHeader.setPadding(0, dpToPx(4), 0, dpToPx(4));
@@ -624,7 +761,7 @@ public class PlanActivity extends AppCompatActivity {
             tvHeader.setLayoutParams(headerLp);
 
             if (isSelectedDay) {
-                tvHeader.setBackgroundColor(0xFF02091B);
+                tvHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_week_header_selected_bg));
             }
 
             dayColumn.addView(tvHeader);
@@ -635,7 +772,10 @@ public class PlanActivity extends AppCompatActivity {
                     columnHeight
             );
             dayBody.setLayoutParams(bodyLp);
-            dayBody.setBackgroundColor(isSelectedDay ? 0xFF020918 : 0xFF020617);
+            dayBody.setBackgroundColor(ContextCompat.getColor(
+                    this,
+                    isSelectedDay ? R.color.plan_week_day_selected_bg : R.color.plan_week_day_bg
+            ));
             dayColumn.addView(dayBody);
 
             addHourLines(dayBody);
@@ -644,9 +784,10 @@ public class PlanActivity extends AppCompatActivity {
                     col.events != null ? col.events : Collections.emptyList();
 
             List<RenderedEvent> renderedEvents = new ArrayList<>();
-
             for (PlanRepository.PlanEventUi ev : events) {
-                if (shouldHideEvent(ev)) continue;
+                if (shouldHideEvent(ev)) {
+                    continue;
+                }
                 View evView = createEventView(ev);
                 dayBody.addView(evView);
                 renderedEvents.add(new RenderedEvent(ev, evView));
@@ -660,12 +801,14 @@ public class PlanActivity extends AppCompatActivity {
                         public void onGlobalLayout() {
                             dayBody.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                             int w = dayBody.getWidth();
-                            if (w <= 0) return;
+                            if (w <= 0) {
+                                return;
+                            }
 
                             layoutEventsInDayBody(dayBody, renderedEvents, w);
 
                             if (colDate != null
-                                    && ("day".equals(viewMode) || "week".equals(viewMode))
+                                    && (isDayMode() || isWeekMode())
                                     && colDate.equals(today)) {
                                 setupNowLine(dayBody, w);
                             }
@@ -689,7 +832,7 @@ public class PlanActivity extends AppCompatActivity {
                     );
             lp.topMargin = (int) topPx;
             line.setLayoutParams(lp);
-            line.setBackgroundColor(0x331F2937);
+            line.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_hour_line));
             dayBody.addView(line);
         }
     }
@@ -711,7 +854,9 @@ public class PlanActivity extends AppCompatActivity {
         int calStart = START_HOUR * 60;
         int calEnd = END_HOUR * 60;
 
-        if (renderedEvents.isEmpty()) return;
+        if (renderedEvents.isEmpty()) {
+            return;
+        }
 
         renderedEvents.sort(Comparator.comparingInt(o -> o.ev.startMin));
 
@@ -729,7 +874,9 @@ public class PlanActivity extends AppCompatActivity {
             } else {
                 if (s < clusterEnd) {
                     currentCluster.add(re);
-                    if (e > clusterEnd) clusterEnd = e;
+                    if (e > clusterEnd) {
+                        clusterEnd = e;
+                    }
                 } else {
                     clusters.add(new ArrayList<>(currentCluster));
                     currentCluster.clear();
@@ -746,7 +893,9 @@ public class PlanActivity extends AppCompatActivity {
         int overlapOffset = dpToPx(6);
 
         for (List<RenderedEvent> cluster : clusters) {
-            if (cluster.isEmpty()) continue;
+            if (cluster.isEmpty()) {
+                continue;
+            }
 
             boolean hasRealCollision = false;
             for (int i = 0; i < cluster.size(); i++) {
@@ -762,7 +911,9 @@ public class PlanActivity extends AppCompatActivity {
                         break;
                     }
                 }
-                if (hasRealCollision) break;
+                if (hasRealCollision) {
+                    break;
+                }
             }
 
             if (!hasRealCollision) {
@@ -884,7 +1035,7 @@ public class PlanActivity extends AppCompatActivity {
                     );
             lp.topMargin = 0;
             nowLineView.setLayoutParams(lp);
-            nowLineView.setBackgroundColor(0xFFF97373);
+            nowLineView.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_now_line));
             parent.addView(nowLineView);
             nowLineView.bringToFront();
         }
@@ -895,7 +1046,9 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     private void updateNowLinePosition() {
-        if (nowLineParent == null || nowLineView == null) return;
+        if (nowLineParent == null || nowLineView == null) {
+            return;
+        }
 
         LocalTime now = LocalTime.now();
         int minutesNow = now.getHour() * 60 + now.getMinute();
@@ -929,8 +1082,12 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     private boolean shouldHideEvent(PlanRepository.PlanEventUi ev) {
-        if (ev == null) return false;
-        if (ev.subjectKey == null || ev.subjectKey.isEmpty()) return false;
+        if (ev == null) {
+            return false;
+        }
+        if (ev.subjectKey == null || ev.subjectKey.isEmpty()) {
+            return false;
+        }
         return hiddenSubjectKeys.contains(ev.subjectKey);
     }
 
@@ -952,11 +1109,11 @@ public class PlanActivity extends AppCompatActivity {
 
         tv.setText(sb.toString());
         tv.setTextSize(11f);
-        tv.setTextColor(0xFFF9FAFB);
+        tv.setTextColor(ContextCompat.getColor(this, R.color.plan_event_text));
         tv.setPadding(dpToPx(4), dpToPx(3), dpToPx(4), dpToPx(3));
         tv.setClickable(true);
 
-        int color = colorForType(ev.typeClass);
+        int color = ContextCompat.getColor(this, colorResForType(ev.typeClass));
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(color);
         bg.setCornerRadius(dpToPx(6));
@@ -974,31 +1131,34 @@ public class PlanActivity extends AppCompatActivity {
         return tv;
     }
 
-    private int colorForType(String typeClass) {
-        if (typeClass == null) typeClass = "";
+    @ColorRes
+    private int colorResForType(String typeClass) {
+        if (typeClass == null) {
+            typeClass = "";
+        }
 
         switch (typeClass) {
             case "week-event-type-lecture":
-                return 0xFF1E3A8A;
+                return R.color.plan_event_lecture_bg;
             case "week-event-type-lab":
-                return 0xFF064E3B;
+                return R.color.plan_event_lab_bg;
             case "week-event-type-auditory":
-                return 0xFF3730A3;
+                return R.color.plan_event_auditory_bg;
             case "week-event-type-exam":
-                return 0xFF7F1D1D;
+                return R.color.plan_event_exam_bg;
             case "week-event-type-cancelled":
-                return 0xFF374151;
+                return R.color.plan_event_cancelled_bg;
             case "week-event-type-rector":
-                return 0xFF78350F;
+                return R.color.plan_event_rector_bg;
             case "week-event-type-remote":
-                return 0xFF1E40AF;
+                return R.color.plan_event_remote_bg;
             case "week-event-type-pass":
             case "week-event-type-pass-retake":
             case "week-event-type-pass-remote":
             case "week-event-type-pass-remote-retake":
-                return 0xFF166534;
+                return R.color.plan_event_pass_bg;
             default:
-                return 0xFF1D4ED8;
+                return R.color.plan_event_default_bg;
         }
     }
 
@@ -1008,54 +1168,70 @@ public class PlanActivity extends AppCompatActivity {
         msg.append(time);
 
         if (ev.room != null && !ev.room.isEmpty()) {
-            msg.append("\nSala: ").append(ev.room);
+            msg.append("\n")
+                    .append(getString(R.string.plan_event_room_prefix))
+                    .append(" ")
+                    .append(ev.room);
         }
         if (ev.group != null && !ev.group.isEmpty()) {
-            msg.append("\nGrupa: ").append(ev.group);
+            msg.append("\n")
+                    .append(getString(R.string.plan_event_group_prefix))
+                    .append(" ")
+                    .append(ev.group);
         }
         if (ev.teacher != null && !ev.teacher.isEmpty()) {
-            msg.append("\nProwadzący: ").append(ev.teacher);
+            msg.append("\n")
+                    .append(getString(R.string.plan_event_teacher_prefix))
+                    .append(" ")
+                    .append(ev.teacher);
         }
         if (ev.typeLabel != null && !ev.typeLabel.isEmpty()) {
             msg.append("\n\n").append(ev.typeLabel);
         }
 
         new AlertDialog.Builder(this)
-                .setTitle(ev.title != null ? ev.title : "Zajęcia")
+                .setTitle(ev.title != null ? ev.title : getString(R.string.plan_event_default_title))
                 .setMessage(msg.toString())
-                .setPositiveButton("OK", null)
+                .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
 
     private String formatDayHeader(LocalDate date) {
-        if (date == null) return "";
+        if (date == null) {
+            return "";
+        }
         String shortName;
         switch (date.getDayOfWeek()) {
             case MONDAY:
-                shortName = "Pn";
+                shortName = getString(R.string.plan_header_mon_short);
                 break;
             case TUESDAY:
-                shortName = "Wt";
+                shortName = getString(R.string.plan_header_tue_short);
                 break;
             case WEDNESDAY:
-                shortName = "Śr";
+                shortName = getString(R.string.plan_header_wed_short);
                 break;
             case THURSDAY:
-                shortName = "Cz";
+                shortName = getString(R.string.plan_header_thu_short);
                 break;
             case FRIDAY:
-                shortName = "Pt";
+                shortName = getString(R.string.plan_header_fri_short);
                 break;
             case SATURDAY:
-                shortName = "Sb";
+                shortName = getString(R.string.plan_header_sat_short);
                 break;
             case SUNDAY:
             default:
-                shortName = "Nd";
+                shortName = getString(R.string.plan_header_sun_short);
                 break;
         }
-        return shortName + "\n" + date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"));
+        return shortName + "\n" +
+                date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"));
     }
+
+    // endregion
+
+    // region Month rendering
 
     private void renderMonth(PlanRepository.PlanResult result) {
         layoutWeekRoot.setVisibility(View.GONE);
@@ -1092,26 +1268,26 @@ public class PlanActivity extends AppCompatActivity {
                 cellRoot.setLayoutParams(lp);
 
                 if (cell.hasPlan) {
-                    cellRoot.setBackgroundColor(0x112563EB);
+                    cellRoot.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_month_cell_with_events_bg));
                 } else {
-                    cellRoot.setBackgroundColor(0xFF020617);
+                    cellRoot.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_month_cell_bg));
                 }
 
                 TextView tvNum = new TextView(this);
                 tvNum.setText(String.valueOf(cell.date.getDayOfMonth()));
-                tvNum.setTextColor(0xFFE5E7EB);
+                tvNum.setTextColor(ContextCompat.getColor(this, R.color.plan_month_day_number));
                 tvNum.setTextSize(13f);
                 cellRoot.addView(tvNum);
 
                 if (cell.hasPlan) {
                     TextView tvHint = new TextView(this);
-                    tvHint.setText("Zajęcia w tym dniu");
+                    tvHint.setText(R.string.plan_month_cell_has_events_hint);
                     tvHint.setTextSize(9f);
-                    tvHint.setTextColor(0xFF9CA3AF);
+                    tvHint.setTextColor(ContextCompat.getColor(this, R.color.plan_month_day_hint));
                     cellRoot.addView(tvHint);
 
                     cellRoot.setOnClickListener(v -> {
-                        viewMode = "day";
+                        setCurrentViewMode(ViewMode.DAY);
                         currentDate = cell.date;
                         new LoadPlanTask().execute();
                     });
@@ -1121,6 +1297,10 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
     }
+
+    // endregion
+
+    // region Utils / inner layout class
 
     private int dpToPx(float dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
@@ -1168,4 +1348,6 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
     }
+
+    // endregion
 }

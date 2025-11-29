@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.MotionEvent;
 
@@ -11,6 +12,10 @@ import com.google.android.material.navigation.NavigationView;
 
 public class AboutActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private Toolbar toolbar;
@@ -24,15 +29,20 @@ public class AboutActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
 
-        toolbar.setTitle("O aplikacji");
+        toolbar.setTitle(R.string.about_title);
 
-        // Attach the navigation drawer and register this screen as "about"
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "about");
+        NavDrawerHelper.setupNavigation(
+                this,
+                drawerLayout,
+                navigationView,
+                toolbar,
+                NavDrawerHelper.Screen.ABOUT
+        );
     }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        // Observe the gesture without blocking the event
+        // Only observe the gesture, do not block the event
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
     }

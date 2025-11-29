@@ -6,6 +6,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -27,12 +28,17 @@ import java.util.List;
 
 public class NewsActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
     // Cache
     private static final String PREFS_NEWS_CACHE = "mzut_news_cache";
     private static final String KEY_NEWS_LIST_JSON = "news_list_json";
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
     // Cache at most for one week – after that always refreshed from network
-    private static final long NEWS_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L; // 7 days
+    private static final long NEWS_CACHE_TTL_MS =
+            7L * 24L * 60L * 60L * 1000L; // 7 days
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -58,7 +64,15 @@ public class NewsActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
 
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "news");
+        toolbar.setTitle(R.string.news_title);
+
+        NavDrawerHelper.setupNavigation(
+                this,
+                drawerLayout,
+                navigationView,
+                toolbar,
+                NavDrawerHelper.Screen.NEWS
+        );
 
         listNews = findViewById(R.id.listNews);
         progress = findViewById(R.id.newsProgress);
@@ -66,7 +80,6 @@ public class NewsActivity extends AppCompatActivity {
         btnNewsRefresh = findViewById(R.id.btnNewsRefresh);
 
         listNews.setLayoutManager(new LinearLayoutManager(this));
-        toolbar.setTitle("Aktualności ZUT");
 
         adapter = new NewsAdapter(this, items);
         listNews.setAdapter(adapter);
@@ -84,7 +97,7 @@ public class NewsActivity extends AppCompatActivity {
             btnNewsRefresh.setOnClickListener(v -> {
                 Toast.makeText(
                         NewsActivity.this,
-                        "Pobieram najnowsze dane…",
+                        R.string.news_refresh_toast,
                         Toast.LENGTH_SHORT
                 ).show();
                 startLoadNews(true);
@@ -141,9 +154,10 @@ public class NewsActivity extends AppCompatActivity {
                     tvEmpty.setVisibility(View.VISIBLE);
                 }
                 if (error != null) {
+                    String msg = error.getMessage() != null ? error.getMessage() : "";
                     Toast.makeText(
                             NewsActivity.this,
-                            "Błąd pobierania RSS: " + error.getMessage(),
+                            getString(R.string.news_error_rss, msg),
                             Toast.LENGTH_LONG
                     ).show();
                 }

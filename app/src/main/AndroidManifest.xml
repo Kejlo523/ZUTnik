@@ -35,9 +35,12 @@
 
         <activity android:name=".PlanActivity" />
 
-        <activity
-            android:name=".AboutActivity"
-            android:label="O aplikacji" />
+        <activity android:name=".UsefulLinksActivity" />
+
+        <activity android:name=".SettingsActivity" />
+
+        <activity android:name=".AboutActivity" />
+
 
         <receiver
             android:name=".PlanDayWidgetProvider"

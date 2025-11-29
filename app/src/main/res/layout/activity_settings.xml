@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:fitsSystemWindows="true">
+
+    <!-- TOOLBAR spójny z innymi ekranami -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@drawable/bg_toolbar"
+        android:titleTextColor="@color/mz_text"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:elevation="0dp" />
+
+    <!-- CONTENT POD TOOLBAREM -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="ifContentScrolls"
+        android:background="@android:color/transparent">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <!-- HERO / nagłówek ekranu -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="20dp">
+
+                <!-- mały pill -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:text="@string/settings_header_pill"
+                    android:textColor="@color/mz_primary"
+                    android:textSize="11sp" />
+
+                <!-- tytuł ustawień -->
+                <TextView
+                    android:id="@+id/settingsTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_title"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/mz_text"
+                    android:layout_marginTop="10dp" />
+
+                <!-- podtytuł -->
+                <TextView
+                    android:id="@+id/settingsSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_subtitle"
+                    android:textSize="14sp"
+                    android:textColor="@color/mz_muted"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+
+            <!-- KARTA USTAWIEŃ JĘZYKA -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_soft"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/settingsSectionLanguageTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_language_label"
+                    android:textColor="@color/mz_text"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <Spinner
+                    android:id="@+id/spinnerLanguage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:popupBackground="@color/mz_bg"
+                    android:padding="4dp"
+                    android:spinnerMode="dropdown" />
+
+            </LinearLayout>
+
+            <!-- Dolny odstęp -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="40dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

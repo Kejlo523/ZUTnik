@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/navHeaderRoot"
     android:orientation="vertical"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:paddingTop="28dp"
+    android:paddingTop="48dp"
     android:paddingBottom="20dp"
     android:background="@color/mz_bg"
     android:layout_width="match_parent"
@@ -18,16 +19,17 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
+        <!-- GÓRA: tytuł + użytkownik -->
         <ImageView
             android:id="@+id/navHeaderIcon"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:src="@mipmap/ic_zut_logo_round"
-            android:scaleType="centerCrop"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginBottom="20dp"
             android:layout_marginEnd="10dp"
-            android:clipToOutline="true" />
+            android:clipToOutline="true"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_zut_logo_round" />
 
-        <!-- GÓRA: tytuł + użytkownik -->
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
@@ -35,7 +37,7 @@
 
             <TextView
                 android:id="@+id/navHeaderTitle"
-                android:text="mZUT v2"
+                android:text="@string/app_name"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium"
@@ -45,7 +47,7 @@
 
             <TextView
                 android:id="@+id/navHeaderUser"
-                android:text="Student"
+                android:text="@string/nav_header_default_username"
                 android:textSize="12sp"
                 android:fontFamily="sans-serif"
                 android:textColor="@color/mz_muted"
@@ -70,7 +72,7 @@
 
             <TextView
                 android:id="@+id/navLinkHome"
-                android:text="Pulpit główny"
+                android:text="@string/home_title"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/mz_text"
@@ -89,7 +91,7 @@
 
             <TextView
                 android:id="@+id/navLinkPlan"
-                android:text="Plan zajęć"
+                android:text="@string/plan_title"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/mz_text"
@@ -108,7 +110,7 @@
 
             <TextView
                 android:id="@+id/navLinkGrades"
-                android:text="Oceny"
+                android:text="@string/grades_title"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/mz_text"
@@ -127,7 +129,7 @@
 
             <TextView
                 android:id="@+id/navLinkInfo"
-                android:text="Dane Studenta"
+                android:text="@string/info_title"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/mz_text"
@@ -146,7 +148,26 @@
 
             <TextView
                 android:id="@+id/navLinkNews"
-                android:text="Aktualności ZUT"
+                android:text="@string/news_title"
+                android:textSize="14sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/mz_text"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:layout_marginTop="6dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_nav_item"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/navLinkUsefull"
+                android:text="@string/nav_useful_links"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/mz_text"
@@ -165,7 +186,7 @@
 
             <TextView
                 android:id="@+id/navLinkAbout"
-                android:text="O aplikacji"
+                android:text="@string/about_title"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/mz_text"
@@ -184,18 +205,40 @@
         </LinearLayout>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/navAppVersion"
-        android:text="@string/app_version"
-        android:textSize="12sp"
-        android:fontFamily="sans-serif"
-        android:textColor="@color/mz_muted"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp"
+    <!-- DÓŁ: wersja + zębatka ustawień -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:id="@+id/navAppVersion"
+            android:text="@string/app_version"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/mz_muted"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/navSettings"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:padding="4dp"
+            android:src="@drawable/ic_settings_24"
+            android:contentDescription="@string/nav_settings_label"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/bg_nav_item"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/mz_text" />
+    </LinearLayout>
 
     <!-- separator nad wylogowaniem -->
     <View
@@ -204,11 +247,10 @@
         android:layout_marginBottom="8dp"
         android:background="@color/mz_border_soft" />
 
-
-    <!-- DÓŁ: wyloguj – przy samym dole -->
+    <!-- DÓŁ: wyloguj -->
     <TextView
         android:id="@+id/navLogout"
-        android:text="Wyloguj się"
+        android:text="@string/nav_logout_label"
         android:textSize="14sp"
         android:fontFamily="sans-serif-medium"
         android:textColor="@color/mz_danger"

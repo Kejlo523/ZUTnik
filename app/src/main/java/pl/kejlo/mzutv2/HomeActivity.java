@@ -11,10 +11,16 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.Context;
 
 import com.google.android.material.navigation.NavigationView;
 
 public class HomeActivity extends AppCompatActivity {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -54,10 +60,17 @@ public class HomeActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
 
-        toolbar.setTitle("Pulpit główny");
+        // Title from resources
+        toolbar.setTitle(R.string.home_title);
 
-        // Navigation drawer – home screen
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "home");
+        // Navigation drawer – home screen (enum version)
+        NavDrawerHelper.setupNavigation(
+                this,
+                drawerLayout,
+                navigationView,
+                toolbar,
+                NavDrawerHelper.Screen.HOME
+        );
 
         // Hero / sections
         textWelcome = findViewById(R.id.textWelcome);
@@ -96,13 +109,15 @@ public class HomeActivity extends AppCompatActivity {
             username = s.getUserId();
         }
         if (username == null || username.trim().isEmpty()) {
-            username = "Student";
+            // Default username from resources (the same as in NavDrawerHelper)
+            username = getString(R.string.nav_header_default_username);
         }
-        textWelcome.setText("Witaj, " + username);
 
-        textWelcomeSub.setText(
-                "Szybki dostęp do planu, ocen, informacji o studiach i aktualności z ZUT – w jednym miejscu."
-        );
+        // "Witaj, %1$s"
+        textWelcome.setText(getString(R.string.home_welcome_message, username));
+
+        // Subtitle from resources
+        textWelcomeSub.setText(R.string.home_welcome_subtitle);
     }
 
     private void setupClicks() {
@@ -115,7 +130,7 @@ public class HomeActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Toast.makeText(
                         HomeActivity.this,
-                        "Ekran ocen nie jest jeszcze podpięty.",
+                        R.string.home_grades_not_available,
                         Toast.LENGTH_SHORT
                 ).show();
             }
@@ -130,7 +145,7 @@ public class HomeActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Toast.makeText(
                         HomeActivity.this,
-                        "Ekran aktualności nie jest jeszcze podpięty.",
+                        R.string.home_news_not_available,
                         Toast.LENGTH_SHORT
                 ).show();
             }
@@ -150,7 +165,7 @@ public class HomeActivity extends AppCompatActivity {
         tilePlan.setOnLongClickListener(v -> {
             Toast.makeText(
                     this,
-                    "Plan: widok dnia, tygodnia, miesiąca + filtr przedmiotów.",
+                    R.string.home_tip_plan,
                     Toast.LENGTH_LONG
             ).show();
             return true;
@@ -159,7 +174,7 @@ public class HomeActivity extends AppCompatActivity {
         tileGrades.setOnLongClickListener(v -> {
             Toast.makeText(
                     this,
-                    "Oceny: średnia ECTS, lista zaliczeń, egzaminy.",
+                    R.string.home_tip_grades,
                     Toast.LENGTH_LONG
             ).show();
             return true;
@@ -168,7 +183,7 @@ public class HomeActivity extends AppCompatActivity {
         tileInfo.setOnLongClickListener(v -> {
             Toast.makeText(
                     this,
-                    "Informacje: kierunek, semestr, status studenta.",
+                    R.string.home_tip_info,
                     Toast.LENGTH_LONG
             ).show();
             return true;
@@ -177,7 +192,7 @@ public class HomeActivity extends AppCompatActivity {
         tileNews.setOnLongClickListener(v -> {
             Toast.makeText(
                     this,
-                    "Aktualności: komunikaty z RSS ZUT (studenci).",
+                    R.string.home_tip_news,
                     Toast.LENGTH_LONG
             ).show();
             return true;

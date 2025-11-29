@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="settings_language_entries">
+        <item>@string/settings_language_polish</item>
+        <item>@string/settings_language_english</item>
+        <item>@string/settings_language_ukrainian</item>
+    </string-array>
+</resources>

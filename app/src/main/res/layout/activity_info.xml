@@ -20,7 +20,6 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             android:titleTextColor="@color/mz_text"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
@@ -62,7 +61,7 @@
                             android:paddingTop="6dp"
                             android:paddingBottom="6dp"
                             android:background="@drawable/bg_card_soft"
-                            android:text="🎓 Dane Studenta"
+                            android:text="@string/info_header_pill"
                             android:textColor="@color/mz_primary"
                             android:textSize="11sp" />
 
@@ -78,7 +77,7 @@
 
                     <TextView
                         android:id="@+id/tvInfoTitle"
-                        android:text="Dane"
+                        android:text="@string/info_header_title"
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
@@ -88,7 +87,7 @@
 
                     <TextView
                         android:id="@+id/tvInfoSubtitle"
-                        android:text="Dane z systemów ZUT: kierunek, status, semestr oraz przebieg studiów — w jednym miejscu."
+                        android:text="@string/info_header_subtitle"
                         android:textSize="13sp"
                         android:textColor="@color/mz_muted"
                         android:layout_marginTop="4dp"
@@ -125,7 +124,7 @@
 
                         <TextView
                             android:id="@+id/tvInfoName"
-                            android:text="Student"
+                            android:text="@string/nav_header_default_username"
                             android:textSize="16sp"
                             android:textStyle="bold"
                             android:textColor="@color/mz_text"
@@ -134,7 +133,7 @@
 
                         <TextView
                             android:id="@+id/tvInfoUserId"
-                            android:text="ID użytkownika: -"
+                            android:text="@string/info_user_id_placeholder"
                             android:textSize="12sp"
                             android:textColor="@color/mz_muted"
                             android:layout_marginTop="2dp"
@@ -153,7 +152,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Kierunek / program studiów"
+                        android:text="@string/info_study_switch_label"
                         android:textSize="12sp"
                         android:textColor="@color/mz_text"
                         android:layout_marginBottom="4dp" />
@@ -177,7 +176,7 @@
                     android:layout_height="wrap_content">
 
                     <TextView
-                        android:text="Aktualne studia"
+                        android:text="@string/info_current_studies_title"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
@@ -199,7 +198,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Nr albumu:"
+                                android:text="@string/info_label_album"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -225,7 +224,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Wydział:"
+                                android:text="@string/info_label_faculty"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -251,7 +250,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Kierunek:"
+                                android:text="@string/info_label_field"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -277,7 +276,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Forma:"
+                                android:text="@string/info_label_form"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -303,7 +302,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Poziom:"
+                                android:text="@string/info_label_level"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -329,7 +328,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Specjalność:"
+                                android:text="@string/info_label_specialty"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -355,7 +354,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Specjalizacja:"
+                                android:text="@string/info_label_specialisation"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -381,7 +380,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Status:"
+                                android:text="@string/info_label_status"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -407,7 +406,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Rok akademicki:"
+                                android:text="@string/info_label_academic_year"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -433,7 +432,7 @@
                             android:paddingBottom="4dp">
 
                             <TextView
-                                android:text="Semestr:"
+                                android:text="@string/info_label_semester"
                                 android:textSize="13sp"
                                 android:textColor="@color/mz_muted"
                                 android:layout_width="0dp"
@@ -462,7 +461,7 @@
                     android:layout_height="wrap_content">
 
                     <TextView
-                        android:text="Przebieg studiów"
+                        android:text="@string/info_history_title"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
@@ -480,7 +479,7 @@
                 <!-- Loading -->
                 <TextView
                     android:id="@+id/infoProgress"
-                    android:text="Ładowanie danych..."
+                    android:text="@string/info_sync_in_progress"
                     android:textSize="12sp"
                     android:textColor="@color/mz_muted"
                     android:layout_marginTop="12dp"

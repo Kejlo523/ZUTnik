@@ -1,19 +1,20 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+
     <style name="Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Primary brand color -->
+        <!-- Kolory brandu -->
         <item name="colorPrimary">@color/mz_primary</item>
         <item name="colorPrimaryVariant">@color/mz_primary_alt</item>
         <item name="colorOnPrimary">@color/mz_text</item>
 
-        <!-- Secondary -->
-        <item name="colorSecondary">@color/mz_primary_alt</item>
-        <item name="colorSecondaryVariant">@color/mz_primary</item>
-        <item name="colorOnSecondary">@color/mz_text</item>
+        <!-- BARDZO WAŻNE: to zabija fiolet -->
+        <item name="colorPrimaryDark">@color/mz_toolbar_grad_start</item>
+        <item name="android:statusBarColor">@color/mz_toolbar_grad_start</item>
+        <item name="android:navigationBarColor">@color/mz_bg</item>
 
-        <!-- Status bar -->
-        <item name="android:statusBarColor">@color/mz_bg_soft</item>
+        <!-- Jasny status bar – ciemne ikonki -->
+        <item name="android:windowLightStatusBar">true</item>
 
-        <!-- ActionBar / title -->
+        <!-- Bez actionbara -->
         <item name="windowActionBar">false</item>
         <item name="android:windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -24,4 +25,5 @@
         <item name="android:windowSplashScreenAnimationDuration">200</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
     </style>
+
 </resources>

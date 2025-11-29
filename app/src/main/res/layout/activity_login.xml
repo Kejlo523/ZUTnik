@@ -26,7 +26,7 @@
         <!-- Baner / nazwa -->
         <TextView
             android:id="@+id/appTitle"
-            android:text="mZUT v2"
+            android:text="@string/app_name"
             android:textSize="26sp"
             android:textStyle="bold"
             android:textColor="@color/mz_text"
@@ -36,6 +36,7 @@
 
         <!-- Karta logowania -->
         <LinearLayout
+            android:id="@+id/loginCard"
             android:orientation="vertical"
             android:padding="20dp"
             android:background="@drawable/bg_card_soft"
@@ -43,7 +44,8 @@
             android:layout_height="wrap_content">
 
             <TextView
-                android:text="Zaloguj się do mZUT"
+                android:id="@+id/loginCardTitle"
+                android:text="@string/login_card_title"
                 android:textColor="@color/mz_text"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -53,17 +55,17 @@
 
             <EditText
                 android:id="@+id/editLogin"
-                android:hint="Login"
+                android:hint="@string/login_hint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
                 android:textColor="@color/mz_text"
                 android:textColorHint="@color/mz_muted"
-                android:background="@color/mz_bg" />
+                android:background="@drawable/login_input_background" />
 
             <EditText
                 android:id="@+id/editPass"
-                android:hint="Hasło"
+                android:hint="@string/login_password_hint"
                 android:inputType="textPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -71,19 +73,20 @@
                 android:padding="10dp"
                 android:textColor="@color/mz_text"
                 android:textColorHint="@color/mz_muted"
-                android:background="@color/mz_bg" />
+                android:background="@drawable/login_input_background" />
 
             <Button
                 android:id="@+id/btnLogin"
-                android:text="Zaloguj"
+                android:text="@string/login_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:backgroundTint="@color/mz_primary"
-                android:textColor="@android:color/white" />
+                android:textColor="@color/mz_text" />
 
             <TextView
-                android:text="Dane logowania są wysyłane przez oficjalne API mZUT. Login zostanie zapamiętany na tym urządzeniu."
+                android:id="@+id/loginInfoText"
+                android:text="@string/login_info_text"
                 android:textSize="11sp"
                 android:textColor="@color/mz_muted"
                 android:layout_marginTop="12dp"

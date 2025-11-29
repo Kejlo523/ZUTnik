@@ -11,7 +11,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 2
-        versionName = "1.0.2"
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,10 +29,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
 
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation(libs.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)

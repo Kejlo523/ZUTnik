@@ -3,7 +3,9 @@ package pl.kejlo.mzutv2;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.core.content.ContextCompat;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -28,30 +30,58 @@ import java.util.List;
 
 public class InfoActivity extends AppCompatActivity {
 
-    // Cache configuration
-    private static final String PREFS_INFO_CACHE      = "mzut_info_cache";
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
+    // region Cache configuration
+
+    private static final String PREFS_INFO_CACHE = "mzut_info_cache";
     private static final String KEY_INFO_DETAILS_JSON = "info_details_json";
     private static final String KEY_INFO_HISTORY_JSON = "info_history_json";
-    private static final String KEY_INFO_TIMESTAMP    = "info_timestamp";
-    private static final long INFO_CACHE_TTL_MS       = 7L * 24L * 60L * 60L * 1000L; // 7 days
+    private static final String KEY_INFO_TIMESTAMP = "info_timestamp";
+    // 7 days
+    private static final long INFO_CACHE_TTL_MS =
+            7L * 24L * 60L * 60L * 1000L;
+
+    // History text appearance
+    private static final float HISTORY_EMPTY_TEXT_SIZE_SP = 12f;
+    private static final float HISTORY_TEXT_SIZE_SP = 13f;
+    // w dp, potem przeliczymy na px
+    private static final int HISTORY_ITEM_VERTICAL_PADDING_DP = 6;
+
+    // endregion
+
+    // region Views
 
     private DrawerLayout drawerLayout;
-
-    private ImageView imageAvatar;
-    private ImageView btnInfoRefresh;
     private NavigationView navigationView;
     private Toolbar toolbar;
 
-    private TextView tvName, tvUserId;
-    private TextView tvAlbum, tvWydzial, tvKierunek, tvForma,
-            tvPoziom, tvSpecjalnosc, tvSpecjalizacja, tvStatus,
-            tvRok, tvSemestr;
+    private ImageView imageAvatar;
+    private ImageView btnInfoRefresh;
+
+    private TextView tvName;
+    private TextView tvUserId;
+
+    private TextView tvAlbum;
+    private TextView tvWydzial;
+    private TextView tvKierunek;
+    private TextView tvForma;
+    private TextView tvPoziom;
+    private TextView tvSpecjalnosc;
+    private TextView tvSpecjalizacja;
+    private TextView tvStatus;
+    private TextView tvRok;
+    private TextView tvSemestr;
 
     private LinearLayout historyContainer;
     private View progress;
     private View infoContentRoot;
     private Spinner spinnerStudies;
     private boolean spinnerInitialized = false;
+
+    // endregion
 
     private LoadInfoTask currentTask;
 
@@ -60,14 +90,21 @@ public class InfoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_info);
 
+        // Views
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
 
-        toolbar.setTitle("Dane Studenta");
+        toolbar.setTitle(R.string.info_title);
 
         // Navigation drawer for the "info" screen
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "info");
+        NavDrawerHelper.setupNavigation(
+                this,
+                drawerLayout,
+                navigationView,
+                toolbar,
+                NavDrawerHelper.Screen.INFO
+        );
 
         tvName = findViewById(R.id.tvInfoName);
         tvUserId = findViewById(R.id.tvInfoUserId);
@@ -90,16 +127,22 @@ public class InfoActivity extends AppCompatActivity {
         infoContentRoot = findViewById(R.id.infoContent);
         spinnerStudies = findViewById(R.id.spinnerStudies);
 
-        MzutSession s = MzutSession.getInstance();
-        String username = s.getUsername();
+        // Session & basic user info
+        MzutSession session = MzutSession.getInstance();
+        String username = session.getUsername();
         if (username == null || username.trim().isEmpty()) {
-            username = s.getUserId();
+            username = session.getUserId();
         }
-        tvName.setText(username != null ? username : "Student");
-        tvUserId.setText("ID użytkownika: " + (s.getUserId() != null ? s.getUserId() : "-"));
+        if (username == null || username.trim().isEmpty()) {
+            username = getString(R.string.nav_header_default_username);
+        }
+        tvName.setText(username);
+
+        String userId = session.getUserId() != null ? session.getUserId() : "-";
+        tvUserId.setText(getString(R.string.info_user_id, userId));
 
         // Avatar image
-        String imageUrl = s.getImageUrl();
+        String imageUrl = session.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             new LoadImageTask(imageAvatar).execute(imageUrl);
         } else {
@@ -119,9 +162,7 @@ public class InfoActivity extends AppCompatActivity {
 
         // 4) Refresh icon – forces reload
         if (btnInfoRefresh != null) {
-            btnInfoRefresh.setOnClickListener(v -> {
-                startInfoLoad(true);
-            });
+            btnInfoRefresh.setOnClickListener(v -> startInfoLoad(true));
         }
     }
 
@@ -132,11 +173,11 @@ public class InfoActivity extends AppCompatActivity {
         return super.dispatchTouchEvent(ev);
     }
 
-    // Network loading
+    // region Network loading
 
     private void startInfoLoad(boolean forceReload) {
         // forceReload simply ignores TTL at the call site and always fetches
-        Toast.makeText(this, "Synchronizuję…", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.info_sync_in_progress, Toast.LENGTH_SHORT).show();
 
         if (currentTask != null) {
             currentTask.cancel(true);
@@ -175,9 +216,10 @@ public class InfoActivity extends AppCompatActivity {
             infoContentRoot.setAlpha(1f);
 
             if (!ok) {
+                String message = error != null ? error.getMessage() : "";
                 Toast.makeText(
                         InfoActivity.this,
-                        "Błąd ładowania danych: " + (error != null ? error.getMessage() : ""),
+                        getString(R.string.info_error_loading, message),
                         Toast.LENGTH_LONG
                 ).show();
                 return;
@@ -196,10 +238,12 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
-    // Cache logic
+    // endregion
+
+    // region Cache logic
 
     // Returns true if data should be fetched from the network
-    // (cache is empty or older than 7 days).
+    // (cache is empty or older than TTL).
     private boolean shouldFetchFromNetwork() {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
         long ts = prefs.getLong(KEY_INFO_TIMESTAMP, 0L);
@@ -300,11 +344,10 @@ public class InfoActivity extends AppCompatActivity {
     private void bindHistoryFromCache(JSONArray arr) {
         historyContainer.removeAllViews();
         if (arr == null || arr.length() == 0) {
-            TextView tv = new TextView(this);
-            tv.setText("Brak przebiegu studiów.");
-            tv.setTextColor(0xFF9CA3AF);
-            tv.setTextSize(12);
-            historyContainer.addView(tv);
+            addHistoryTextView(
+                    getString(R.string.info_history_empty),
+                    true
+            );
             return;
         }
 
@@ -315,17 +358,14 @@ public class InfoActivity extends AppCompatActivity {
             }
             String label = obj.optString("label", "");
             String status = obj.optString("status", "");
-
-            TextView tv = new TextView(this);
-            tv.setText(label + " – " + status);
-            tv.setTextColor(0xFFE5E7EB);
-            tv.setTextSize(13);
-            tv.setPadding(0, 6, 0, 6);
-            historyContainer.addView(tv);
+            String text = getString(R.string.info_history_item, label, status);
+            addHistoryTextView(text, false);
         }
     }
 
-    // Studies spinner
+    // endregion
+
+    // region Studies spinner
 
     private void setupStudiesSpinner() {
         MzutSession session = MzutSession.getInstance();
@@ -372,6 +412,7 @@ public class InfoActivity extends AppCompatActivity {
 
                 @Override
                 public void onNothingSelected(AdapterView<?> parent) {
+                    // no-op
                 }
             });
         } else {
@@ -383,7 +424,9 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
-    // Binding data from API
+    // endregion
+
+    // region Binding data from API
 
     private void bindDetails(StudiesInfoRepository.StudyDetails d) {
         setOrHide(tvAlbum,         d.album);
@@ -401,21 +444,16 @@ public class InfoActivity extends AppCompatActivity {
     private void bindHistory(List<StudiesInfoRepository.StudyHistoryItem> history) {
         historyContainer.removeAllViews();
         if (history == null || history.isEmpty()) {
-            TextView tv = new TextView(this);
-            tv.setText("Brak przebiegu studiów.");
-            tv.setTextColor(0xFF9CA3AF);
-            tv.setTextSize(12);
-            historyContainer.addView(tv);
+            addHistoryTextView(
+                    getString(R.string.info_history_empty),
+                    true
+            );
             return;
         }
 
         for (StudiesInfoRepository.StudyHistoryItem item : history) {
-            TextView tv = new TextView(this);
-            tv.setText(item.label + " – " + item.status);
-            tv.setTextColor(0xFFE5E7EB);
-            tv.setTextSize(13);
-            tv.setPadding(0, 6, 0, 6);
-            historyContainer.addView(tv);
+            String text = getString(R.string.info_history_item, item.label, item.status);
+            addHistoryTextView(text, false);
         }
     }
 
@@ -428,7 +466,30 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
-    // Avatar loading
+    private void addHistoryTextView(String text, boolean isEmpty) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+
+        if (isEmpty) {
+            tv.setTextColor(ContextCompat.getColor(this, R.color.mz_muted));
+            tv.setTextSize(HISTORY_EMPTY_TEXT_SIZE_SP);
+        } else {
+            tv.setTextColor(ContextCompat.getColor(this, R.color.mz_text));
+            tv.setTextSize(HISTORY_TEXT_SIZE_SP);
+            int padV = dpToPx(HISTORY_ITEM_VERTICAL_PADDING_DP);
+            tv.setPadding(0, padV, 0, padV);
+        }
+
+        historyContainer.addView(tv);
+    }
+
+    private int dpToPx(float dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    // endregion
+
+    // region Avatar loading
 
     private static class LoadImageTask extends android.os.AsyncTask<String, Void, android.graphics.Bitmap> {
         private final android.widget.ImageView target;
@@ -464,4 +525,6 @@ public class InfoActivity extends AppCompatActivity {
             }
         }
     }
+
+    // endregion
 }
