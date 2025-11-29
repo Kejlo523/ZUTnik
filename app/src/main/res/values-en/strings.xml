@@ -1,0 +1,375 @@
+<resources>
+
+    <!-- =========================
+         APLIKACJA / GLOBALNE
+         ========================= -->
+    <string name="app_name">mZUT v2</string>
+    <string name="app_version">Version %1$s</string>
+
+    <!-- =========================
+         NAV / WSPÓLNE
+         ========================= -->
+    <string name="nav_header_default_username">Student</string>
+    <string name="logout_success_message">Logged out</string>
+    <string name="nav_settings_label">Settings</string>
+    <string name="nav_useful_links">Useful links</string>
+    <string name="nav_logout_label">Log out</string>
+
+    <!-- =========================
+         EKRAN LOGOWANIA
+         ========================= -->
+    <!-- UI -->
+    <string name="login_card_title">Log in to mZUT</string>
+    <string name="login_hint">Login</string>
+    <string name="login_password_hint">Password</string>
+    <string name="login_button">Log in</string>
+    <string name="login_info_text">
+        Login data is sent via the official mZUT API. The login will be remembered on this device.
+    </string>
+
+    <!-- Logika -->
+    <string name="login_enter_credentials">Enter login and password!</string>
+    <string name="login_error_generic">Error: %1$s</string>
+    <string name="login_no_server_response">No response from server</string>
+    <string name="login_system_error">ZUT system error (SYSTEM ERROR).</string>
+    <string name="login_invalid_credentials">Invalid login or password.</string>
+    <string name="login_success">Logged in as %1$s</string>
+
+    <!-- =========================
+         HOME
+         ========================= -->
+    <string name="home_title">Main dashboard</string>
+
+    <!-- Welcome section -->
+    <string name="home_welcome_message">Hello, %1$s</string>
+    <string name="home_welcome_subtitle">
+        Quick access to timetable, grades, study info and ZUT news – in one place.
+    </string>
+    <string name="home_welcome_fallback">Hello, Student 👋</string>
+
+    <!-- Ekrany jeszcze niepodpięte -->
+    <string name="home_grades_not_available">Grades screen is not connected yet.</string>
+    <string name="home_news_not_available">News screen is not connected yet.</string>
+
+    <!-- Podpowiedzi (long press) -->
+    <string name="home_tip_plan">Timetable: day, week, month view + subject filter.</string>
+    <string name="home_tip_grades">Grades: ECTS average, list of passes, exams.</string>
+    <string name="home_tip_info">Info: field of study, semester, student status.</string>
+    <string name="home_tip_news">News: announcements from ZUT RSS (students).</string>
+
+    <!-- HOME – layout / kafelki -->
+    <string name="home_shortcuts_title">Quick shortcuts</string>
+
+    <!-- Hero buttons -->
+    <string name="home_action_plan_label">📅 Timetable</string>
+    <string name="home_action_grades_label">⭐ Grades</string>
+
+    <!-- Tiles -->
+    <string name="home_tile_plan_title">📅 Timetable</string>
+    <string name="home_tile_plan_desc">
+        Day, week and month view + subject filtering.
+    </string>
+
+    <string name="home_tile_grades_title">⭐ Grades</string>
+    <string name="home_tile_grades_desc">
+        Average, ECTS and pass details in one place.
+    </string>
+
+    <string name="home_tile_info_title">🎓 Study information</string>
+    <string name="home_tile_info_desc">
+        Field of study, faculty, student status, course of studies.
+    </string>
+
+    <string name="home_tile_news_title">📰 ZUT news</string>
+    <string name="home_tile_news_desc">
+        Announcements from the RSS channel for students.
+    </string>
+
+    <!-- Footer -->
+    <string name="home_footer_meta">
+        Data is fetched from ZUT systems and cached locally. If something looks suspicious, always verify it in the official panels as well.
+    </string>
+
+    <!-- =========================
+         INFO (DANE STUDENTA)
+         ========================= -->
+    <string name="info_title">Student data</string>
+    <string name="info_user_id">User ID: %1$s</string>
+    <string name="info_user_id_placeholder">User ID: -</string>
+
+    <!-- Sync / błędy -->
+    <string name="info_sync_in_progress">Syncing…</string>
+    <string name="info_error_loading">Error loading data: %1$s</string>
+
+    <!-- Przebieg studiów -->
+    <string name="info_history_empty">No study history.</string>
+    <string name="info_history_item">%1$s – %2$s</string>
+    <string name="info_history_title">Study history</string>
+
+    <!-- INFO – nagłówek / hero -->
+    <string name="info_header_pill">🎓 Student data</string>
+    <string name="info_header_title">Data</string>
+    <string name="info_header_subtitle">
+        Data from ZUT systems: field of study, status, semester and course of studies — in one place.
+    </string>
+
+    <!-- INFO – przełącznik kierunku -->
+    <string name="info_study_switch_label">Field / study programme</string>
+
+    <!-- INFO – karta "Aktualne studia" -->
+    <string name="info_current_studies_title">Current studies</string>
+    <string name="info_label_album">Student ID number:</string>
+    <string name="info_label_faculty">Faculty:</string>
+    <string name="info_label_field">Field of study:</string>
+    <string name="info_label_form">Form:</string>
+    <string name="info_label_level">Level:</string>
+    <string name="info_label_specialty">Speciality:</string>
+    <string name="info_label_specialisation">Specialization:</string>
+    <string name="info_label_status">Status:</string>
+    <string name="info_label_academic_year">Academic year:</string>
+    <string name="info_label_semester">Semester:</string>
+
+    <!-- =========================
+         PLAN ZAJĘĆ – LOGIKA
+         ========================= -->
+    <string name="plan_title">Timetable</string>
+
+    <!-- Filtry -->
+    <string name="plan_filters_cache_cleared">
+        Subject list cache cleared. A new list will be fetched next time it is opened.
+    </string>
+    <string name="plan_filters_loading">Loading…</string>
+    <string name="plan_filters_error">Error loading subject list: %1$s</string>
+    <string name="plan_filters_empty">No subjects to filter.</string>
+    <string name="plan_filters_dialog_title">Subject filter – exclude from view</string>
+    <string name="plan_filters_apply">Apply</string>
+    <string name="plan_filters_reset">Reset</string>
+    <string name="plan_filters_cancel">Cancel</string>
+
+    <!-- Ładowanie / puste stany -->
+    <string name="plan_error_loading_plan_with_message">Error loading timetable: %1$s</string>
+    <string name="plan_error_loading_plan_generic">Error loading timetable.</string>
+    <string name="plan_no_classes_in_range">No classes in selected range.</string>
+    <string name="plan_no_data_for_month">No timetable data for this month.</string>
+
+    <!-- Widok miesiąca -->
+    <string name="plan_month_cell_has_events_hint">Classes on this day</string>
+
+    <!-- Szczegóły zajęć -->
+    <string name="plan_event_default_title">Classes</string>
+    <string name="plan_event_room_prefix">Room: </string>
+    <string name="plan_event_group_prefix">Group: </string>
+    <string name="plan_event_teacher_prefix">Teacher: </string>
+
+    <!-- Skróty dni (nagłówki tygodnia/dnia) -->
+    <string name="plan_header_mon_short">Mon</string>
+    <string name="plan_header_tue_short">Tue</string>
+    <string name="plan_header_wed_short">Wed</string>
+    <string name="plan_header_thu_short">Thu</string>
+    <string name="plan_header_fri_short">Fri</string>
+    <string name="plan_header_sat_short">Sat</string>
+    <string name="plan_header_sun_short">Sun</string>
+
+    <!-- Nazwy dni w wierszu miesiąca -->
+    <string name="plan_month_weekday_mon">Mon</string>
+    <string name="plan_month_weekday_tue">Tue</string>
+    <string name="plan_month_weekday_wed">Wed</string>
+    <string name="plan_month_weekday_thu">Thu</string>
+    <string name="plan_month_weekday_fri">Fri</string>
+    <string name="plan_month_weekday_sat">Sat</string>
+    <string name="plan_month_weekday_sun">Sun</string>
+
+    <!-- PLAN – UI przyciski / nawigacja -->
+    <string name="plan_view_day">Day</string>
+    <string name="plan_view_week">Week</string>
+    <string name="plan_view_month">Month</string>
+
+    <string name="plan_button_today">Today</string>
+    <string name="plan_button_refresh">Refresh</string>
+    <string name="plan_button_filters">Subject filter</string>
+
+    <string name="plan_nav_prev">&lt;</string>
+    <string name="plan_nav_next">&gt;</string>
+
+    <!-- =========================
+         OCENY – LOGIKA
+         ========================= -->
+    <string name="grades_title">Grades</string>
+    <string name="grades_refresh_toast">Refreshing grades and ECTS…</string>
+
+    <!-- Błędy / toasty -->
+    <string name="grades_error_initial_load">Error loading data: %1$s</string>
+    <string name="grades_error_loading_semesters">Error fetching semesters: %1$s</string>
+    <string name="grades_no_semesters_for_study">No semesters for selected field of study.</string>
+    <string name="grades_refresh_network_failed_using_cache">
+        Could not refresh grades. Showing last saved data.
+    </string>
+    <string name="grades_load_network_failed_using_cache">
+        Could not fetch grades. Showing last saved data.
+    </string>
+    <string name="grades_error_loading_grades">Error fetching grades: %1$s</string>
+
+    <!-- Semestry -->
+    <string name="grades_semester_label">Semester %1$s (%2$s)</string>
+
+    <!-- Podsumowanie -->
+    <string name="grades_average_placeholder">–</string>
+
+    <!-- OCENY – UI LAYOUT -->
+    <string name="grades_header_pill">⭐ Grades and ECTS</string>
+    <string name="grades_hero_title">Grade summary by semester</string>
+    <string name="grades_hero_subtitle">
+        Weighted ECTS average, total points and detailed list of passes.
+    </string>
+
+    <string name="grades_summary_average_label">Grade average</string>
+    <string name="grades_summary_average_description">
+        Weighted ECTS average (numeric grades only).
+    </string>
+
+    <string name="grades_summary_ects_label">ECTS total</string>
+    <string name="grades_summary_ects_description">
+        Total number of ECTS points from grades in the selected semester.
+    </string>
+
+    <string name="grades_study_label">Active field of study</string>
+    <string name="grades_semester_caption">Semester</string>
+
+    <!-- Nagłówki tabeli ocen -->
+    <string name="grades_table_header_subject">Subject</string>
+    <string name="grades_table_header_type">Type</string>
+    <string name="grades_table_header_grade">Grade</string>
+    <string name="grades_table_header_date">Date</string>
+
+    <!-- Pusty stan listy -->
+    <string name="grades_empty_state">No grades for the selected semester.</string>
+
+    <!-- =========================
+         NEWS – LOGIKA
+         ========================= -->
+    <string name="news_title">ZUT news</string>
+    <string name="news_refresh_toast">Fetching latest data…</string>
+    <string name="news_error_rss">Error fetching RSS: %1$s</string>
+
+    <!-- Szczegóły news -->
+    <string name="news_detail_title">Post</string>
+    <string name="news_detail_source_label">Source: zut.edu.pl</string>
+    <string name="news_detail_no_content">
+        No content in RSS channel for this post.
+    </string>
+
+    <!-- NEWS – layout / nagłówek -->
+    <string name="news_header_pill">📰 ZUT news</string>
+    <string name="news_header_title">Announcements channel for students</string>
+    <string name="news_header_source_info">RSS source: ZUT students</string>
+
+    <!-- NEWS – pusty stan -->
+    <string name="news_empty_state">
+        No news or a problem occurred while fetching the RSS channel.
+    </string>
+
+    <!-- News detail – nagłówek pill -->
+    <string name="news_detail_tag">📰 ZUT news item</string>
+
+    <!-- =========================
+         WIDGET DNIA (PLAN)
+         ========================= -->
+    <string name="plan_widget_subtitle_today">Today\'s classes</string>
+    <string name="plan_widget_subtitle_in_progress">Classes in progress</string>
+    <string name="plan_widget_subtitle_next_prefix">Next in </string>
+    <string name="plan_widget_hours_suffix"> h</string>
+    <string name="plan_widget_minutes_suffix"> min</string>
+    <string name="plan_widget_subtitle_no_classes_tomorrow">No classes tomorrow</string>
+    <string name="plan_widget_subtitle_tomorrow">Tomorrow\'s classes</string>
+    <string name="plan_widget_subtitle_login_required">
+        Log in in the mZUT app
+    </string>
+    <string name="plan_widget_date_tomorrow_suffix">(tomorrow)</string>
+    <string name="plan_widget_refreshed_prefix">Refreshed: </string>
+
+    <!-- =========================
+         ABOUT
+         ========================= -->
+    <string name="about_title">About the app</string>
+
+    <!-- About screen / nagłówek -->
+    <string name="about_header_pill">ℹ️ App information</string>
+    <string name="about_subtitle">
+        Unofficial mobile app for ZUT students, with timetable, grades, study information and a daily widget — without ads and tracking.
+    </string>
+
+    <!-- About: projekt i autor -->
+    <string name="about_section_project_title">Project and author</string>
+    <string name="about_author_line">The app was created by Jędrzej Nowak.</string>
+    <string name="about_project_description_1">
+        mZUT v2 was created as an unofficial, lightweight alternative for quickly viewing timetable, grades and study information at ZUT, without having to click through heavy web panels.
+    </string>
+    <string name="about_project_description_2">
+        The app uses publicly available university systems and APIs, and login data stays on your device.
+    </string>
+
+    <!-- About: kontakt i linki -->
+    <string name="about_section_contact_title">Contact and links</string>
+    <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
+    <string name="about_contact_website">Website: endozero.pl</string>
+    <string name="about_contact_app_website">App website: mzut.endozero.pl</string>
+    <string name="about_contact_github">GitHub: https://github.com/Kejlo523/mzut-v2</string>
+
+    <!-- About: prywatność -->
+    <string name="about_section_privacy_title">Privacy and data</string>
+    <string name="about_privacy_text_1">
+        mZUT v2 does not use external analytics systems (Google Analytics, Firebase Analytics etc.), does not show ads and does not track your activity in the app.
+    </string>
+    <string name="about_privacy_text_2">
+        Login data is only used to authenticate in university systems and is stored locally on the device. No data is sent to the app author\'s servers.
+    </string>
+
+    <!-- About: stopka -->
+    <string name="about_footer_disclaimer">
+        mZUT v2 is an unofficial project and is not an app released by the West Pomeranian University of Technology.
+    </string>
+
+    <!-- =========================
+         USTAWIENIA / JĘZYK
+         ========================= -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_header_pill">⚙️ App settings</string>
+    <string name="settings_subtitle">
+        Choose the interface language. The change may require restarting the app.
+    </string>
+
+    <string name="settings_language_label">App language</string>
+    <string name="settings_language_polish">Polish</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_ukrainian">Ukrainian</string>
+
+    <string name="settings_language_info_hint">
+        Changing the language may require restarting the app.
+    </string>
+
+    <string name="settings_language_changed_toast">
+        Language changed. Interface has been reloaded.
+    </string>
+
+    <!-- =========================
+         PRZYDATNE LINKI
+         ========================= -->
+    <string name="useful_links_pill">Useful links</string>
+    <string name="useful_links_header_title">Your most important addresses in one place</string>
+    <string name="useful_links_header_sub">
+        Add or quickly open websites of the dean\'s office, faculty, timetable, regulations and other ZUT services.
+    </string>
+    <string name="useful_links_section_title">Links list</string>
+    <string name="useful_links_empty">
+        No defined links.\nAdd something in settings or check default suggestions.
+    </string>
+
+    <!-- =========================
+         WYLOGOWANIE – POTWIERDZENIE
+         ========================= -->
+    <string name="logout_confirm_title">Log out?</string>
+    <string name="logout_confirm_message">Are you sure you want to log out?</string>
+    <string name="logout_confirm_positive">Log out</string>
+    <string name="logout_confirm_negative">Cancel</string>
+
+</resources>

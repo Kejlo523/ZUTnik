@@ -1,0 +1,375 @@
+<resources>
+
+    <!-- =========================
+         APLIKACJA / GLOBALNE
+         ========================= -->
+    <string name="app_name">mZUT v2</string>
+    <string name="app_version">Версія %1$s</string>
+
+    <!-- =========================
+         NAV / WSPÓLNE
+         ========================= -->
+    <string name="nav_header_default_username">Студент</string>
+    <string name="logout_success_message">Вихід виконано</string>
+    <string name="nav_settings_label">Налаштування</string>
+    <string name="nav_useful_links">Корисні сторінки</string>
+    <string name="nav_logout_label">Вийти</string>
+
+    <!-- =========================
+         EKRAN LOGOWANIA
+         ========================= -->
+    <!-- UI -->
+    <string name="login_card_title">Увійдіть до mZUT</string>
+    <string name="login_hint">Логін</string>
+    <string name="login_password_hint">Пароль</string>
+    <string name="login_button">Увійти</string>
+    <string name="login_info_text">
+        Дані для входу надсилаються через офіційний API mZUT. Логін буде збережено на цьому пристрої.
+    </string>
+
+    <!-- Logika -->
+    <string name="login_enter_credentials">Введіть логін і пароль!</string>
+    <string name="login_error_generic">Помилка: %1$s</string>
+    <string name="login_no_server_response">Немає відповіді від сервера</string>
+    <string name="login_system_error">Помилка системи ZUT (SYSTEM ERROR).</string>
+    <string name="login_invalid_credentials">Неправильний логін або пароль.</string>
+    <string name="login_success">Увійшли як %1$s</string>
+
+    <!-- =========================
+         HOME
+         ========================= -->
+    <string name="home_title">Головна панель</string>
+
+    <!-- Welcome section -->
+    <string name="home_welcome_message">Вітаємо, %1$s</string>
+    <string name="home_welcome_subtitle">
+        Швидкий доступ до розкладу, оцінок, інформації про навчання та новин ZUT – усе в одному місці.
+    </string>
+    <string name="home_welcome_fallback">Вітаємо, Студенте 👋</string>
+
+    <!-- Ekrany jeszcze niepodpięte -->
+    <string name="home_grades_not_available">Екран оцінок ще не підключено.</string>
+    <string name="home_news_not_available">Екран новин ще не підключено.</string>
+
+    <!-- Podpowiedzi (long press) -->
+    <string name="home_tip_plan">Розклад: перегляд дня, тижня, місяця + фільтр предметів.</string>
+    <string name="home_tip_grades">Оцінки: середнє ECTS, список заліків, іспити.</string>
+    <string name="home_tip_info">Інформація: напрям, семестр, статус студента.</string>
+    <string name="home_tip_news">Новини: повідомлення з RSS ZUT (студенти).</string>
+
+    <!-- HOME – layout / kafelki -->
+    <string name="home_shortcuts_title">Швидкі ярлики</string>
+
+    <!-- Hero buttons -->
+    <string name="home_action_plan_label">📅 Розклад занять</string>
+    <string name="home_action_grades_label">⭐ Оцінки</string>
+
+    <!-- Tiles -->
+    <string name="home_tile_plan_title">📅 Розклад занять</string>
+    <string name="home_tile_plan_desc">
+        Перегляд дня, тижня й місяця + фільтрування предметів.
+    </string>
+
+    <string name="home_tile_grades_title">⭐ Оцінки</string>
+    <string name="home_tile_grades_desc">
+        Середнє, ECTS та деталі заліків в одному місці.
+    </string>
+
+    <string name="home_tile_info_title">🎓 Інформація про навчання</string>
+    <string name="home_tile_info_desc">
+        Напрям, факультет, статус студента, історія навчання.
+    </string>
+
+    <string name="home_tile_news_title">📰 Новини ZUT</string>
+    <string name="home_tile_news_desc">
+        Повідомлення й оголошення з RSS-каналу для студентів.
+    </string>
+
+    <!-- Footer -->
+    <string name="home_footer_meta">
+        Дані отримуються з систем ZUT і кешуються локально. Якщо щось виглядає підозріло, завжди перевіряйте це також в офіційних панелях.
+    </string>
+
+    <!-- =========================
+         INFO (DANE STUDENTA)
+         ========================= -->
+    <string name="info_title">Дані студента</string>
+    <string name="info_user_id">ID користувача: %1$s</string>
+    <string name="info_user_id_placeholder">ID користувача: -</string>
+
+    <!-- Sync / błędy -->
+    <string name="info_sync_in_progress">Виконується синхронізація…</string>
+    <string name="info_error_loading">Помилка завантаження даних: %1$s</string>
+
+    <!-- Przebieg studiów -->
+    <string name="info_history_empty">Немає історії навчання.</string>
+    <string name="info_history_item">%1$s – %2$s</string>
+    <string name="info_history_title">Історія навчання</string>
+
+    <!-- INFO – nagłówek / hero -->
+    <string name="info_header_pill">🎓 Дані студента</string>
+    <string name="info_header_title">Дані</string>
+    <string name="info_header_subtitle">
+        Дані із систем ZUT: напрям, статус, семестр та історія навчання — в одному місці.
+    </string>
+
+    <!-- INFO – przełącznik kierunku -->
+    <string name="info_study_switch_label">Напрям / освітня програма</string>
+
+    <!-- INFO – karta "Aktualne studia" -->
+    <string name="info_current_studies_title">Поточне навчання</string>
+    <string name="info_label_album">Номер залікової книжки:</string>
+    <string name="info_label_faculty">Факультет:</string>
+    <string name="info_label_field">Напрям:</string>
+    <string name="info_label_form">Форма:</string>
+    <string name="info_label_level">Рівень:</string>
+    <string name="info_label_specialty">Спеціальність:</string>
+    <string name="info_label_specialisation">Спеціалізація:</string>
+    <string name="info_label_status">Статус:</string>
+    <string name="info_label_academic_year">Навчальний рік:</string>
+    <string name="info_label_semester">Семестр:</string>
+
+    <!-- =========================
+         PLAN ZAJĘĆ – LOGIKA
+         ========================= -->
+    <string name="plan_title">Розклад занять</string>
+
+    <!-- Filtry -->
+    <string name="plan_filters_cache_cleared">
+        Кеш списку предметів очищено. Під час наступного відкриття буде завантажено новий список.
+    </string>
+    <string name="plan_filters_loading">Завантаження…</string>
+    <string name="plan_filters_error">Помилка завантаження списку предметів: %1$s</string>
+    <string name="plan_filters_empty">Немає предметів для фільтрування.</string>
+    <string name="plan_filters_dialog_title">Фільтр предметів – виключити з відображення</string>
+    <string name="plan_filters_apply">Застосувати</string>
+    <string name="plan_filters_reset">Скинути</string>
+    <string name="plan_filters_cancel">Скасувати</string>
+
+    <!-- Ładowanie / puste stany -->
+    <string name="plan_error_loading_plan_with_message">Помилка завантаження розкладу: %1$s</string>
+    <string name="plan_error_loading_plan_generic">Помилка завантаження розкладу.</string>
+    <string name="plan_no_classes_in_range">Немає занять у вибраному діапазоні.</string>
+    <string name="plan_no_data_for_month">Немає даних розкладу для цього місяця.</string>
+
+    <!-- Widok miesiąca -->
+    <string name="plan_month_cell_has_events_hint">Заняття в цей день</string>
+
+    <!-- Szczegóły zajęć -->
+    <string name="plan_event_default_title">Заняття</string>
+    <string name="plan_event_room_prefix">Аудиторія: </string>
+    <string name="plan_event_group_prefix">Група: </string>
+    <string name="plan_event_teacher_prefix">Викладач: </string>
+
+    <!-- Skróty dni (nagłówki tygodnia/dnia) -->
+    <string name="plan_header_mon_short">Пн</string>
+    <string name="plan_header_tue_short">Вт</string>
+    <string name="plan_header_wed_short">Ср</string>
+    <string name="plan_header_thu_short">Чт</string>
+    <string name="plan_header_fri_short">Пт</string>
+    <string name="plan_header_sat_short">Сб</string>
+    <string name="plan_header_sun_short">Нд</string>
+
+    <!-- Nazwy dni w wierszu miesiąca -->
+    <string name="plan_month_weekday_mon">Пон</string>
+    <string name="plan_month_weekday_tue">Вів</string>
+    <string name="plan_month_weekday_wed">Срд</string>
+    <string name="plan_month_weekday_thu">Чтв</string>
+    <string name="plan_month_weekday_fri">Пт</string>
+    <string name="plan_month_weekday_sat">Суб</string>
+    <string name="plan_month_weekday_sun">Нд</string>
+
+    <!-- PLAN – UI przyciski / nawigacja -->
+    <string name="plan_view_day">День</string>
+    <string name="plan_view_week">Тиждень</string>
+    <string name="plan_view_month">Місяць</string>
+
+    <string name="plan_button_today">Сьогодні</string>
+    <string name="plan_button_refresh">Оновити</string>
+    <string name="plan_button_filters">Фільтр предметів</string>
+
+    <string name="plan_nav_prev">&lt;</string>
+    <string name="plan_nav_next">&gt;</string>
+
+    <!-- =========================
+         OCENY – LOGIKA
+         ========================= -->
+    <string name="grades_title">Оцінки</string>
+    <string name="grades_refresh_toast">Оновлюю оцінки та ECTS…</string>
+
+    <!-- Błędy / toasty -->
+    <string name="grades_error_initial_load">Помилка завантаження даних: %1$s</string>
+    <string name="grades_error_loading_semesters">Помилка отримання семестрів: %1$s</string>
+    <string name="grades_no_semesters_for_study">Немає семестрів для вибраного напряму.</string>
+    <string name="grades_refresh_network_failed_using_cache">
+        Не вдалося оновити оцінки. Показую останні збережені дані.
+    </string>
+    <string name="grades_load_network_failed_using_cache">
+        Не вдалося отримати оцінки. Показую останні збережені дані.
+    </string>
+    <string name="grades_error_loading_grades">Помилка отримання оцінок: %1$s</string>
+
+    <!-- Semestry -->
+    <string name="grades_semester_label">Семестр %1$s (%2$s)</string>
+
+    <!-- Podsumowanie -->
+    <string name="grades_average_placeholder">–</string>
+
+    <!-- OCENY – UI LAYOUT -->
+    <string name="grades_header_pill">⭐ Оцінки та ECTS</string>
+    <string name="grades_hero_title">Зведення оцінок за семестрами</string>
+    <string name="grades_hero_subtitle">
+        Зважене середнє ECTS, сума балів та детальний список заліків.
+    </string>
+
+    <string name="grades_summary_average_label">Середнє з оцінок</string>
+    <string name="grades_summary_average_description">
+        Зважене середнє ECTS (лише числові оцінки).
+    </string>
+
+    <string name="grades_summary_ects_label">Сума ECTS</string>
+    <string name="grades_summary_ects_description">
+        Сума кредитів ECTS з оцінок у вибраному семестрі.
+    </string>
+
+    <string name="grades_study_label">Активний напрям</string>
+    <string name="grades_semester_caption">Семестр</string>
+
+    <!-- Nagłówki tabeli ocen -->
+    <string name="grades_table_header_subject">Предмет</string>
+    <string name="grades_table_header_type">Вид</string>
+    <string name="grades_table_header_grade">Оцінка</string>
+    <string name="grades_table_header_date">Дата</string>
+
+    <!-- Pusty stan listy -->
+    <string name="grades_empty_state">Немає оцінок для вибраного семестру.</string>
+
+    <!-- =========================
+         NEWS – LOGIKA
+         ========================= -->
+    <string name="news_title">Новини ZUT</string>
+    <string name="news_refresh_toast">Отримую найновіші дані…</string>
+    <string name="news_error_rss">Помилка отримання RSS: %1$s</string>
+
+    <!-- Szczegóły news -->
+    <string name="news_detail_title">Запис</string>
+    <string name="news_detail_source_label">Джерело: zut.edu.pl</string>
+    <string name="news_detail_no_content">
+        У RSS-каналі немає вмісту для цього запису.
+    </string>
+
+    <!-- NEWS – layout / nagłówek -->
+    <string name="news_header_pill">📰 Новини ZUT</string>
+    <string name="news_header_title">Канал оголошень для студентів</string>
+    <string name="news_header_source_info">Джерело RSS: студенти ZUT</string>
+
+    <!-- NEWS – pusty stan -->
+    <string name="news_empty_state">
+        Немає новин або сталася помилка під час отримання RSS-каналу.
+    </string>
+
+    <!-- News detail – nagłówek pill -->
+    <string name="news_detail_tag">📰 Новина ZUT</string>
+
+    <!-- =========================
+         WIDGET DNIA (PLAN)
+         ========================= -->
+    <string name="plan_widget_subtitle_today">Сьогоднішні заняття</string>
+    <string name="plan_widget_subtitle_in_progress">Заняття тривають</string>
+    <string name="plan_widget_subtitle_next_prefix">Найближчі за </string>
+    <string name="plan_widget_hours_suffix"> год</string>
+    <string name="plan_widget_minutes_suffix"> хв</string>
+    <string name="plan_widget_subtitle_no_classes_tomorrow">Немає занять завтра</string>
+    <string name="plan_widget_subtitle_tomorrow">Завтрашні заняття</string>
+    <string name="plan_widget_subtitle_login_required">
+        Увійдіть в застосунок mZUT
+    </string>
+    <string name="plan_widget_date_tomorrow_suffix">(завтра)</string>
+    <string name="plan_widget_refreshed_prefix">Оновлено: </string>
+
+    <!-- =========================
+         ABOUT
+         ========================= -->
+    <string name="about_title">Про застосунок</string>
+
+    <!-- About screen / nagłówek -->
+    <string name="about_header_pill">ℹ️ Інформація про застосунок</string>
+    <string name="about_subtitle">
+        Неофіційний мобільний застосунок для студентів ZUT з розкладом занять, оцінками, інформацією про навчання та денним віджетом — без реклами й стеження.
+    </string>
+
+    <!-- About: projekt i autor -->
+    <string name="about_section_project_title">Проєкт і автор</string>
+    <string name="about_author_line">Автором застосунку є Jędrzej Nowak.</string>
+    <string name="about_project_description_1">
+        mZUT v2 створено як неофіційну, легку альтернативу для швидкого перегляду розкладу, оцінок та інформації про навчання в ZUT без необхідності переходити через важкі веб-панелі.
+    </string>
+    <string name="about_project_description_2">
+        Застосунок використовує публічно доступні системи та API університету, а дані для входу залишаються на вашому пристрої.
+    </string>
+
+    <!-- About: kontakt i linki -->
+    <string name="about_section_contact_title">Контакт і посилання</string>
+    <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
+    <string name="about_contact_website">Сайт: endozero.pl</string>
+    <string name="about_contact_app_website">Сайт застосунку: mzut.endozero.pl</string>
+    <string name="about_contact_github">GitHub: https://github.com/Kejlo523/mzut-v2</string>
+
+    <!-- About: prywatność -->
+    <string name="about_section_privacy_title">Конфіденційність і дані</string>
+    <string name="about_privacy_text_1">
+        mZUT v2 не використовує зовнішні аналітичні системи (Google Analytics, Firebase Analytics тощо), не показує рекламу та не відстежує ваші дії в застосунку.
+    </string>
+    <string name="about_privacy_text_2">
+        Дані для входу використовуються лише для автентифікації в системах університету та зберігаються локально на пристрої. Жодні дані не надсилаються на сервери автора застосунку.
+    </string>
+
+    <!-- About: stopka -->
+    <string name="about_footer_disclaimer">
+        mZUT v2 є неофіційним проєктом і не є застосунком, випущеним Західнопоморським технологічним університетом.
+    </string>
+
+    <!-- =========================
+         USTAWIENIA / JĘZYK
+         ========================= -->
+    <string name="settings_title">Налаштування</string>
+    <string name="settings_header_pill">⚙️ Налаштування застосунку</string>
+    <string name="settings_subtitle">
+        Виберіть мову інтерфейсу. Зміна може вимагати повторного запуску застосунку.
+    </string>
+
+    <string name="settings_language_label">Мова застосунку</string>
+    <string name="settings_language_polish">Польська</string>
+    <string name="settings_language_english">Англійська</string>
+    <string name="settings_language_ukrainian">Українська</string>
+
+    <string name="settings_language_info_hint">
+        Зміна мови може вимагати повторного запуску застосунку.
+    </string>
+
+    <string name="settings_language_changed_toast">
+        Мову змінено. Інтерфейс було перезавантажено.
+    </string>
+
+    <!-- =========================
+         PRZYDATNE LINKI
+         ========================= -->
+    <string name="useful_links_pill">Корисні посилання</string>
+    <string name="useful_links_header_title">Ваші найважливіші адреси в одному місці</string>
+    <string name="useful_links_header_sub">
+        Додавайте або швидко відкривайте сторінки деканату, факультету, розкладу, правил та інших сервісів ZUT.
+    </string>
+    <string name="useful_links_section_title">Список посилань</string>
+    <string name="useful_links_empty">
+        Немає визначених посилань.\nДодайте щось у налаштуваннях або перевірте стандартні пропозиції.
+    </string>
+
+    <!-- =========================
+         WYLOGOWANIE – POTWIERDZENIE
+         ========================= -->
+    <string name="logout_confirm_title">Вийти з облікового запису?</string>
+    <string name="logout_confirm_message">Ви справді хочете вийти з облікового запису?</string>
+    <string name="logout_confirm_positive">Вийти</string>
+    <string name="logout_confirm_negative">Скасувати</string>
+
+</resources>
