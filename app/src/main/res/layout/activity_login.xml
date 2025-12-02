@@ -15,7 +15,7 @@
         <!-- Ikona apki -->
         <ImageView
             android:id="@+id/appIcon"
-            android:layout_width="72dp"
+            android:layout_width="172dp"
             android:layout_height="72dp"
             android:layout_marginTop="40dp"
             android:layout_marginBottom="12dp"
