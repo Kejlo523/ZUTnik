@@ -31,15 +31,15 @@ import java.util.Set;
  * Assumptions:
  * - Shows selected, most frequently used links (global + faculty + major).
  * - Links matched to the user's majors / faculties go to the top,
- *   remaining links are below.
+ * remaining links are below.
  * - No spinners / selectors – priority is based on data from MzutSession.
  *
  * Expected layout: res/layout/activity_useful_links.xml
- *  - DrawerLayout @+id/drawerLayout
- *  - NavigationView @+id/navigationView
- *  - Toolbar @+id/toolbar
- *  - RecyclerView @+id/listLinks
- *  - TextView @+id/tvLinksEmpty (optional "no data" label)
+ * - DrawerLayout @+id/drawerLayout
+ * - NavigationView @+id/navigationView
+ * - Toolbar @+id/toolbar
+ * - RecyclerView @+id/listLinks
+ * - TextView @+id/tvLinksEmpty (optional "no data" label)
  */
 public class UsefulLinksActivity extends AppCompatActivity {
 
@@ -164,13 +164,23 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 faculties.add("WNEIZ");
             }
 
-            // Mechanika i budowa maszyn – WIMiM (example)
+            // Mechanika i budowa maszyn – WIMiM
             if (l.contains("mechanika") || l.contains("budowa maszyn")) {
                 majors.add("MIB");
                 faculties.add("WIMIM");
             }
 
-            // Additional majors can be mapped here
+            // Elektrotechnika / Automatyka – WE (Wydział Elektryczny)
+            if (l.contains("elektrotechnika") || l.contains("automatyka")) {
+                majors.add("ELE");
+                faculties.add("WE");
+            }
+
+            // Budownictwo / Architektura – WBiA
+            if (l.contains("budownictwo") || l.contains("architektura")) {
+                majors.add("BUD");
+                faculties.add("WBIA");
+            }
         }
     }
 
@@ -206,16 +216,18 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
     /**
      * Defines selected, most frequently used links.
+     * Lista zweryfikowana i zaktualizowana.
      */
     private List<LinkItem> buildAllLinks() {
         List<LinkItem> list = new ArrayList<>();
 
-        // Global – general ZUT pages / systems
+        // --- GLOBALNE (Najważniejsze systemy) ---
+
         list.add(new LinkItem(
-                "global_zut_home",
-                "Strona główna ZUT",
-                "https://www.zut.edu.pl",
-                "Aktualności, ogólne informacje o uczelni.",
+                "global_plan_zajec",
+                "Plan zajęć (Rozkład)",
+                "https://plan.zut.edu.pl",
+                "Aktualny rozkład zajęć dla wszystkich kierunków i grup.",
                 LinkScope.GLOBAL,
                 null,
                 null
@@ -225,37 +237,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "global_usosweb",
                 "USOSweb / e-dziekanat",
                 "https://usosweb.zut.edu.pl",
-                "Oceny, plan studiów, dane osobowe, mLegitymacja.",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        list.add(new LinkItem(
-                "global_elearning",
-                "E-learning ZUT (e-edukacja)",
-                "https://e-edukacja.zut.edu.pl",
-                "Platforma e-learningowa ZUT (Moodle, kursy online).",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        list.add(new LinkItem(
-                "global_library",
-                "Biblioteka ZUT",
-                "https://bg.zut.edu.pl",
-                "Biblioteka główna, zasady korzystania, katalog online.",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        list.add(new LinkItem(
-                "global_mleg",
-                "mLegitymacja studencka",
-                "https://mlegitymacja.zut.edu.pl",
-                "mLegitymacja ZUT – informacje o aktywacji i przedłużaniu.",
+                "Oceny, zapisy na przedmioty, płatności, wnioski.",
                 LinkScope.GLOBAL,
                 null,
                 null
@@ -263,19 +245,51 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
         list.add(new LinkItem(
                 "global_office365",
-                "Poczta studencka / Office 365",
-                "https://outlook.office.com",
-                "Poczta studencka, Teams, OneDrive – pakiet Office 365.",
+                "Poczta / Office 365",
+                "https://outlook.office.com/zut.edu.pl",
+                "Poczta studencka, Teams, OneDrive (Dysk).",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
 
         list.add(new LinkItem(
-                "global_zut_studinfo",
-                "StudInfo – usługi IT dla studenta",
-                "https://uci.zut.edu.pl/studinfo.html",
-                "Zbiór linków: poczta, e-dziekanat, e-edukacja, e-dysk, WiFi i inne usługi IT ZUT.",
+                "global_elearning",
+                "E-learning ZUT (Moodle)",
+                "https://e-edukacja.zut.edu.pl",
+                "Kursy online, materiały wykładowe, przesyłanie prac.",
+                LinkScope.GLOBAL,
+                null,
+                null
+        ));
+
+        list.add(new LinkItem(
+                "global_zut_home",
+                "Strona główna ZUT",
+                "https://www.zut.edu.pl",
+                "Aktualności uczelniane i komunikaty rektora.",
+                LinkScope.GLOBAL,
+                null,
+                null
+        ));
+
+        // --- IT / Konto / Legitymacja ---
+
+        list.add(new LinkItem(
+                "global_konto_zut",
+                "Zarządzanie kontem ZUT",
+                "https://konto.zut.edu.pl",
+                "Zmiana hasła, odzyskiwanie dostępu, konfiguracja WiFi (Eduroam).",
+                LinkScope.GLOBAL,
+                null,
+                null
+        ));
+
+        list.add(new LinkItem(
+                "global_mleg",
+                "mLegitymacja",
+                "https://mlegitymacja.zut.edu.pl",
+                "Aktywacja i przedłużanie mLegitymacji w aplikacji mObywatel.",
                 LinkScope.GLOBAL,
                 null,
                 null
@@ -283,135 +297,84 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
         list.add(new LinkItem(
                 "global_uci",
-                "Uczelniane Centrum Informatyki (UCI)",
-                "https://www.zut.edu.pl/uczelnia/jednostki-uczelni/uczelniane-centrum-informatyki.html",
-                "Pomoc IT, hasła, sieć, konfiguracja poczty i usług informatycznych.",
+                "Pomoc IT (UCI)",
+                "https://uci.zut.edu.pl",
+                "Instrukcje konfiguracji sieci, VPN, zgłaszanie awarii.",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
+
+        // --- Sprawy Studenckie / Życie ---
 
         list.add(new LinkItem(
-                "global_edysk_student",
-                "e-Dysk – przestrzeń na pliki (studenci)",
-                "https://edysk2.zut.edu.pl",
-                "Uczelniana chmura plików (eDysk) dla studentów – dostęp po loginie USK ZUT.",
+                "global_library",
+                "Biblioteka Główna",
+                "https://bg.zut.edu.pl",
+                "Katalog książek, dostęp do baz danych i artykułów.",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
 
-        // Student area / information
-        list.add(new LinkItem(
-                "global_zut_students_news",
-                "ZUT – aktualności dla studentów",
-                "https://www.zut.edu.pl/zut-studenci/aktualnosci.html",
-                "Komunikaty i aktualności uczelniane kierowane do studentów.",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        list.add(new LinkItem(
-                "global_zut_praca_kariera",
-                "Praca i Kariera",
-                "https://www.zut.edu.pl/zut-studenci/praca-i-kariera.html",
-                "Oferty pracy, praktyk oraz informacje o Biurze Karier i AIP.",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        // Financial aid / scholarships
         list.add(new LinkItem(
                 "global_pomoc_materialna",
-                "Pomoc materialna, akademiki, kredyty",
-                "https://www.zut.edu.pl/zut-studenci/pomoc-materialna-akademiki-kredyty/aktualnosci.html",
-                "Ogólne informacje o stypendiach, akademikach i kredytach studenckich (aktualności).",
+                "Stypendia i pomoc materialna",
+                "https://www.zut.edu.pl/zut-studenci/pomoc-materialna-akademiki-kredyty.html",
+                "Regulaminy, terminy i wzory wniosków o stypendia.",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
 
-        list.add(new LinkItem(
-                "global_pomoc_wzory_wnioskow",
-                "Wzory wniosków o stypendia",
-                "https://www.zut.edu.pl/zut-studenci/pomoc-materialna-akademiki-kredyty/wzory-wnioskow-o-stypendia-20252026.html",
-                "Aktualne formularze wniosków o stypendia i inne świadczenia.",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        // Dorms / health
         list.add(new LinkItem(
                 "global_osiedle_studenckie",
-                "Osiedle Studenckie ZUT",
+                "Akademiki (Osiedle Studenckie)",
                 "https://osiedlestudenckie.zut.edu.pl",
-                "Główny portal domów studenckich ZUT – informacje o akademikach, regulaminy, aktualności.",
+                "Opłaty, kwaterowanie, regulaminy domów studenckich.",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
 
         list.add(new LinkItem(
-                "global_akademiki_kontakt",
-                "Akademiki – dane kontaktowe",
-                "https://osiedlestudenckie.zut.edu.pl/akademiki-kontakt.html",
-                "Adresy, telefony i informacje o poszczególnych domach studenckich.",
+                "global_samorzad",
+                "Samorząd Studencki",
+                "https://samorzad.zut.edu.pl",
+                "Wydarzenia, juwenalia, prawa studenta, koła naukowe.",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
 
-        list.add(new LinkItem(
-                "global_przychodnie_zut",
-                "Przychodnie ZUT",
-                "https://www.zut.edu.pl/zut-studenci/kontakt/przychodnie-zut.html",
-                "Informacje o przychodniach związanych z ZUT, adresy i godziny przyjęć.",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        // Career / internships
         list.add(new LinkItem(
                 "global_biuro_karier",
-                "Akademickie Biuro Karier",
+                "Biuro Karier",
                 "https://biurokarier.zut.edu.pl",
-                "Oferty pracy, praktyk i wsparcie w planowaniu kariery.",
+                "Oferty pracy, staże, targi pracy.",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
 
-        list.add(new LinkItem(
-                "global_praktyki_zawodowe",
-                "Praktyki zawodowe – informacje",
-                "https://www.zut.edu.pl/zut-studenci/studia/praktyki-zawodowe.html",
-                "Zasady realizacji praktyk zawodowych, informacje dla studentów wszystkich kierunków.",
-                LinkScope.GLOBAL,
-                null,
-                null
-        ));
-
-        // PRK / curricula
         list.add(new LinkItem(
                 "global_prk_portal",
-                "PRK ZUT – programy studiów i sylabusy",
+                "Katalog Przedmiotów (PRK)",
                 "https://prk.zut.edu.pl",
-                "Portal z planami studiów, sylabusami i efektami uczenia dla wszystkich kierunków ZUT (PRK).",
+                "Wyszukiwarka sylabusów (kart przedmiotów) i programów studiów.",
                 LinkScope.GLOBAL,
                 null,
                 null
         ));
 
-        // Informatyka / Faculty of Computer Science (INF / WI)
+        // --- WYDZIAŁY (Przykłady - sortowane dynamicznie) ---
+
+        // Wydział Informatyki (WI)
         list.add(new LinkItem(
                 "inf_wi_home",
                 "Wydział Informatyki (WI)",
                 "https://wi.zut.edu.pl",
-                "Strona wydziału, informacje dla studentów informatyki.",
+                "Strona główna wydziału, ogłoszenia dziekanatu.",
                 LinkScope.FACULTY,
                 "WI",
                 null
@@ -419,83 +382,65 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
         list.add(new LinkItem(
                 "inf_wi_students",
-                "WI – sprawy studenckie",
+                "WI – Strefa Studenta",
                 "https://wi.zut.edu.pl/dla-studenta",
-                "Dziekanat, regulaminy, organizacja studiów dla studentów WI.",
+                "Plany studiów, dyplomowanie, druki do pobrania.",
                 LinkScope.FACULTY,
                 "WI",
                 null
         ));
 
-        list.add(new LinkItem(
-                "inf_wiki_zmsi",
-                "WikiZMSI – materiały do informatyki",
-                "https://wikizmsi.zut.edu.pl/wiki/Strona_g%C5%82%C3%B3wna",
-                "Nieoficjalne wiki z materiałami, zadaniami i kursami WI.",
-                LinkScope.MAJOR,
-                "WI",
-                "INF"
-        ));
-
-        list.add(new LinkItem(
-                "prk_inf_n1",
-                "PRK – Informatyka (N1, WI)",
-                "https://prk.zut.edu.pl/pl/2024-2025/wydzial-informatyki/informatyka-N1/",
-                "Opis programu studiów Informatyka (niestacjonarne I stopnia, WI) – długość studiów, ECTS, efekty uczenia.",
-                LinkScope.MAJOR,
-                "WI",
-                "INF"
-        ));
-
-        // Ekonomia / WNEiZ (EKO / WNEIZ)
+        // Wydział Ekonomiczny (WNEiZ)
         list.add(new LinkItem(
                 "eko_faculty_home",
-                "Wydział Ekonomiczny / WNEiZ",
+                "Wydział Ekonomiczny",
                 "https://www.wneiz.zut.edu.pl",
-                "Strona wydziału, informacje dla studentów kierunków ekonomicznych.",
+                "Aktualności wydziałowe i informacje dla studentów.",
                 LinkScope.FACULTY,
                 "WNEIZ",
                 null
         ));
 
         list.add(new LinkItem(
-                "eko_students",
-                "Ekonomia – informacje dla studentów",
-                "https://www.wneiz.zut.edu.pl/dla-studenta",
-                "Sprawy studenckie, plan studiów, organizacja roku akademickiego.",
-                LinkScope.MAJOR,
+                "eko_plany",
+                "WNEiZ – Plany i programy",
+                "https://www.wneiz.zut.edu.pl/dla-studenta/organizacja-studiow",
+                "Szczegółowa organizacja roku i plany na WNEiZ.",
+                LinkScope.FACULTY,
                 "WNEIZ",
-                "EKO"
+                null
         ));
 
-        list.add(new LinkItem(
-                "eko_major_desc",
-                "Kierunek Ekonomia – opis",
-                "https://www.zut.edu.pl/studia/kierunki-studiow/ekonomia.html",
-                "Opis kierunku i programu kształcenia Ekonomia.",
-                LinkScope.MAJOR,
-                "WNEIZ",
-                "EKO"
-        ));
-
-        list.add(new LinkItem(
-                "prk_eko_s1",
-                "PRK – Ekonomia (S1, Wydział Ekonomiczny)",
-                "https://prk.zut.edu.pl/pl/2024-2025/wydzial-ekonomiczny/ekonomia-S1/",
-                "Opis programu studiów Ekonomia (stacjonarne I stopnia, Wydział Ekonomiczny).",
-                LinkScope.MAJOR,
-                "WNEIZ",
-                "EKO"
-        ));
-
-        // WIMiM – example of another faculty
+        // Wydział Inżynierii Mechanicznej i Mechatroniki (WIMiM)
         list.add(new LinkItem(
                 "mech_faculty_home",
-                "Wydział Inżynierii Mechanicznej i Mechatroniki (WIMiM)",
+                "Wydział Inżynierii Mech. i Mechatroniki",
                 "https://wimim.zut.edu.pl",
-                "Strona wydziału dla kierunków mechanicznych i mechatroniki.",
+                "Strona wydziału WIMiM.",
                 LinkScope.FACULTY,
                 "WIMIM",
+                null
+        ));
+
+        // Wydział Elektryczny (WE)
+        list.add(new LinkItem(
+                "we_faculty_home",
+                "Wydział Elektryczny (WE)",
+                "https://we.zut.edu.pl",
+                "Strona wydziału, aktualności dla elektryków i automatyków.",
+                LinkScope.FACULTY,
+                "WE",
+                null
+        ));
+
+        // Wydział Budownictwa i Architektury (WBiA)
+        list.add(new LinkItem(
+                "wbia_faculty_home",
+                "Wydział Budownictwa i Architektury",
+                "https://wbia.zut.edu.pl",
+                "Strona wydziału WBiA.",
+                LinkScope.FACULTY,
+                "WBIA",
                 null
         ));
 

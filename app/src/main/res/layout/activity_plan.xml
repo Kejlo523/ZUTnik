@@ -24,23 +24,94 @@
             android:background="@color/mz_bg"
             android:popupTheme="@style/ThemeOverlay.AppCompat.Dark" />
 
-        <!-- TREŚĆ -->
+        <!-- GÓRNY PASEK: LUPA + ODŚWIEŻ | DATA | MENU -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <!-- Kontener Lupy i Odświeżania -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Przycisk Lupy (Szukaj) -->
+                <ImageButton
+                    android:id="@+id/btnSearch"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/mz_text"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="@string/plan_search_hint" />
+
+                <!-- Przycisk Odśwież (Refresh) -->
+                <ImageButton
+                    android:id="@+id/btnRefresh"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_refresh"
+                    app:tint="@color/mz_text"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="@string/plan_button_refresh" />
+            </LinearLayout>
+
+            <!-- Wyśrodkowana Data -->
+            <TextView
+                android:id="@+id/tvHeaderLabel"
+                android:text="-"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/mz_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"/>
+
+            <!-- Przycisk Menu (Trzy kropki) -->
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_more_vert"
+                app:tint="@color/mz_text"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:contentDescription="Opcje" />
+
+        </LinearLayout>
+
+        <!-- TREŚĆ PLANU -->
         <LinearLayout
             android:id="@+id/planContentRoot"
             android:orientation="vertical"
-            android:padding="12dp"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="12dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!-- PRZEŁĄCZNIK WIDOKÓW -->
+            <!-- PRZEŁĄCZNIK WIDOKÓW (Dzień / Tydzień / Miesiąc) -->
             <LinearLayout
                 android:id="@+id/layoutViewModesRow"
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+                android:paddingBottom="8dp">
 
                 <Button
                     android:id="@+id/btnViewDay"
@@ -80,117 +151,28 @@
                     android:textAllCaps="false" />
             </LinearLayout>
 
-            <!-- NAGŁÓWEK ZAKRESU + AKCJE W PRAWYM GÓRNYM ROGU -->
+            <!-- STICKY HEADER (DNI TYGODNIA) -->
             <LinearLayout
-                android:id="@+id/layoutHeaderActionsRow"
-                android:orientation="horizontal"
+                android:id="@+id/layoutWeekHeadersFixed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                android:paddingTop="4dp"
                 android:paddingBottom="4dp">
 
-                <TextView
-                    android:id="@+id/tvHeaderLabel"
-                    android:text="-"
-                    android:textSize="14sp"
-                    android:textColor="@color/mz_text"
+                <!-- Pusty widok nad kolumną godzin (36dp) -->
+                <View
+                    android:layout_width="36dp"
+                    android:layout_height="match_parent" />
+
+                <!-- Kontener na nagłówki dni -->
+                <LinearLayout
+                    android:id="@+id/layoutWeekHeadersRow"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <Button
-                        android:id="@+id/btnToday"
-                        android:text="@string/plan_button_today"
-                        android:textSize="12sp"
-                        android:background="@drawable/bg_mode_button"
-                        android:textColor="@color/mz_text"
-                        android:minHeight="0dp"
-                        android:minWidth="0dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
-                        android:textAllCaps="false" />
-
-                    <Button
-                        android:id="@+id/btnRefresh"
-                        android:text="@string/plan_button_refresh"
-                        android:textSize="12sp"
-                        android:background="@drawable/bg_mode_button"
-                        android:textColor="@color/mz_text"
-                        android:minHeight="0dp"
-                        android:minWidth="0dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_marginLeft="6dp"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
-                        android:textAllCaps="false" />
-
-                    <Button
-                        android:id="@+id/btnFilters"
-                        android:text="@string/plan_button_filters"
-                        android:textSize="11sp"
-                        android:background="@drawable/bg_mode_button"
-                        android:textColor="@color/mz_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_marginLeft="6dp"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
-                        android:textAllCaps="false" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- NAWIGACJA: STRZAŁKA LEWO / PRAWO NAD KALENDARZEM -->
-            <LinearLayout
-                android:id="@+id/layoutArrowsTop"
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingBottom="6dp"
-                android:gravity="center_vertical">
-
-                <!-- LEWY PRZYCISK – DOLEGA DO LEWEJ KRAWĘDZI -->
-                <Button
-                    android:id="@+id/btnPrev"
-                    android:text="@string/plan_nav_prev"
-                    android:textSize="18sp"
-                    android:background="@drawable/bg_mode_button"
-                    android:textColor="@color/mz_text"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:textAllCaps="false"
-                    android:layout_marginStart="0dp" />
-
-                <!-- PUSTA PRZESTRZEŃ -->
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
-
-                <!-- PRAWY PRZYCISK – DOLEGA DO PRAWEJ KRAWĘDZI -->
-                <Button
-                    android:id="@+id/btnNext"
-                    android:text="@string/plan_nav_next"
-                    android:textSize="18sp"
-                    android:background="@drawable/bg_mode_button"
-                    android:textColor="@color/mz_text"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:textAllCaps="false"
-                    android:layout_marginEnd="0dp" />
-
+                    android:layout_weight="1"
+                    android:orientation="horizontal" />
             </LinearLayout>
 
             <!-- SCROLL NA PLAN -->
@@ -208,7 +190,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 
-                    <!-- PLAN WEEK/DAY -->
+                    <!-- WIDOK TYGODNIA / DNIA -->
                     <LinearLayout
                         android:id="@+id/layoutWeekRoot"
                         android:orientation="horizontal"
@@ -216,23 +198,25 @@
                         android:layout_height="wrap_content"
                         android:background="@color/mz_bg">
 
+                        <!-- Kolumna godzin -->
                         <LinearLayout
                             android:id="@+id/layoutTimeColumn"
                             android:orientation="vertical"
                             android:layout_width="36dp"
                             android:layout_height="wrap_content"
-                            android:paddingTop="32dp"
                             android:paddingRight="2dp" />
 
-                        <LinearLayout
-                            android:id="@+id/layoutWeekDays"
-                            android:orientation="horizontal"
+                        <!-- ViewPager2 z siatką zajęć -->
+                        <androidx.viewpager2.widget.ViewPager2
+                            android:id="@+id/planViewPager"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1" />
+                            android:layout_weight="1"
+                            android:overScrollMode="never" />
+
                     </LinearLayout>
 
-                    <!-- PLAN MONTH -->
+                    <!-- WIDOK MIESIĄCA -->
                     <LinearLayout
                         android:id="@+id/layoutMonthRoot"
                         android:orientation="vertical"

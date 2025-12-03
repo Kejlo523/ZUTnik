@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -19,30 +20,53 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-// Home screen provider for the "day plan" widget.
+// Day plan widget provider.
 public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     public static final String ACTION_REFRESH =
             "pl.kejlo.mzutv2.PLAN_WIDGET_REFRESH";
 
+    // Date extra key (must match service)
+    public static final String EXTRA_DATE_ISO =
+            "pl.kejlo.mzutv2.PLAN_WIDGET_DATE_ISO";
+
     private static final DateTimeFormatter DATE_LABEL =
             DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("pl", "PL"));
 
-    // Time label in footer ("Odświeżono:")
+    // Footer time format
     private static final DateTimeFormatter TIME_LABEL =
             DateTimeFormatter.ofPattern("HH:mm");
 
-    // Plan preferences (filters as in PlanActivity)
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
+    // Refresh interval (30m)
+    private static final long REFRESH_INTERVAL_MS = 30L * 60L * 1000L;
+
+    @Override
+    public void onEnabled(Context context) {
+        super.onEnabled(context);
+        schedulePeriodicRefresh(context);
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        super.onDisabled(context);
+        cancelPeriodicRefresh(context);
+    }
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        // System update (e.g. every 30 minutes) – refresh list and header immediately
+        super.onUpdate(context, appWidgetManager, appWidgetIds);
+
+        // System update
         for (int appWidgetId : appWidgetIds) {
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
             updateOneWidget(context, appWidgetManager, appWidgetId);
         }
+
+        // Schedule alarm
+        schedulePeriodicRefresh(context);
     }
 
     @Override
@@ -61,16 +85,15 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             }
 
             for (int appWidgetId : ids) {
-                // Refresh list data
+                // Refresh list
                 mgr.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
-                // Refresh header (date + subtitle + footer)
+                // Refresh header
                 updateOneWidget(context, mgr, appWidgetId);
             }
         }
     }
 
-    // Initializes session from SharedPreferences (new MzutSession).
-    // Returns true if we have userId + authKey (user is logged in).
+    // Init session from prefs.
     private static boolean ensureSessionFromPrefs(Context ctx) {
         MzutSession.initializeFromPreferences(ctx);
         MzutSession s = MzutSession.getInstance();
@@ -83,30 +106,22 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day);
 
-        // Attach RemoteViewsService that provides the list data
-        Intent svcIntent = new Intent(context, PlanDayWidgetService.class);
-        svcIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-        svcIntent.setData(Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME)));
-        views.setRemoteAdapter(R.id.widgetList, svcIntent);
-
         LocalDate today = LocalDate.now();
         LocalDate dateToShow = today;
         boolean showingTomorrow = false;
 
-        // Default subtitle
         String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
 
-        // Initialize session – if there is no login, widget stays empty instead of crashing
+        // Initialize session
         boolean hasSession = ensureSessionFromPrefs(context);
 
         if (hasSession) {
             try {
-                // Repository with context -> shared cache with main app
+                // Repo with shared cache
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
 
                 LocalDate targetDate = today;
 
-                // Load filters
                 Set<String> hiddenSubjectKeys = context
                         .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
                         .getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
@@ -114,7 +129,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 LocalTime now = LocalTime.now();
                 int nowMin = now.getHour() * 60 + now.getMinute();
 
-                // First attempt: today
+                // --- Today/Tomorrow Logic ---
+
+                // Try today
                 PlanRepository.PlanResult resultToday = repo.loadPlan("day", today);
 
                 PlanRepository.DayColumn todayCol = null;
@@ -149,7 +166,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                     }
 
                     if (!upcomingToday.isEmpty()) {
-                        // There are still classes today – keep "today" view
+                        // Classes remain today.
                         PlanRepository.PlanEventUi next = upcomingToday.get(0);
                         if (next.startMin <= nowMin) {
                             subtitleText = context.getString(R.string.plan_widget_subtitle_in_progress);
@@ -183,8 +200,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
                             subtitleText = sb.toString();
                         }
+                        targetDate = today;
                     } else {
-                        // There were classes today, but all finished -> try tomorrow
+                        // Today finished -> try tomorrow.
                         String[] subtitleHolder = new String[]{subtitleText};
                         showingTomorrow = tryTomorrowHeader(
                                 context,
@@ -205,7 +223,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         }
                     }
                 } else {
-                    // No classes today at all (also after filters) -> try tomorrow
+                    // No classes today -> try tomorrow.
                     String[] subtitleHolder = new String[]{subtitleText};
                     showingTomorrow = tryTomorrowHeader(
                             context,
@@ -229,14 +247,13 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 dateToShow = targetDate;
 
             } catch (Exception ignored) {
-                // On error keep default "today" subtitle and today's date
+                // Keep default
             }
         } else {
-            // No session – suggest logging in
             subtitleText = context.getString(R.string.plan_widget_subtitle_login_required);
         }
 
-        // Header date (optionally with "(jutro)")
+        // Header date
         String dateLabel = dateToShow.format(DATE_LABEL);
         if (showingTomorrow) {
             dateLabel += " " + context.getString(R.string.plan_widget_date_tomorrow_suffix);
@@ -244,13 +261,20 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         views.setTextViewText(R.id.widgetDate, dateLabel);
         views.setTextViewText(R.id.widgetSubtitle, subtitleText);
 
-        // Footer: last refresh time
+        // Footer
         LocalTime nowTime = LocalTime.now();
         String refreshedLabel = context.getString(R.string.plan_widget_refreshed_prefix)
                 + " " + nowTime.format(TIME_LABEL);
         views.setTextViewText(R.id.widgetLastRefresh, refreshedLabel);
 
-        // Click on whole widget -> open PlanActivity
+        // Configure list adapter
+        Intent svcIntent = new Intent(context, PlanDayWidgetService.class);
+        svcIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+        svcIntent.putExtra(EXTRA_DATE_ISO, dateToShow.toString());
+        svcIntent.setData(Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME)));
+        views.setRemoteAdapter(R.id.widgetList, svcIntent);
+
+        // Click actions
         Intent openIntent = new Intent(context, PlanActivity.class);
         PendingIntent piOpen = PendingIntent.getActivity(
                 context,
@@ -260,7 +284,6 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widgetRoot, piOpen);
 
-        // Click on refresh icon -> broadcast ACTION_REFRESH
         Intent refreshIntent = new Intent(context, PlanDayWidgetProvider.class);
         refreshIntent.setAction(ACTION_REFRESH);
         refreshIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[]{appWidgetId});
@@ -273,7 +296,6 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widgetRefresh, piRefresh);
 
-        // Click on a single list row -> open PlanActivity (template)
         Intent rowIntent = new Intent(context, PlanActivity.class);
         PendingIntent rowPI = PendingIntent.getActivity(
                 context,
@@ -287,8 +309,6 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     }
 
     // Prepares subtitle for tomorrow.
-    // Returns true if there are any classes tomorrow (after filters).
-    // outSubtitle[0] is set to "Jutrzejsze zajęcia" or "Brak zajęć jutro".
     private boolean tryTomorrowHeader(Context context,
                                       PlanRepository repo,
                                       Set<String> hiddenSubjectKeys,
@@ -333,5 +353,48 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
         outSubtitle[0] = context.getString(R.string.plan_widget_subtitle_tomorrow);
         return true;
+    }
+
+    // Periodic Refresh (AlarmManager)
+
+    private static void schedulePeriodicRefresh(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
+
+        Intent i = new Intent(context, PlanDayWidgetProvider.class);
+        i.setAction(ACTION_REFRESH);
+
+        PendingIntent pi = PendingIntent.getBroadcast(
+                context,
+                0,
+                i,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        long first = System.currentTimeMillis() + REFRESH_INTERVAL_MS;
+
+        am.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP,
+                first,
+                REFRESH_INTERVAL_MS,
+                pi
+        );
+    }
+
+    private static void cancelPeriodicRefresh(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
+
+        Intent i = new Intent(context, PlanDayWidgetProvider.class);
+        i.setAction(ACTION_REFRESH);
+
+        PendingIntent pi = PendingIntent.getBroadcast(
+                context,
+                0,
+                i,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        am.cancel(pi);
     }
 }

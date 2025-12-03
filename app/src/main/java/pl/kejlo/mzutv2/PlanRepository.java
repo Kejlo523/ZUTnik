@@ -14,8 +14,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -29,22 +31,21 @@ public class PlanRepository {
 
     private static final String TAG = "mZUTv2-PLAN";
 
-    // Cache on disk
-
+    // Disk cache file
     private static final String CACHE_FILE_NAME = "plan_cache_v1.json";
 
-    // TTL for a specific scope (day/week/month)
-    private static final long SCOPE_CACHE_TTL_MS = 60L * 60L * 1000L; // 1h
+    // Scope TTL: 1h
+    private static final long SCOPE_CACHE_TTL_MS = 60L * 60L * 1000L;
 
-    // Global application context (optional – when null, file cache is disabled)
+    // Global context (null disables file cache)
     private static Context appContext;
 
-    // In-memory cache structure for the full schedule
+    // In-memory cache structure
     private static class FullPlanCache {
         String album;
-        long timestampMs; // last update (full or partial)
+        long timestampMs;
         Map<LocalDate, List<PlanEventRaw>> byDate = new HashMap<>();
-        // Tracks when a given scope was last refreshed (memory-only)
+        // Scope refresh timestamps
         Map<String, Long> scopeTimestamps = new HashMap<>();
     }
 
@@ -59,17 +60,17 @@ public class PlanRepository {
     }
 
     public PlanRepository() {
-        // If appContext is null, disk cache is disabled – behavior falls back to in-memory only
+        // Disk cache disabled
     }
 
     // Data models
 
-    // Raw event from plan.zut – direct JSON mapping
+    // Raw JSON event model
     public static class PlanEventRaw {
         public String title;
         public String description;
-        public String start;   // ISO string
-        public String end;     // ISO string
+        public String start;
+        public String end;
         public String workerTitle;
         public String worker;
         public String lessonForm;
@@ -85,48 +86,54 @@ public class PlanRepository {
         public String borderColor;
     }
 
-    // UI-ready event (day/week view) – with positioning info
+    // UI event model
     public static class PlanEventUi {
-        public int startMin;   // minutes from midnight
+        public int startMin;
         public int endMin;
         public float topPx;
         public float heightPx;
         public float leftPct;
         public float widthPct;
 
-        public String title;      // "Subject (L/A/W)"
+        public String title;
         public String room;
         public String group;
-        public String startStr;   // "HH:mm"
+        public String startStr;
         public String endStr;
         public String tooltip;
-        public String typeClass;   // week-event-type-...
-        public String typeLabel;   // e.g. "Laboratorium", "Egzamin", "Rektorskie", "Odwołane"
-        public String subjectKey;  // "Subject||lab" / "Subject||aud" / "Subject||lec"
+        public String typeClass;
+        public String typeLabel;
+        public String subjectKey;
         public String teacher;
     }
 
-    // One day column for week/day view
+    // Day column model
     public static class DayColumn {
         public LocalDate date;
         public List<PlanEventUi> events = new ArrayList<>();
     }
 
-    // One cell in the month calendar grid
+    // Month cell model
     public static class MonthCell {
         public LocalDate date;
         public boolean hasPlan;
     }
 
-    // One item in the subject filter list
+    // Subject filter model
     public static class SubjectFilterItem {
-        public String label;      // subject name
-        public String typeKey;    // lab / aud / lec
-        public String typeLabel;  // "Laboratorium" / "Audytoryjne" / "Wykład"
-        public String filterKey;  // label||typeKey
+        public String label;
+        public String typeKey;
+        public String typeLabel;
+        public String filterKey;
     }
 
-    // Debug info (equivalent of $PLAN_DEBUG)
+    // Search params
+    public static class SearchParams {
+        public String category;
+        public String query;
+    }
+
+    // Debug info
     public static class PlanDebug {
         public String album;
         public String view;
@@ -145,26 +152,25 @@ public class PlanRepository {
         public List<RequestDebug> requests = new ArrayList<>();
     }
 
-    // Result of loading a schedule for a given view (day/week/month)
+    // Load result
     public static class PlanResult {
-        public String viewMode;        // "day" / "week" / "month"
+        public String viewMode;
         public LocalDate current;
         public LocalDate rangeStart;
         public LocalDate rangeEnd;
 
-        // day/week:
+        // Day/Week
         public List<DayColumn> dayColumns = new ArrayList<>();
         public boolean hasAnyEventsInRange;
 
-        // month:
+        // Month
         public List<List<MonthCell>> monthGrid = new ArrayList<>();
 
-        // navigation dates:
+        // Navigation
         public LocalDate prev;
         public LocalDate next;
         public LocalDate today;
 
-        // header text (as in PHP: day_label/week_label/month_label)
         public String headerLabel;
 
         public PlanDebug debug = new PlanDebug();
@@ -185,11 +191,25 @@ public class PlanRepository {
     private static long sCachedAlbumTs;
     private static final long ALBUM_TTL_MS = 24L * 60L * 60L * 1000L; // 24h
 
-    private static final String[] DNI_PL = {"Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"};
-
     private static String fmtPlDate(LocalDate date) {
-        int dow = date.getDayOfWeek().getValue() % 7; // 1..7 -> 1..6,0
-        String dz = DNI_PL[dow];
+        // Use Resources if context available to avoid hardcoding strings
+        String dz;
+        if (appContext != null) {
+            switch (date.getDayOfWeek()) {
+                case MONDAY: dz = appContext.getString(R.string.plan_header_mon_short); break;
+                case TUESDAY: dz = appContext.getString(R.string.plan_header_tue_short); break;
+                case WEDNESDAY: dz = appContext.getString(R.string.plan_header_wed_short); break;
+                case THURSDAY: dz = appContext.getString(R.string.plan_header_thu_short); break;
+                case FRIDAY: dz = appContext.getString(R.string.plan_header_fri_short); break;
+                case SATURDAY: dz = appContext.getString(R.string.plan_header_sat_short); break;
+                case SUNDAY: default: dz = appContext.getString(R.string.plan_header_sun_short); break;
+            }
+        } else {
+            // Fallback if context is missing (should not happen in normal usage)
+            String[] dniPl = {"Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"};
+            int dow = date.getDayOfWeek().getValue() % 7;
+            dz = dniPl[dow];
+        }
         return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + " (" + dz + ")";
     }
 
@@ -200,11 +220,11 @@ public class PlanRepository {
         try {
             OffsetDateTime odt = OffsetDateTime.parse(iso);
             return odt.toLocalDateTime();
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {}
         try {
             return LocalDateTime.parse(iso, ISO_LOCAL_DT);
         } catch (Exception e) {
-            Log.w(TAG, "Nie udało się sparsować daty: " + iso, e);
+            Log.w(TAG, "Failed to parse date: " + iso, e);
             return null;
         }
     }
@@ -213,9 +233,9 @@ public class PlanRepository {
         return dt.getHour() * 60 + dt.getMinute();
     }
 
-    // Helpers – ZUT API (plan.zut)
+    // Helpers – ZUT API
 
-    // Simple GET to plan.zut.edu.pl that returns a JSONArray
+    // Simple GET to plan.zut
     private JSONArray httpGetJsonArray(String urlStr, PlanDebug debug) throws IOException, JSONException {
         HttpURLConnection conn = null;
         InputStream is = null;
@@ -263,7 +283,7 @@ public class PlanRepository {
             if (is != null) {
                 try {
                     is.close();
-                } catch (Exception ignore) { }
+                } catch (Exception ignore) {}
             }
             if (conn != null) {
                 conn.disconnect();
@@ -271,11 +291,10 @@ public class PlanRepository {
         }
     }
 
-    // Fetches album number for active study (getStudy)
+    // Resolve album number (Active study)
     private String resolveAlbumNumber() throws IOException, JSONException {
         long now = System.currentTimeMillis();
 
-        // 1) Try in-memory cache (avoid hitting API too often)
         if (sCachedAlbum != null && (now - sCachedAlbumTs) < ALBUM_TTL_MS) {
             return sCachedAlbum;
         }
@@ -287,7 +306,6 @@ public class PlanRepository {
             return null;
         }
 
-        // Determine active study
         List<Study> studies = session.getStudies();
         if (studies == null || studies.isEmpty()) {
             GradesRepository gr = new GradesRepository();
@@ -306,7 +324,6 @@ public class PlanRepository {
             return null;
         }
 
-        // getStudy – only if album is not already cached
         HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
         params.put("token", authKey);
@@ -325,19 +342,141 @@ public class PlanRepository {
             return null;
         }
 
-        // Save to cache
         sCachedAlbum = album;
         sCachedAlbumTs = now;
 
         return album;
     }
 
-    // Fetching schedule from plan.zut
+    // --- Search Functionality ---
 
-    // Fetches [rangeStart, rangeEnd] from plan.zut by album number.
-    // Used:
-    // - when entering a scope and TTL > 1h,
-    // - on short "Refresh" press (forces scope refresh).
+    public PlanResult searchPlan(String viewMode, LocalDate currentDate, SearchParams search) throws IOException, JSONException {
+        if (currentDate == null) currentDate = LocalDate.now();
+        if (viewMode == null) viewMode = "week";
+
+        PlanResult r = new PlanResult();
+        r.viewMode = viewMode;
+        r.current = currentDate;
+        r.today = LocalDate.now();
+        r.debug.view = viewMode + " (SEARCH)";
+
+        LocalDate rangeStart, rangeEnd;
+        if ("day".equals(viewMode)) {
+            rangeStart = currentDate;
+            rangeEnd = currentDate;
+            r.headerLabel = fmtPlDate(currentDate);
+        } else if ("week".equals(viewMode)) {
+            LocalDate weekStart;
+            if (currentDate.equals(r.today) && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                weekStart = currentDate.plusDays(1);
+            } else {
+                weekStart = currentDate;
+                int dow = weekStart.getDayOfWeek().getValue();
+                if (dow > 1) weekStart = weekStart.minusDays(dow - 1);
+            }
+            LocalDate weekEnd = weekStart.plusDays(6);
+            rangeStart = weekStart;
+            rangeEnd = weekEnd;
+            r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM"))
+                    + " – " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        } else {
+            rangeStart = currentDate.withDayOfMonth(1);
+            rangeEnd = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
+            r.headerLabel = rangeStart.getMonth().name() + " " + rangeStart.getYear();
+        }
+
+        r.rangeStart = rangeStart;
+        r.rangeEnd = rangeEnd;
+
+        String url = buildSearchUrl(search, rangeStart, rangeEnd);
+        r.debug.requests.add(new PlanDebug.RequestDebug());
+        r.debug.requests.get(0).url = url;
+
+        JSONArray arr = null;
+        try {
+            arr = httpGetJsonArray(url, r.debug);
+        } catch (Exception e) {
+            Log.w(TAG, "Search error: " + e.getMessage());
+        }
+
+        List<PlanEventRaw> rawEvents = new ArrayList<>();
+        if (arr != null) {
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.optJSONObject(i);
+                if (obj != null) {
+                    PlanEventRaw ev = parsePlanEventRaw(obj);
+                    if (ev != null) rawEvents.add(ev);
+                }
+            }
+        }
+
+        Map<LocalDate, List<PlanEventRaw>> byDate = groupByDay(rawEvents);
+
+        if ("day".equals(viewMode) || "week".equals(viewMode)) {
+            LocalDate iter = rangeStart;
+            boolean any = false;
+            while (!iter.isAfter(rangeEnd)) {
+                DayColumn col = new DayColumn();
+                col.date = iter;
+                List<PlanEventRaw> dailyRaw = byDate.getOrDefault(iter, Collections.emptyList());
+                col.events = buildDayLayout(dailyRaw);
+                if (!col.events.isEmpty()) any = true;
+                r.dayColumns.add(col);
+                iter = iter.plusDays(1);
+            }
+            r.hasAnyEventsInRange = any;
+        } else {
+            r.monthGrid = buildMonthGrid(currentDate, byDate.keySet());
+        }
+
+        if ("day".equals(viewMode)) {
+            r.prev = currentDate.minusDays(1);
+            r.next = currentDate.plusDays(1);
+        } else if ("week".equals(viewMode)) {
+            r.prev = currentDate.minusWeeks(1);
+            r.next = currentDate.plusWeeks(1);
+        } else {
+            r.prev = currentDate.minusMonths(1);
+            r.next = currentDate.plusMonths(1);
+        }
+
+        return r;
+    }
+
+    private String buildSearchUrl(SearchParams params, LocalDate start, LocalDate end) throws UnsupportedEncodingException {
+        String queryEncoded = URLEncoder.encode(params.query, "UTF-8");
+
+        // Format required by schedule_student.php
+        String startStr = start.atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();
+        String endStr = end.plusDays(1).atStartOfDay().minusSeconds(1).atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();
+
+        startStr = URLEncoder.encode(startStr, "UTF-8");
+        endStr = URLEncoder.encode(endStr, "UTF-8");
+
+        String baseUrl = "https://plan.zut.edu.pl/schedule_student.php?";
+        String commonParams = "&start=" + startStr + "&end=" + endStr;
+
+        // Note: All requests go through schedule_student.php
+        // These are Internal Keys, not Display Strings
+        switch (params.category) {
+            case "Wykładowca":
+                return baseUrl + "teacher=" + queryEncoded + commonParams;
+            case "Sala":
+                return baseUrl + "room=" + queryEncoded + commonParams;
+            case "Grupa":
+                return baseUrl + "group=" + queryEncoded + commonParams;
+            case "Przedmiot":
+                return baseUrl + "subject=" + queryEncoded + commonParams;
+            case "Numer albumu":
+                return baseUrl + "number=" + queryEncoded + commonParams;
+            default:
+                return baseUrl + "number=" + queryEncoded + commonParams;
+        }
+    }
+
+    // --- End Search ---
+
+    // Fetch range
     private List<PlanEventRaw> fetchPlanRangeByAlbum(
             String album,
             LocalDate rangeStart,
@@ -379,7 +518,7 @@ public class PlanRepository {
                     break;
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Błąd pobierania plan.zut (" + u + "): " + e.getMessage());
+                Log.w(TAG, "Error fetching plan.zut (" + u + "): " + e.getMessage());
             }
         }
 
@@ -424,8 +563,7 @@ public class PlanRepository {
         return out;
     }
 
-    // Fetches the entire schedule for a given album (no start/end params).
-    // Used for full reload (long-press refresh in UI).
+    // Fetch full plan
     private List<PlanEventRaw> fetchFullPlanByAlbum(
             String album,
             PlanDebug debug
@@ -437,7 +575,7 @@ public class PlanRepository {
         try {
             arr = httpGetJsonArray(base, debug);
         } catch (Exception e) {
-            Log.w(TAG, "Błąd pobierania pełnego planu (" + base + "): " + e.getMessage());
+            Log.w(TAG, "Error fetching full plan (" + base + "): " + e.getMessage());
         }
 
         if (arr == null) {
@@ -491,7 +629,7 @@ public class PlanRepository {
         return r;
     }
 
-    // Event type classification
+    // Event Classification
 
     private String eventTypeClass(PlanEventRaw e) {
         String statusShort = lower(e.lessonStatusShort);
@@ -546,26 +684,31 @@ public class PlanRepository {
 
     private String eventTypeLabel(PlanEventRaw e) {
         String cls = eventTypeClass(e);
+
+        if (appContext == null) {
+            return e.lessonForm != null ? e.lessonForm : "";
+        }
+
         switch (cls) {
             case "week-event-type-lecture":
-                return "Wykład";
+                return appContext.getString(R.string.plan_type_lecture);
             case "week-event-type-lab":
-                return "Laboratorium";
+                return appContext.getString(R.string.plan_type_lab);
             case "week-event-type-auditory":
-                return "Ćwiczenia audytoryjne";
+                return appContext.getString(R.string.plan_type_auditory);
             case "week-event-type-exam":
-                return "Egzamin";
+                return appContext.getString(R.string.plan_type_exam);
             case "week-event-type-cancelled":
-                return "Odwołane";
+                return appContext.getString(R.string.plan_type_cancelled);
             case "week-event-type-rector":
-                return "Dzień rektorski";
+                return appContext.getString(R.string.plan_type_rector);
             case "week-event-type-remote":
-                return "Zajęcia zdalne";
+                return appContext.getString(R.string.plan_type_remote);
             case "week-event-type-pass":
             case "week-event-type-pass-retake":
             case "week-event-type-pass-remote":
             case "week-event-type-pass-remote-retake":
-                return "Zaliczenie";
+                return appContext.getString(R.string.plan_type_pass);
             default:
                 String form = e.lessonForm != null ? e.lessonForm.trim() : "";
                 if (!form.isEmpty()) {
@@ -579,7 +722,7 @@ public class PlanRepository {
         return (s == null) ? "" : s.toLowerCase(Locale.ROOT);
     }
 
-    // Building structures: by-date map and clusters
+    // Data Structuring
 
     private static final int START_HOUR = 6;
     private static final int END_HOUR = 22;
@@ -611,7 +754,7 @@ public class PlanRepository {
         return byDate;
     }
 
-    // For a single day, builds a list of PlanEventUi with top/height and lane layout
+    // Build UI layout for a single day
     private List<PlanEventUi> buildDayLayout(List<PlanEventRaw> list) {
         List<PlanEventUi> result = new ArrayList<>();
         if (list == null || list.isEmpty()) {
@@ -814,7 +957,6 @@ public class PlanRepository {
     }
 
     // Month grid
-
     private List<List<MonthCell>> buildMonthGrid(LocalDate monthDate, Set<LocalDate> daysWithPlan) {
         List<List<MonthCell>> grid = new ArrayList<>();
 
@@ -822,7 +964,7 @@ public class PlanRepository {
         LocalDate monthEnd = monthDate.withDayOfMonth(monthDate.lengthOfMonth());
 
         LocalDate cursor = monthStart;
-        int firstDow = cursor.getDayOfWeek().getValue(); // 1..7 (Mon=1)
+        int firstDow = cursor.getDayOfWeek().getValue();
         int col = firstDow - 1;
 
         List<MonthCell> week = new ArrayList<>(Collections.nCopies(7, null));
@@ -856,12 +998,8 @@ public class PlanRepository {
         return grid;
     }
 
-    // Cache – disk / memory
+    // Cache management
 
-    // Builds scope key for cache:
-    //  - "day:YYYY-MM-DD"
-    //  - "week:YYYY-MM-DD" (Monday of the week)
-    //  - "month:YYYY-MM-01"
     private String buildScopeKey(String viewMode, LocalDate rangeStart, LocalDate rangeEnd) {
         if ("day".equals(viewMode)) {
             return "day:" + rangeStart.format(YMD);
@@ -873,14 +1011,6 @@ public class PlanRepository {
         }
     }
 
-    // Ensures in-memory cache exists and belongs to the correct album.
-    // If needed, refreshes a specific scope from API.
-    //
-    // album              album number
-    // rangeStart         first day of scope
-    // rangeEnd           last day of scope
-    // viewMode           "day"/"week"/"month"
-    // forceScopeRefresh  true -> always refresh this scope (short tap "Refresh")
     private Map<LocalDate, List<PlanEventRaw>> ensureScopeData(
             String album,
             LocalDate rangeStart,
@@ -928,28 +1058,22 @@ public class PlanRepository {
             if (needRefresh) {
                 List<PlanEventRaw> fresh = fetchPlanRangeByAlbum(album, rangeStart, rangeEnd, debug);
 
-                // If the API returned an empty list for this range,
-                // keep the existing cache as-is and treat it as a temporary error / missing data
-                // rather than "definitely no classes".
+                // If API returns empty, preserve cache
                 if (fresh == null || fresh.isEmpty()) {
-                    Log.w(TAG, "Brak danych z plan.zut dla zakresu "
+                    Log.w(TAG, "No data from plan.zut for range "
                             + rangeStart + " - " + rangeEnd + " (view=" + viewMode + "). "
-                            + "Pozostawiam istniejący cache bez zmian.");
-                    // Important: do not update scopeTimestamps – we want to retry refresh later
+                            + "Keeping cache.");
                     return sFullPlanCache.byDate;
                 }
 
                 Map<LocalDate, List<PlanEventRaw>> tmp = groupByDay(fresh);
 
-                // Replace data only for days that actually have new entries;
-                // do not wipe days that might have valid data when the API temporarily returned less.
                 LocalDate d = rangeStart;
                 while (!d.isAfter(rangeEnd)) {
                     List<PlanEventRaw> list = tmp.get(d);
                     if (list != null && !list.isEmpty()) {
                         sFullPlanCache.byDate.put(d, list);
                     }
-                    // If list is null or empty, keep whatever is currently in the cache
                     d = d.plusDays(1);
                 }
 
@@ -1037,13 +1161,13 @@ public class PlanRepository {
             return cache;
 
         } catch (Exception e) {
-            Log.w(TAG, "Nie udało się wczytać cache planu z pliku: " + e.getMessage());
+            Log.w(TAG, "Failed to read cache: " + e.getMessage());
             return null;
         } finally {
             if (fis != null) {
                 try {
                     fis.close();
-                } catch (Exception ignore) { }
+                } catch (Exception ignore) {}
             }
         }
     }
@@ -1105,44 +1229,34 @@ public class PlanRepository {
             fos.flush();
 
         } catch (Exception e) {
-            Log.w(TAG, "Nie udało się zapisać cache planu do pliku: " + e.getMessage());
+            Log.w(TAG, "Failed to write cache: " + e.getMessage());
         } finally {
             if (fos != null) {
                 try {
                     fos.close();
-                } catch (Exception ignore) { }
+                } catch (Exception ignore) {}
             }
         }
     }
 
-    // Public API – schedule loading
+    // Public API
 
-    // Main entry: loads schedule for the given view (day/week/month) and date.
-    // Uses cache and scope TTL (1h).
+    // Load plan (cached or fresh based on TTL)
     public PlanResult loadPlan(String viewMode, LocalDate currentDate) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, false, false);
     }
 
-    // Main entry: loads schedule for the given view (day/week/month) and date.
-    //
-    // viewMode          "day" / "week" / "month"
-    // currentDate       current position (if null -> today)
-    // forceFullRefresh  true -> ignore cache and fetch the entire schedule
-    //                    (used on long-press refresh).
+    // Load plan (optional full refresh)
     public PlanResult loadPlan(String viewMode, LocalDate currentDate, boolean forceFullRefresh) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, forceFullRefresh, false);
     }
 
-    // Refreshes only the current scope (day/week/month) without touching the whole plan.
-    // Used for short press on "Refresh" button.
+    // Reload scope only
     public PlanResult reloadScope(String viewMode, LocalDate currentDate) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, false, true);
     }
 
-    // Shared logic:
-    //  - forceFullRefresh  = true  -> full schedule reload,
-    //  - forceScopeRefresh = true  -> only current scope reload,
-    //  - both false                -> cache + scope TTL.
+    // Internal load logic
     private PlanResult loadPlanInternal(String viewMode,
                                         LocalDate currentDate,
                                         boolean forceFullRefresh,
@@ -1179,12 +1293,11 @@ public class PlanRepository {
         } else if ("week".equals(viewMode)) {
             LocalDate weekStart;
 
-            // For Sunday "today" we show the next week by default
             if (currentDate.equals(today) && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
                 weekStart = currentDate.plusDays(1);
             } else {
                 weekStart = currentDate;
-                int dow = weekStart.getDayOfWeek().getValue(); // 1..7 (Mon=1)
+                int dow = weekStart.getDayOfWeek().getValue();
                 if (dow > 1) {
                     weekStart = weekStart.minusDays(dow - 1);
                 }
@@ -1306,7 +1419,7 @@ public class PlanRepository {
 
         PlanDebug debug = new PlanDebug();
 
-        // Same as in PHP: first call getPlan without "day", then fetch each day separately
+        // Logic matches PHP backend
         MzutSession s = MzutSession.getInstance();
         String userId = s.getUserId();
         String authKey = s.getAuthKey();
@@ -1314,7 +1427,7 @@ public class PlanRepository {
             return Collections.emptyList();
         }
 
-        // Step 1: getPlan (list of days, like in PHP)
+        // Step 1: getPlan
         HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
         params.put("token", authKey);
@@ -1332,8 +1445,6 @@ public class PlanRepository {
             arr.put(block);
         }
 
-        // dataZajec -> dayKey
-        // example mapping: "Y-m-d" -> "20112025"
         Map<String, String> daysList = new HashMap<>();
         for (int i = 0; i < arr.length(); i++) {
             JSONObject row = arr.getJSONObject(i);
@@ -1345,7 +1456,6 @@ public class PlanRepository {
             String dataClean = data.replace('.', '-');
             LocalDate d = null;
 
-            // Try to parse using different date formats
             try {
                 if (dataClean.matches("\\d{4}-\\d{2}-\\d{2}")) {
                     d = LocalDate.parse(dataClean);
@@ -1353,8 +1463,7 @@ public class PlanRepository {
                     DateTimeFormatter f = DateTimeFormatter.ofPattern("dd-MM-yyyy");
                     d = LocalDate.parse(dataClean, f);
                 }
-            } catch (Exception ignore) {
-            }
+            } catch (Exception ignore) {}
 
             if (d == null) {
                 continue;
@@ -1368,7 +1477,7 @@ public class PlanRepository {
 
         Map<String, Map<String, String>> subjectsAll = new TreeMap<>();
 
-        // Step 2: fetch each day separately (getPlan with "day" parameter)
+        // Step 2: fetch individual days
         for (String dateStr : daysList.keySet()) {
             String dayKey = daysList.get(dateStr);
             HashMap<String, String> paramsDay = new HashMap<>();
@@ -1443,16 +1552,18 @@ public class PlanRepository {
                 String filterKey = t.getValue();
 
                 String typeLabel;
-                switch (typeKey) {
-                    case "lab":
-                        typeLabel = "Laboratorium";
-                        break;
-                    case "aud":
-                        typeLabel = "Audytoryjne";
-                        break;
-                    default:
-                        typeLabel = "Wykład";
-                        break;
+                if (appContext != null) {
+                    switch (typeKey) {
+                        case "lab": typeLabel = appContext.getString(R.string.plan_type_lab); break;
+                        case "aud": typeLabel = appContext.getString(R.string.plan_type_auditory); break;
+                        default: typeLabel = appContext.getString(R.string.plan_type_lecture); break;
+                    }
+                } else {
+                    switch (typeKey) {
+                        case "lab": typeLabel = "Laboratorium"; break;
+                        case "aud": typeLabel = "Audytoryjne"; break;
+                        default: typeLabel = "Wykład"; break;
+                    }
                 }
 
                 SubjectFilterItem si = new SubjectFilterItem();

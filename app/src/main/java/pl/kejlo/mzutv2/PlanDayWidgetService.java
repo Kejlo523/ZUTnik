@@ -7,6 +7,8 @@ import android.os.Binder;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
+import androidx.core.content.ContextCompat;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -15,20 +17,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-// RemoteViewsService for the day-plan widget ListView.
+// Service for day-plan widget list.
 public class PlanDayWidgetService extends RemoteViewsService {
 
-    // Plan prefs (same as in PlanActivity)
+    // Plan prefs (matches PlanActivity)
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
+    // Must match PlanDayWidgetProvider
+    public static final String EXTRA_DATE_ISO = "pl.kejlo.mzutv2.PLAN_WIDGET_DATE_ISO";
+
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
-        return new PlanDayFactory(getApplicationContext());
+        // Pass intent for EXTRA_DATE_ISO
+        return new PlanDayFactory(getApplicationContext(), intent);
     }
 
-    // Initializes session from SharedPreferences (new MzutSession).
-    // Returns true if we have userId + authKey (user is logged in).
+    // Init session from prefs.
     private static boolean ensureSessionFromPrefs(Context ctx) {
         MzutSession.initializeFromPreferences(ctx);
         MzutSession s = MzutSession.getInstance();
@@ -40,13 +45,28 @@ public class PlanDayWidgetService extends RemoteViewsService {
         private final Context context;
         private final List<PlanRepository.PlanEventUi> events = new ArrayList<>();
 
-        PlanDayFactory(Context context) {
+        private final LocalDate targetDate; // Target date.
+
+        PlanDayFactory(Context context, Intent intent) {
             this.context = context;
+
+            LocalDate tmpDate;
+            try {
+                String dateStr = intent != null ? intent.getStringExtra(EXTRA_DATE_ISO) : null;
+                if (dateStr != null) {
+                    tmpDate = LocalDate.parse(dateStr);
+                } else {
+                    tmpDate = LocalDate.now();
+                }
+            } catch (Exception e) {
+                tmpDate = LocalDate.now();
+            }
+            this.targetDate = tmpDate;
         }
 
         @Override
         public void onCreate() {
-            // No-op – data is loaded in onDataSetChanged
+            // No-op
         }
 
         @Override
@@ -55,10 +75,9 @@ public class PlanDayWidgetService extends RemoteViewsService {
             try {
                 events.clear();
 
-                // Restore session after process kill
+                // Restore session
                 boolean hasSession = ensureSessionFromPrefs(context);
                 if (!hasSession) {
-                    // No logged in user -> no data in widget
                     return;
                 }
 
@@ -69,95 +88,62 @@ public class PlanDayWidgetService extends RemoteViewsService {
                         new HashSet<>()
                 );
 
-                // Repository with context -> shared cache with the main app
+                // Repo with shared cache
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
+
                 LocalDate today = LocalDate.now();
+                boolean isToday = targetDate.equals(today);
 
                 LocalTime now = LocalTime.now();
                 int nowMin = now.getHour() * 60 + now.getMinute();
 
-                // First attempt: today
-                PlanRepository.PlanResult resultToday = repo.loadPlan("day", today);
+                // Load plan for target date
+                PlanRepository.PlanResult result = repo.loadPlan("day", targetDate);
 
-                PlanRepository.DayColumn todayCol = null;
-                if (resultToday.dayColumns != null) {
-                    for (PlanRepository.DayColumn col : resultToday.dayColumns) {
-                        if (today.equals(col.date)) {
-                            todayCol = col;
+                PlanRepository.DayColumn dayCol = null;
+                if (result.dayColumns != null) {
+                    for (PlanRepository.DayColumn col : result.dayColumns) {
+                        if (targetDate.equals(col.date)) {
+                            dayCol = col;
                             break;
                         }
                     }
                 }
 
-                List<PlanRepository.PlanEventUi> todayAll = new ArrayList<>();
-                if (todayCol != null && todayCol.events != null) {
-                    for (PlanRepository.PlanEventUi ev : todayCol.events) {
-                        if (ev.subjectKey != null && !ev.subjectKey.isEmpty()
-                                && hiddenSubjectKeys.contains(ev.subjectKey)) {
-                            // Hidden by filter
-                            continue;
-                        }
-                        todayAll.add(ev);
-                    }
-                }
-
-                if (!todayAll.isEmpty()) {
-                    Collections.sort(todayAll, (a, b) -> Integer.compare(a.startMin, b.startMin));
-
-                    // Drop events that already finished – only for today
-                    List<PlanRepository.PlanEventUi> upcomingToday = new ArrayList<>();
-                    for (PlanRepository.PlanEventUi ev : todayAll) {
-                        if (ev.endMin > nowMin) {
-                            upcomingToday.add(ev);
-                        }
-                    }
-
-                    if (!upcomingToday.isEmpty()) {
-                        events.addAll(upcomingToday);
-                        // There are still classes today – stop here
-                        return;
-                    }
-                }
-
-                // If there is nothing for today -> try tomorrow
-                LocalDate tomorrow = today.plusDays(1);
-
-                PlanRepository.PlanResult resultTomorrow = repo.loadPlan("day", tomorrow);
-
-                PlanRepository.DayColumn tomorrowCol = null;
-                if (resultTomorrow.dayColumns != null) {
-                    for (PlanRepository.DayColumn col : resultTomorrow.dayColumns) {
-                        if (tomorrow.equals(col.date)) {
-                            tomorrowCol = col;
-                            break;
-                        }
-                    }
-                }
-
-                if (tomorrowCol == null || tomorrowCol.events == null) {
-                    // No classes tomorrow – list stays empty
+                if (dayCol == null || dayCol.events == null) {
+                    // No classes
                     return;
                 }
 
-                List<PlanRepository.PlanEventUi> tomorrowAll = new ArrayList<>();
-                for (PlanRepository.PlanEventUi ev : tomorrowCol.events) {
+                List<PlanRepository.PlanEventUi> all = new ArrayList<>();
+                for (PlanRepository.PlanEventUi ev : dayCol.events) {
                     if (ev.subjectKey != null && !ev.subjectKey.isEmpty()
                             && hiddenSubjectKeys.contains(ev.subjectKey)) {
                         // Hidden by filter
                         continue;
                     }
-                    tomorrowAll.add(ev);
+                    all.add(ev);
                 }
 
-                if (tomorrowAll.isEmpty()) {
-                    // Everything filtered out for tomorrow
+                if (all.isEmpty()) {
                     return;
                 }
 
-                Collections.sort(tomorrowAll, (a, b) -> Integer.compare(a.startMin, b.startMin));
+                Collections.sort(all, (a, b) -> Integer.compare(a.startMin, b.startMin));
 
-                // For tomorrow we do not filter by time – everything is in the future anyway
-                events.addAll(tomorrowAll);
+                if (isToday) {
+                    // Today: show upcoming only
+                    List<PlanRepository.PlanEventUi> upcoming = new ArrayList<>();
+                    for (PlanRepository.PlanEventUi ev : all) {
+                        if (ev.endMin > nowMin) {
+                            upcoming.add(ev);
+                        }
+                    }
+                    events.addAll(upcoming);
+                } else {
+                    // Future: show all
+                    events.addAll(all);
+                }
 
             } catch (Exception e) {
                 events.clear();
@@ -189,11 +175,11 @@ public class PlanDayWidgetService extends RemoteViewsService {
                     R.layout.widget_plan_day_item
             );
 
-            // Line 1: title
+            // Title
             String title = ev.title != null ? ev.title : "";
             rv.setTextViewText(R.id.itemTitle, title);
 
-            // Line 2: time range + room
+            // Line 2: time + room
             StringBuilder line2 = new StringBuilder();
             line2.append(ev.startStr)
                     .append("–")
@@ -203,11 +189,10 @@ public class PlanDayWidgetService extends RemoteViewsService {
             }
             rv.setTextViewText(R.id.itemRoom, line2.toString());
 
-            // Color strip on the left by type (same mapping as in PlanActivity)
+            // Type color strip
             int color = colorForType(ev.typeClass);
             rv.setInt(R.id.itemColorStrip, "setBackgroundColor", color);
 
-            // Row click -> just open PlanActivity
             Intent fillIntent = new Intent();
             rv.setOnClickFillInIntent(R.id.itemRoot, fillIntent);
 
@@ -216,7 +201,6 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
         @Override
         public RemoteViews getLoadingView() {
-            // Use default loading view
             return null;
         }
 
@@ -240,29 +224,41 @@ public class PlanDayWidgetService extends RemoteViewsService {
                 typeClass = "";
             }
 
+            int resId;
             switch (typeClass) {
                 case "week-event-type-lecture":
-                    return 0xFF1E3A8A;
+                    resId = R.color.plan_event_lecture_bg;
+                    break;
                 case "week-event-type-lab":
-                    return 0xFF064E3B;
+                    resId = R.color.plan_event_lab_bg;
+                    break;
                 case "week-event-type-auditory":
-                    return 0xFF3730A3;
+                    resId = R.color.plan_event_auditory_bg;
+                    break;
                 case "week-event-type-exam":
-                    return 0xFF7F1D1D;
+                    resId = R.color.plan_event_exam_bg;
+                    break;
                 case "week-event-type-cancelled":
-                    return 0xFF374151;
+                    resId = R.color.plan_event_cancelled_bg;
+                    break;
                 case "week-event-type-rector":
-                    return 0xFF78350F;
+                    resId = R.color.plan_event_rector_bg;
+                    break;
                 case "week-event-type-remote":
-                    return 0xFF1E40AF;
+                    resId = R.color.plan_event_remote_bg;
+                    break;
                 case "week-event-type-pass":
                 case "week-event-type-pass-retake":
                 case "week-event-type-pass-remote":
                 case "week-event-type-pass-remote-retake":
-                    return 0xFF166534;
+                    resId = R.color.plan_event_pass_bg;
+                    break;
                 default:
-                    return 0xFF1D4ED8;
+                    resId = R.color.plan_event_default_bg;
+                    break;
             }
+
+            return ContextCompat.getColor(context, resId);
         }
     }
 }
