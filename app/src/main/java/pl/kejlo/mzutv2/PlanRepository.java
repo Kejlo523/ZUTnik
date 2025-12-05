@@ -7,16 +7,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
@@ -26,6 +22,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class PlanRepository {
 
@@ -235,38 +234,25 @@ public class PlanRepository {
 
     // Helpers – ZUT API
 
-    // Simple GET to plan.zut
+    // Simple GET to plan.zut replaced with OkHttp for custom SSL support
     private JSONArray httpGetJsonArray(String urlStr, PlanDebug debug) throws IOException, JSONException {
-        HttpURLConnection conn = null;
-        InputStream is = null;
         PlanDebug.RequestDebug rd = new PlanDebug.RequestDebug();
         rd.url = urlStr;
 
-        try {
-            URL url = new URL(urlStr);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(8000);
-            conn.setReadTimeout(8000);
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("User-Agent", "mZUTv2-Android-Plan/1.0");
-            conn.setInstanceFollowRedirects(true);
+        Request request = new Request.Builder()
+                .url(urlStr)
+                .header("User-Agent", "mZUTv2-Android-Plan/1.0")
+                .build();
 
-            int code = conn.getResponseCode();
+        try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+            int code = response.code();
             rd.httpCode = code;
 
-            if (code != 200) {
+            if (!response.isSuccessful()) {
                 throw new IOException("HTTP " + code + " from plan.zut");
             }
 
-            is = new BufferedInputStream(conn.getInputStream());
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-
-            String body = sb.toString();
+            String body = response.body() != null ? response.body().string() : "";
             JSONArray arr = new JSONArray(body);
 
             rd.jsonOk = true;
@@ -279,15 +265,6 @@ public class PlanRepository {
             rd.jsonCount = null;
             debug.requests.add(rd);
             throw e;
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (Exception ignore) {}
-            }
-            if (conn != null) {
-                conn.disconnect();
-            }
         }
     }
 

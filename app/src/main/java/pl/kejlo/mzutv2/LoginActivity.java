@@ -2,14 +2,21 @@ package pl.kejlo.mzutv2;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.CycleInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
@@ -41,7 +48,11 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnLogin;
 
     private AuthTask currentTask;
-    private boolean isFormElevated = false;
+
+    // Animation specific constants
+    private static final long ANIM_DURATION_ENTER = 600;
+    private static final long ANIM_STAGGER_DELAY = 100;
+    private ObjectAnimator loadingAnimator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,28 +87,106 @@ public class LoginActivity extends AppCompatActivity {
 
         btnLogin.setOnClickListener(v -> doLogin());
 
-        // Initial hidden state for staggered form animation (to avoid flicker)
-        float startOffset = 24f;
-        editLogin.setAlpha(0f);
-        editLogin.setTranslationY(startOffset);
-        editPass.setAlpha(0f);
-        editPass.setTranslationY(startOffset);
-        btnLogin.setAlpha(0f);
-        btnLogin.setTranslationY(startOffset);
-
-        // Focus listener: gently raise the form when keyboard appears
+        // Focus listener for aesthetic focus scaling
         View.OnFocusChangeListener focusListener = (v, hasFocus) -> {
-            if (hasFocus) {
-                elevateForm(true);
-            } else if (!editLogin.hasFocus() && !editPass.hasFocus()) {
-                elevateForm(false);
-            }
+            float scale = hasFocus ? 1.02f : 1.0f;
+            float elevation = hasFocus ? 12f : 0f; // works on newer Androids visual only
+            v.animate()
+                    .scaleX(scale)
+                    .scaleY(scale)
+                    .translationZ(elevation)
+                    .setDuration(200)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
         };
         editLogin.setOnFocusChangeListener(focusListener);
         editPass.setOnFocusChangeListener(focusListener);
 
-        // Initial intro animation for icon and form
-        runIntroAnimations();
+        // Prepare views for entry animation (hide them initially)
+        prepareViewsForAnimation();
+
+        // Start the "Wow" intro
+        startKillerIntroAnimation();
+    }
+
+    /**
+     * Sets initial state of views before animation starts (hidden, scaled down, etc.)
+     */
+    private void prepareViewsForAnimation() {
+        appIcon.setAlpha(0f);
+        appIcon.setTranslationY(-300f);
+        appIcon.setRotation(-180f);
+        appIcon.setScaleX(0.5f);
+        appIcon.setScaleY(0.5f);
+
+        loginCard.setAlpha(0f);
+        loginCard.setScaleX(0.9f);
+        loginCard.setScaleY(0.9f);
+        loginCard.setTranslationY(200f);
+
+        editLogin.setAlpha(0f);
+        editLogin.setTranslationX(-100f);
+
+        editPass.setAlpha(0f);
+        editPass.setTranslationX(100f);
+
+        btnLogin.setAlpha(0f);
+        btnLogin.setTranslationY(150f);
+        btnLogin.setScaleX(0.5f);
+    }
+
+    /**
+     * Executes the complex entry animation sequence.
+     */
+    private void startKillerIntroAnimation() {
+        // 1. App Icon Drop & Spin
+        appIcon.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .rotation(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(800)
+                .setInterpolator(new OvershootInterpolator(1.5f)) // Bouncy effect
+                .start();
+
+        // 2. Card Rise (Slightly delayed)
+        loginCard.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setStartDelay(200)
+                .setDuration(600)
+                .setInterpolator(new DecelerateInterpolator(1.2f))
+                .start();
+
+        // 3. Inputs Slide In (Staggered from sides)
+        editLogin.animate()
+                .alpha(1f)
+                .translationX(0f)
+                .setStartDelay(400)
+                .setDuration(500)
+                .setInterpolator(new OvershootInterpolator(1.0f))
+                .start();
+
+        editPass.animate()
+                .alpha(1f)
+                .translationX(0f)
+                .setStartDelay(500)
+                .setDuration(500)
+                .setInterpolator(new OvershootInterpolator(1.0f))
+                .start();
+
+        // 4. Button Pop Up
+        btnLogin.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f)
+                .setStartDelay(650)
+                .setDuration(600)
+                .setInterpolator(new OvershootInterpolator(2.0f)) // Extra bouncy
+                .start();
     }
 
     private void doLogin() {
@@ -106,8 +195,8 @@ public class LoginActivity extends AppCompatActivity {
 
         if (login.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, R.string.login_enter_credentials, Toast.LENGTH_SHORT).show();
-            playShakeAnimation(editLogin);
-            playShakeAnimation(editPass);
+            animateFailureShake(editLogin);
+            animateFailureShake(editPass);
             return;
         }
 
@@ -125,160 +214,116 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Button click animation + temporary disable
+        // Start Loading Animation state
+        startLoadingState();
+
+        currentTask = new AuthTask(login, pass, token, tokenJpg);
+        currentTask.execute();
+    }
+
+    /**
+     * Transits UI into a "Thinking" state.
+     * Button pulsates, inputs fade out slightly.
+     */
+    private void startLoadingState() {
         btnLogin.setEnabled(false);
-        btnLogin.animate()
-                .alpha(0.9f)
-                .scaleX(0.96f)
-                .scaleY(0.96f)
-                .setDuration(120)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .withEndAction(() -> {
-                    btnLogin.animate()
-                            .alpha(1f)
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(160)
-                            .setInterpolator(new OvershootInterpolator(1.05f))
-                            .start();
-
-                    currentTask = new AuthTask(login, pass, token, tokenJpg);
-                    currentTask.execute();
-                })
-                .start();
-    }
-
-    // Intro animations for initial appearance
-
-    private void runIntroAnimations() {
-        // Icon: start slightly above with zoom, then drop into place with overshoot
-        appIcon.setAlpha(0f);
-        appIcon.setScaleX(1.2f);
-        appIcon.setScaleY(1.2f);
-        appIcon.setTranslationY(-40f);
-
-        appIcon.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .translationY(0f)
-                .setDuration(550)
-                .setInterpolator(new OvershootInterpolator(1.2f))
-                .start();
-
-        // Card: slide up from bottom with fade in
-        loginCard.setAlpha(0f);
-        loginCard.setTranslationY(80f);
-
-        loginCard.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setStartDelay(200)
-                .setDuration(450)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .withEndAction(this::runFormStaggerAnimation)
-                .start();
-    }
-
-    // Slight stagger for login, password and button after the card appears
-    private void runFormStaggerAnimation() {
-        long baseDelay = 80L;
-        long duration = 260L;
-
-        editLogin.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setStartDelay(baseDelay)
-                .setDuration(duration)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .start();
-
-        editPass.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setStartDelay(baseDelay + 60L)
-                .setDuration(duration)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .start();
-
-        btnLogin.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setStartDelay(baseDelay + 120L)
-                .setDuration(duration)
-                .setInterpolator(new OvershootInterpolator(1.1f))
-                .start();
-    }
-
-    private void elevateForm(boolean elevate) {
-        if (elevate == isFormElevated) {
-            return;
-        }
-        isFormElevated = elevate;
-
-        float targetTranslation = elevate ? -60f : 0f;
-
-        loginCard.animate()
-                .translationY(targetTranslation)
-                .setDuration(260)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .start();
-    }
-
-    private void playShakeAnimation(View view) {
-        if (view == null) {
-            return;
-        }
-
-        final float delta = 8f;
-
-        view.animate()
-                .translationX(-delta)
-                .setDuration(40)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .withEndAction(() ->
-                        view.animate()
-                                .translationX(delta)
-                                .setDuration(60)
-                                .setInterpolator(new AccelerateDecelerateInterpolator())
-                                .withEndAction(() ->
-                                        view.animate()
-                                                .translationX(0)
-                                                .setDuration(40)
-                                                .setInterpolator(new AccelerateDecelerateInterpolator())
-                                                .start()
-                                )
-                                .start()
-                )
-                .start();
-    }
-
-    // Exit animation after successful login, then navigate to HomeActivity
-    private void runSuccessTransitionAndOpenHome() {
-        btnLogin.setEnabled(false);
-        loginCard.setClickable(false);
         editLogin.setEnabled(false);
         editPass.setEnabled(false);
 
+        // Fade out inputs slightly
+        editLogin.animate().alpha(0.5f).setDuration(300).start();
+        editPass.animate().alpha(0.5f).setDuration(300).start();
+
+        // Pulse the login button
+        loadingAnimator = ObjectAnimator.ofPropertyValuesHolder(
+                btnLogin,
+                PropertyValuesHolder.ofFloat("scaleX", 1f, 0.95f),
+                PropertyValuesHolder.ofFloat("scaleY", 1f, 0.95f),
+                PropertyValuesHolder.ofFloat("alpha", 1f, 0.8f)
+        );
+        loadingAnimator.setDuration(600);
+        loadingAnimator.setRepeatCount(ObjectAnimator.INFINITE);
+        loadingAnimator.setRepeatMode(ObjectAnimator.REVERSE);
+        loadingAnimator.start();
+    }
+
+    /**
+     * Resets UI from Loading state back to Normal (e.g., on error).
+     */
+    private void stopLoadingState() {
+        if (loadingAnimator != null) {
+            loadingAnimator.cancel();
+            btnLogin.setScaleX(1f);
+            btnLogin.setScaleY(1f);
+            btnLogin.setAlpha(1f);
+        }
+
+        btnLogin.setEnabled(true);
+        editLogin.setEnabled(true);
+        editPass.setEnabled(true);
+
+        editLogin.animate().alpha(1f).setDuration(200).start();
+        editPass.animate().alpha(1f).setDuration(200).start();
+    }
+
+    /**
+     * Violently shakes the view to indicate error + Haptic feedback.
+     */
+    private void animateFailureShake(View view) {
+        // Haptic feedback
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (v != null) {
+            v.vibrate(50); // 50ms vibration
+        }
+
+        // CycleInterpolator creates the shake effect
+        ObjectAnimator shake = ObjectAnimator.ofFloat(view, "translationX", 0, 25, -25, 25, -25, 15, -15, 6, -6, 0);
+        shake.setDuration(700);
+        shake.start();
+    }
+
+    /**
+     * Explosive exit animation on success.
+     * Icon flies up, Card drops down, elements fade out fast.
+     */
+    private void runSuccessTransitionAndOpenHome() {
+        if (loadingAnimator != null) loadingAnimator.cancel();
+
+        // 1. Icon shoots up into the sky
         appIcon.animate()
-                .translationY(-40f)
+                .translationY(-1000f)
                 .alpha(0f)
-                .setDuration(260)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .setDuration(400)
+                .setInterpolator(new AccelerateInterpolator())
                 .start();
 
+        // 2. Card drops to the floor
         loginCard.animate()
-                .translationY(60f)
+                .translationY(1000f)
                 .alpha(0f)
-                .setDuration(260)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .rotation(10f) // slight tilt
+                .setDuration(400)
+                .setInterpolator(new AccelerateInterpolator())
+                .start();
+
+        // 3. Button explodes (scales up and fades)
+        btnLogin.animate()
+                .scaleX(3f)
+                .scaleY(3f)
+                .alpha(0f)
+                .setDuration(300)
                 .withEndAction(() -> {
                     Intent i = new Intent(LoginActivity.this, HomeActivity.class);
+                    // Disable standard activity transition for seamless feel
+                    i.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                     startActivity(i);
+                    // Use a custom fade transition
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     finish();
                 })
                 .start();
     }
+
 
     // AuthTask – login logic (behavior unchanged)
 
@@ -315,10 +360,10 @@ public class LoginActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(JSONObject auth) {
-            btnLogin.setEnabled(true);
             currentTask = null;
 
             if (error != null) {
+                stopLoadingState(); // Stop animations
                 String errorMessage = error.getMessage() != null ? error.getMessage() : "";
                 Toast.makeText(
                         LoginActivity.this,
@@ -330,6 +375,7 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             if (auth == null) {
+                stopLoadingState(); // Stop animations
                 Toast.makeText(
                         LoginActivity.this,
                         R.string.login_no_server_response,
@@ -346,6 +392,7 @@ public class LoginActivity extends AppCompatActivity {
             );
 
             if (!"OK".equalsIgnoreCase(status)) {
+                stopLoadingState(); // Stop animations
                 if ("SYSTEM ERROR".equalsIgnoreCase(status)) {
                     Toast.makeText(
                             LoginActivity.this,
@@ -358,12 +405,13 @@ public class LoginActivity extends AppCompatActivity {
                             R.string.login_invalid_credentials,
                             Toast.LENGTH_LONG
                     ).show();
-                    playShakeAnimation(editLogin);
-                    playShakeAnimation(editPass);
+                    // Shake and Vibrate
+                    animateFailureShake(loginCard);
                 }
                 return;
             }
 
+            // SUCCESS!
             String userId = auth.optString("login", login);
             String first = auth.optString("pierwszeImie", "");
             String last = auth.optString("nazwisko", "");
@@ -387,6 +435,7 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG
             ).show();
 
+            // Run the exit animation
             runSuccessTransitionAndOpenHome();
         }
     }

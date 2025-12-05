@@ -9,13 +9,11 @@
     android:fitsSystemWindows="true"
     app:statusBarBackground="@color/mz_bg">
 
-    <!-- GŁÓWNA ZAWARTOŚĆ EKRANU -->
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- TOOLBAR -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -26,286 +24,152 @@
             android:paddingEnd="16dp"
             android:elevation="0dp" />
 
-        <!-- CONTENT -->
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:layout_height="match_parent"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp">
 
-            <!-- HERO / NAGŁÓWEK (bardziej kompaktowy) -->
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingBottom="6dp">
-
-                <!-- pill + przycisk odświeżania -->
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/grades_header_pill"
-                        android:textSize="11sp"
-                        android:textColor="@color/mz_primary"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        android:paddingTop="6dp"
-                        android:paddingBottom="6dp"
-                        android:background="@drawable/bg_card_soft" />
-
-                    <ImageView
-                        android:id="@+id/btnGradesRefresh"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginStart="8dp"
-                        android:padding="2dp"
-                        android:src="@android:drawable/ic_popup_sync"
-                        android:tint="@color/mz_muted" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/grades_hero_title"
-                    android:textColor="@color/mz_text"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:layout_marginTop="4dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/grades_hero_subtitle"
-                    android:textColor="@color/mz_muted"
-                    android:textSize="11sp"
-                    android:maxLines="2"
-                    android:ellipsize="end"
-                    android:layout_marginTop="2dp" />
-            </LinearLayout>
-
-            <!-- PODSUMOWANIE: DWA KAFELKI (niższe, ciaśniejsze) -->
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
+                android:background="@drawable/bg_card_primary"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp"
+                android:elevation="2dp">
 
-                <!-- ŚREDNIA OCEN -->
                 <LinearLayout
                     android:orientation="vertical"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_card_soft"
-                    android:padding="8dp"
-                    android:layout_marginEnd="4dp">
-
+                    android:layout_weight="1">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="@string/grades_summary_average_label"
                         android:textColor="@color/mz_muted"
-                        android:textSize="10sp" />
-
+                        android:textSize="11sp"
+                        android:textAllCaps="true"
+                        android:textStyle="bold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
                     <TextView
                         android:id="@+id/tvAverageValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="@string/grades_average_placeholder"
                         android:textColor="@color/mz_text"
+                        android:textSize="28sp"
                         android:textStyle="bold"
-                        android:textSize="18sp"
-                        android:layout_marginTop="2dp" />
-
-                    <TextView
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/grades_summary_average_description"
-                        android:textColor="@color/mz_text"
-                        android:textSize="9sp"
-                        android:maxLines="2"
-                        android:ellipsize="end"
-                        android:layout_marginTop="2dp" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
-                <!-- SUMA ECTS -->
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:background="@color/mz_border_soft"
+                    android:layout_marginHorizontal="16dp" />
+
                 <LinearLayout
                     android:orientation="vertical"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_card_soft"
-                    android:padding="8dp"
-                    android:layout_marginStart="4dp">
-
+                    android:layout_weight="1">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="@string/grades_summary_ects_label"
                         android:textColor="@color/mz_muted"
-                        android:textSize="10sp" />
-
+                        android:textSize="11sp"
+                        android:textAllCaps="true"
+                        android:textStyle="bold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
                     <TextView
                         android:id="@+id/tvEctsValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="0"
                         android:textColor="@color/mz_text"
+                        android:textSize="28sp"
                         android:textStyle="bold"
-                        android:textSize="18sp"
-                        android:layout_marginTop="2dp" />
-
-                    <TextView
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/grades_summary_ects_description"
-                        android:textColor="@color/mz_text"
-                        android:textSize="9sp"
-                        android:maxLines="2"
-                        android:ellipsize="end"
-                        android:layout_marginTop="2dp" />
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/btnGradesRefresh"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_popup_sync"
+                    app:tint="@color/mz_primary"
+                    android:layout_gravity="top|end" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_card_soft"
+                    android:padding="2dp"
+                    android:layout_marginEnd="6dp">
+                    <Spinner
+                        android:id="@+id/spinnerStudies"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:background="@drawable/bg_card_soft"
+                    android:padding="2dp"
+                    android:layout_marginStart="6dp">
+                    <Spinner
+                        android:id="@+id/spinnerSemesters"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:spinnerMode="dropdown" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- WYBÓR KIERUNKU (mniej „powietrza”) -->
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/grades_study_label"
-                    android:textColor="@color/mz_text"
-                    android:textSize="12sp" />
-
-                <Spinner
-                    android:id="@+id/spinnerStudies"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:background="@color/mz_bg"
-                    android:spinnerMode="dropdown" />
-            </LinearLayout>
-
-            <!-- WYBÓR SEMESTRU -->
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/grades_semester_caption"
-                    android:textColor="@color/mz_text"
-                    android:textSize="12sp" />
-
-                <Spinner
-                    android:id="@+id/spinnerSemesters"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:background="@color/mz_bg"
-                    android:spinnerMode="dropdown" />
-            </LinearLayout>
-
-            <!-- NAGŁÓWEK TABELI (cieńszy) -->
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp"
-                android:background="@color/mz_bg_soft">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="2"
-                    android:text="@string/grades_table_header_subject"
-                    android:textColor="@color/mz_text"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/grades_table_header_type"
-                    android:textColor="@color/mz_text"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="@string/grades_table_header_grade"
-                    android:textColor="@color/mz_text"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="end"
-                    android:text="@string/grades_table_header_date"
-                    android:textColor="@color/mz_text"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <!-- LISTA OCEN -> ma jak najwięcej miejsca (weight=1) -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/listGrades"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:layout_marginTop="2dp"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp"
                 android:overScrollMode="ifContentScrolls" />
 
-            <!-- PROGRESS -->
-            <ProgressBar
-                android:id="@+id/gradesProgress"
-                style="?android:attr/progressBarStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="4dp"
-                android:visibility="gone" />
-
-            <!-- PUSTY STAN -->
             <TextView
                 android:id="@+id/tvEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/grades_empty_state"
                 android:textColor="@color/mz_muted"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:gravity="center"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="32dp"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/gradesProgress"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="32dp"
                 android:visibility="gone" />
 
         </LinearLayout>
-
     </LinearLayout>
 
-    <!-- NAVIGATION DRAWER -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
         android:layout_width="wrap_content"
@@ -313,12 +177,7 @@
         android:layout_gravity="start"
         android:background="@color/mz_bg"
         android:fitsSystemWindows="true">
-
-        <include
-            layout="@layout/nav_header"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
+        <include layout="@layout/nav_header" />
     </com.google.android.material.navigation.NavigationView>
 
 </androidx.drawerlayout.widget.DrawerLayout>

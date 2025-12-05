@@ -25,118 +25,122 @@
             android:elevation="0dp"
             android:titleTextColor="@color/mz_text" />
 
-        <ScrollView
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:overScrollMode="ifContentScrolls"
-            android:fillViewport="true">
+            android:layout_height="match_parent"
+            android:baselineAligned="false">
 
             <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.35"
                 android:orientation="vertical"
-                android:padding="20dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:padding="24dp"
+                android:background="@color/mz_bg">
 
                 <LinearLayout
                     android:id="@+id/homeHero"
                     android:orientation="vertical"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
                     android:background="@drawable/bg_card_primary"
                     android:padding="24dp"
-                    android:elevation="4dp"
-                    android:layout_marginBottom="24dp">
+                    android:elevation="4dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/textHeroPill"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-                        <TextView
-                            android:id="@+id/textHeroPill"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:background="@drawable/bg_card_soft"
-                            android:text="@string/app_name"
-                            android:textColor="@color/mz_text"
-                            android:textSize="10sp"
-                            android:textStyle="bold"
-                            android:textAllCaps="true"
-                            android:letterSpacing="0.05" />
-                    </LinearLayout>
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:background="@drawable/bg_card_soft"
+                        android:text="@string/app_name"
+                        android:textColor="@color/mz_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:textAllCaps="true" />
 
                     <TextView
                         android:id="@+id/textWelcome"
                         android:text="@string/home_welcome_fallback"
-                        android:textSize="26sp"
+                        android:textSize="32sp"
                         android:textStyle="bold"
                         android:textColor="@color/mz_text"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="24dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
                     <TextView
                         android:id="@+id/textWelcomeSub"
                         android:text="@string/home_welcome_subtitle"
-                        android:textSize="15sp"
+                        android:textSize="16sp"
                         android:textColor="@color/mz_muted"
-                        android:layout_marginTop="6dp"
-                        android:layout_marginBottom="20dp"
+                        android:layout_marginTop="8dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
-                    <LinearLayout
-                        android:orientation="horizontal"
+                    <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/btnHeroPlan"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp">
+                        android:layout_height="56dp"
+                        android:gravity="center"
+                        android:text="@string/home_action_plan_label"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/mz_text"
+                        android:background="@drawable/bg_card_soft"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:layout_marginBottom="12dp" />
 
-                        <TextView
-                            android:id="@+id/btnHeroPlan"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="@string/home_action_plan_label"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/mz_text"
-                            android:background="@drawable/bg_card_soft"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:layout_marginEnd="6dp" />
+                    <TextView
+                        android:id="@+id/btnHeroGrades"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:gravity="center"
+                        android:text="@string/home_action_grades_label"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/mz_text"
+                        android:background="@drawable/bg_card_soft"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground" />
 
-                        <TextView
-                            android:id="@+id/btnHeroGrades"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="@string/home_action_grades_label"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/mz_text"
-                            android:background="@drawable/bg_card_soft"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:layout_marginStart="6dp" />
-                    </LinearLayout>
                 </LinearLayout>
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/homeSection"
+                    android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/home_shortcuts_title"
-                    android:textColor="@color/mz_text"
-                    android:textStyle="bold"
-                    android:textSize="18sp"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginTop="16dp"
+                    android:padding="12dp"
+                    android:background="@drawable/bg_card_soft">
+                    <TextView
+                        android:id="@+id/textFooterMeta"
+                        android:text="@string/home_footer_meta"
+                        android:textSize="11sp"
+                        android:textColor="@color/mz_muted"
+                        android:gravity="center"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <ScrollView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.65"
+                android:fillViewport="true"
+                android:padding="24dp">
 
                 <LinearLayout
                     android:id="@+id/homeShortcuts"
@@ -144,11 +148,20 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/home_shortcuts_title"
+                        android:textColor="@color/mz_text"
+                        android:textStyle="bold"
+                        android:textSize="22sp"
+                        android:layout_marginBottom="20dp" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
+                        android:layout_marginBottom="16dp">
 
                         <LinearLayout
                             android:id="@+id/tilePlan"
@@ -156,28 +169,27 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical"
-                            android:background="@drawable/bg_card_soft"
-                            android:padding="20dp"
-                            android:layout_marginEnd="6dp"
-                            android:minHeight="140dp"
+                            android:background="@drawable/bg_card_primary"
+                            android:padding="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:minHeight="180dp"
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_plan_title"
                                 android:textColor="@color/mz_text"
                                 android:textStyle="bold"
-                                android:textSize="16sp" />
+                                android:textSize="18sp" />
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_plan_desc"
                                 android:textColor="@color/mz_muted"
-                                android:textSize="12sp"
-                                android:layout_marginTop="6dp" />
+                                android:textSize="13sp"
+                                android:layout_marginTop="8dp" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -187,27 +199,26 @@
                             android:layout_weight="1"
                             android:orientation="vertical"
                             android:background="@drawable/bg_card_soft"
-                            android:padding="20dp"
-                            android:layout_marginStart="6dp"
-                            android:minHeight="140dp"
+                            android:padding="24dp"
+                            android:layout_marginStart="12dp"
+                            android:minHeight="180dp"
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_grades_title"
                                 android:textColor="@color/mz_text"
                                 android:textStyle="bold"
-                                android:textSize="16sp" />
+                                android:textSize="18sp" />
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_grades_desc"
                                 android:textColor="@color/mz_muted"
-                                android:textSize="12sp"
-                                android:layout_marginTop="6dp" />
+                                android:textSize="13sp"
+                                android:layout_marginTop="8dp" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -223,27 +234,26 @@
                             android:layout_weight="1"
                             android:orientation="vertical"
                             android:background="@drawable/bg_card_soft"
-                            android:padding="20dp"
-                            android:layout_marginEnd="6dp"
-                            android:minHeight="140dp"
+                            android:padding="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:minHeight="180dp"
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_info_title"
                                 android:textColor="@color/mz_text"
                                 android:textStyle="bold"
-                                android:textSize="16sp" />
+                                android:textSize="18sp" />
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_info_desc"
                                 android:textColor="@color/mz_muted"
-                                android:textSize="12sp"
-                                android:layout_marginTop="6dp" />
+                                android:textSize="13sp"
+                                android:layout_marginTop="8dp" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -253,52 +263,31 @@
                             android:layout_weight="1"
                             android:orientation="vertical"
                             android:background="@drawable/bg_card_soft"
-                            android:padding="20dp"
-                            android:layout_marginStart="6dp"
-                            android:minHeight="140dp"
+                            android:padding="24dp"
+                            android:layout_marginStart="12dp"
+                            android:minHeight="180dp"
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_news_title"
                                 android:textColor="@color/mz_text"
                                 android:textStyle="bold"
-                                android:textSize="16sp" />
+                                android:textSize="18sp" />
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/home_tile_news_desc"
                                 android:textColor="@color/mz_muted"
-                                android:textSize="12sp"
-                                android:layout_marginTop="6dp" />
+                                android:textSize="13sp"
+                                android:layout_marginTop="8dp" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/homeSection"
-                    android:orientation="vertical"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:padding="16dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_card_soft">
-                    <TextView
-                        android:id="@+id/textFooterMeta"
-                        android:text="@string/home_footer_meta"
-                        android:textSize="11sp"
-                        android:textColor="@color/mz_muted"
-                        android:gravity="center"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-            </LinearLayout>
-        </ScrollView>
+            </ScrollView>
+        </LinearLayout>
     </LinearLayout>
 
     <com.google.android.material.navigation.NavigationView

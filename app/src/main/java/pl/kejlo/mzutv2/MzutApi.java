@@ -1,16 +1,14 @@
 package pl.kejlo.mzutv2;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
+
+import okhttp3.FormBody;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class MzutApi {
 
@@ -19,55 +17,34 @@ public class MzutApi {
     public static JSONObject callApi(String fn, Map<String, String> params)
             throws IOException, JSONException {
 
-        // URL z ?f=
-        String urlStr = MZUT_API_BASE + "?f=" + URLEncoder.encode(fn, "UTF-8");
-        URL url = new URL(urlStr);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        // Build URL
+        String urlStr = MZUT_API_BASE + "?f=" + java.net.URLEncoder.encode(fn, "UTF-8");
 
-        conn.setRequestMethod("POST");
-        conn.setDoOutput(true);
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(10000);
-        conn.setRequestProperty("User-Agent", "mZUT-ANDROID-V2/1.0");
-        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-        // Body: http_build_query($params)
-        StringBuilder postData = new StringBuilder();
+        // Build POST body
+        FormBody.Builder formBuilder = new FormBody.Builder();
         for (Map.Entry<String, String> e : params.entrySet()) {
-            if (postData.length() != 0) postData.append('&');
-            postData.append(URLEncoder.encode(e.getKey(), "UTF-8"));
-            postData.append('=');
-            postData.append(URLEncoder.encode(e.getValue(), "UTF-8"));
+            formBuilder.add(e.getKey(), e.getValue());
         }
 
-        byte[] postBytes = postData.toString().getBytes(StandardCharsets.UTF_8);
+        // Build request using custom client
+        Request request = new Request.Builder()
+                .url(urlStr)
+                .post(formBuilder.build())
+                .header("User-Agent", "mZUT-ANDROID-V2/1.0")
+                .build();
 
-        try (OutputStream os = conn.getOutputStream()) {
-            os.write(postBytes);
-        }
-
-        int code = conn.getResponseCode();
-        if (code != HttpURLConnection.HTTP_OK) {
-            conn.disconnect();
-            throw new IOException("HTTP error: " + code);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
+        // Execute request
+        try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("HTTP error: " + response.code());
             }
-        } finally {
-            conn.disconnect();
-        }
 
-        String resp = sb.toString();
-        if (resp.isEmpty()) {
-            return null;
-        }
+            String respBody = response.body() != null ? response.body().string() : "";
+            if (respBody.isEmpty()) {
+                return null;
+            }
 
-        return new JSONObject(resp); // json_decode(..., true)
+            return new JSONObject(respBody);
+        }
     }
 }

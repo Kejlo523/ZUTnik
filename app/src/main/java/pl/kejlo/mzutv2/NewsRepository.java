@@ -1,5 +1,7 @@
 package pl.kejlo.mzutv2;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.text.Html;
 import android.util.Log;
 
@@ -8,8 +10,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,6 +21,9 @@ import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class NewsRepository {
 
@@ -34,23 +37,22 @@ public class NewsRepository {
             Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>",
                     Pattern.CASE_INSENSITIVE);
 
+    // --- Fetch news list (RSS) ---
     public List<NewsItem> loadNews() throws Exception {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            URL url = new URL(RSS_URL);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(8000);
-            conn.setReadTimeout(8000);
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("User-Agent", "mZUTv2-Android-News/1.2-RSS");
+        Request request = new Request.Builder()
+                .url(RSS_URL)
+                .header("User-Agent", "mZUTv2-Android-News/1.2-RSS")
+                .build();
 
-            int code = conn.getResponseCode();
-            if (code != 200) {
-                throw new RuntimeException("HTTP " + code + " przy pobieraniu RSS");
+        try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new RuntimeException("HTTP " + response.code() + " przy pobieraniu RSS");
+            }
+            if (response.body() == null) {
+                throw new RuntimeException("Pusta odpowiedź z RSS");
             }
 
-            is = conn.getInputStream();
+            InputStream is = response.body().byteStream();
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -72,14 +74,12 @@ public class NewsRepository {
                 String pub = getChildText(itemNode, "pubDate");
                 String descHtml = getChildText(itemNode, "description");
 
-                // Full HTML from <content:encoded> (content namespace)
                 String contentHtml = getChildTextNs(
                         itemNode,
                         "http://purl.org/rss/1.0/modules/content/",
                         "encoded"
                 );
 
-                // Plain text description from <description> (HTML stripped)
                 String descText = "";
                 if (descHtml != null && !descHtml.trim().isEmpty()) {
                     descText = Html.fromHtml(descHtml, Html.FROM_HTML_MODE_LEGACY)
@@ -87,7 +87,6 @@ public class NewsRepository {
                             .trim();
                 }
 
-                // Short snippet (~220 characters)
                 String snippetSource = descText;
                 if (snippetSource == null || snippetSource.trim().isEmpty()) {
                     snippetSource = "";
@@ -97,7 +96,6 @@ public class NewsRepository {
                     snippet = snippet.substring(0, 217) + "…";
                 }
 
-                // Thumbnail – first <img> from contentHtml
                 String thumbUrl = null;
                 if (contentHtml != null && !contentHtml.trim().isEmpty()) {
                     Matcher m = IMG_PATTERN.matcher(contentHtml);
@@ -125,17 +123,47 @@ public class NewsRepository {
             }
 
             return items;
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (Exception ignored) { }
-            }
-            if (conn != null) {
-                conn.disconnect();
-            }
         }
     }
+
+    // --- New method: Image download (uses MzutNetwork) ---
+    // Static for easy calls from Adapters: NewsRepository.downloadImage(url)
+    public static Bitmap downloadImage(String url) {
+        if (url == null || url.isEmpty()) {
+            return null;
+        }
+
+        // 1. Check cache
+        Bitmap cached = ImageMemoryCache.get(url);
+        if (cached != null) {
+            return cached;
+        }
+
+        // 2. Fetch via MzutNetwork (bypasses SSL error)
+        Request request = new Request.Builder()
+                .url(url)
+                .header("User-Agent", "mZUTv2-Android-Images/1.0")
+                .build();
+
+        try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                // 3. Decode stream to Bitmap
+                InputStream is = response.body().byteStream();
+                Bitmap bitmap = BitmapFactory.decodeStream(is);
+
+                if (bitmap != null) {
+                    // 4. Save to cache
+                    ImageMemoryCache.put(url, bitmap);
+                    return bitmap;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Błąd pobierania obrazka: " + url, e);
+        }
+        return null;
+    }
+
+    // --- Helpers ---
 
     private String getChildText(Node parent, String tagName) {
         NodeList children = parent.getChildNodes();
@@ -149,7 +177,6 @@ public class NewsRepository {
         return "";
     }
 
-    // Reads <content:encoded> using namespace
     private String getChildTextNs(Node parent, String namespaceUri, String localName) {
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -162,13 +189,8 @@ public class NewsRepository {
             String loc = n.getLocalName();
             String nn = n.getNodeName();
 
-            boolean matchesNs =
-                    namespaceUri.equals(ns) && localName.equals(loc);
-
-            // Fallback if parser does not expose namespaces correctly
-            boolean matchesFallback =
-                    "content:encoded".equalsIgnoreCase(nn) ||
-                            "encoded".equalsIgnoreCase(nn);
+            boolean matchesNs = namespaceUri.equals(ns) && localName.equals(loc);
+            boolean matchesFallback = "content:encoded".equalsIgnoreCase(nn) || "encoded".equalsIgnoreCase(nn);
 
             if (matchesNs || matchesFallback) {
                 return n.getTextContent();
@@ -181,34 +203,20 @@ public class NewsRepository {
         if (pubDateRaw == null || pubDateRaw.trim().isEmpty()) {
             return "";
         }
-
-        // RSS example: "Wed, 20 Nov 2024 13:45:00 +0100"
-        SimpleDateFormat inFmt =
-                new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
-        SimpleDateFormat outFmt =
-                new SimpleDateFormat("dd.MM.yyyy HH:mm", new Locale("pl", "PL"));
+        SimpleDateFormat inFmt = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
+        SimpleDateFormat outFmt = new SimpleDateFormat("dd.MM.yyyy HH:mm", new Locale("pl", "PL"));
         try {
             Date d = inFmt.parse(pubDateRaw.trim());
             return outFmt.format(d);
         } catch (ParseException e) {
-            Log.w(TAG, "Nie udało się sparsować daty RSS: " + pubDateRaw, e);
             return pubDateRaw;
         }
     }
 
-    // Same logic as in PHP: relative -> absolute
     private String fixImageUrl(String src) {
-        if (src == null || src.isEmpty()) {
-            return src;
-        }
-        if (src.startsWith("http")) {
-            return src;
-        }
-
-        if (src.startsWith("/")) {
-            return "https://www.zut.edu.pl" + src;
-        } else {
-            return "https://www.zut.edu.pl/" + src;
-        }
+        if (src == null || src.isEmpty()) return src;
+        if (src.startsWith("http")) return src;
+        if (src.startsWith("/")) return "https://www.zut.edu.pl" + src;
+        return "https://www.zut.edu.pl/" + src;
     }
 }

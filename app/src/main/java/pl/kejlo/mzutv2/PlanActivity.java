@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.GridLayout;
@@ -40,6 +41,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,8 +59,6 @@ public class PlanActivity extends AppCompatActivity {
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
-
-    // region Enums
 
     private enum ViewMode {
         DAY("day"),
@@ -86,32 +86,21 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
-    // endregion
-
-    // region Preferences / Cache
-
     private static final String PREFS_NAME = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
     private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
     private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
-    private static final long FILTER_CACHE_TTL_MS = 30L * 24L * 60L * 60L * 1000L; // 30 days
-
-    // endregion
-
-    // region Layout Config
+    private static final long FILTER_CACHE_TTL_MS = 30L * 24L * 60L * 60L * 1000L;
 
     private static final int START_HOUR = 6;
     private static final int END_HOUR = 22;
     private static final float HOUR_HEIGHT_DP = 48f;
-    private static final float DAY_HEADER_HEIGHT_DP = 32f;
+    // Changed: Header height increased to 48f to fit two lines of text
+    private static final float DAY_HEADER_HEIGHT_DP = 48f;
+    private static final float MONTH_CELL_HEIGHT_DP = 70f;
 
-    // ViewPager starts in the middle to allow bidirectional scrolling
     private static final int VP_START_POSITION = 5000;
-
-    // endregion
-
-    // region Views
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -127,30 +116,20 @@ public class PlanActivity extends AppCompatActivity {
     private TextView tvHeaderLabel;
     private TextView tvEmpty;
 
-    private View layoutWeekRoot;
     private LinearLayout layoutTimeColumn;
 
     private LinearLayout layoutWeekHeadersFixed;
     private LinearLayout layoutWeekHeadersRow;
+    private LinearLayout layoutMonthHeadersFixed;
 
     private ViewPager2 viewPager;
     private PlanPagerAdapter pagerAdapter;
 
-    private View layoutMonthRoot;
-    private LinearLayout layoutMonthWeekdays;
-    private GridLayout gridMonth;
-
     private ProgressBar progress;
-
-    // endregion
-
-    // region State & Helpers
 
     private String viewModeId = ViewMode.WEEK.getId();
 
-    // Base date for ViewPager (corresponds to VP_START_POSITION)
     private LocalDate baseDate = LocalDate.now();
-    // Currently displayed range (day/week/month)
     private LocalDate currentDate = LocalDate.now();
 
     private PlanRepository planRepository;
@@ -159,10 +138,8 @@ public class PlanActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private Set<String> hiddenSubjectKeys = new HashSet<>();
 
-    // Search state - stores the current query
     private PlanRepository.SearchParams currentSearchQuery = null;
 
-    // Plan cache (sized for ViewPager)
     private static class PlanKey {
         final String viewModeId;
         final LocalDate date;
@@ -204,7 +181,6 @@ public class PlanActivity extends AppCompatActivity {
         return planCache.get(new PlanKey(modeId, date));
     }
 
-    // "Now" line - refreshed every minute
     private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
     private final Runnable nowLineRunnable = new Runnable() {
         @Override
@@ -214,7 +190,6 @@ public class PlanActivity extends AppCompatActivity {
         }
     };
 
-    // Helper: Weekend filtering
     private List<PlanRepository.DayColumn> getVisibleColumns(List<PlanRepository.DayColumn> allColumns) {
         if (allColumns == null || allColumns.isEmpty()) {
             return Collections.emptyList();
@@ -243,6 +218,7 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
 
+        // Hide weekends if they have no events
         if (satIndex != -1 && sunIndex != -1 && !satHasEvents && !sunHasEvents) {
             List<PlanRepository.DayColumn> filtered = new ArrayList<>();
             for (int i = 0; i < allColumns.size(); i++) {
@@ -255,15 +231,10 @@ public class PlanActivity extends AppCompatActivity {
         return allColumns;
     }
 
-    // endregion
-
-    // region Lifecycle
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Session check
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
         if (session.getAuthKey() == null || session.getUserId() == null) {
@@ -303,17 +274,13 @@ public class PlanActivity extends AppCompatActivity {
         tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
         tvEmpty = findViewById(R.id.tvEmpty);
 
-        layoutWeekRoot = findViewById(R.id.layoutWeekRoot);
         layoutTimeColumn = findViewById(R.id.layoutTimeColumn);
-        layoutMonthRoot = findViewById(R.id.layoutMonthRoot);
-        layoutMonthWeekdays = findViewById(R.id.layoutMonthWeekdays);
-        gridMonth = findViewById(R.id.gridMonth);
         progress = findViewById(R.id.planProgress);
 
         layoutWeekHeadersFixed = findViewById(R.id.layoutWeekHeadersFixed);
         layoutWeekHeadersRow = findViewById(R.id.layoutWeekHeadersRow);
+        layoutMonthHeadersFixed = findViewById(R.id.layoutMonthHeadersFixed);
 
-        // ViewPager2 replaces the old layoutWeekDays
         viewPager = findViewById(R.id.planViewPager);
 
         setupWeekdayHeadersForMonth();
@@ -323,9 +290,7 @@ public class PlanActivity extends AppCompatActivity {
         setupSearchButton();
         setupRefreshButton();
 
-        // ViewPager configuration
         if (viewPager != null) {
-            setupHeightForViewPager();
             pagerAdapter = new PlanPagerAdapter(this);
             viewPager.setAdapter(pagerAdapter);
             viewPager.setCurrentItem(VP_START_POSITION, false);
@@ -336,15 +301,22 @@ public class PlanActivity extends AppCompatActivity {
                 public void onPageSelected(int position) {
                     super.onPageSelected(position);
                     updateCurrentDateFromPosition(position);
-                    updateNowLineInVisiblePage();
 
-                    // Fix: Update headers on scroll (from cache)
+                    if (!isMonthMode()) {
+                        updateNowLineInVisiblePage();
+                    }
+
                     PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, currentDate);
                     if (cached != null) {
-                        updateFixedWeekHeaders(cached.dayColumns, currentDate);
+                        if (isMonthMode()) {
+                            if (cached.headerLabel != null) tvHeaderLabel.setText(cached.headerLabel);
+                        } else {
+                            updateFixedWeekHeaders(cached.dayColumns, currentDate);
+                        }
                     } else {
-                        // Clear headers if no data to avoid confusion
-                        updateFixedWeekHeaders(Collections.emptyList(), currentDate);
+                        if (!isMonthMode()) {
+                            updateFixedWeekHeaders(Collections.emptyList(), currentDate);
+                        }
                     }
                 }
             });
@@ -373,8 +345,29 @@ public class PlanActivity extends AppCompatActivity {
     private void setupHeightForViewPager() {
         if (viewPager == null) return;
 
-        float totalHours = END_HOUR - START_HOUR;
-        int gridHeight = dpToPx(totalHours * HOUR_HEIGHT_DP + DAY_HEADER_HEIGHT_DP + 8);
+        int gridHeight;
+
+        if (isMonthMode()) {
+            gridHeight = dpToPx(6 * MONTH_CELL_HEIGHT_DP + 16);
+            if (layoutTimeColumn != null) layoutTimeColumn.setVisibility(View.GONE);
+            if (layoutWeekHeadersFixed != null) layoutWeekHeadersFixed.setVisibility(View.GONE);
+            if (layoutMonthHeadersFixed != null) layoutMonthHeadersFixed.setVisibility(View.VISIBLE);
+
+        } else {
+            float totalHours = END_HOUR - START_HOUR;
+            gridHeight = dpToPx(totalHours * HOUR_HEIGHT_DP + DAY_HEADER_HEIGHT_DP + 8);
+
+            if (layoutTimeColumn != null) layoutTimeColumn.setVisibility(View.VISIBLE);
+            if (layoutTimeColumn != null) {
+                ViewGroup.LayoutParams tp = layoutTimeColumn.getLayoutParams();
+                if (tp != null) {
+                    tp.height = gridHeight;
+                    layoutTimeColumn.setLayoutParams(tp);
+                }
+            }
+            if (layoutWeekHeadersFixed != null) layoutWeekHeadersFixed.setVisibility(View.VISIBLE);
+            if (layoutMonthHeadersFixed != null) layoutMonthHeadersFixed.setVisibility(View.GONE);
+        }
 
         LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) viewPager.getLayoutParams();
         if (params == null) {
@@ -386,28 +379,20 @@ public class PlanActivity extends AppCompatActivity {
             params.height = gridHeight;
         }
         viewPager.setLayoutParams(params);
-
-        // Time column shares the same height
-        if (layoutTimeColumn != null) {
-            ViewGroup.LayoutParams tp = layoutTimeColumn.getLayoutParams();
-            if (tp != null) {
-                tp.height = gridHeight;
-                layoutTimeColumn.setLayoutParams(tp);
-            }
-        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         nowLineHandler.removeCallbacks(nowLineRunnable);
-        updateNowLineInVisiblePage();
-        scheduleNextNowLineUpdate();
+        if (!isMonthMode()) {
+            updateNowLineInVisiblePage();
+            scheduleNextNowLineUpdate();
+        }
     }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        // Remove drawer swipe to avoid conflict with ViewPager
         return super.dispatchTouchEvent(ev);
     }
 
@@ -429,10 +414,6 @@ public class PlanActivity extends AppCompatActivity {
         outState.putString("viewMode", viewModeId);
         outState.putString("currentDate", currentDate.format(YMD));
     }
-
-    // endregion
-
-    // region Logic: Navigation & Modes
 
     private ViewMode getCurrentViewMode() {
         return ViewMode.fromId(viewModeId);
@@ -462,18 +443,23 @@ public class PlanActivity extends AppCompatActivity {
             newDate = baseDate.plusDays(diff);
         } else if (isWeekMode()) {
             newDate = baseDate.plusWeeks(diff);
+        } else if (isMonthMode()) {
+            newDate = baseDate.plusMonths(diff).with(TemporalAdjusters.firstDayOfMonth());
         } else {
             return;
         }
 
         currentDate = newDate;
 
-        // Update title (e.g., "20.10.2023")
         PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, currentDate);
         if (cached != null && cached.headerLabel != null) {
             tvHeaderLabel.setText(cached.headerLabel);
         } else {
-            tvHeaderLabel.setText(currentDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+            if (isMonthMode()) {
+                tvHeaderLabel.setText(currentDate.format(DateTimeFormatter.ofPattern("MM.yyyy")));
+            } else {
+                tvHeaderLabel.setText(currentDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+            }
         }
     }
 
@@ -481,46 +467,32 @@ public class PlanActivity extends AppCompatActivity {
         updateViewModeButtonsUi();
 
         if (isMonthMode()) {
-            if (layoutWeekRoot != null) layoutWeekRoot.setVisibility(View.GONE);
-            if (layoutMonthRoot != null) layoutMonthRoot.setVisibility(View.VISIBLE);
-            if (layoutWeekHeadersFixed != null) layoutWeekHeadersFixed.setVisibility(View.GONE);
-            new LoadMonthTask().execute();
-        } else {
-            if (layoutMonthRoot != null) layoutMonthRoot.setVisibility(View.GONE);
-            if (layoutWeekRoot != null) layoutWeekRoot.setVisibility(View.VISIBLE);
-            // Headers visible by default, updateFixedWeekHeaders manages the rest
-            if (layoutWeekHeadersFixed != null) layoutWeekHeadersFixed.setVisibility(View.VISIBLE);
+            baseDate = baseDate.with(TemporalAdjusters.firstDayOfMonth());
+            currentDate = currentDate.with(TemporalAdjusters.firstDayOfMonth());
+        }
 
-            if (pagerAdapter != null) pagerAdapter.notifyDataSetChanged();
-            if (viewPager != null) {
-                // Force update position and headers
-                int pos = viewPager.getCurrentItem();
+        setupHeightForViewPager();
+
+        if (pagerAdapter != null) pagerAdapter.notifyDataSetChanged();
+
+        if (viewPager != null) {
+            int pos = viewPager.getCurrentItem();
+            if (pos == VP_START_POSITION) {
                 updateCurrentDateFromPosition(pos);
+            } else {
+                viewPager.setCurrentItem(VP_START_POSITION, false);
+                updateCurrentDateFromPosition(VP_START_POSITION);
+            }
 
-                // Try refreshing headers from cache (at start)
-                PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, currentDate);
-                if (cached != null) {
-                    updateFixedWeekHeaders(cached.dayColumns, currentDate);
-                } else {
-                    // No cache - clear old state
-                    updateFixedWeekHeaders(Collections.emptyList(), currentDate);
-                }
+            PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, currentDate);
+            if (cached != null) {
+                if (!isMonthMode()) updateFixedWeekHeaders(cached.dayColumns, currentDate);
+                if (cached.headerLabel != null) tvHeaderLabel.setText(cached.headerLabel);
+            } else {
+                if (!isMonthMode()) updateFixedWeekHeaders(Collections.emptyList(), currentDate);
             }
         }
     }
-
-    private void navigateRelative(int dir) {
-        if (isMonthMode()) {
-            currentDate = currentDate.plusMonths(dir);
-            loadPlanForCurrentMode();
-        } else if (viewPager != null) {
-            viewPager.setCurrentItem(viewPager.getCurrentItem() + dir, true);
-        }
-    }
-
-    // endregion
-
-    // region UI setup (buttons)
 
     private void setupViewModeButtons() {
         View.OnClickListener modeClick = v -> {
@@ -532,7 +504,7 @@ public class PlanActivity extends AppCompatActivity {
             if (!newMode.getId().equals(viewModeId)) {
                 setCurrentViewMode(newMode);
                 baseDate = currentDate;
-                if (!isMonthMode() && viewPager != null) {
+                if (viewPager != null) {
                     viewPager.setCurrentItem(VP_START_POSITION, false);
                 }
                 loadPlanForCurrentMode();
@@ -547,27 +519,25 @@ public class PlanActivity extends AppCompatActivity {
 
     private void updateViewModeButtonsUi() {
         ViewMode mode = getCurrentViewMode();
-        btnViewDay.setAlpha(mode == ViewMode.DAY ? 1f : 0.6f);
-        btnViewWeek.setAlpha(mode == ViewMode.WEEK ? 1f : 0.6f);
-        btnViewMonth.setAlpha(mode == ViewMode.MONTH ? 1f : 0.6f);
+        btnViewDay.setSelected(mode == ViewMode.DAY);
+        btnViewWeek.setSelected(mode == ViewMode.WEEK);
+        btnViewMonth.setSelected(mode == ViewMode.MONTH);
     }
 
-    // Configure Dropdown Menu
     private void setupMenuButton() {
         if (btnMenu != null) {
             btnMenu.setOnClickListener(v -> {
                 PopupMenu popup = new PopupMenu(this, v);
 
-                // Manually add menu options
                 popup.getMenu().add(0, 1, 0, R.string.plan_button_today);
                 popup.getMenu().add(0, 3, 2, R.string.plan_button_filters);
 
                 popup.setOnMenuItemClickListener(item -> {
                     switch (item.getItemId()) {
-                        case 1: // Today
+                        case 1:
                             goToToday();
                             return true;
-                        case 3: // Filters
+                        case 3:
                             new LoadSubjectsForFilterTask(false).execute();
                             return true;
                         default:
@@ -585,20 +555,19 @@ public class PlanActivity extends AppCompatActivity {
         baseDate = today;
 
         if (isMonthMode()) {
-            loadPlanForCurrentMode();
-        } else {
-            if (viewPager != null) {
-                viewPager.setCurrentItem(VP_START_POSITION, true);
-            }
-            if (pagerAdapter != null) pagerAdapter.notifyDataSetChanged();
+            baseDate = today.with(TemporalAdjusters.firstDayOfMonth());
+            currentDate = baseDate;
         }
+
+        if (viewPager != null) {
+            viewPager.setCurrentItem(VP_START_POSITION, true);
+        }
+        if (pagerAdapter != null) pagerAdapter.notifyDataSetChanged();
     }
 
-    // Configure Refresh Button
     private void setupRefreshButton() {
         if (btnRefresh != null) {
             btnRefresh.setOnClickListener(v -> {
-                // Refresh clears search state, returning to default plan
                 if (currentSearchQuery != null) {
                     currentSearchQuery = null;
                     Toast.makeText(this, R.string.plan_toast_resetting_search, Toast.LENGTH_SHORT).show();
@@ -611,22 +580,18 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
-    // Configure Search Button
     private void setupSearchButton() {
         if (btnSearch != null) {
             btnSearch.setOnClickListener(v -> showSearchDialog());
         }
     }
 
-    // Show Search Dialog
     private void showSearchDialog() {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(dpToPx(24), dpToPx(16), dpToPx(24), dpToPx(8));
 
-        // Category (Spinner)
         final Spinner spinner = new Spinner(this);
-        // Load display strings from resources
         String[] displayCategories = {
                 getString(R.string.plan_search_cat_album),
                 getString(R.string.plan_search_cat_teacher),
@@ -634,7 +599,6 @@ public class PlanActivity extends AppCompatActivity {
                 getString(R.string.plan_search_cat_subject),
                 getString(R.string.plan_search_cat_group)
         };
-        // Internal keys expected by PlanRepository
         final String[] apiCategories = {
                 "Numer albumu",
                 "Wykładowca",
@@ -645,16 +609,8 @@ public class PlanActivity extends AppCompatActivity {
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, displayCategories);
         spinner.setAdapter(adapter);
-
-        LinearLayout.LayoutParams spinnerParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        spinnerParams.bottomMargin = dpToPx(16);
-        spinner.setLayoutParams(spinnerParams);
         layout.addView(spinner);
 
-        // Text input
         final EditText input = new EditText(this);
         input.setHint(R.string.plan_search_hint_input);
         input.setSingleLine(true);
@@ -676,27 +632,16 @@ public class PlanActivity extends AppCompatActivity {
                 .show();
     }
 
-    // Execute Search
     private void performSearch(String categoryKey, String categoryLabel, String query) {
         currentSearchQuery = new PlanRepository.SearchParams();
-        currentSearchQuery.category = categoryKey; // Internal key for API
+        currentSearchQuery.category = categoryKey;
         currentSearchQuery.query = query;
 
-        // Clear cache so search results don't mix with normal plan
         planCache.clear();
         loadPlanForCurrentMode();
 
         String msg = getString(R.string.plan_toast_search_prefix, categoryLabel, query);
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-    }
-
-    private void setupFiltersButton() {
-        // Previously used directly, now logic is in Menu
-        // Kept for structure: "LoadSubjectsForFilterTask"
-    }
-
-    private void setupNavButtons() {
-        // Old button config - replaced by Menu
     }
 
     private void setupTimeColumn() {
@@ -718,7 +663,8 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     private void setupWeekdayHeadersForMonth() {
-        layoutMonthWeekdays.removeAllViews();
+        if (layoutMonthHeadersFixed == null) return;
+        layoutMonthHeadersFixed.removeAllViews();
         String[] days = {
                 getString(R.string.plan_month_weekday_mon),
                 getString(R.string.plan_month_weekday_tue),
@@ -740,13 +686,9 @@ public class PlanActivity extends AppCompatActivity {
                     1f
             );
             tv.setLayoutParams(lp);
-            layoutMonthWeekdays.addView(tv);
+            layoutMonthHeadersFixed.addView(tv);
         }
     }
-
-    // endregion
-
-    // region ViewPager adapter (week/day)
 
     private class PlanPagerAdapter extends RecyclerView.Adapter<PlanPageViewHolder> {
 
@@ -759,39 +701,43 @@ public class PlanActivity extends AppCompatActivity {
         @NonNull
         @Override
         public PlanPageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            LinearLayout columnsContainer = new LinearLayout(context);
-            columnsContainer.setOrientation(LinearLayout.HORIZONTAL);
-            columnsContainer.setLayoutParams(new ViewGroup.LayoutParams(
+            FrameLayout container = new FrameLayout(context);
+            container.setLayoutParams(new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            return new PlanPageViewHolder(columnsContainer);
+            return new PlanPageViewHolder(container);
         }
 
         @Override
         public void onBindViewHolder(@NonNull PlanPageViewHolder holder, int position) {
             int diff = position - VP_START_POSITION;
             LocalDate pageDate;
+
             if (isDayMode()) {
                 pageDate = baseDate.plusDays(diff);
-            } else {
+            } else if (isWeekMode()) {
                 pageDate = baseDate.plusWeeks(diff);
+            } else {
+                pageDate = baseDate.plusMonths(diff).with(TemporalAdjusters.firstDayOfMonth());
             }
 
-            holder.columnsContainer.removeAllViews();
+            holder.container.removeAllViews();
 
             PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, pageDate);
 
             if (cached != null) {
-                renderColumns(holder, cached, pageDate);
-                // Fix: updateFixedWeekHeaders removed here - done in onPostExecute/onPageSelected
+                if (isMonthMode()) {
+                    renderMonthPage(holder, cached);
+                } else {
+                    renderWeekPage(holder, cached, pageDate);
+                }
             } else {
                 showLoadingState(holder);
                 new LoadPageTask(position, pageDate, viewModeId)
                         .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             }
         }
-
 
         @Override
         public int getItemCount() {
@@ -802,23 +748,25 @@ public class PlanActivity extends AppCompatActivity {
             TextView loadingView = new TextView(context);
             loadingView.setText(R.string.plan_filters_loading);
             loadingView.setGravity(Gravity.CENTER);
-            loadingView.setLayoutParams(new LinearLayout.LayoutParams(
+            holder.container.addView(loadingView, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            holder.columnsContainer.addView(loadingView);
         }
 
-        private void renderColumns(PlanPageViewHolder holder,
-                                   PlanRepository.PlanResult result,
-                                   LocalDate pageDate) {
+        private void renderWeekPage(PlanPageViewHolder holder,
+                                    PlanRepository.PlanResult result,
+                                    LocalDate pageDate) {
 
-            holder.columnsContainer.removeAllViews();
+            LinearLayout columnsContainer = new LinearLayout(context);
+            columnsContainer.setOrientation(LinearLayout.HORIZONTAL);
+            holder.container.addView(columnsContainer, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
 
             float totalHours = END_HOUR - START_HOUR;
             int columnHeight = (int) (dpToPx(HOUR_HEIGHT_DP) * totalHours);
 
-            // Filter columns (weekends)
             List<PlanRepository.DayColumn> rawCols =
                     result.dayColumns != null ? result.dayColumns : Collections.emptyList();
             List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
@@ -827,11 +775,9 @@ public class PlanActivity extends AppCompatActivity {
                 TextView empty = new TextView(context);
                 empty.setText(R.string.plan_no_classes_in_range);
                 empty.setGravity(Gravity.CENTER);
-                holder.columnsContainer.addView(
-                        empty,
-                        new LinearLayout.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT));
+                columnsContainer.addView(empty, new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT));
                 return;
             }
 
@@ -852,7 +798,6 @@ public class PlanActivity extends AppCompatActivity {
                 dayLp.setMargins(dpToPx(2), 0, dpToPx(2), 0);
                 dayColumn.setLayoutParams(dayLp);
 
-                // Body only, no header in column
                 FrameLayoutWithChildren dayBody = new FrameLayoutWithChildren(context);
                 LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
@@ -878,13 +823,10 @@ public class PlanActivity extends AppCompatActivity {
                 }
 
                 LocalDate colDate = col.date;
-
                 dayBody.post(() -> {
                     int w = dayBody.getWidth();
                     if (w <= 0) return;
-
                     layoutEventsInDayBody(dayBody, renderedEvents, w);
-
                     if (colDate != null && colDate.equals(today)) {
                         dayBody.setTag("TODAY_BODY");
                         updateNowLineInVisiblePage();
@@ -892,18 +834,94 @@ public class PlanActivity extends AppCompatActivity {
                 });
 
                 dayColumn.addView(dayBody);
-                holder.columnsContainer.addView(dayColumn);
+                columnsContainer.addView(dayColumn);
+            }
+        }
+
+        private void renderMonthPage(PlanPageViewHolder holder, PlanRepository.PlanResult result) {
+            GridLayout grid = new GridLayout(context);
+            grid.setColumnCount(7);
+            grid.setUseDefaultMargins(false);
+
+            holder.container.addView(grid, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            List<List<PlanRepository.MonthCell>> gridData =
+                    result.monthGrid != null ? result.monthGrid : Collections.emptyList();
+
+            if (gridData.isEmpty()) {
+                TextView empty = new TextView(context);
+                empty.setText(R.string.plan_no_classes_in_range);
+                empty.setGravity(Gravity.CENTER);
+                holder.container.removeAllViews();
+                holder.container.addView(empty);
+                return;
             }
 
+            for (List<PlanRepository.MonthCell> week : gridData) {
+                for (PlanRepository.MonthCell cell : week) {
+                    if (cell == null) {
+                        View spacer = new View(context);
+                        GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+                        lp.width = 0;
+                        lp.height = dpToPx(MONTH_CELL_HEIGHT_DP);
+                        lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+                        spacer.setLayoutParams(lp);
+                        grid.addView(spacer);
+                        continue;
+                    }
+
+                    LinearLayout cellRoot = new LinearLayout(context);
+                    cellRoot.setOrientation(LinearLayout.VERTICAL);
+                    cellRoot.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+
+                    GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+                    lp.width = 0;
+                    lp.height = dpToPx(MONTH_CELL_HEIGHT_DP);
+                    lp.setMargins(dpToPx(2), dpToPx(2), dpToPx(2), dpToPx(2));
+                    lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+                    cellRoot.setLayoutParams(lp);
+
+                    if (cell.hasPlan) {
+                        cellRoot.setBackgroundColor(ContextCompat.getColor(context, R.color.plan_month_cell_with_events_bg));
+                    } else {
+                        cellRoot.setBackgroundColor(ContextCompat.getColor(context, R.color.plan_month_cell_bg));
+                    }
+
+                    TextView tvNum = new TextView(context);
+                    tvNum.setText(String.valueOf(cell.date.getDayOfMonth()));
+                    tvNum.setTextColor(ContextCompat.getColor(context, R.color.plan_month_day_number));
+                    tvNum.setTextSize(13f);
+                    cellRoot.addView(tvNum);
+
+                    if (cell.hasPlan) {
+                        TextView tvHint = new TextView(context);
+                        tvHint.setText(R.string.plan_month_cell_has_events_hint);
+                        tvHint.setTextSize(9f);
+                        tvHint.setTextColor(ContextCompat.getColor(context, R.color.plan_month_day_hint));
+                        cellRoot.addView(tvHint);
+
+                        cellRoot.setOnClickListener(v -> {
+                            setCurrentViewMode(ViewMode.DAY);
+                            currentDate = cell.date;
+                            baseDate = currentDate;
+                            if (viewPager != null) viewPager.setCurrentItem(VP_START_POSITION, false);
+                            loadPlanForCurrentMode();
+                        });
+                    }
+                    grid.addView(cellRoot);
+                }
+            }
         }
     }
 
     private static class PlanPageViewHolder extends RecyclerView.ViewHolder {
-        LinearLayout columnsContainer;
+        FrameLayout container;
 
-        PlanPageViewHolder(LinearLayout container) {
+        PlanPageViewHolder(FrameLayout container) {
             super(container);
-            this.columnsContainer = container;
+            this.container = container;
         }
     }
 
@@ -921,7 +939,6 @@ public class PlanActivity extends AppCompatActivity {
         @Override
         protected PlanRepository.PlanResult doInBackground(Void... voids) {
             try {
-                // Use search repo if query exists
                 if (currentSearchQuery != null) {
                     return planRepository.searchPlan(modeId, date, currentSearchQuery);
                 } else {
@@ -936,138 +953,21 @@ public class PlanActivity extends AppCompatActivity {
         protected void onPostExecute(PlanRepository.PlanResult res) {
             if (res != null) {
                 putPlanInCache(modeId, date, res);
-                if (pagerAdapter != null) pagerAdapter.notifyItemChanged(pos);
+                if (modeId.equals(viewModeId) && pagerAdapter != null) {
+                    pagerAdapter.notifyItemChanged(pos);
+                }
 
-                // Fix: If incoming data is for the currently selected/visible date, update headers
                 if (date.equals(currentDate)) {
-                    // Update labels
                     if (res.headerLabel != null) {
                         tvHeaderLabel.setText(res.headerLabel);
                     }
-                    // Update fixed header
-                    updateFixedWeekHeaders(res.dayColumns, date);
+                    if (!isMonthMode()) {
+                        updateFixedWeekHeaders(res.dayColumns, date);
+                    }
                 }
             }
         }
     }
-
-    // endregion
-
-    // region Month Rendering
-
-    private class LoadMonthTask extends AsyncTask<Void, Void, PlanRepository.PlanResult> {
-        Exception error;
-
-        @Override
-        protected void onPreExecute() {
-            if (progress != null) progress.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected PlanRepository.PlanResult doInBackground(Void... voids) {
-            try {
-                // Search in month mode
-                if (currentSearchQuery != null) {
-                    return planRepository.searchPlan(ViewMode.MONTH.getId(), currentDate, currentSearchQuery);
-                } else {
-                    return planRepository.loadPlan(ViewMode.MONTH.getId(), currentDate, false);
-                }
-            } catch (Exception e) {
-                error = e;
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(PlanRepository.PlanResult result) {
-            if (progress != null) progress.setVisibility(View.GONE);
-            if (result != null) {
-                renderMonth(result);
-                if (result.headerLabel != null) tvHeaderLabel.setText(result.headerLabel);
-                if (tvEmpty != null) {
-                    tvEmpty.setVisibility(
-                            (result.monthGrid == null || result.monthGrid.isEmpty()) ?
-                                    View.VISIBLE : View.GONE);
-                }
-            } else {
-                if (tvEmpty != null) {
-                    tvEmpty.setVisibility(View.VISIBLE);
-                    tvEmpty.setText(R.string.plan_error_loading_plan_generic);
-                }
-            }
-        }
-    }
-
-    private void renderMonth(PlanRepository.PlanResult result) {
-        layoutWeekRoot.setVisibility(View.GONE);
-        layoutMonthRoot.setVisibility(View.VISIBLE);
-
-        gridMonth.removeAllViews();
-        gridMonth.setColumnCount(7);
-
-        List<List<PlanRepository.MonthCell>> grid =
-                result.monthGrid != null ? result.monthGrid : Collections.emptyList();
-
-        for (List<PlanRepository.MonthCell> week : grid) {
-            for (PlanRepository.MonthCell cell : week) {
-                if (cell == null) {
-                    View spacer = new View(this);
-                    GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
-                    lp.width = 0;
-                    lp.height = dpToPx(48);
-                    lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-                    spacer.setLayoutParams(lp);
-                    gridMonth.addView(spacer);
-                    continue;
-                }
-
-                LinearLayout cellRoot = new LinearLayout(this);
-                cellRoot.setOrientation(LinearLayout.VERTICAL);
-                cellRoot.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
-
-                GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
-                lp.width = 0;
-                lp.height = dpToPx(64);
-                lp.setMargins(dpToPx(2), dpToPx(2), dpToPx(2), dpToPx(2));
-                lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-                cellRoot.setLayoutParams(lp);
-
-                if (cell.hasPlan) {
-                    cellRoot.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_month_cell_with_events_bg));
-                } else {
-                    cellRoot.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_month_cell_bg));
-                }
-
-                TextView tvNum = new TextView(this);
-                tvNum.setText(String.valueOf(cell.date.getDayOfMonth()));
-                tvNum.setTextColor(ContextCompat.getColor(this, R.color.plan_month_day_number));
-                tvNum.setTextSize(13f);
-                cellRoot.addView(tvNum);
-
-                if (cell.hasPlan) {
-                    TextView tvHint = new TextView(this);
-                    tvHint.setText(R.string.plan_month_cell_has_events_hint);
-                    tvHint.setTextSize(9f);
-                    tvHint.setTextColor(ContextCompat.getColor(this, R.color.plan_month_day_hint));
-                    cellRoot.addView(tvHint);
-
-                    cellRoot.setOnClickListener(v -> {
-                        setCurrentViewMode(ViewMode.DAY);
-                        currentDate = cell.date;
-                        baseDate = currentDate;
-                        if (viewPager != null) viewPager.setCurrentItem(VP_START_POSITION, false);
-                        loadPlanForCurrentMode();
-                    });
-                }
-
-                gridMonth.addView(cellRoot);
-            }
-        }
-    }
-
-    // endregion
-
-    // region Filters
 
     private class LoadSubjectsForFilterTask extends AsyncTask<Void, Void, List<PlanRepository.SubjectFilterItem>> {
         Exception error;
@@ -1223,10 +1123,6 @@ public class PlanActivity extends AppCompatActivity {
                 .apply();
     }
 
-    // endregion
-
-    // region Utils / Rendering Helpers
-
     private void addHourLines(FrameLayoutWithChildren dayBody) {
         for (int h = START_HOUR; h < END_HOUR; h++) {
             int minutesFromStart = (h - START_HOUR) * 60;
@@ -1248,7 +1144,7 @@ public class PlanActivity extends AppCompatActivity {
     private void updateNowLineInVisiblePage() {
         if (viewPager == null) return;
 
-        View root = viewPager.getChildAt(0); // RecyclerView
+        View root = viewPager.getChildAt(0);
         if (!(root instanceof RecyclerView)) return;
 
         RecyclerView rv = (RecyclerView) root;
@@ -1320,7 +1216,6 @@ public class PlanActivity extends AppCompatActivity {
     private void layoutEventsInDayBody(FrameLayoutWithChildren dayBody,
                                        List<RenderedEvent> renderedEvents,
                                        int widthPx) {
-
         int calStart = START_HOUR * 60;
         int calEnd = END_HOUR * 60;
 
@@ -1366,7 +1261,6 @@ public class PlanActivity extends AppCompatActivity {
                     int e1 = cluster.get(i).ev.endMin;
                     int s2 = cluster.get(j).ev.startMin;
                     int e2 = cluster.get(j).ev.endMin;
-
                     int overlap = Math.min(e1, e2) - Math.max(s1, s2);
                     if (overlap >= 20) {
                         hasRealCollision = true;
@@ -1378,7 +1272,6 @@ public class PlanActivity extends AppCompatActivity {
 
             if (!hasRealCollision) {
                 int clusterSize = cluster.size();
-
                 int maxOffset = overlapOffset * (clusterSize - 1);
                 int availableWidth = widthPx - 2 * marginPx - maxOffset;
                 if (availableWidth < dpToPx(40)) {
@@ -1388,7 +1281,6 @@ public class PlanActivity extends AppCompatActivity {
 
                 for (int i = 0; i < clusterSize; i++) {
                     RenderedEvent re = cluster.get(i);
-
                     int startMin = re.ev.startMin;
                     int endMin = re.ev.endMin;
 
@@ -1408,15 +1300,12 @@ public class PlanActivity extends AppCompatActivity {
 
                     FrameLayoutWithChildren.LayoutParams lp =
                             (FrameLayoutWithChildren.LayoutParams) re.view.getLayoutParams();
-
                     lp.topMargin = (int) topPx;
                     lp.height = (int) heightPx;
                     lp.leftMargin = marginPx + i * overlapOffset;
                     lp.width = availableWidth;
-
                     re.view.setLayoutParams(lp);
                 }
-
                 continue;
             }
 
@@ -1448,7 +1337,6 @@ public class PlanActivity extends AppCompatActivity {
             for (int i = 0; i < cluster.size(); i++) {
                 RenderedEvent re = cluster.get(i);
                 int laneIdx = laneOf[i];
-
                 int startMin = re.ev.startMin;
                 int endMin = re.ev.endMin;
 
@@ -1468,12 +1356,10 @@ public class PlanActivity extends AppCompatActivity {
 
                 FrameLayoutWithChildren.LayoutParams lp =
                         (FrameLayoutWithChildren.LayoutParams) re.view.getLayoutParams();
-
                 lp.topMargin = (int) topPx;
                 lp.height = (int) heightPx;
                 lp.leftMargin = (int) (marginPx + laneIdx * laneWidth);
                 lp.width = (int) (laneWidth - 2 * marginPx);
-
                 re.view.setLayoutParams(lp);
             }
         }
@@ -1482,9 +1368,7 @@ public class PlanActivity extends AppCompatActivity {
     private void updateFixedWeekHeaders(List<PlanRepository.DayColumn> rawCols, LocalDate pageDate) {
         if (layoutWeekHeadersRow == null || layoutWeekHeadersFixed == null) return;
 
-        // Fix: Use weekend filtering for headers as well
         List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
-
         layoutWeekHeadersRow.removeAllViews();
 
         if (cols == null || cols.isEmpty()) {
@@ -1492,15 +1376,14 @@ public class PlanActivity extends AppCompatActivity {
             return;
         }
 
-        // Fix: Ensure container visibility if data exists
         layoutWeekHeadersFixed.setVisibility(View.VISIBLE);
-
         LocalDate today = LocalDate.now();
 
         for (PlanRepository.DayColumn col : cols) {
+            // Changed: Use WRAP_CONTENT instead of fixed height
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     0,
-                    dpToPx(DAY_HEADER_HEIGHT_DP),
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
                     1f
             );
             lp.setMargins(dpToPx(2), 0, dpToPx(2), 0);
@@ -1524,7 +1407,6 @@ public class PlanActivity extends AppCompatActivity {
             layoutWeekHeadersRow.addView(tv);
         }
     }
-
 
     private boolean shouldHideEvent(PlanRepository.PlanEventUi ev) {
         if (ev == null) return false;
@@ -1568,7 +1450,6 @@ public class PlanActivity extends AppCompatActivity {
         tv.setLayoutParams(lp);
 
         tv.setOnClickListener(v -> showEventDetails(ev));
-
         return tv;
     }
 
@@ -1578,22 +1459,13 @@ public class PlanActivity extends AppCompatActivity {
         msg.append(time);
 
         if (ev.room != null && !ev.room.isEmpty()) {
-            msg.append("\n")
-                    .append(getString(R.string.plan_event_room_prefix))
-                    .append(" ")
-                    .append(ev.room);
+            msg.append("\n").append(getString(R.string.plan_event_room_prefix)).append(" ").append(ev.room);
         }
         if (ev.group != null && !ev.group.isEmpty()) {
-            msg.append("\n")
-                    .append(getString(R.string.plan_event_group_prefix))
-                    .append(" ")
-                    .append(ev.group);
+            msg.append("\n").append(getString(R.string.plan_event_group_prefix)).append(" ").append(ev.group);
         }
         if (ev.teacher != null && !ev.teacher.isEmpty()) {
-            msg.append("\n")
-                    .append(getString(R.string.plan_event_teacher_prefix))
-                    .append(" ")
-                    .append(ev.teacher);
+            msg.append("\n").append(getString(R.string.plan_event_teacher_prefix)).append(" ").append(ev.teacher);
         }
         if (ev.typeLabel != null && !ev.typeLabel.isEmpty()) {
             msg.append("\n\n").append(ev.typeLabel);
@@ -1610,114 +1482,51 @@ public class PlanActivity extends AppCompatActivity {
     private int colorResForType(String typeClass) {
         if (typeClass == null) typeClass = "";
         switch (typeClass) {
-            case "week-event-type-lecture":
-                return R.color.plan_event_lecture_bg;
-            case "week-event-type-lab":
-                return R.color.plan_event_lab_bg;
-            case "week-event-type-auditory":
-                return R.color.plan_event_auditory_bg;
-            case "week-event-type-exam":
-                return R.color.plan_event_exam_bg;
-            case "week-event-type-cancelled":
-                return R.color.plan_event_cancelled_bg;
-            case "week-event-type-rector":
-                return R.color.plan_event_rector_bg;
-            case "week-event-type-remote":
-                return R.color.plan_event_remote_bg;
+            case "week-event-type-lecture": return R.color.plan_event_lecture_bg;
+            case "week-event-type-lab": return R.color.plan_event_lab_bg;
+            case "week-event-type-auditory": return R.color.plan_event_auditory_bg;
+            case "week-event-type-exam": return R.color.plan_event_exam_bg;
+            case "week-event-type-cancelled": return R.color.plan_event_cancelled_bg;
+            case "week-event-type-rector": return R.color.plan_event_rector_bg;
+            case "week-event-type-remote": return R.color.plan_event_remote_bg;
             case "week-event-type-pass":
             case "week-event-type-pass-retake":
             case "week-event-type-pass-remote":
-            case "week-event-type-pass-remote-retake":
-                return R.color.plan_event_pass_bg;
-            default:
-                return R.color.plan_event_default_bg;
+            case "week-event-type-pass-remote-retake": return R.color.plan_event_pass_bg;
+            default: return R.color.plan_event_default_bg;
         }
     }
 
     private String formatDayHeader(LocalDate date) {
-        if (date == null) {
-            return "";
-        }
+        if (date == null) return "";
         String shortName;
         switch (date.getDayOfWeek()) {
-            case MONDAY:
-                shortName = getString(R.string.plan_header_mon_short);
-                break;
-            case TUESDAY:
-                shortName = getString(R.string.plan_header_tue_short);
-                break;
-            case WEDNESDAY:
-                shortName = getString(R.string.plan_header_wed_short);
-                break;
-            case THURSDAY:
-                shortName = getString(R.string.plan_header_thu_short);
-                break;
-            case FRIDAY:
-                shortName = getString(R.string.plan_header_fri_short);
-                break;
-            case SATURDAY:
-                shortName = getString(R.string.plan_header_sat_short);
-                break;
-            case SUNDAY:
-            default:
-                shortName = getString(R.string.plan_header_sun_short);
-                break;
+            case MONDAY: shortName = getString(R.string.plan_header_mon_short); break;
+            case TUESDAY: shortName = getString(R.string.plan_header_tue_short); break;
+            case WEDNESDAY: shortName = getString(R.string.plan_header_wed_short); break;
+            case THURSDAY: shortName = getString(R.string.plan_header_thu_short); break;
+            case FRIDAY: shortName = getString(R.string.plan_header_fri_short); break;
+            case SATURDAY: shortName = getString(R.string.plan_header_sat_short); break;
+            case SUNDAY: default: shortName = getString(R.string.plan_header_sun_short); break;
         }
-        return shortName + "\n" +
-                date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"));
+        return shortName + "\n" + date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"));
     }
 
     private int dpToPx(float dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
-    // Exact class from original
     public static class FrameLayoutWithChildren extends android.widget.FrameLayout {
-        public FrameLayoutWithChildren(Context context) {
-            super(context);
-        }
-
-        public FrameLayoutWithChildren(Context context, AttributeSet attrs) {
-            super(context, attrs);
-        }
-
-        @Override
-        protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
-            return p instanceof LayoutParams;
-        }
-
-        @Override
-        protected LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
-            return new LayoutParams(p);
-        }
-
-        @Override
-        public LayoutParams generateLayoutParams(AttributeSet attrs) {
-            return new LayoutParams(getContext(), attrs);
-        }
-
-        @Override
-        protected LayoutParams generateDefaultLayoutParams() {
-            return new LayoutParams(
-                    LayoutParams.MATCH_PARENT,
-                    LayoutParams.WRAP_CONTENT
-            );
-        }
-
+        public FrameLayoutWithChildren(Context context) { super(context); }
+        public FrameLayoutWithChildren(Context context, AttributeSet attrs) { super(context, attrs); }
+        @Override protected boolean checkLayoutParams(ViewGroup.LayoutParams p) { return p instanceof LayoutParams; }
+        @Override protected LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) { return new LayoutParams(p); }
+        @Override public LayoutParams generateLayoutParams(AttributeSet attrs) { return new LayoutParams(getContext(), attrs); }
+        @Override protected LayoutParams generateDefaultLayoutParams() { return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT); }
         public static class LayoutParams extends android.widget.FrameLayout.LayoutParams {
-            public LayoutParams(Context c, AttributeSet attrs) {
-                super(c, attrs);
-            }
-
-            public LayoutParams(int width, int height) {
-                super(width, height);
-            }
-
-            public LayoutParams(ViewGroup.LayoutParams source) {
-                super(source);
-            }
+            public LayoutParams(Context c, AttributeSet attrs) { super(c, attrs); }
+            public LayoutParams(int width, int height) { super(width, height); }
+            public LayoutParams(ViewGroup.LayoutParams source) { super(source); }
         }
     }
-
-    // endregion
 }
