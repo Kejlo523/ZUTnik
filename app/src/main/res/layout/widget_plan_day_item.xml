@@ -1,47 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/itemRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:paddingLeft="6dp"
-    android:paddingRight="6dp"
     android:paddingTop="3dp"
-    android:paddingBottom="3dp"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:paddingRight="6dp"
+    android:paddingBottom="3dp">
 
-    <!-- Wąska pionowa belka z kolorem typu zajęć (musi być ImageView, nie View) -->
     <ImageView
         android:id="@+id/itemColorStrip"
         android:layout_width="4dp"
         android:layout_height="match_parent"
-        android:layout_marginRight="6dp"
+        android:layout_marginRight="8dp"
         android:background="@android:color/transparent" />
 
-    <!-- Treść wiersza -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <!-- 1. linia: tytuł przedmiotu -->
         <TextView
             android:id="@+id/itemTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Programowanie (L)"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/mz_text" />
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Przedmiot"
+            android:textColor="@color/mz_text"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
-        <!-- 2. linia: godziny + sala -->
-        <TextView
-            android:id="@+id/itemRoom"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="08:15 – 09:45 · Sala 312"
-            android:textSize="11sp"
-            android:textColor="@color/mz_text" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/itemTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:text="08:00 - 09:30"
+                android:textColor="@color/mz_text"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/itemRoom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Sala 123"
+                android:textColor="@color/mz_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

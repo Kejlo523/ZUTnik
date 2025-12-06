@@ -38,7 +38,7 @@ public class NewsActivity extends AppCompatActivity {
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
     // Cache at most for one week – after that always refreshed from network
     private static final long NEWS_CACHE_TTL_MS =
-            7L * 24L * 60L * 60L * 1000L; // 7 days
+            2L * 24L * 60L * 60L * 1000L; // 7 days
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;

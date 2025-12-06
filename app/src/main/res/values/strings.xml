@@ -80,7 +80,6 @@
     <string name="info_history_item">%1$s – %2$s</string>
     <string name="info_history_title">Przebieg studiów</string>
 
-    <string name="info_header_pill">🎓 Dane Studenta</string>
     <string name="info_header_title">Dane</string>
     <string name="info_header_subtitle">
         Dane z systemów ZUT: kierunek, status, semestr oraz przebieg studiów — w jednym miejscu.
@@ -194,7 +193,6 @@
 
     <string name="grades_average_placeholder">–</string>
 
-    <string name="grades_header_pill">⭐ Oceny i ECTS</string>
     <string name="grades_hero_title">Zestawienie ocen z podziałem na semestry</string>
     <string name="grades_hero_subtitle">
         Średnia ważona ECTS, suma punktów oraz szczegółowa lista zaliczeń.
@@ -230,7 +228,6 @@
         Brak treści w kanale RSS dla tego wpisu.
     </string>
 
-    <string name="news_header_pill">📰 Aktualności ZUT</string>
     <string name="news_header_title">Kanał ogłoszeń dla studentów</string>
     <string name="news_header_source_info">Źródło RSS: studenci ZUT</string>
 
@@ -255,7 +252,6 @@
 
     <string name="about_title">O aplikacji</string>
 
-    <string name="about_header_pill">ℹ️ Informacje o aplikacji</string>
     <string name="about_subtitle">
         Nieoficjalna aplikacja mobilna dla studentów ZUT, z planem zajęć, ocenami, informacjami o studiach i widżetem dziennym — bez reklam i śledzenia.
     </string>
@@ -288,7 +284,6 @@
     </string>
 
     <string name="settings_title">Ustawienia</string>
-    <string name="settings_header_pill">⚙️ Ustawienia aplikacji</string>
     <string name="settings_subtitle">
         Wybierz język interfejsu. Zmiana może wymagać ponownego uruchomienia aplikacji.
     </string>
@@ -306,7 +301,6 @@
         Zmieniono język. Interfejs został przeładowany.
     </string>
 
-    <string name="useful_links_pill">Przydatne linki</string>
     <string name="useful_links_header_title">Twoje najważniejsze adresy w jednym miejscu</string>
     <string name="useful_links_header_sub">
         Dodaj lub otwieraj szybko strony dziekanatu, wydziału, planu, regulaminów i innych serwisów ZUT.

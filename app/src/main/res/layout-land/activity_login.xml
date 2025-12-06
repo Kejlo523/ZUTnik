@@ -5,7 +5,9 @@
     android:layout_height="match_parent"
     android:background="@color/mz_bg"
     android:fillViewport="true"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:isScrollContainer="true"
+    android:overScrollMode="ifContentScrolls">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,17 +18,19 @@
         android:baselineAligned="false">
 
         <LinearLayout
+            android:id="@+id/headerContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingEnd="24dp">
+            android:paddingEnd="24dp"
+            android:layout_marginBottom="16dp">
 
             <ImageView
                 android:id="@+id/appIcon"
-                android:layout_width="140dp"
-                android:layout_height="140dp"
+                android:layout_width="220dp"
+                android:layout_height="220dp"
                 android:layout_marginBottom="16dp"
                 android:adjustViewBounds="true"
                 android:contentDescription="@string/app_name"
@@ -73,6 +77,7 @@
                     android:textStyle="bold" />
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/loginInputLayout"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -90,10 +95,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="text"
+                        android:paddingStart="12dp"
                         android:textColor="@color/mz_text" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/passwordInputLayout"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -102,8 +109,8 @@
                     android:hint="@string/login_password_hint"
                     app:boxBackgroundColor="@color/mz_bg"
                     app:boxStrokeColor="@color/mz_primary"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/mz_muted"
+                    app:passwordToggleEnabled="true"
+                    app:passwordToggleTint="@color/mz_muted"
                     app:hintTextColor="@color/mz_primary"
                     app:startIconDrawable="@drawable/ic_lock"
                     app:startIconTint="@color/mz_muted">
@@ -113,6 +120,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textPassword"
+                        android:paddingStart="12dp"
                         android:textColor="@color/mz_text" />
                 </com.google.android.material.textfield.TextInputLayout>
 

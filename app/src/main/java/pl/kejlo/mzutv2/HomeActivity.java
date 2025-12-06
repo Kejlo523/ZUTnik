@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,14 +41,11 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initialize session from SharedPreferences
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
-        // If there is no valid session, go back to the login screen
         if (session.getAuthKey() == null || session.getUserId() == null) {
             Intent i = new Intent(this, LoginActivity.class);
-            // Clear the back stack so the user cannot return to an empty Home screen
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
             finish();
@@ -60,10 +58,8 @@ public class HomeActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
 
-        // Title from resources
         toolbar.setTitle(R.string.home_title);
 
-        // Navigation drawer – home screen (enum version)
         NavDrawerHelper.setupNavigation(
                 this,
                 drawerLayout,
@@ -72,18 +68,15 @@ public class HomeActivity extends AppCompatActivity {
                 NavDrawerHelper.Screen.HOME
         );
 
-        // Hero / sections
         textWelcome = findViewById(R.id.textWelcome);
         textWelcomeSub = findViewById(R.id.textWelcomeSub);
         homeHero = findViewById(R.id.homeHero);
         homeShortcuts = findViewById(R.id.homeShortcuts);
         homeSection = findViewById(R.id.homeSection);
 
-        // Main buttons
         btnHeroPlan = findViewById(R.id.btnHeroPlan);
         btnHeroGrades = findViewById(R.id.btnHeroGrades);
 
-        // Shortcut tiles
         tilePlan = findViewById(R.id.tilePlan);
         tileGrades = findViewById(R.id.tileGrades);
         tileInfo = findViewById(R.id.tileInfo);
@@ -96,27 +89,21 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        // Only observe the gesture, do not block the event
         NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
         return super.dispatchTouchEvent(ev);
     }
 
     private void setupWelcomeText() {
-        // Use the version with context to ensure the session is loaded
         MzutSession s = MzutSession.getInstance(this);
         String username = s.getUsername();
         if (username == null || username.trim().isEmpty()) {
             username = s.getUserId();
         }
         if (username == null || username.trim().isEmpty()) {
-            // Default username from resources (the same as in NavDrawerHelper)
             username = getString(R.string.nav_header_default_username);
         }
 
-        // "Witaj, %1$s"
         textWelcome.setText(getString(R.string.home_welcome_message, username));
-
-        // Subtitle from resources
         textWelcomeSub.setText(R.string.home_welcome_subtitle);
     }
 
@@ -151,17 +138,14 @@ public class HomeActivity extends AppCompatActivity {
             }
         };
 
-        // Hero buttons
         btnHeroPlan.setOnClickListener(openPlan);
         btnHeroGrades.setOnClickListener(openGrades);
 
-        // Tiles
         tilePlan.setOnClickListener(openPlan);
         tileGrades.setOnClickListener(openGrades);
         tileInfo.setOnClickListener(openInfo);
         tileNews.setOnClickListener(openNews);
 
-        // Long press tips (optional)
         tilePlan.setOnLongClickListener(v -> {
             Toast.makeText(
                     this,
@@ -200,22 +184,36 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void runIntroAnimations() {
-        animateInFromBottom(homeHero, 0);
-        animateInFromBottom(homeShortcuts, 60);
-        animateInFromBottom(homeSection, 120);
+        homeHero.setAlpha(0f);
+        tilePlan.setAlpha(0f);
+        tileGrades.setAlpha(0f);
+        tileInfo.setAlpha(0f);
+        tileNews.setAlpha(0f);
+        homeSection.setAlpha(0f);
+
+        animateIn(homeHero, 100);
+        animateIn(tilePlan, 200);
+        animateIn(tileGrades, 250);
+        animateIn(tileInfo, 300);
+        animateIn(tileNews, 350);
+        animateIn(homeSection, 450);
     }
 
-    private void animateInFromBottom(View v, long delayMs) {
+    private void animateIn(View v, long delayMs) {
         if (v == null) {
             return;
         }
-        v.setAlpha(0f);
-        v.setTranslationY(16f);
+        v.setTranslationY(100f);
+        v.setScaleX(0.95f);
+        v.setScaleY(0.95f);
         v.animate()
                 .alpha(1f)
                 .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
                 .setStartDelay(delayMs)
-                .setDuration(220)
+                .setDuration(400)
+                .setInterpolator(new DecelerateInterpolator(1.5f))
                 .start();
     }
 }

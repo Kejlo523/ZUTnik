@@ -22,6 +22,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -96,7 +97,6 @@ public class PlanActivity extends AppCompatActivity {
     private static final int START_HOUR = 6;
     private static final int END_HOUR = 22;
     private static final float HOUR_HEIGHT_DP = 48f;
-    // Changed: Header height increased to 48f to fit two lines of text
     private static final float DAY_HEADER_HEIGHT_DP = 48f;
     private static final float MONTH_CELL_HEIGHT_DP = 70f;
 
@@ -106,9 +106,12 @@ public class PlanActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private Toolbar toolbar;
 
+    private LinearLayout controlsContainer;
     private Button btnViewDay;
     private Button btnViewWeek;
     private Button btnViewMonth;
+
+    private LinearLayout actionsContainer;
     private ImageButton btnSearch;
     private ImageButton btnRefresh;
     private ImageButton btnMenu;
@@ -218,7 +221,6 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
 
-        // Hide weekends if they have no events
         if (satIndex != -1 && sunIndex != -1 && !satHasEvents && !sunHasEvents) {
             List<PlanRepository.DayColumn> filtered = new ArrayList<>();
             for (int i = 0; i < allColumns.size(); i++) {
@@ -340,6 +342,50 @@ public class PlanActivity extends AppCompatActivity {
         }
 
         loadPlanForCurrentMode();
+        runIntroAnimations();
+    }
+
+    private void runIntroAnimations() {
+        View[] topControls = {btnViewDay, btnViewWeek, btnViewMonth};
+        View[] actions = {tvHeaderLabel, btnSearch, btnRefresh, btnMenu};
+        View mainContent = viewPager;
+        View sideColumn = layoutTimeColumn;
+        View headerRow = layoutWeekHeadersFixed;
+
+        // Reset
+        for(View v : topControls) if(v != null) { v.setAlpha(0f); v.setTranslationY(-20f); }
+        for(View v : actions) if(v != null) { v.setAlpha(0f); v.setTranslationY(-20f); }
+        if(mainContent != null) { mainContent.setAlpha(0f); mainContent.setTranslationY(50f); }
+        if(sideColumn != null) { sideColumn.setAlpha(0f); sideColumn.setTranslationX(-30f); }
+        if(headerRow != null) { headerRow.setAlpha(0f); headerRow.setTranslationY(-20f); }
+
+        long delay = 100;
+
+        for (View v : topControls) {
+            if(v != null) animateIn(v, delay);
+            delay += 50;
+        }
+
+        delay = 200;
+        for (View v : actions) {
+            if(v != null) animateIn(v, delay);
+            delay += 50;
+        }
+
+        if (headerRow != null) animateIn(headerRow, 300);
+        if (sideColumn != null) animateIn(sideColumn, 350);
+        if (mainContent != null) animateIn(mainContent, 400);
+    }
+
+    private void animateIn(View v, long delayMs) {
+        v.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .translationX(0f)
+                .setStartDelay(delayMs)
+                .setDuration(400)
+                .setInterpolator(new DecelerateInterpolator(1.5f))
+                .start();
     }
 
     private void setupHeightForViewPager() {
@@ -771,7 +817,20 @@ public class PlanActivity extends AppCompatActivity {
                     result.dayColumns != null ? result.dayColumns : Collections.emptyList();
             List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
 
-            if (cols.isEmpty()) {
+            boolean hasAnyEvents = false;
+            for (PlanRepository.DayColumn col : cols) {
+                if (col.events != null && !col.events.isEmpty()) {
+                    for (PlanRepository.PlanEventUi ev : col.events) {
+                        if (!shouldHideEvent(ev)) {
+                            hasAnyEvents = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasAnyEvents) break;
+            }
+
+            if (cols.isEmpty() || !hasAnyEvents) {
                 TextView empty = new TextView(context);
                 empty.setText(R.string.plan_no_classes_in_range);
                 empty.setGravity(Gravity.CENTER);
@@ -784,9 +843,9 @@ public class PlanActivity extends AppCompatActivity {
             LocalDate today = LocalDate.now();
 
             for (PlanRepository.DayColumn col : cols) {
-                boolean isSelectedDay = col.date != null && col.date.equals(pageDate);
+
                 boolean isToday = col.date != null && col.date.equals(today);
-                boolean highlight = isDayMode() ? isSelectedDay : isToday;
+                boolean highlight = isToday;
 
                 LinearLayout dayColumn = new LinearLayout(context);
                 dayColumn.setOrientation(LinearLayout.VERTICAL);
@@ -1380,7 +1439,6 @@ public class PlanActivity extends AppCompatActivity {
         LocalDate today = LocalDate.now();
 
         for (PlanRepository.DayColumn col : cols) {
-            // Changed: Use WRAP_CONTENT instead of fixed height
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     0,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -1396,9 +1454,8 @@ public class PlanActivity extends AppCompatActivity {
             tv.setGravity(Gravity.CENTER);
             tv.setPadding(0, dpToPx(4), 0, dpToPx(4));
 
-            boolean isSelectedDay = col.date != null && col.date.equals(pageDate);
             boolean isToday = col.date != null && col.date.equals(today);
-            boolean highlight = isDayMode() ? isSelectedDay : isToday;
+            boolean highlight = isToday;
 
             if (highlight) {
                 tv.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_week_header_selected_bg));

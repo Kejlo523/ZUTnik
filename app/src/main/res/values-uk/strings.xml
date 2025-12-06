@@ -80,7 +80,6 @@
     <string name="info_history_item">%1$s – %2$s</string>
     <string name="info_history_title">Історія навчання</string>
 
-    <string name="info_header_pill">🎓 Дані студента</string>
     <string name="info_header_title">Дані</string>
     <string name="info_header_subtitle">
         Дані із систем ZUT: напрям, статус, семестр та історія навчання — в одному місці.
@@ -193,7 +192,6 @@
 
     <string name="grades_average_placeholder">–</string>
 
-    <string name="grades_header_pill">⭐ Оцінки та ECTS</string>
     <string name="grades_hero_title">Зведення оцінок за семестрами</string>
     <string name="grades_hero_subtitle">
         Зважене середнє ECTS, сума балів та детальний список заліків.
@@ -229,7 +227,6 @@
         У RSS-каналі немає вмісту для цього запису.
     </string>
 
-    <string name="news_header_pill">📰 Новини ZUT</string>
     <string name="news_header_title">Канал оголошень для студентів</string>
     <string name="news_header_source_info">Джерело RSS: студенти ZUT</string>
 
@@ -254,7 +251,6 @@
 
     <string name="about_title">Про застосунок</string>
 
-    <string name="about_header_pill">ℹ️ Інформація про застосунок</string>
     <string name="about_subtitle">
         Неофіційний мобільний застосунок для студентів ZUT з розкладом занять, оцінками, інформацією про навчання та денним віджетом — без реклами й стеження.
     </string>
@@ -287,7 +283,6 @@
     </string>
 
     <string name="settings_title">Налаштування</string>
-    <string name="settings_header_pill">⚙️ Налаштування застосунку</string>
     <string name="settings_subtitle">
         Виберіть мову інтерфейсу. Зміна може вимагати повторного запуску застосунку.
     </string>
@@ -305,7 +300,6 @@
         Мову змінено. Інтерфейс було перезавантажено.
     </string>
 
-    <string name="useful_links_pill">Корисні посилання</string>
     <string name="useful_links_header_title">Ваші найважливіші адреси в одному місці</string>
     <string name="useful_links_header_sub">
         Додавайте або швидко відкривайте сторінки деканату, факультету, розкладу, правил та інших сервісів ZUT.

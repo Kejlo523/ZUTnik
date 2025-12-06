@@ -2,26 +2,29 @@ package pl.kejlo.mzutv2;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
-import android.view.animation.CycleInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import org.json.JSONObject;
 
@@ -37,19 +40,25 @@ public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "mZUTv2";
 
-    // Only local login-screen preferences
     private static final String PREFS_NAME = "mzut_prefs";
     private static final String KEY_LAST_LOGIN = "last_login";
 
     private ImageView appIcon;
     private View loginCard;
-    private EditText editLogin;
-    private EditText editPass;
+    private View headerContainer;
+    private TextInputEditText editLogin;
+    private TextInputEditText editPass;
+    private TextInputLayout loginInputLayout;
+    private TextInputLayout passwordInputLayout;
     private Button btnLogin;
+
+    private View rootView;
+    private boolean isKeyboardVisible = false;
+    private int headerExpandedBottomMargin = 0;
+    private int headerCollapsedBottomMargin = 0;
 
     private AuthTask currentTask;
 
-    // Animation specific constants
     private static final long ANIM_DURATION_ENTER = 600;
     private static final long ANIM_STAGGER_DELAY = 100;
     private ObjectAnimator loadingAnimator;
@@ -58,11 +67,11 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Try to restore session from preferences
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
-        // If we already have userId + authKey, go straight to Home
         if (session.getAuthKey() != null && session.getUserId() != null) {
             Intent i = new Intent(LoginActivity.this, HomeActivity.class);
             startActivity(i);
@@ -74,44 +83,114 @@ public class LoginActivity extends AppCompatActivity {
 
         appIcon = findViewById(R.id.appIcon);
         loginCard = findViewById(R.id.loginCard);
+        headerContainer = findViewById(R.id.headerContainer);
+        loginInputLayout = findViewById(R.id.loginInputLayout);
+        passwordInputLayout = findViewById(R.id.passwordInputLayout);
         editLogin = findViewById(R.id.editLogin);
         editPass = findViewById(R.id.editPass);
         btnLogin = findViewById(R.id.btnLogin);
 
-        // Prefill last used login if available
+        if (headerContainer != null) {
+            ViewGroup.LayoutParams params = headerContainer.getLayoutParams();
+            if (params instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) params;
+                headerExpandedBottomMargin = lp.bottomMargin;
+                headerCollapsedBottomMargin = Math.max(dpToPx(8), headerExpandedBottomMargin / 2);
+            }
+        }
+
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String lastLogin = prefs.getString(KEY_LAST_LOGIN, "");
-        if (!lastLogin.isEmpty()) {
+        if (editLogin.getText() != null && editLogin.getText().length() == 0 && !lastLogin.isEmpty()) {
             editLogin.setText(lastLogin);
+            editLogin.setSelection(lastLogin.length());
         }
 
         btnLogin.setOnClickListener(v -> doLogin());
 
-        // Focus listener for aesthetic focus scaling
-        View.OnFocusChangeListener focusListener = (v, hasFocus) -> {
-            float scale = hasFocus ? 1.02f : 1.0f;
-            float elevation = hasFocus ? 12f : 0f; // works on newer Androids visual only
-            v.animate()
-                    .scaleX(scale)
-                    .scaleY(scale)
-                    .translationZ(elevation)
-                    .setDuration(200)
-                    .setInterpolator(new DecelerateInterpolator())
-                    .start();
-        };
-        editLogin.setOnFocusChangeListener(focusListener);
-        editPass.setOnFocusChangeListener(focusListener);
+        if (loginInputLayout != null) {
+            loginInputLayout.post(() -> {
+                loginInputLayout.setHintEnabled(false);
+                loginInputLayout.setHintEnabled(true);
+            });
+        }
+        if (passwordInputLayout != null) {
+            passwordInputLayout.post(() -> {
+                passwordInputLayout.setHintEnabled(false);
+                passwordInputLayout.setHintEnabled(true);
+            });
+        }
 
-        // Prepare views for entry animation (hide them initially)
+        rootView = findViewById(android.R.id.content);
+        if (rootView != null) {
+            rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    Rect r = new Rect();
+                    rootView.getWindowVisibleDisplayFrame(r);
+                    int screenHeight = rootView.getRootView().getHeight();
+                    int heightDiff = screenHeight - r.height();
+                    boolean visible = heightDiff > dpToPx(150);
+                    if (visible != isKeyboardVisible) {
+                        isKeyboardVisible = visible;
+                        handleKeyboardVisibilityChange(visible);
+                    }
+                }
+            });
+        }
+
         prepareViewsForAnimation();
-
-        // Start the "Wow" intro
         startKillerIntroAnimation();
     }
 
-    /**
-     * Sets initial state of views before animation starts (hidden, scaled down, etc.)
-     */
+    private void handleKeyboardVisibilityChange(boolean visible) {
+        if (visible) {
+            if (headerContainer != null) {
+                ViewGroup.LayoutParams params = headerContainer.getLayoutParams();
+                if (params instanceof ViewGroup.MarginLayoutParams) {
+                    ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) params;
+                    lp.bottomMargin = headerCollapsedBottomMargin;
+                    headerContainer.setLayoutParams(lp);
+                }
+            }
+            appIcon.animate()
+                    .scaleX(0.7f)
+                    .scaleY(0.7f)
+                    .setDuration(200)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+            loginCard.animate()
+                    .translationY(-dpToPx(12))
+                    .setDuration(200)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+        } else {
+            if (headerContainer != null) {
+                ViewGroup.LayoutParams params = headerContainer.getLayoutParams();
+                if (params instanceof ViewGroup.MarginLayoutParams) {
+                    ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) params;
+                    lp.bottomMargin = headerExpandedBottomMargin;
+                    headerContainer.setLayoutParams(lp);
+                }
+            }
+            appIcon.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(200)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+            loginCard.animate()
+                    .translationY(0f)
+                    .setDuration(200)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
     private void prepareViewsForAnimation() {
         appIcon.setAlpha(0f);
         appIcon.setTranslationY(-300f);
@@ -124,22 +203,21 @@ public class LoginActivity extends AppCompatActivity {
         loginCard.setScaleY(0.9f);
         loginCard.setTranslationY(200f);
 
-        editLogin.setAlpha(0f);
-        editLogin.setTranslationX(-100f);
-
-        editPass.setAlpha(0f);
-        editPass.setTranslationX(100f);
+        if (loginInputLayout != null) {
+            loginInputLayout.setAlpha(0f);
+            loginInputLayout.setTranslationY(50f);
+        }
+        if (passwordInputLayout != null) {
+            passwordInputLayout.setAlpha(0f);
+            passwordInputLayout.setTranslationY(50f);
+        }
 
         btnLogin.setAlpha(0f);
         btnLogin.setTranslationY(150f);
         btnLogin.setScaleX(0.5f);
     }
 
-    /**
-     * Executes the complex entry animation sequence.
-     */
     private void startKillerIntroAnimation() {
-        // 1. App Icon Drop & Spin
         appIcon.animate()
                 .alpha(1f)
                 .translationY(0f)
@@ -147,10 +225,9 @@ public class LoginActivity extends AppCompatActivity {
                 .scaleX(1f)
                 .scaleY(1f)
                 .setDuration(800)
-                .setInterpolator(new OvershootInterpolator(1.5f)) // Bouncy effect
+                .setInterpolator(new OvershootInterpolator(1.5f))
                 .start();
 
-        // 2. Card Rise (Slightly delayed)
         loginCard.animate()
                 .alpha(1f)
                 .translationY(0f)
@@ -161,37 +238,39 @@ public class LoginActivity extends AppCompatActivity {
                 .setInterpolator(new DecelerateInterpolator(1.2f))
                 .start();
 
-        // 3. Inputs Slide In (Staggered from sides)
-        editLogin.animate()
-                .alpha(1f)
-                .translationX(0f)
-                .setStartDelay(400)
-                .setDuration(500)
-                .setInterpolator(new OvershootInterpolator(1.0f))
-                .start();
+        if (loginInputLayout != null) {
+            loginInputLayout.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(400)
+                    .setDuration(500)
+                    .setInterpolator(new OvershootInterpolator(1.0f))
+                    .start();
+        }
 
-        editPass.animate()
-                .alpha(1f)
-                .translationX(0f)
-                .setStartDelay(500)
-                .setDuration(500)
-                .setInterpolator(new OvershootInterpolator(1.0f))
-                .start();
+        if (passwordInputLayout != null) {
+            passwordInputLayout.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(500)
+                    .setDuration(500)
+                    .setInterpolator(new OvershootInterpolator(1.0f))
+                    .start();
+        }
 
-        // 4. Button Pop Up
         btnLogin.animate()
                 .alpha(1f)
                 .translationY(0f)
                 .scaleX(1f)
                 .setStartDelay(650)
                 .setDuration(600)
-                .setInterpolator(new OvershootInterpolator(2.0f)) // Extra bouncy
+                .setInterpolator(new OvershootInterpolator(2.0f))
                 .start();
     }
 
     private void doLogin() {
-        String login = editLogin.getText().toString().trim();
-        String pass = editPass.getText().toString().trim();
+        String login = editLogin.getText() != null ? editLogin.getText().toString().trim() : "";
+        String pass = editPass.getText() != null ? editPass.getText().toString().trim() : "";
 
         if (login.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, R.string.login_enter_credentials, Toast.LENGTH_SHORT).show();
@@ -200,7 +279,6 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Remember last used login
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(KEY_LAST_LOGIN, login).apply();
 
@@ -209,32 +287,24 @@ public class LoginActivity extends AppCompatActivity {
 
         Log.d(TAG, "Generated token: " + token);
 
-        // Avoid parallel login attempts
         if (currentTask != null) {
             return;
         }
 
-        // Start Loading Animation state
         startLoadingState();
 
         currentTask = new AuthTask(login, pass, token, tokenJpg);
         currentTask.execute();
     }
 
-    /**
-     * Transits UI into a "Thinking" state.
-     * Button pulsates, inputs fade out slightly.
-     */
     private void startLoadingState() {
         btnLogin.setEnabled(false);
         editLogin.setEnabled(false);
         editPass.setEnabled(false);
 
-        // Fade out inputs slightly
         editLogin.animate().alpha(0.5f).setDuration(300).start();
         editPass.animate().alpha(0.5f).setDuration(300).start();
 
-        // Pulse the login button
         loadingAnimator = ObjectAnimator.ofPropertyValuesHolder(
                 btnLogin,
                 PropertyValuesHolder.ofFloat("scaleX", 1f, 0.95f),
@@ -247,9 +317,6 @@ public class LoginActivity extends AppCompatActivity {
         loadingAnimator.start();
     }
 
-    /**
-     * Resets UI from Loading state back to Normal (e.g., on error).
-     */
     private void stopLoadingState() {
         if (loadingAnimator != null) {
             loadingAnimator.cancel();
@@ -266,30 +333,20 @@ public class LoginActivity extends AppCompatActivity {
         editPass.animate().alpha(1f).setDuration(200).start();
     }
 
-    /**
-     * Violently shakes the view to indicate error + Haptic feedback.
-     */
     private void animateFailureShake(View view) {
-        // Haptic feedback
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (v != null) {
-            v.vibrate(50); // 50ms vibration
+            v.vibrate(50);
         }
 
-        // CycleInterpolator creates the shake effect
         ObjectAnimator shake = ObjectAnimator.ofFloat(view, "translationX", 0, 25, -25, 25, -25, 15, -15, 6, -6, 0);
         shake.setDuration(700);
         shake.start();
     }
 
-    /**
-     * Explosive exit animation on success.
-     * Icon flies up, Card drops down, elements fade out fast.
-     */
     private void runSuccessTransitionAndOpenHome() {
         if (loadingAnimator != null) loadingAnimator.cancel();
 
-        // 1. Icon shoots up into the sky
         appIcon.animate()
                 .translationY(-1000f)
                 .alpha(0f)
@@ -297,16 +354,14 @@ public class LoginActivity extends AppCompatActivity {
                 .setInterpolator(new AccelerateInterpolator())
                 .start();
 
-        // 2. Card drops to the floor
         loginCard.animate()
                 .translationY(1000f)
                 .alpha(0f)
-                .rotation(10f) // slight tilt
+                .rotation(10f)
                 .setDuration(400)
                 .setInterpolator(new AccelerateInterpolator())
                 .start();
 
-        // 3. Button explodes (scales up and fades)
         btnLogin.animate()
                 .scaleX(3f)
                 .scaleY(3f)
@@ -314,18 +369,13 @@ public class LoginActivity extends AppCompatActivity {
                 .setDuration(300)
                 .withEndAction(() -> {
                     Intent i = new Intent(LoginActivity.this, HomeActivity.class);
-                    // Disable standard activity transition for seamless feel
                     i.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                     startActivity(i);
-                    // Use a custom fade transition
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     finish();
                 })
                 .start();
     }
-
-
-    // AuthTask – login logic (behavior unchanged)
 
     private class AuthTask extends AsyncTask<Void, Void, JSONObject> {
 
@@ -363,7 +413,7 @@ public class LoginActivity extends AppCompatActivity {
             currentTask = null;
 
             if (error != null) {
-                stopLoadingState(); // Stop animations
+                stopLoadingState();
                 String errorMessage = error.getMessage() != null ? error.getMessage() : "";
                 Toast.makeText(
                         LoginActivity.this,
@@ -375,7 +425,7 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             if (auth == null) {
-                stopLoadingState(); // Stop animations
+                stopLoadingState();
                 Toast.makeText(
                         LoginActivity.this,
                         R.string.login_no_server_response,
@@ -392,7 +442,7 @@ public class LoginActivity extends AppCompatActivity {
             );
 
             if (!"OK".equalsIgnoreCase(status)) {
-                stopLoadingState(); // Stop animations
+                stopLoadingState();
                 if ("SYSTEM ERROR".equalsIgnoreCase(status)) {
                     Toast.makeText(
                             LoginActivity.this,
@@ -405,13 +455,11 @@ public class LoginActivity extends AppCompatActivity {
                             R.string.login_invalid_credentials,
                             Toast.LENGTH_LONG
                     ).show();
-                    // Shake and Vibrate
                     animateFailureShake(loginCard);
                 }
                 return;
             }
 
-            // SUCCESS!
             String userId = auth.optString("login", login);
             String first = auth.optString("pierwszeImie", "");
             String last = auth.optString("nazwisko", "");
@@ -435,7 +483,6 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG
             ).show();
 
-            // Run the exit animation
             runSuccessTransitionAndOpenHome();
         }
     }

@@ -80,7 +80,6 @@
     <string name="info_history_item">%1$s – %2$s</string>
     <string name="info_history_title">Study history</string>
 
-    <string name="info_header_pill">🎓 Student data</string>
     <string name="info_header_title">Data</string>
     <string name="info_header_subtitle">
         Data from ZUT systems: field of study, status, semester and course of studies — in one place.
@@ -193,7 +192,6 @@
 
     <string name="grades_average_placeholder">–</string>
 
-    <string name="grades_header_pill">⭐ Grades and ECTS</string>
     <string name="grades_hero_title">Grade summary by semester</string>
     <string name="grades_hero_subtitle">
         Weighted ECTS average, total points and detailed list of passes.
@@ -229,7 +227,6 @@
         No content in RSS channel for this post.
     </string>
 
-    <string name="news_header_pill">📰 ZUT news</string>
     <string name="news_header_title">Announcements channel for students</string>
     <string name="news_header_source_info">RSS source: ZUT students</string>
 
@@ -254,7 +251,6 @@
 
     <string name="about_title">About the app</string>
 
-    <string name="about_header_pill">ℹ️ App information</string>
     <string name="about_subtitle">
         Unofficial mobile app for ZUT students, with timetable, grades, study information and a daily widget — without ads and tracking.
     </string>
@@ -287,7 +283,6 @@
     </string>
 
     <string name="settings_title">Settings</string>
-    <string name="settings_header_pill">⚙️ App settings</string>
     <string name="settings_subtitle">
         Choose the interface language. The change may require restarting the app.
     </string>
@@ -305,7 +300,6 @@
         Language changed. Interface has been reloaded.
     </string>
 
-    <string name="useful_links_pill">Useful links</string>
     <string name="useful_links_header_title">Your most important addresses in one place</string>
     <string name="useful_links_header_sub">
         Add or quickly open websites of the dean\'s office, faculty, timetable, regulations and other ZUT services.
