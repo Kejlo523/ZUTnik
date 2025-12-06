@@ -615,46 +615,57 @@ public class PlanRepository {
         String subject = lower(e.subject != null && !e.subject.isEmpty() ? e.subject : e.title);
 
         if ("e".equals(statusShort)) return "week-event-type-exam";
+        if ("ez".equals(statusShort)) return "week-event-type-exam-remote";
         if ("o".equals(statusShort)) return "week-event-type-cancelled";
         if ("r".equals(statusShort)) return "week-event-type-rector";
+        if ("dz".equals(statusShort)) return "week-event-type-dean";
         if ("zz".equals(statusShort)) return "week-event-type-remote";
 
         String hay = formFull + " " + subject;
+
+        if (hay.contains("egzamin zdalny")) return "week-event-type-exam-remote";
         if (hay.contains("egzamin")) return "week-event-type-exam";
         if (hay.contains("odwołane")) return "week-event-type-cancelled";
         if (hay.contains("rektorskie")) return "week-event-type-rector";
+        if (hay.contains("dziekańskie") || hay.contains("godziny dziekańskie")) return "week-event-type-dean";
 
         if (hay.contains("zajęcia zdalne") || hay.contains("zdalne")) {
             return "week-event-type-remote";
         }
 
-        if (hay.contains("zaliczenie zdalne poprawkowe")) {
+        if (hay.contains("zaliczenie zdalne poprawkowe") || "zalzdp".equals(formShort)) {
             return "week-event-type-pass-remote-retake";
         }
-
-        if (hay.contains("zaliczenie zdalne")) {
+        if (hay.contains("zaliczenie zdalne") || "zalzd".equals(formShort)) {
             return "week-event-type-pass-remote";
         }
-
-        if (hay.contains("zaliczenie poprawkow") || hay.contains("zaliczenie poprawkowe")) {
+        if (hay.contains("zaliczenie poprawkow") || "zalp".equals(formShort)) {
             return "week-event-type-pass-retake";
         }
-
-        if (hay.contains("zaliczenie")) {
+        if (hay.contains("zaliczenie") || "zal".equals(formShort)) {
             return "week-event-type-pass";
         }
+
+        if (hay.contains("seminarium dyplomowe") || "sd".equals(formShort)) return "week-event-type-diploma-seminar";
+        if (hay.contains("seminarium") || "s".equals(formShort)) return "week-event-type-seminar";
+        if (hay.contains("praca dyplomowa") || "pd".equals(formShort)) return "week-event-type-diploma";
+        if (hay.contains("projekt") || "p".equals(formShort)) return "week-event-type-project";
+        if (hay.contains("lektorat") || "lek".equals(formShort)) return "week-event-type-lectorate";
+        if (hay.contains("konserwatorium") || "k".equals(formShort)) return "week-event-type-conservatory";
+        if (hay.contains("konsultacje") || "kons".equals(formShort)) return "week-event-type-consultation";
+        if (hay.contains("terenowe") || "t".equals(formShort)) return "week-event-type-field";
 
         if (hay.contains("laboratorium") || "l".equals(formShort)) {
             return "week-event-type-lab";
         }
-
         if (hay.contains("audytoryjne") || "a".equals(formShort)) {
             return "week-event-type-auditory";
         }
-
         if (hay.contains("wykład") || "w".equals(formShort)) {
             return "week-event-type-lecture";
         }
+
+        if ("z".equals(formShort)) return "week-event-type-class";
 
         return "";
     }
