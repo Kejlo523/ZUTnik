@@ -131,7 +131,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
             if (position < 0 || position >= events.size()) return null;
 
             PlanRepository.PlanEventUi ev = events.get(position);
-            RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_item);
+            RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_item_glass);
 
             rv.setTextViewText(R.id.itemTitle, ev.title != null ? ev.title : "");
 

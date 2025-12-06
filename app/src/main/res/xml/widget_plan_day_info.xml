@@ -4,6 +4,6 @@
     android:minWidth="200dp"
     android:minHeight="90dp"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_plan_day"
+    android:initialLayout="@layout/widget_plan_day_glass"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

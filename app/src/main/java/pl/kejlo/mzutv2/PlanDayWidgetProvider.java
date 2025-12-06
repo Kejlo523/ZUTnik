@@ -88,7 +88,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     }
 
     private void updateOneWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day);
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_glass);
 
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
