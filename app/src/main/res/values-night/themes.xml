@@ -6,8 +6,8 @@
         <item name="colorOnPrimary">@color/mz_text</item>
 
         <!-- status bar w darku -->
-        <item name="colorPrimaryDark">@color/mz_bg_soft</item>
-        <item name="android:statusBarColor">@color/mz_bg_soft</item>
+        <item name="colorPrimaryDark">@color/mz_bg</item>
+        <item name="android:statusBarColor">@color/mz_bg</item>
         <item name="android:navigationBarColor">@color/mz_bg</item>
 
         <!-- Ciemny status bar – jasne ikonki -->

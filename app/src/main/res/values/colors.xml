@@ -1,22 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="mz_bg">#F8F9FC</color>          <color name="mz_bg_soft">#F1F5F9</color>     <color name="mz_card">#FFFFFF</color>        <color name="mz_card_soft">#E2E8F0</color>   <color name="mz_text">#334155</color>        <color name="mz_muted">#94A3B8</color>       <color name="mz_border_soft">#E2E8F0</color>
+    <color name="mz_bg">#F4F6F9</color>
+
+    <color name="mz_bg_soft">#E2E7F0</color>
+
+    <color name="mz_card">#FFFFFF</color>
+
+    <color name="mz_card_soft">#EFF4FF</color>
+
+    <color name="mz_text">#0F172A</color>
+
+    <color name="mz_muted">#64748B</color>
+
+    <color name="mz_border_soft">#E2E8F0</color>
     <color name="mz_border_strong">#CBD5E1</color>
 
-    <color name="mz_primary">#3B82F6</color>     <color name="mz_primary_alt">#8B5CF6</color> <color name="mz_accent">#10B981</color>      <color name="mz_danger">#F43F5E</color>      <color name="mz_danger_soft">#FFE4E6</color> <color name="mz_toolbar_grad_start">#FFFFFF</color>
-    <color name="mz_toolbar_grad_end">#F8F9FC</color>
+    <color name="mz_primary">#2563EB</color>
+    <color name="mz_primary_alt">#4F46E5</color>
+    <color name="mz_accent">#059669</color>
+    <color name="mz_success">#349662</color>
+    <color name="mz_danger">#D94545</color>
+    <color name="mz_danger_soft">#FEE2E2</color>
+
+    <color name="mz_toolbar_grad_start">#FFFFFF</color>
+    <color name="mz_toolbar_grad_end">#F4F6F9</color>
+
 
     <color name="plan_time_column_text">@color/mz_muted</color>
     <color name="plan_month_weekday_text">@color/mz_muted</color>
-    <color name="plan_hour_line">#E2E8F0</color>
+
+    <color name="plan_hour_line">#1A64748B</color>
 
     <color name="plan_week_header_text">@color/mz_text</color>
-    <color name="plan_week_header_selected_bg">#DBEAFE</color> <color name="plan_week_day_bg">@color/mz_bg</color>
-    <color name="plan_week_day_selected_bg">#EFF6FF</color>     <color name="plan_now_line">#F43F5E</color>
+    <color name="plan_week_header_selected_bg">@color/mz_card_soft</color>
 
-    <color name="plan_event_text">#1E293B</color> <color name="plan_month_cell_with_events_bg">#DBEAFE</color>
-    <color name="plan_month_cell_bg">@color/mz_card</color>
+    <color name="plan_week_day_bg">@color/mz_bg</color>
+    <color name="plan_week_day_selected_bg">#DBE2EF</color>
+
+    <color name="plan_now_line">@color/mz_primary</color>
+
+    <color name="plan_event_text">#FFFFFF</color>
+
+    <color name="plan_month_cell_with_events_bg">#DBEAFE</color>
+    <color name="plan_month_cell_bg">@android:color/transparent</color>
     <color name="plan_month_day_number">@color/mz_text</color>
-    <color name="plan_month_day_hint">@color/mz_muted</color>
+    <color name="plan_month_day_hint">#94A3B8</color>
 
-    <color name="plan_event_lecture_bg">#BFDBFE</color>    <color name="plan_event_lab_bg">#A7F3D0</color>        <color name="plan_event_auditory_bg">#C4B5FD</color>   <color name="plan_event_exam_bg">#FECDD3</color>       <color name="plan_event_cancelled_bg">#E2E8F0</color>  <color name="plan_event_rector_bg">#FDE68A</color>     <color name="plan_event_remote_bg">#BAE6FD</color>     <color name="plan_event_pass_bg">#BEF264</color>       <color name="plan_event_default_bg">#E0F2FE</color>    </resources>
+
+    <color name="plan_event_lecture_bg">#2563EB</color>
+    <color name="plan_event_lab_bg">#2E8B57</color>       <color name="plan_event_auditory_bg">#7C3AED</color>  <color name="plan_event_exam_bg">#DC2626</color>      <color name="plan_event_cancelled_bg">#475569</color> <color name="plan_event_rector_bg">#D97706</color>    <color name="plan_event_remote_bg">#0891B2</color>    <color name="plan_event_pass_bg">#65A30D</color>      <color name="plan_event_default_bg">#576F76</color>
+
+</resources>
