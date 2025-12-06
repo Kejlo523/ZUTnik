@@ -143,6 +143,8 @@ public class PlanActivity extends AppCompatActivity {
 
     private PlanRepository.SearchParams currentSearchQuery = null;
 
+    private android.animation.ObjectAnimator mRefreshAnimator;
+
     private static class PlanKey {
         final String viewModeId;
         final LocalDate date;
@@ -452,6 +454,10 @@ public class PlanActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         nowLineHandler.removeCallbacks(nowLineRunnable);
+        if (mRefreshAnimator != null) {
+            mRefreshAnimator.cancel();
+            mRefreshAnimator = null;
+        }
     }
 
     @Override
@@ -614,6 +620,7 @@ public class PlanActivity extends AppCompatActivity {
     private void setupRefreshButton() {
         if (btnRefresh != null) {
             btnRefresh.setOnClickListener(v -> {
+                startRefreshAnimation();
                 if (currentSearchQuery != null) {
                     currentSearchQuery = null;
                     Toast.makeText(this, R.string.plan_toast_resetting_search, Toast.LENGTH_SHORT).show();
@@ -688,6 +695,26 @@ public class PlanActivity extends AppCompatActivity {
 
         String msg = getString(R.string.plan_toast_search_prefix, categoryLabel, query);
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    private void startRefreshAnimation() {
+        if (btnRefresh == null) return;
+        if (mRefreshAnimator == null) {
+            mRefreshAnimator = android.animation.ObjectAnimator.ofFloat(btnRefresh, "rotation", 0f, 360f);
+            mRefreshAnimator.setDuration(1000);
+            mRefreshAnimator.setRepeatCount(android.animation.ObjectAnimator.INFINITE);
+            mRefreshAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
+        }
+        if (!mRefreshAnimator.isStarted()) {
+            mRefreshAnimator.start();
+        }
+    }
+
+    private void stopRefreshAnimation() {
+        if (mRefreshAnimator != null && mRefreshAnimator.isStarted()) {
+            mRefreshAnimator.cancel();
+            btnRefresh.setRotation(0f);
+        }
     }
 
     private void setupTimeColumn() {
@@ -1025,6 +1052,7 @@ public class PlanActivity extends AppCompatActivity {
                     }
                 }
             }
+            stopRefreshAnimation();
         }
     }
 
