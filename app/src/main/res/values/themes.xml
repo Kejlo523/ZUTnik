@@ -7,8 +7,8 @@
         <item name="colorOnPrimary">@color/mz_text</item>
 
         <!-- BARDZO WAŻNE: to zabija fiolet -->
-        <item name="colorPrimaryDark">@color/mz_toolbar_grad_start</item>
-        <item name="android:statusBarColor">@color/mz_toolbar_grad_start</item>
+        <item name="colorPrimaryDark">@color/mz_bg</item>
+        <item name="android:statusBarColor">@color/mz_bg</item>
         <item name="android:navigationBarColor">@color/mz_bg</item>
 
         <!-- Jasny status bar – ciemne ikonki -->

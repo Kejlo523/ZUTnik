@@ -3,6 +3,6 @@
     android:padding="12dp"
     android:textColor="@color/mz_text"
     android:textSize="14sp"
-    android:background="@drawable/bg_toolbar"
+    android:background="@color/mz_card_soft"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" />

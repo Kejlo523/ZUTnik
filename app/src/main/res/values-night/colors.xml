@@ -12,6 +12,7 @@
     <color name="mz_primary">#2196F3</color>
     <color name="mz_primary_alt">#7C4DFF</color>
     <color name="mz_accent">#00E676</color>
+    <color name="mz_success">#4CA672</color>
     <color name="mz_danger">#FF5252</color>
     <color name="mz_danger_soft">#3E1818</color>
     <color name="mz_toolbar_grad_start">#1E1E1E</color>
@@ -19,11 +20,11 @@
 
     <color name="plan_time_column_text">@color/mz_muted</color>
     <color name="plan_month_weekday_text">@color/mz_muted</color>
-    <color name="plan_hour_line">#33444444</color>
+
+    <color name="plan_hour_line">#1A2A3650</color>
 
     <color name="plan_week_header_text">@color/mz_text</color>
-
-    <color name="plan_week_header_selected_bg">#333333</color>
+    <color name="plan_week_header_selected_bg">@color/mz_card_soft</color>
 
     <color name="plan_week_day_bg">#000000</color>
     <color name="plan_week_day_selected_bg">#181818</color>
@@ -33,7 +34,7 @@
     <color name="plan_month_cell_with_events_bg">#1A237E</color>
     <color name="plan_month_cell_bg">@color/mz_card</color>
     <color name="plan_month_day_number">@color/mz_text</color>
-    <color name="plan_month_day_hint">@color/mz_muted</color>
+    <color name="plan_month_day_hint">#6B7A99</color>
 
     <color name="plan_event_lecture_bg">#828ac2</color>
     <color name="plan_event_lab_bg">#a75bbb</color>
