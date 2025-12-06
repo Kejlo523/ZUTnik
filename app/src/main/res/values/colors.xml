@@ -43,11 +43,11 @@
     <color name="plan_event_pass_bg">#bb5b5b</color>
     <color name="plan_event_default_bg">#f5d751</color>
 
-    <!-- Dark Glass Theme -->
-    <color name="glass_bg_start">#F2121212</color>
-    <color name="glass_bg_end">#F21C1C1C</color>
-    <color name="glass_border">#26FFFFFF</color>
-    <color name="glass_text_primary">#F8FAFC</color>
-    <color name="glass_text_secondary">#94A3B8</color>
-    <color name="glass_divider">#1AFFFFFF</color>
+    <!-- Light Glass Theme -->
+    <color name="glass_bg_start">#F2FFFFFF</color>
+    <color name="glass_bg_end">#F2F8FAFC</color>
+    <color name="glass_border">#26000000</color>
+    <color name="glass_text_primary">#1E293B</color>
+    <color name="glass_text_secondary">#64748B</color>
+    <color name="glass_divider">#1A000000</color>
 </resources>
