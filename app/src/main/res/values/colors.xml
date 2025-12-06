@@ -33,17 +33,17 @@
     <color name="plan_month_day_number">@color/mz_text</color>
     <color name="plan_month_day_hint">@color/mz_muted</color>
 
-    <color name="plan_event_lecture_bg">#BFDBFE</color>
-    <color name="plan_event_lab_bg">#A7F3D0</color>
-    <color name="plan_event_auditory_bg">#C4B5FD</color>
-    <color name="plan_event_exam_bg">#FECDD3</color>
-    <color name="plan_event_cancelled_bg">#E2E8F0</color>
-    <color name="plan_event_rector_bg">#FDE68A</color>
-    <color name="plan_event_remote_bg">#BAE6FD</color>
-    <color name="plan_event_pass_bg">#BEF264</color>
-    <color name="plan_event_default_bg">#E0F2FE</color>
+    <color name="plan_event_lecture_bg">#828ac2</color>
+    <color name="plan_event_lab_bg">#a75bbb</color>
+    <color name="plan_event_auditory_bg">#6e73c2</color>
+    <color name="plan_event_exam_bg">#bb5b5b</color>
+    <color name="plan_event_cancelled_bg">#8c8c8c</color>
+    <color name="plan_event_rector_bg">#8c8c8c</color>
+    <color name="plan_event_remote_bg">#bb5b93</color>
+    <color name="plan_event_pass_bg">#bb5b5b</color>
+    <color name="plan_event_default_bg">#f5d751</color>
 
-    <!-- Dark Liquid Glass Theme -->
+    <!-- Dark Glass Theme -->
     <color name="glass_bg_start">#F2121212</color>
     <color name="glass_bg_end">#F21C1C1C</color>
     <color name="glass_border">#26FFFFFF</color>
