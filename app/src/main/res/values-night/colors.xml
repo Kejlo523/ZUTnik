@@ -45,7 +45,19 @@
     <color name="plan_event_remote_bg">#bb5b93</color>
     <color name="plan_event_pass_bg">#bb5b5b</color>
     <color name="plan_event_default_bg">#f5d751</color>
-    <!-- Dark Glass Theme -->
+
+    <color name="plan_event_project_bg">#5bbb9e</color>
+    <color name="plan_event_seminar_bg">#5bbb70</color>
+    <color name="plan_event_diploma_seminar_bg">#4ca672</color>
+    <color name="plan_event_diploma_bg">#bb935b</color>
+    <color name="plan_event_lectorate_bg">#5b8ebb</color>
+    <color name="plan_event_conservatory_bg">#bb5ba7</color>
+    <color name="plan_event_consultation_bg">#8c7b70</color>
+    <color name="plan_event_field_bg">#708c5b</color>
+    <color name="plan_event_class_bg">#6e85c2</color>
+    <color name="plan_event_exam_remote_bg">#d66b6b</color>
+    <color name="plan_event_dean_bg">#6e6e6e</color>
+
     <color name="glass_bg_start">#F2121212</color>
     <color name="glass_bg_end">#F21C1C1C</color>
     <color name="glass_border">#26FFFFFF</color>

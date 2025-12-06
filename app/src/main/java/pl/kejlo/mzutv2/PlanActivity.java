@@ -1570,9 +1570,20 @@ public class PlanActivity extends AppCompatActivity {
             case "week-event-type-lecture": return R.color.plan_event_lecture_bg;
             case "week-event-type-lab": return R.color.plan_event_lab_bg;
             case "week-event-type-auditory": return R.color.plan_event_auditory_bg;
+            case "week-event-type-project": return R.color.plan_event_project_bg;
+            case "week-event-type-seminar": return R.color.plan_event_seminar_bg;
+            case "week-event-type-diploma-seminar": return R.color.plan_event_diploma_seminar_bg;
+            case "week-event-type-diploma": return R.color.plan_event_diploma_bg;
+            case "week-event-type-lectorate": return R.color.plan_event_lectorate_bg;
+            case "week-event-type-conservatory": return R.color.plan_event_conservatory_bg;
+            case "week-event-type-consultation": return R.color.plan_event_consultation_bg;
+            case "week-event-type-field": return R.color.plan_event_field_bg;
+            case "week-event-type-class": return R.color.plan_event_class_bg;
             case "week-event-type-exam": return R.color.plan_event_exam_bg;
+            case "week-event-type-exam-remote": return R.color.plan_event_exam_remote_bg;
             case "week-event-type-cancelled": return R.color.plan_event_cancelled_bg;
             case "week-event-type-rector": return R.color.plan_event_rector_bg;
+            case "week-event-type-dean": return R.color.plan_event_dean_bg;
             case "week-event-type-remote": return R.color.plan_event_remote_bg;
             case "week-event-type-pass":
             case "week-event-type-pass-retake":
