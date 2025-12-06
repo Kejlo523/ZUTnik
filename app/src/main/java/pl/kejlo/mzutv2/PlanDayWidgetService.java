@@ -180,9 +180,20 @@ public class PlanDayWidgetService extends RemoteViewsService {
                 case "week-event-type-lecture": resId = R.color.plan_event_lecture_bg; break;
                 case "week-event-type-lab": resId = R.color.plan_event_lab_bg; break;
                 case "week-event-type-auditory": resId = R.color.plan_event_auditory_bg; break;
+                case "week-event-type-project": resId = R.color.plan_event_project_bg; break;
+                case "week-event-type-seminar": resId = R.color.plan_event_seminar_bg; break;
+                case "week-event-type-diploma-seminar": resId = R.color.plan_event_diploma_seminar_bg; break;
+                case "week-event-type-diploma": resId = R.color.plan_event_diploma_bg; break;
+                case "week-event-type-lectorate": resId = R.color.plan_event_lectorate_bg; break;
+                case "week-event-type-conservatory": resId = R.color.plan_event_conservatory_bg; break;
+                case "week-event-type-consultation": resId = R.color.plan_event_consultation_bg; break;
+                case "week-event-type-field": resId = R.color.plan_event_field_bg; break;
+                case "week-event-type-class": resId = R.color.plan_event_class_bg; break;
                 case "week-event-type-exam": resId = R.color.plan_event_exam_bg; break;
+                case "week-event-type-exam-remote": resId = R.color.plan_event_exam_remote_bg; break;
                 case "week-event-type-cancelled": resId = R.color.plan_event_cancelled_bg; break;
                 case "week-event-type-rector": resId = R.color.plan_event_rector_bg; break;
+                case "week-event-type-dean": resId = R.color.plan_event_dean_bg; break;
                 case "week-event-type-remote": resId = R.color.plan_event_remote_bg; break;
                 case "week-event-type-pass":
                 case "week-event-type-pass-retake":
