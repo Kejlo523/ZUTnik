@@ -32,30 +32,33 @@
 
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="0.4"
+                android:layout_marginEnd="16dp"
                 android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingEnd="16dp">
+                android:orientation="vertical">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp">
+                    android:layout_marginBottom="8dp">
+
                     <ImageView
                         android:id="@+id/btnInfoRefresh"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="2dp"
                         android:src="@android:drawable/ic_popup_sync"
                         app:tint="@color/mz_muted" />
                 </RelativeLayout>
 
                 <ImageView
                     android:id="@+id/imageInfoAvatar"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
                     android:background="@drawable/bg_avatar_round"
                     android:clipToOutline="true"
                     android:padding="2dp"
@@ -67,6 +70,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
+                    android:gravity="center"
                     android:text="@string/nav_header_default_username"
                     android:textColor="@color/mz_text"
                     android:textSize="18sp"
@@ -76,39 +80,40 @@
                     android:id="@+id/tvInfoUserId"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="24dp"
                     android:text="@string/info_user_id_placeholder"
                     android:textColor="@color/mz_muted"
-                    android:textSize="12sp" />
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
+                    android:textSize="13sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
                     android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginStart="4dp"
                         android:text="@string/info_study_switch_label"
                         android:textColor="@color/mz_muted"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_card_soft"
-                        android:paddingStart="4dp">
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp">
+
                         <Spinner
                             android:id="@+id/spinnerStudies"
                             android:layout_width="match_parent"
-                            android:layout_height="40dp"
+                            android:layout_height="48dp"
                             android:background="@android:color/transparent"
+                            android:popupBackground="@color/mz_bg"
                             android:spinnerMode="dropdown" />
                     </LinearLayout>
                 </LinearLayout>
@@ -118,8 +123,6 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="0.6"
-                android:clipToPadding="false"
-                android:paddingStart="8dp"
                 android:scrollbars="vertical">
 
                 <LinearLayout
@@ -131,7 +134,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
+                        android:layout_marginBottom="20dp"
                         android:background="@drawable/bg_card_soft"
                         android:orientation="vertical"
                         android:padding="20dp">
@@ -139,7 +142,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
+                            android:layout_marginBottom="16dp"
                             android:text="@string/info_current_studies_title"
                             android:textColor="@color/mz_text"
                             android:textSize="16sp"
@@ -148,77 +151,239 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:paddingVertical="4dp">
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/info_label_album"
-                                android:textColor="@color/mz_muted"
-                                android:textSize="13sp" />
-                            <TextView
-                                android:id="@+id/tvInfoAlbum"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1.3"
-                                android:text="-"
-                                android:textColor="@color/mz_text"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                            android:orientation="vertical">
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:paddingVertical="4dp">
-                            <TextView
-                                android:layout_width="0dp"
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/info_label_faculty"
-                                android:textColor="@color/mz_muted"
-                                android:textSize="13sp" />
-                            <TextView
-                                android:id="@+id/tvInfoWydzial"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1.3"
-                                android:text="-"
-                                android:textColor="@color/mz_text"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_album"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoAlbum"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:paddingVertical="4dp">
-                            <TextView
-                                android:layout_width="0dp"
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/info_label_field"
-                                android:textColor="@color/mz_muted"
-                                android:textSize="13sp" />
-                            <TextView
-                                android:id="@+id/tvInfoKierunek"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1.3"
-                                android:text="-"
-                                android:textColor="@color/mz_text"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_faculty"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoWydzial"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
 
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_field"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoKierunek"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_form"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoForma"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_level"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoPoziom"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_specialty"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoSpecjalnosc"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/containerSpecjalizacja"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_specialisation"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoSpecjalizacja"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_label_status"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp" />
+                                <TextView
+                                    android:id="@+id/tvInfoStatus"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.3"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingVertical="6dp">
+
+                                <TextView
+                                    android:text="@string/info_label_academic_year"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="4dp"/>
+                                <TextView
+                                    android:id="@+id/tvInfoRok"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="16dp"/>
+
+                                <TextView
+                                    android:text="@string/info_label_semester"
+                                    android:textColor="@color/mz_muted"
+                                    android:textSize="13sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="4dp"/>
+                                <TextView
+                                    android:id="@+id/tvInfoSemestr"
+                                    android:text="-"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                            </LinearLayout>
+                        </LinearLayout>
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
                         android:background="@drawable/bg_card_soft"
                         android:orientation="vertical"
                         android:padding="20dp">
@@ -238,6 +403,18 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical" />
                     </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/infoProgress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginBottom="24dp"
+                        android:text="@string/info_sync_in_progress"
+                        android:textColor="@color/mz_muted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
                 </LinearLayout>
             </ScrollView>
         </LinearLayout>
