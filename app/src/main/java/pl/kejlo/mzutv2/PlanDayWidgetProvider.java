@@ -65,19 +65,33 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (ACTION_REFRESH.equals(intent.getAction())) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-
             AppWidgetManager mgr = AppWidgetManager.getInstance(context);
             int[] ids = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
             if (ids == null || ids.length == 0) {
                 ids = mgr.getAppWidgetIds(new ComponentName(context, PlanDayWidgetProvider.class));
             }
 
+            
             for (int appWidgetId : ids) {
-                updateOneWidget(context, mgr, appWidgetId);
-                mgr.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
+                RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_glass);
+                views.setViewVisibility(R.id.widgetRefresh, android.view.View.GONE);
+                views.setViewVisibility(R.id.widgetLoading, android.view.View.VISIBLE);
+                mgr.updateAppWidget(appWidgetId, views);
             }
+
+        
+            final PendingResult result = goAsync();
+            final int[] finalIds = ids;
+            new Thread(() -> {
+                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+                StrictMode.setThreadPolicy(policy); 
+
+                for (int appWidgetId : finalIds) {
+                    updateOneWidget(context, mgr, appWidgetId);
+                    mgr.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
+                }
+                result.finish();
+            }).start();
         }
     }
 
@@ -89,6 +103,10 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     private void updateOneWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_glass);
+
+        
+        views.setViewVisibility(R.id.widgetRefresh, android.view.View.VISIBLE);
+        views.setViewVisibility(R.id.widgetLoading, android.view.View.GONE);
 
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
