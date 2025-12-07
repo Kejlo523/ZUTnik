@@ -139,7 +139,6 @@ public class HomeActivity extends AppCompatActivity {
             cancelEditMode();
             return true;
         } else if (item.getItemId() == R.id.action_reset_defaults) {
-        } else if (item.getItemId() == R.id.action_reset_defaults) {
             new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle(R.string.home_reset_dialog_title)
                 .setMessage(R.string.home_reset_dialog_message)
