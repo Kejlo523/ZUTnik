@@ -147,12 +147,32 @@ public class NewsRepository {
 
         try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
-                // 3. Decode stream to Bitmap
-                InputStream is = response.body().byteStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(is);
+                // 3. Read bytes to allow double-decoding (bounds checks + actual decode)
+                byte[] data = response.body().bytes();
+                if (data.length == 0) return null;
+
+                // 4. Decode bounds only
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inJustDecodeBounds = true;
+                BitmapFactory.decodeByteArray(data, 0, data.length, options);
+
+                // 5. Calculate inSampleSize (Resize to max ~480px height)
+                int reqHeight = 480;
+                int inSampleSize = 1;
+                if (options.outHeight > reqHeight) {
+                    final int halfHeight = options.outHeight / 2;
+                    while ((halfHeight / inSampleSize) >= reqHeight) {
+                        inSampleSize *= 2;
+                    }
+                }
+
+                // 6. Decode with sample size (RAM optimization)
+                options.inSampleSize = inSampleSize;
+                options.inJustDecodeBounds = false;
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
 
                 if (bitmap != null) {
-                    // 4. Save to cache
+                    // 7. Save to cache (ImageCache saves to disk as JPG now)
                     ImageMemoryCache.put(url, bitmap);
                     return bitmap;
                 }

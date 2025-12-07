@@ -1,59 +1,33 @@
 package pl.kejlo.mzutv2;
 
 import android.graphics.Bitmap;
-import android.util.LruCache;
 
+/**
+ * Legacy wrapper for ImageCache to maintain compatibility.
+ * Redirects all calls to the centralized ImageCache.
+ */
 public class ImageMemoryCache {
 
-    // Image TTL – 7 days
-    private static final long TTL_MS = 7L * 24L * 60L * 60L * 1000L;
-
-    private static class Entry {
-        Bitmap bitmap;
-        long timestamp;
-    }
-
-    // Cache size in KB
-    private static final LruCache<String, Entry> cache;
-
-    static {
-        int maxMemoryKb = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        int cacheSizeKb = maxMemoryKb / 8; // Use 1/8 of available memory
-        cache = new LruCache<String, Entry>(cacheSizeKb) {
-            @Override
-            protected int sizeOf(String key, Entry value) {
-                if (value == null || value.bitmap == null) {
-                    return 0;
-                }
-                return value.bitmap.getByteCount() / 1024;
-            }
-        };
-    }
-
+    /**
+     * @deprecated Use ImageCache.getInstance().getFromMemory() for UI thread
+     * or ImageCache.getInstance().getFromDisk() for background thread.
+     * This method tries memory, then disk, which can cause LAG on main thread.
+     */
+    @Deprecated
     public static Bitmap get(String url) {
-        if (url == null) {
+        try {
+            // Forward to memory-only check to avoid lag on main thread if legacy code calls this.
+            // If caller needs disk, they should use ImageCache.getInstance().getFromDisk() explicitly.
+            return ImageCache.getInstance().getFromMemory(url);
+        } catch (Exception e) {
             return null;
         }
-        Entry e = cache.get(url);
-        if (e == null || e.bitmap == null) {
-            return null;
-        }
-        long now = System.currentTimeMillis();
-        if (now - e.timestamp > TTL_MS) {
-            // Expired – remove from cache
-            cache.remove(url);
-            return null;
-        }
-        return e.bitmap;
     }
 
     public static void put(String url, Bitmap bitmap) {
-        if (url == null || bitmap == null) {
-            return;
+        try {
+            ImageCache.getInstance().put(url, bitmap);
+        } catch (Exception e) {
         }
-        Entry e = new Entry();
-        e.bitmap = bitmap;
-        e.timestamp = System.currentTimeMillis();
-        cache.put(url, e);
     }
 }

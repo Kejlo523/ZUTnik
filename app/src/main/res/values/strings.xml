@@ -156,6 +156,16 @@
     <string name="plan_search_dialog_title">Wyszukaj w planie</string>
     <string name="plan_search_hint_input">Wpisz szukaną frazę…</string>
     <string name="plan_search_button">Szukaj</string>
+    <string name="plan_search_saved_title">Zapisane wyszukiwania</string>
+    <string name="plan_search_save_label">Zapisz</string>
+    <string name="plan_search_save_hint_label">Nazwa (opcjonalnie)</string>
+    <string name="plan_search_save_title">Zapisz wyszukiwanie</string>
+    <string name="plan_search_save_confirm">Zapisz</string>
+    <string name="plan_search_saved_toast">Zapisano!</string>
+    <string name="plan_search_no_saved">Brak zapisanych wyszukiwań</string>
+    <string name="plan_search_saved_clear">Wyczyść listę</string>
+    <string name="plan_search_saved_cleared">Lista wyczyszczona</string>
+    <string name="plan_search_empty_query">Wpisz frazę do wyszukania</string>
 
     <string name="plan_search_cat_album">Numer albumu</string>
     <string name="plan_search_cat_teacher">Wykładowca</string>

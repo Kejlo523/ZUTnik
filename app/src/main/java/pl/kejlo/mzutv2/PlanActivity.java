@@ -32,6 +32,7 @@ import android.widget.PopupMenu;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -266,9 +267,20 @@ public class PlanActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
 
+        ScrollView scrollPlan = findViewById(R.id.scrollPlan);
+        scrollPlan.setClipToPadding(false);
+
         ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+            // Top padding for status bar, sides safe guard. Bottom is 0 to let content go behind navbar
+            v.setPadding(insets.left, insets.top, insets.right, 0);
+            return windowInsets;
+        });
+
+        ViewCompat.setOnApplyWindowInsetsListener(scrollPlan, (v, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            // Bottom padding for navigation bar so last item is reachable
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), insets.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
 
@@ -652,10 +664,21 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
+    // --- Saved Searches ---
+    private static final String KEY_SAVED_SEARCHES = "plan_saved_searches_json";
+
     private void showSearchDialog() {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(dpToPx(24), dpToPx(16), dpToPx(24), dpToPx(8));
+
+        // Header row: Spinner + Save Button + Clipboard Button
+        LinearLayout headerRow = new LinearLayout(this);
+        headerRow.setOrientation(LinearLayout.HORIZONTAL);
+        headerRow.setGravity(Gravity.CENTER_VERTICAL);
+        layout.addView(headerRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 
+                ViewGroup.LayoutParams.WRAP_CONTENT));
 
         final Spinner spinner = new Spinner(this);
         String[] displayCategories = {
@@ -675,17 +698,47 @@ public class PlanActivity extends AppCompatActivity {
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, displayCategories);
         spinner.setAdapter(adapter);
-        layout.addView(spinner);
+        
+        LinearLayout.LayoutParams spinnerLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        headerRow.addView(spinner, spinnerLp);
+
+        // Clipboard (List) Button
+        ImageButton btnClipboard = new ImageButton(this);
+        btnClipboard.setImageResource(android.R.drawable.ic_menu_save); // Using a generic save/list icon available in standard android or AppCompat
+        // Better: use a specific icon if available, but ic_menu_save or similar works for "Saved items" context somewhat
+        // Let's use a standard localized string "Saved" on a small button if icon is risky, but ImageButton is requested ("new icon").
+        // Safest standard icon: android.R.drawable.ic_menu_agenda or similar. Let's try basic "ic_menu_save" as placeholder for "Saved"
+        // Actually, user said "clipboard icon". android.R.drawable.ic_menu_paste is close? 
+        // Let's use android.R.drawable.ic_menu_my_calendar as it looks like a list/clipboard often.
+        btnClipboard.setImageResource(android.R.drawable.ic_menu_my_calendar); 
+        btnClipboard.setBackgroundColor(0); // transparent
+        btnClipboard.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
+        headerRow.addView(btnClipboard);
 
         final EditText input = new EditText(this);
         input.setHint(R.string.plan_search_hint_input);
         input.setSingleLine(true);
         layout.addView(input);
+        
+        // Save Search Button (small, below input or next to Search? Dialog buttons are standard)
+        // User asked for "Save option in this window". 
+        // Let's put a "Save this query" button/icon inside the layout.
+        
+        Button btnSaveQuery = new Button(this);
+        btnSaveQuery.setText(R.string.plan_search_save_label); 
+        btnSaveQuery.setVisibility(View.VISIBLE);
+        btnSaveQuery.setTextSize(12f);
+        
+        LinearLayout.LayoutParams saveLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, 
+                dpToPx(36));
+        saveLp.gravity = Gravity.END;
+        layout.addView(btnSaveQuery, saveLp);
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.plan_search_dialog_title)
                 .setView(layout)
-                .setPositiveButton(R.string.plan_search_button, (dialog, which) -> {
+                .setPositiveButton(R.string.plan_search_button, (d, which) -> {
                     int pos = spinner.getSelectedItemPosition();
                     String categoryKey = (pos >= 0 && pos < apiCategories.length) ? apiCategories[pos] : apiCategories[0];
                     String categoryLabel = (pos >= 0 && pos < displayCategories.length) ? displayCategories[pos] : displayCategories[0];
@@ -695,7 +748,130 @@ public class PlanActivity extends AppCompatActivity {
                     }
                 })
                 .setNegativeButton(R.string.plan_filters_cancel, null)
+                .create();
+
+        btnClipboard.setOnClickListener(v -> {
+            dialog.dismiss();
+            showSavedSearchesDialog();
+        });
+
+        btnSaveQuery.setOnClickListener(v -> {
+            String q = input.getText().toString().trim();
+            if (q.isEmpty()) {
+                Toast.makeText(this, R.string.plan_search_empty_query, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int pos = spinner.getSelectedItemPosition();
+            String catKey = (pos >= 0 && pos < apiCategories.length) ? apiCategories[pos] : apiCategories[0];
+            String catLabel = (pos >= 0 && pos < displayCategories.length) ? displayCategories[pos] : displayCategories[0];
+            
+            showSaveQueryDialog(catKey, catLabel, q);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+    
+    private void showSaveQueryDialog(String catKey, String catLabel, String query) {
+        EditText inputLabel = new EditText(this);
+        inputLabel.setHint(R.string.plan_search_save_hint_label);
+        
+        int pad = dpToPx(20);
+        LinearLayout container = new LinearLayout(this);
+        container.setPadding(pad, pad, pad, pad);
+        container.addView(inputLabel, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.plan_search_save_title)
+            .setView(container)
+            .setPositiveButton(R.string.plan_search_save_confirm, (d, w) -> {
+                 String label = inputLabel.getText().toString().trim();
+                 if (label.isEmpty()) label = query; // fallback
+                 saveSearchQuery(label, catKey, catLabel, query);
+            })
+            .setNegativeButton(R.string.plan_filters_cancel, null)
+            .show();
+    }
+
+    private void saveSearchQuery(String label, String catKey, String catLabel, String query) {
+        List<SavedSearch> list = loadSavedSearches();
+        list.add(new SavedSearch(label, catKey, catLabel, query));
+        saveSavedSearches(list);
+        Toast.makeText(this, R.string.plan_search_saved_toast, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showSavedSearchesDialog() {
+        List<SavedSearch> list = loadSavedSearches();
+        if (list.isEmpty()) {
+            Toast.makeText(this, R.string.plan_search_no_saved, Toast.LENGTH_SHORT).show();
+            showSearchDialog(); // Go back
+            return;
+        }
+
+        String[] items = new String[list.size()];
+        for(int i=0; i<list.size(); i++) {
+            items[i] = list.get(i).label + " (" + list.get(i).catLabel + ": " + list.get(i).query + ")";
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.plan_search_saved_title)
+                .setItems(items, (d, which) -> {
+                    SavedSearch s = list.get(which);
+                    performSearch(s.catKey, s.catLabel, s.query);
+                })
+                .setNegativeButton(R.string.plan_filters_cancel, null)
+                .setNeutralButton(R.string.plan_search_saved_clear, (d, w) -> {
+                     saveSavedSearches(new ArrayList<>());
+                     Toast.makeText(this, R.string.plan_search_saved_cleared, Toast.LENGTH_SHORT).show();
+                })
                 .show();
+    }
+
+    // -- Saved Search Persistence --
+    
+    private static class SavedSearch {
+        String label;
+        String catKey;
+        String catLabel;
+        String query;
+        
+        SavedSearch(String l, String k, String cl, String q) {
+            this.label = l; this.catKey = k; this.catLabel = cl; this.query = q;
+        }
+    }
+
+    private List<SavedSearch> loadSavedSearches() {
+        String json = prefs.getString(KEY_SAVED_SEARCHES, null);
+        List<SavedSearch> list = new ArrayList<>();
+        if (json == null) return list;
+        try {
+            org.json.JSONArray arr = new org.json.JSONArray(json);
+            for(int i=0; i<arr.length(); i++) {
+                 org.json.JSONObject o = arr.getJSONObject(i);
+                 list.add(new SavedSearch(
+                     o.optString("lbl"),
+                     o.optString("ck"),
+                     o.optString("cl"),
+                     o.optString("q")
+                 ));
+            }
+        } catch(Exception ignored){}
+        return list;
+    }
+    
+    private void saveSavedSearches(List<SavedSearch> list) {
+        org.json.JSONArray arr = new org.json.JSONArray();
+        for(SavedSearch s : list) {
+            try {
+                org.json.JSONObject o = new org.json.JSONObject();
+                o.put("lbl", s.label);
+                o.put("ck", s.catKey);
+                o.put("cl", s.catLabel);
+                o.put("q", s.query);
+                arr.put(o);
+            } catch(Exception ignored){}
+        }
+        prefs.edit().putString(KEY_SAVED_SEARCHES, arr.toString()).apply();
     }
 
     private void performSearch(String categoryKey, String categoryLabel, String query) {

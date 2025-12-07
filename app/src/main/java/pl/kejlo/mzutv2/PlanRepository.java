@@ -33,8 +33,8 @@ public class PlanRepository {
     // Disk cache file
     private static final String CACHE_FILE_NAME = "plan_cache_v1.json";
 
-    // Scope TTL: 1h
-    private static final long SCOPE_CACHE_TTL_MS = 60L * 60L * 1000L;
+    // Scope TTL: 7 days
+    private static final long SCOPE_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
 
     // Global context (null disables file cache)
     private static Context appContext;
@@ -1036,11 +1036,20 @@ public class PlanRepository {
             String scopeKey = buildScopeKey(viewMode, rangeStart, rangeEnd);
             Long lastScopeMs = sFullPlanCache.scopeTimestamps.get(scopeKey);
 
+            // Logic change: 
+            // 1. If album matches current user's album -> 1h TTL (3_600_000 ms)
+            // 2. If album mismatch (search) -> Force refresh (TTL = 0)
+            
+            String userAlbum = resolveAlbumNumber();
+            boolean isUserPlan = (userAlbum != null && userAlbum.equals(album));
+            
+            long ttl = isUserPlan ? 3_600_000L : 0L; // 1h vs 0 (no cache)
+
             boolean needRefresh;
             if (forceScopeRefresh) {
                 needRefresh = true;
             } else {
-                needRefresh = (lastScopeMs == null) || ((now - lastScopeMs) > SCOPE_CACHE_TTL_MS);
+                needRefresh = (lastScopeMs == null) || ((now - lastScopeMs) > ttl);
             }
 
             if (needRefresh) {

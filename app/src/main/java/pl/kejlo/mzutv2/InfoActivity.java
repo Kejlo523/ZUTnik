@@ -44,9 +44,8 @@ public class InfoActivity extends AppCompatActivity {
     private static final String KEY_INFO_DETAILS_JSON = "info_details_json";
     private static final String KEY_INFO_HISTORY_JSON = "info_history_json";
     private static final String KEY_INFO_TIMESTAMP = "info_timestamp";
-    // 7 days
-    private static final long INFO_CACHE_TTL_MS =
-            7L * 24L * 60L * 60L * 1000L;
+    // 45 days
+    private static final long INFO_CACHE_TTL_MS = 45L * 24L * 60L * 60L * 1000L;
 
     // History text appearance
     private static final float HISTORY_EMPTY_TEXT_SIZE_SP = 12f;
@@ -163,13 +162,15 @@ public class InfoActivity extends AppCompatActivity {
         }
 
         // 1) Try to load from cache and bind immediately if possible
-        loadInfoFromCacheIfAvailable();
+        MzutSession sessionObj = MzutSession.getInstance();
+        int currentIndex = sessionObj.getActiveStudyIndex();
+        loadInfoFromCacheIfAvailable(currentIndex);
 
         // 2) Setup studies spinner (may already be available from other screens)
         setupStudiesSpinner();
 
         // 3) If cache is missing or outdated, fetch from network
-        if (shouldFetchFromNetwork()) {
+        if (shouldFetchFromNetwork(currentIndex)) {
             startInfoLoad(false);
         }
 
@@ -247,7 +248,7 @@ public class InfoActivity extends AppCompatActivity {
             setupStudiesSpinner();
 
             // Save to cache after successful refresh
-            saveInfoToCache(details, history);
+            saveInfoToCache(MzutSession.getInstance().getActiveStudyIndex(), details, history);
         }
     }
 
@@ -255,11 +256,20 @@ public class InfoActivity extends AppCompatActivity {
 
     // region Cache logic
 
-    // Returns true if data should be fetched from the network
+    // region Cache logic
+
+    private String getCacheKey(String baseKey, int index) {
+        return baseKey + "_" + index;
+    }
+
+    // Returns true if data should be fetched from the network for the given index
     // (cache is empty or older than TTL).
-    private boolean shouldFetchFromNetwork() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
-        long ts = prefs.getLong(KEY_INFO_TIMESTAMP, 0L);
+    private boolean shouldFetchFromNetwork(int index) {
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE); // Use default or specific? File is separate.
+        // Actually code uses specific file: PREFS_INFO_CACHE
+        SharedPreferences cache = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
+        
+        long ts = cache.getLong(getCacheKey(KEY_INFO_TIMESTAMP, index), 0L);
         if (ts == 0L) {
             return true;
         }
@@ -269,29 +279,27 @@ public class InfoActivity extends AppCompatActivity {
     }
 
     // Loads data from cache (if available) and binds it to the views.
-    private void loadInfoFromCacheIfAvailable() {
+    // Returns true if cache was successfully loaded and displayed.
+    private boolean loadInfoFromCacheIfAvailable(int index) {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
-        String detailsJson = prefs.getString(KEY_INFO_DETAILS_JSON, null);
-        String historyJson = prefs.getString(KEY_INFO_HISTORY_JSON, null);
+        String keyDetails = getCacheKey(KEY_INFO_DETAILS_JSON, index);
+        String keyHistory = getCacheKey(KEY_INFO_HISTORY_JSON, index);
+
+        String detailsJson = prefs.getString(keyDetails, null);
+        String historyJson = prefs.getString(keyHistory, null);
 
         if (detailsJson == null && historyJson == null) {
-            return; // First start, no cache yet
+            return false;
         }
+
+        boolean somethingLoaded = false;
 
         // Details
         if (detailsJson != null) {
             try {
                 JSONObject obj = new JSONObject(detailsJson);
-                setOrHide(tvAlbum,         obj.optString("album", null));
-                setOrHide(tvWydzial,       obj.optString("wydzial", null));
-                setOrHide(tvKierunek,      obj.optString("kierunek", null));
-                setOrHide(tvForma,         obj.optString("forma", null));
-                setOrHide(tvPoziom,        obj.optString("poziom", null));
-                setOrHide(tvSpecjalnosc,   obj.optString("specjalnosc", null));
-                setOrHide(tvSpecjalizacja, obj.optString("specjalizacja", null));
-                setOrHide(tvStatus,        obj.optString("status", null));
-                setOrHide(tvRok,           obj.optString("rokAkademicki", null));
-                setOrHide(tvSemestr,       obj.optString("semestrLabel", null));
+                bindDetailsFromCache(obj);
+                somethingLoaded = true;
             } catch (JSONException e) {
                 // On error just ignore cache
             }
@@ -302,15 +310,31 @@ public class InfoActivity extends AppCompatActivity {
             try {
                 JSONArray arr = new JSONArray(historyJson);
                 bindHistoryFromCache(arr);
+                somethingLoaded = true;
             } catch (JSONException e) {
                 // Fallback: show empty history message
                 bindHistory(null);
             }
         }
+        return somethingLoaded;
+    }
+
+    private void bindDetailsFromCache(JSONObject obj) {
+        setOrHide(tvAlbum,         obj.optString("album", null));
+        setOrHide(tvWydzial,       obj.optString("wydzial", null));
+        setOrHide(tvKierunek,      obj.optString("kierunek", null));
+        setOrHide(tvForma,         obj.optString("forma", null));
+        setOrHide(tvPoziom,        obj.optString("poziom", null));
+        setOrHide(tvSpecjalnosc,   obj.optString("specjalnosc", null));
+        setOrHide(tvSpecjalizacja, obj.optString("specjalizacja", null));
+        setOrHide(tvStatus,        obj.optString("status", null));
+        setOrHide(tvRok,           obj.optString("rokAkademicki", null));
+        setOrHide(tvSemestr,       obj.optString("semestrLabel", null));
     }
 
     // Saves the data fetched from the API into cache.
-    private void saveInfoToCache(StudiesInfoRepository.StudyDetails d,
+    private void saveInfoToCache(int index,
+                                 StudiesInfoRepository.StudyDetails d,
                                  List<StudiesInfoRepository.StudyHistoryItem> history) {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
         JSONObject detailsObj = new JSONObject();
@@ -343,9 +367,9 @@ public class InfoActivity extends AppCompatActivity {
             }
 
             prefs.edit()
-                    .putString(KEY_INFO_DETAILS_JSON, detailsObj.toString())
-                    .putString(KEY_INFO_HISTORY_JSON, historyArr.toString())
-                    .putLong(KEY_INFO_TIMESTAMP, System.currentTimeMillis())
+                    .putString(getCacheKey(KEY_INFO_DETAILS_JSON, index), detailsObj.toString())
+                    .putString(getCacheKey(KEY_INFO_HISTORY_JSON, index), historyArr.toString())
+                    .putLong(getCacheKey(KEY_INFO_TIMESTAMP, index), System.currentTimeMillis())
                     .apply();
 
         } catch (JSONException e) {
@@ -419,8 +443,15 @@ public class InfoActivity extends AppCompatActivity {
                         return;
                     }
                     s.setActiveStudyIndex(position);
-                    // Changing the active study triggers a refresh (and cache update)
-                    startInfoLoad(true);
+                    
+                    // Smart switching: 
+                    // 1. Try to load cached data for this index
+                    boolean loaded = loadInfoFromCacheIfAvailable(position);
+                    
+                    // 2. If no valid cache or expired, fetch from network
+                    if (!loaded || shouldFetchFromNetwork(position)) {
+                        startInfoLoad(false);
+                    }
                 }
 
                 @Override
@@ -505,35 +536,58 @@ public class InfoActivity extends AppCompatActivity {
     // region Avatar loading
 
     private static class LoadImageTask extends android.os.AsyncTask<String, Void, android.graphics.Bitmap> {
-        private final android.widget.ImageView target;
+        private final java.lang.ref.WeakReference<android.widget.ImageView> targetRef;
 
         LoadImageTask(android.widget.ImageView target) {
-            this.target = target;
+            this.targetRef = new java.lang.ref.WeakReference<>(target);
         }
 
         @Override
         protected android.graphics.Bitmap doInBackground(String... urls) {
             String url = urls[0];
+            if (url == null || url.isEmpty()) return null;
+
+            // 1. Try cache (Disk check is safe here as this is background thread)
             try {
-                java.net.URL u = new java.net.URL(url);
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) u.openConnection();
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setDoInput(true);
-                conn.connect();
-                java.io.InputStream is = conn.getInputStream();
-                return android.graphics.BitmapFactory.decodeStream(is);
+                android.graphics.Bitmap cached = ImageCache.getInstance().getFromDisk(url);
+                if (cached != null) return cached;
+            } catch (Exception ignored) {}
+
+            // 2. Fetch via MzutNetwork (handles SSL/certs)
+            try {
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(url)
+                        .header("User-Agent", "mZUTv2-Android-Info/1.0")
+                        .build();
+
+                try (okhttp3.Response response = MzutNetwork.getClient().newCall(request).execute()) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        java.io.InputStream is = response.body().byteStream();
+                        android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeStream(is);
+
+                        // 3. Save to cache
+                        if (bmp != null) {
+                            try {
+                                ImageCache.getInstance().put(url, bmp);
+                            } catch (Exception ignored) {}
+                        }
+                        return bmp;
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
             }
+            return null;
         }
 
         @Override
         protected void onPostExecute(android.graphics.Bitmap bmp) {
-            if (bmp != null && target != null) {
+            android.widget.ImageView target = targetRef.get();
+            if (target == null) return;
+
+            if (bmp != null) {
                 target.setImageBitmap(bmp);
-            } else if (target != null) {
+            } else {
                 target.setVisibility(View.GONE);
             }
         }
