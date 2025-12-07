@@ -9,6 +9,7 @@
     app:statusBarBackground="@color/mz_bg">
 
     <LinearLayout
+        android:id="@+id/drawerContentRoot"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -60,7 +61,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/news_header_title"
                     android:textColor="@color/mz_text"
-                    android:textSize="24sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
                     android:gravity="center" />
 

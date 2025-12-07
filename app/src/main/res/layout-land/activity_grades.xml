@@ -9,6 +9,7 @@
     app:statusBarBackground="@color/mz_bg">
 
     <LinearLayout
+        android:id="@+id/drawerContentRoot"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -86,7 +87,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/grades_average_placeholder"
                                 android:textColor="@color/mz_text"
-                                android:textSize="24sp"
+                                android:textSize="32sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -123,7 +124,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="0"
                                 android:textColor="@color/mz_text"
-                                android:textSize="24sp"
+                                android:textSize="32sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
@@ -141,7 +142,7 @@
                         android:id="@+id/spinnerStudies"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:background="@android:color/transparent"
+                        android:background="@drawable/bg_spinner_dark"
                         android:spinnerMode="dropdown" />
                 </LinearLayout>
 
@@ -156,7 +157,7 @@
                         android:id="@+id/spinnerSemesters"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:background="@android:color/transparent"
+                        android:background="@drawable/bg_spinner_dark"
                         android:spinnerMode="dropdown" />
                 </LinearLayout>
 
