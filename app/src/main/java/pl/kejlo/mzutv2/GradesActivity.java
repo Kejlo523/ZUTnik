@@ -155,12 +155,7 @@ public class GradesActivity extends AppCompatActivity {
         runInitialLoad();
     }
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        // Only observe the gesture, DO NOT block the event
-        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
-        return super.dispatchTouchEvent(ev);
-    }
+
 
     // -----------------------
     //   INITIAL LOAD

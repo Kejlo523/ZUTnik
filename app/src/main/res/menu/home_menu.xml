@@ -4,24 +4,24 @@
     <item
         android:id="@+id/action_edit_home"
         android:icon="@drawable/ic_edit_small"
-        android:title="Edytuj kafelki"
+        android:title="@string/menu_home_edit"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_cancel_edit"
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
-        android:title="Anuluj"
+        android:title="@string/menu_home_cancel"
         android:visible="false"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_add_tile"
         android:icon="@android:drawable/ic_menu_add"
-        android:title="Dodaj kafelek"
+        android:title="@string/menu_home_add"
         android:visible="false"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_reset_defaults"
         android:icon="@android:drawable/ic_menu_revert"
-        android:title="Przywróć domyślne"
+        android:title="@string/menu_home_reset"
         android:visible="false"
         app:showAsAction="never" />
 </menu>

@@ -314,4 +314,48 @@
     <string name="logout_confirm_positive">Вийти</string>
     <string name="logout_confirm_negative">Скасувати</string>
 
+    <!-- Tile Customization & Edit Mode -->
+    <string name="dialog_add_edit_tile_title_new">Нова плитка</string>
+    <string name="dialog_add_edit_tile_title_edit">Редагувати плитку</string>
+    <string name="dialog_add_edit_tile_label_title">Заголовок</string>
+    <string name="dialog_add_edit_tile_hint_title">Напр. Розклад</string>
+    <string name="dialog_add_edit_tile_label_desc">Опис</string>
+    <string name="dialog_add_edit_tile_hint_desc">Короткий опис</string>
+    <string name="dialog_add_edit_tile_label_action">Тип дії</string>
+    <string name="dialog_add_edit_tile_label_url_section">URL-адреса (https://...)</string>
+    <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
+    <string name="dialog_add_edit_tile_label_saved_search">Виберіть збережений пошук</string>
+    <string name="dialog_add_edit_tile_label_color">Колір плитки</string>
+    <string name="dialog_add_edit_tile_btn_save">Зберегти</string>
+    <string name="dialog_add_edit_tile_btn_cancel">Скасувати</string>
+    <string name="dialog_add_edit_tile_toast_no_saved_searches">Немає збережених пошуків!</string>
+    <string name="dialog_add_edit_tile_spinner_empty">(Немає збережених пошуків)</string>
+
+    <string name="tile_action_plan">Розклад занять</string>
+    <string name="tile_action_grades">Оцінки</string>
+    <string name="tile_action_info">Інформація</string>
+    <string name="tile_action_news">Новини</string>
+    <string name="tile_action_news_latest">Остання новина (Авто)</string>
+    <string name="tile_action_plan_search">Збережений пошук розкладу</string>
+    <string name="tile_action_useful">Корисні посилання</string>
+    <string name="tile_action_about">Про застосунок</string>
+    <string name="tile_action_url">Власне посилання URL</string>
+
+    <string name="menu_home_edit">Редагувати плитки</string>
+    <string name="menu_home_save">Зберегти</string>
+    <string name="menu_home_add">Додати плитку</string>
+    <string name="menu_home_cancel">Скасувати</string>
+    <string name="menu_home_reset">Відновити стандартні</string>
+
+    <string name="home_edit_mode_toast">Режим редагування: Натисніть для редагування, утримуйте для зміни розміру</string>
+    <string name="home_save_toast">Зміни збережено</string>
+    <string name="home_cancel_toast">Зміни скасовано</string>
+    <string name="home_reset_toast">Відновлено стандартний макет</string>
+    <string name="home_reset_dialog_title">Відновити стандартні?</string>
+    <string name="home_reset_dialog_message">Ви впевнені, що хочете відновити стандартний макет плиток? Ваші зміни буде втрачено.</string>
+    <string name="home_reset_dialog_yes">Так</string>
+    <string name="home_reset_dialog_no">Ні</string>
+    <string name="home_open_url_error">Неправильна URL-адреса</string>
+    <string name="home_open_error">Помилка відкриття: %1$s</string>
+
 </resources>
