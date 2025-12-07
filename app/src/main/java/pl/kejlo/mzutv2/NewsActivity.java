@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -60,12 +61,15 @@ public class NewsActivity extends AppCompatActivity {
 
     private NewsAdapter adapter;
     private LoadNewsTask currentTask;
+    private boolean openLatestOnLoad = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_news);
+
+        openLatestOnLoad = getIntent().getBooleanExtra("EXTRA_OPEN_LATEST", false);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -100,6 +104,7 @@ public class NewsActivity extends AppCompatActivity {
 
         // 1) Try to show cached data
         loadNewsFromCacheIfAvailable();
+        checkAutoOpen();
 
         // 2) If cache is missing or outdated, fetch from network
         if (shouldFetchFromNetwork()) {
@@ -116,6 +121,20 @@ public class NewsActivity extends AppCompatActivity {
                 ).show();
                 startLoadNews(true);
             });
+        }
+    }
+
+    private void checkAutoOpen() {
+        if (openLatestOnLoad && !items.isEmpty()) {
+            openLatestOnLoad = false; // Consume
+            NewsItem item = items.get(0);
+            Intent i = new Intent(this, NewsDetailActivity.class);
+            i.putExtra("title", item.title);
+            i.putExtra("date", item.date);
+            i.putExtra("link", item.link);
+            i.putExtra("contentHtml", item.contentHtml);
+            i.putExtra("descriptionText", item.descriptionText);
+            startActivity(i);
         }
     }
 
@@ -206,6 +225,7 @@ public class NewsActivity extends AppCompatActivity {
 
             // Save to cache after successful fetch
             saveNewsToCache(loaded);
+            checkAutoOpen();
         }
     }
 

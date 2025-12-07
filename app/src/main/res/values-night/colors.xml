@@ -4,6 +4,7 @@
     <color name="mz_bg_soft">#121212</color>
     <color name="mz_card">#1E1E1E</color>
     <color name="mz_card_soft">#2C2C2C</color>
+    <color name="mz_bg_surface">#1E1E1E</color>
     <color name="mz_text">#FFFFFF</color>
     <color name="mz_muted">#A0A0A0</color>
     <color name="mz_border_soft">#333333</color>

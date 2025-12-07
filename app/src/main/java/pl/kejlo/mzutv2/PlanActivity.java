@@ -367,6 +367,20 @@ public class PlanActivity extends AppCompatActivity {
                 }
             }
         }
+        
+        // Handle Search Intent (New Action)
+        if (getIntent().hasExtra("EXTRA_SEARCH_QUERY")) {
+            String q = getIntent().getStringExtra("EXTRA_SEARCH_QUERY");
+            String c = getIntent().getStringExtra("EXTRA_SEARCH_CATEGORY");
+            if (q != null && !q.isEmpty()) {
+                 currentSearchQuery = new PlanRepository.SearchParams();
+                 currentSearchQuery.query = q;
+                 currentSearchQuery.category = c;
+                 // Toast to inform user
+                 // Use String instead of R.string if dynamic, but a generic toast is ok
+                 Toast.makeText(this, "Wyszukiwanie: " + q, Toast.LENGTH_SHORT).show();
+            }
+        }
 
         loadPlanForCurrentMode();
         runIntroAnimations();
@@ -794,14 +808,16 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     private void saveSearchQuery(String label, String catKey, String catLabel, String query) {
-        List<SavedSearch> list = loadSavedSearches();
-        list.add(new SavedSearch(label, catKey, catLabel, query));
-        saveSavedSearches(list);
+        List<PlanRepository.SavedSearch> list = PlanRepository.loadSavedSearches(this);
+        list.add(new PlanRepository.SavedSearch(label, catKey, catLabel, query));
+        PlanRepository.saveSavedSearches(this, list);
         Toast.makeText(this, R.string.plan_search_saved_toast, Toast.LENGTH_SHORT).show();
     }
 
+    // -- Saved Search Persistence --
+
     private void showSavedSearchesDialog() {
-        List<SavedSearch> list = loadSavedSearches();
+        List<PlanRepository.SavedSearch> list = PlanRepository.loadSavedSearches(this);
         if (list.isEmpty()) {
             Toast.makeText(this, R.string.plan_search_no_saved, Toast.LENGTH_SHORT).show();
             showSearchDialog(); // Go back
@@ -816,63 +832,18 @@ public class PlanActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.plan_search_saved_title)
                 .setItems(items, (d, which) -> {
-                    SavedSearch s = list.get(which);
+                    PlanRepository.SavedSearch s = list.get(which);
                     performSearch(s.catKey, s.catLabel, s.query);
                 })
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .setNeutralButton(R.string.plan_search_saved_clear, (d, w) -> {
-                     saveSavedSearches(new ArrayList<>());
+                     PlanRepository.saveSavedSearches(this, new ArrayList<>());
                      Toast.makeText(this, R.string.plan_search_saved_cleared, Toast.LENGTH_SHORT).show();
                 })
                 .show();
     }
 
-    // -- Saved Search Persistence --
-    
-    private static class SavedSearch {
-        String label;
-        String catKey;
-        String catLabel;
-        String query;
-        
-        SavedSearch(String l, String k, String cl, String q) {
-            this.label = l; this.catKey = k; this.catLabel = cl; this.query = q;
-        }
-    }
 
-    private List<SavedSearch> loadSavedSearches() {
-        String json = prefs.getString(KEY_SAVED_SEARCHES, null);
-        List<SavedSearch> list = new ArrayList<>();
-        if (json == null) return list;
-        try {
-            org.json.JSONArray arr = new org.json.JSONArray(json);
-            for(int i=0; i<arr.length(); i++) {
-                 org.json.JSONObject o = arr.getJSONObject(i);
-                 list.add(new SavedSearch(
-                     o.optString("lbl"),
-                     o.optString("ck"),
-                     o.optString("cl"),
-                     o.optString("q")
-                 ));
-            }
-        } catch(Exception ignored){}
-        return list;
-    }
-    
-    private void saveSavedSearches(List<SavedSearch> list) {
-        org.json.JSONArray arr = new org.json.JSONArray();
-        for(SavedSearch s : list) {
-            try {
-                org.json.JSONObject o = new org.json.JSONObject();
-                o.put("lbl", s.label);
-                o.put("ck", s.catKey);
-                o.put("cl", s.catLabel);
-                o.put("q", s.query);
-                arr.put(o);
-            } catch(Exception ignored){}
-        }
-        prefs.edit().putString(KEY_SAVED_SEARCHES, arr.toString()).apply();
-    }
 
     private void performSearch(String categoryKey, String categoryLabel, String query) {
         currentSearchQuery = new PlanRepository.SearchParams();
