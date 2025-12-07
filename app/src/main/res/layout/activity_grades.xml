@@ -9,6 +9,7 @@
     app:statusBarBackground="@color/mz_bg">
 
     <LinearLayout
+        android:id="@+id/drawerContentRoot"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">

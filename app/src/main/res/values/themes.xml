@@ -9,10 +9,13 @@
         <!-- BARDZO WAŻNE: to zabija fiolet -->
         <item name="colorPrimaryDark">@color/mz_bg</item>
         <item name="android:statusBarColor">@color/mz_bg</item>
-        <item name="android:navigationBarColor">@color/mz_bg</item>
-
+        
         <!-- Jasny status bar – ciemne ikonki -->
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Nawigacja na dole -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">true</item>
 
         <!-- Bez actionbara -->
         <item name="windowActionBar">false</item>

@@ -8,10 +8,13 @@
         <!-- status bar w darku -->
         <item name="colorPrimaryDark">@color/mz_bg</item>
         <item name="android:statusBarColor">@color/mz_bg</item>
-        <item name="android:navigationBarColor">@color/mz_bg</item>
-
+        
         <!-- Ciemny status bar – jasne ikonki -->
         <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Nawigacja na dole -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">false</item>
 
         <item name="windowActionBar">false</item>
         <item name="android:windowActionBar">false</item>
