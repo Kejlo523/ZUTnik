@@ -1,0 +1,128 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:foreground="?attr/selectableItemBackground">
+
+    <!-- Main Content Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="10dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="@color/mz_bg_surface"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+        <LinearLayout
+            android:id="@+id/contentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="12dp">
+
+            <ImageView
+                android:id="@+id/iconView"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_launcher_foreground"
+                android:visibility="gone"
+                app:tint="@color/mz_primary" />
+
+            <TextView
+                android:id="@+id/textTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Title"
+                android:textColor="@color/mz_text"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/textDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Description"
+                android:textColor="@color/mz_muted"
+                android:textSize="12sp"
+                android:maxLines="3"
+                android:ellipsize="end" />
+        </LinearLayout>
+        
+        <!-- Edit Border Overlay (inside card) -->
+        <View
+            android:id="@+id/editBorder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_tile_edit_border"
+            android:visibility="gone" />
+            
+    </androidx.cardview.widget.CardView>
+
+    <!-- Floating Delete Button (Top Right) -->
+    <ImageView
+        android:id="@+id/btnDelete"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="0dp"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:background="@drawable/bg_circle_soft"
+        android:backgroundTint="#FF5252"
+        android:elevation="4dp"
+        android:padding="6dp"
+        android:visibility="gone"
+        app:tint="#FFFFFF"
+        xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
+    <!-- Drag Handle (Top Left) -->
+    <ImageView
+        android:id="@+id/btnDrag"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="0dp"
+        android:src="@drawable/ic_drag_handle"
+        android:background="@drawable/bg_circle_soft"
+        android:backgroundTint="@color/mz_primary"
+        android:elevation="4dp"
+        android:padding="6dp"
+        android:visibility="gone"
+        app:tint="#FFFFFF"
+        xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
+    <!-- Resize Handle Right (Bottom Right) -->
+    <ImageView
+        android:id="@+id/btnResizeRight"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="bottom|end"
+        android:src="@drawable/ic_resize_handle"
+        android:padding="8dp"
+        android:visibility="gone"
+        app:tint="#80FFFFFF"
+        android:background="#40000000"
+        android:backgroundTint="@null"
+        xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
+    <!-- Resize Handle Left (Bottom Left) -->
+    <ImageView
+        android:id="@+id/btnResizeLeft"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="bottom|start"
+        android:src="@drawable/ic_resize_handle"
+        android:rotation="90"
+        android:padding="8dp"
+        android:visibility="gone"
+        app:tint="#80FFFFFF"
+        android:background="#40000000"
+        android:backgroundTint="@null"
+        xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
+</FrameLayout>

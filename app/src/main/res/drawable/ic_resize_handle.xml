@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+  <path
+      android:fillColor="@android:color/white"
+      android:pathData="M22,22H20V20H22V22ZM22,18H20V16H22V18ZM18,22H16V20H18V22ZM6,22H2V18L18,2V6H22V22H6ZM8,22V18h10V8l-6,6h4v4H8Z"/>
+  <!-- Simple triangle shape for resize -->
+  <path
+      android:fillColor="@android:color/white"
+      android:pathData="M22,22 L12,22 L22,12 Z" />
+</vector>

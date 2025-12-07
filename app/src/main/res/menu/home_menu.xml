@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_edit_home"
+        android:icon="@drawable/ic_edit_small"
+        android:title="Edytuj kafelki"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_cancel_edit"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:title="Anuluj"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_add_tile"
+        android:icon="@android:drawable/ic_menu_add"
+        android:title="Dodaj kafelek"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_reset_defaults"
+        android:icon="@android:drawable/ic_menu_revert"
+        android:title="Przywróć domyślne"
+        android:visible="false"
+        app:showAsAction="never" />
+</menu>

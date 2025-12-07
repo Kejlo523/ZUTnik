@@ -20,6 +20,9 @@ import android.content.Context;
 
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class HomeActivity extends AppCompatActivity {
 
     @Override
@@ -36,11 +39,13 @@ public class HomeActivity extends AppCompatActivity {
     private TextView textWelcomeSub;
 
     private LinearLayout homeHero;
-    private LinearLayout homeShortcuts;
     private LinearLayout homeSection;
 
-    private LinearLayout tilePlan, tileGrades, tileInfo, tileNews;
     private TextView btnHeroPlan, btnHeroGrades;
+    
+    // New Grid
+    private TileGridLayout tileGrid;
+    private HomeRepository homeRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +75,9 @@ public class HomeActivity extends AppCompatActivity {
             v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
-
+        
+        // Setup Toolbar
+        setSupportActionBar(toolbar);
         toolbar.setTitle(R.string.home_title);
 
         NavDrawerHelper.setupNavigation(
@@ -84,25 +91,129 @@ public class HomeActivity extends AppCompatActivity {
         textWelcome = findViewById(R.id.textWelcome);
         textWelcomeSub = findViewById(R.id.textWelcomeSub);
         homeHero = findViewById(R.id.homeHero);
-        homeShortcuts = findViewById(R.id.homeShortcuts);
         homeSection = findViewById(R.id.homeSection);
 
         btnHeroPlan = findViewById(R.id.btnHeroPlan);
         btnHeroGrades = findViewById(R.id.btnHeroGrades);
 
-        tilePlan = findViewById(R.id.tilePlan);
-        tileGrades = findViewById(R.id.tileGrades);
-        tileInfo = findViewById(R.id.tileInfo);
-        tileNews = findViewById(R.id.tileNews);
-
+        tileGrid = findViewById(R.id.tileGrid);
+        
         setupWelcomeText();
         setupClicks();
+        setupGrid();
         runIntroAnimations();
+    }
+    
+    private void setupGrid() {
+        homeRepository = new HomeRepository(this);
+        List<Tile> tiles = homeRepository.loadTiles();
+        
+        tileGrid.setGap(dpToPx(8));
+        tileGrid.setTiles(tiles);
+        
+        // Removed auto-save. Save is manual via menu.
+        tileGrid.setOnTileClickListener(this::onTileClicked);
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.home_menu, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(@androidx.annotation.NonNull android.view.MenuItem item) {
+        if (item.getItemId() == R.id.action_edit_home) {
+            // This is the "Edit" / "Save" button
+            // If we are currently in edit mode, this acts as SAVE.
+            if (tileGrid.isEditMode()) {
+                saveAndExitEditMode();
+            } else {
+                enterEditMode();
+            }
+            return true;
+        } else if (item.getItemId() == R.id.action_add_tile) {
+            showAddEditDialog(null);
+            return true;
+        } else if (item.getItemId() == R.id.action_cancel_edit) {
+            cancelEditMode();
+            return true;
+        } else if (item.getItemId() == R.id.action_reset_defaults) {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Przywrócić domyślne?")
+                .setMessage("Czy na pewno chcesz przywrócić domyślny układ kafelków? Twoje zmiany zostaną utracone.")
+                .setPositiveButton("Tak", (d, w) -> {
+                    tileGrid.setTiles(homeRepository.restoreDefaults());
+                    tileGrid.setEditMode(false);
+                    invalidateOptionsMenu();
+                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+                    Toast.makeText(this, "Przywrócono domyślny układ", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Nie", null)
+                .show();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    
+    private void enterEditMode() {
+        tileGrid.setEditMode(true);
+        invalidateOptionsMenu();
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        Toast.makeText(this, "Tryb edycji: Kliknij aby edytować, przytrzymaj ikonę aby zmienić rozmiar", Toast.LENGTH_LONG).show();
+    }
+    
+    private void saveAndExitEditMode() {
+        // Save changes
+        homeRepository.saveTiles(tileGrid.getTiles());
+        tileGrid.setEditMode(false);
+        invalidateOptionsMenu();
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        Toast.makeText(this, "Zapisano zmiany", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void cancelEditMode() {
+        // Revert changes by reloading
+        tileGrid.setTiles(homeRepository.loadTiles());
+        tileGrid.setEditMode(false);
+        invalidateOptionsMenu();
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        Toast.makeText(this, "Anulowano zmiany", Toast.LENGTH_SHORT).show();
+    }
+    
+    @Override
+    public boolean onPrepareOptionsMenu(android.view.Menu menu) {
+        boolean isEdit = tileGrid.isEditMode();
+        
+        android.view.MenuItem editItem = menu.findItem(R.id.action_edit_home);
+        if (editItem != null) {
+            editItem.setIcon(isEdit ? android.R.drawable.ic_menu_save : R.drawable.ic_edit_small);
+            editItem.setTitle(isEdit ? "Zapisz" : "Edytuj");
+        }
+        
+        android.view.MenuItem addItem = menu.findItem(R.id.action_add_tile);
+        if (addItem != null) {
+            addItem.setVisible(isEdit);
+        }
+        
+        android.view.MenuItem cancelItem = menu.findItem(R.id.action_cancel_edit);
+        if (cancelItem != null) {
+            cancelItem.setVisible(isEdit);
+        }
+        
+        android.view.MenuItem resetItem = menu.findItem(R.id.action_reset_defaults);
+        if (resetItem != null) {
+            resetItem.setVisible(isEdit);
+        }
+        
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
+        if (!tileGrid.isEditMode()) {
+            NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
+        }
         return super.dispatchTouchEvent(ev);
     }
 
@@ -123,93 +234,26 @@ public class HomeActivity extends AppCompatActivity {
     private void setupClicks() {
         View.OnClickListener openPlan = v ->
                 startActivity(new Intent(HomeActivity.this, PlanActivity.class));
-
         View.OnClickListener openGrades = v -> {
             try {
                 startActivity(new Intent(HomeActivity.this, GradesActivity.class));
             } catch (Exception e) {
-                Toast.makeText(
-                        HomeActivity.this,
-                        R.string.home_grades_not_available,
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
-        };
-
-        View.OnClickListener openInfo = v ->
-                startActivity(new Intent(HomeActivity.this, InfoActivity.class));
-
-        View.OnClickListener openNews = v -> {
-            try {
-                startActivity(new Intent(HomeActivity.this, NewsActivity.class));
-            } catch (Exception e) {
-                Toast.makeText(
-                        HomeActivity.this,
-                        R.string.home_news_not_available,
-                        Toast.LENGTH_SHORT
-                ).show();
+                Toast.makeText(this, R.string.home_grades_not_available, Toast.LENGTH_SHORT).show();
             }
         };
 
         btnHeroPlan.setOnClickListener(openPlan);
         btnHeroGrades.setOnClickListener(openGrades);
-
-        tilePlan.setOnClickListener(openPlan);
-        tileGrades.setOnClickListener(openGrades);
-        tileInfo.setOnClickListener(openInfo);
-        tileNews.setOnClickListener(openNews);
-
-        tilePlan.setOnLongClickListener(v -> {
-            Toast.makeText(
-                    this,
-                    R.string.home_tip_plan,
-                    Toast.LENGTH_LONG
-            ).show();
-            return true;
-        });
-
-        tileGrades.setOnLongClickListener(v -> {
-            Toast.makeText(
-                    this,
-                    R.string.home_tip_grades,
-                    Toast.LENGTH_LONG
-            ).show();
-            return true;
-        });
-
-        tileInfo.setOnLongClickListener(v -> {
-            Toast.makeText(
-                    this,
-                    R.string.home_tip_info,
-                    Toast.LENGTH_LONG
-            ).show();
-            return true;
-        });
-
-        tileNews.setOnLongClickListener(v -> {
-            Toast.makeText(
-                    this,
-                    R.string.home_tip_news,
-                    Toast.LENGTH_LONG
-            ).show();
-            return true;
-        });
     }
 
     private void runIntroAnimations() {
         homeHero.setAlpha(0f);
-        tilePlan.setAlpha(0f);
-        tileGrades.setAlpha(0f);
-        tileInfo.setAlpha(0f);
-        tileNews.setAlpha(0f);
+        tileGrid.setAlpha(0f);
         homeSection.setAlpha(0f);
 
         animateIn(homeHero, 100);
-        animateIn(tilePlan, 200);
-        animateIn(tileGrades, 250);
-        animateIn(tileInfo, 300);
-        animateIn(tileNews, 350);
-        animateIn(homeSection, 450);
+        animateIn(tileGrid, 200);
+        animateIn(homeSection, 300);
     }
 
     private void animateIn(View v, long delayMs) {
@@ -228,5 +272,90 @@ public class HomeActivity extends AppCompatActivity {
                 .setDuration(400)
                 .setInterpolator(new DecelerateInterpolator(1.5f))
                 .start();
+    }
+    
+    private int dpToPx(int dp) {
+         return (int) (dp * getResources().getDisplayMetrics().density);
+    }
+    
+    public void onTileClicked(Tile tile) {
+        if (tileGrid.isEditMode()) {
+            showAddEditDialog(tile);
+            return;
+        }
+        
+        Intent intent = null;
+        if (Tile.ACTION_URL.equals(tile.actionType)) {
+             if (tile.actionData != null && !tile.actionData.isEmpty()) {
+                 try {
+                     intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(tile.actionData));
+                 } catch (Exception e) {
+                     Toast.makeText(this, "Nieprawidłowy URL", Toast.LENGTH_SHORT).show();
+                 }
+             }
+        } else {
+            switch (tile.actionType) {
+                case Tile.ACTION_PLAN:
+                    intent = new Intent(this, PlanActivity.class);
+                    break;
+                case Tile.ACTION_GRADES:
+                    intent = new Intent(this, GradesActivity.class);
+                    break;
+                case Tile.ACTION_INFO:
+                    intent = new Intent(this, InfoActivity.class);
+                    break;
+                case Tile.ACTION_NEWS:
+                    intent = new Intent(this, NewsActivity.class);
+                    break;
+                case Tile.ACTION_NEWS_LATEST:
+                    intent = new Intent(this, NewsActivity.class);
+                    intent.putExtra("EXTRA_OPEN_LATEST", true);
+                    break;
+                case Tile.ACTION_PLAN_SEARCH:
+                    intent = new Intent(this, PlanActivity.class);
+                    if (tile.actionData != null) {
+                        try {
+                            org.json.JSONObject o = new org.json.JSONObject(tile.actionData);
+                            intent.putExtra("EXTRA_SEARCH_CATEGORY", o.optString("ck"));
+                            intent.putExtra("EXTRA_SEARCH_QUERY", o.optString("q"));
+                        } catch (Exception ignored) {}
+                    }
+                    break;
+                case Tile.ACTION_ACTIVITY:
+                     try {
+                        if (tile.actionData != null) {
+                            Class<?> cls = Class.forName(tile.actionData);
+                            intent = new Intent(this, cls);
+                        }
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+            }
+        }
+        
+        if (intent != null) {
+            try {
+                startActivity(intent);
+            } catch (Exception e) {
+                 Toast.makeText(this, "Błąd otwierania: " + tile.title, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+    
+    private void showAddEditDialog(Tile tile) {
+        AddEditTileDialog dialog = AddEditTileDialog.newInstance(tile);
+        dialog.setListener(savedTile -> {
+            if (tile == null) {
+                // Add new
+                tileGrid.addTile(savedTile);
+            } else {
+                // Dialog modified 'tileToEdit' references if passed.
+                // We should force grid refresh.
+                tileGrid.refreshTileView(savedTile);
+                tileGrid.requestLayout(); // Still needed for size/pos potentially
+            }
+        });
+        dialog.show(getSupportFragmentManager(), "add_edit_tile");
     }
 }

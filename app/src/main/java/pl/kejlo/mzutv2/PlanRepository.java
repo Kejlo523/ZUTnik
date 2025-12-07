@@ -1,6 +1,7 @@
 package pl.kejlo.mzutv2;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -704,6 +705,60 @@ public class PlanRepository {
                 }
                 return "";
         }
+    }
+
+    // --- Saved Search Persistence ---
+
+    public static class SavedSearch {
+        public String label;
+        public String catKey;
+        public String catLabel;
+        public String query;
+
+        public SavedSearch(String l, String k, String cl, String q) {
+            this.label = l; this.catKey = k; this.catLabel = cl; this.query = q;
+        }
+    }
+
+    private static final String PREFS_PLAN = "mzut_plan";
+    private static final String KEY_SAVED_SEARCHES = "plan_saved_searches_json";
+
+    public static List<SavedSearch> loadSavedSearches(Context context) {
+        if (context == null) return new ArrayList<>();
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
+        String json = prefs.getString(KEY_SAVED_SEARCHES, null);
+        List<SavedSearch> list = new ArrayList<>();
+        if (json == null) return list;
+        try {
+            JSONArray arr = new JSONArray(json);
+            for(int i=0; i<arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                list.add(new SavedSearch(
+                        o.optString("lbl"),
+                        o.optString("ck"),
+                        o.optString("cl"),
+                        o.optString("q")
+                ));
+            }
+        } catch(Exception ignored){}
+        return list;
+    }
+
+    public static void saveSavedSearches(Context context, List<SavedSearch> list) {
+        if (context == null) return;
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
+        JSONArray arr = new JSONArray();
+        for(SavedSearch s : list) {
+            try {
+                JSONObject o = new JSONObject();
+                o.put("lbl", s.label);
+                o.put("ck", s.catKey);
+                o.put("cl", s.catLabel);
+                o.put("q", s.query);
+                arr.put(o);
+            } catch(Exception ignored){}
+        }
+        prefs.edit().putString(KEY_SAVED_SEARCHES, arr.toString()).apply();
     }
 
     private static String lower(String s) {
