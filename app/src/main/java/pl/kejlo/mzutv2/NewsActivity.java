@@ -132,8 +132,24 @@ public class NewsActivity extends AppCompatActivity {
         if (currentTask != null) {
             currentTask.cancel(true);
         }
-        // forceReload is not used internally yet – starting the task always
-        // fetches from network and overwrites the cache
+
+        if (forceReload) {
+            // Clear cache immediately
+            getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE)
+                    .edit()
+                    .remove(KEY_NEWS_LIST_JSON)
+                    .remove(KEY_NEWS_TIMESTAMP)
+                    .apply();
+
+            // Clear items from adapter to visual feedback of reload
+            items.clear();
+            adapter.notifyDataSetChanged();
+            
+            // Also suggest clearing image cache if desired, but user asked for "everything to be deleted" on new fetch
+            // We can clear memory/disk image cache too:
+            ImageCache.getInstance().clear();
+        }
+
         currentTask = new LoadNewsTask();
         currentTask.execute();
     }

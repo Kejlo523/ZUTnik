@@ -90,7 +90,39 @@ public class NewsDetailActivity extends AppCompatActivity {
             String styled = wrapInThemedTemplate(cleaned);
 
             webView.setBackgroundColor(Color.TRANSPARENT);
-            webView.setWebViewClient(new WebViewClient());
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view,
+                                                                                 android.webkit.WebResourceRequest request) {
+                    if (request == null || request.getUrl() == null) {
+                        return super.shouldInterceptRequest(view, request);
+                    }
+                    String url = request.getUrl().toString();
+                    String lower = url.toLowerCase();
+
+                    // Intercept images to enforce resizing/compression/caching
+                    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                            || lower.endsWith(".png") || lower.endsWith(".gif")
+                            || lower.endsWith(".webp")) {
+
+                        try {
+                            // 1. Ensure it's in cache (download/resize if needed)
+                            // This runs on background thread (WebView calls this on background usually)
+                            NewsRepository.downloadImage(url);
+
+                            // 2. Get stream from cache (it's saved as JPEG 50%)
+                            java.io.InputStream is = ImageCache.getInstance().getStream(url);
+                            if (is != null) {
+                                // Always serving as jpeg per our cache logic
+                                return new android.webkit.WebResourceResponse("image/jpeg", "UTF-8", is);
+                            }
+                        } catch (Exception e) {
+                            // fall back to network
+                        }
+                    }
+                    return super.shouldInterceptRequest(view, request);
+                }
+            });
 
             WebSettings ws = webView.getSettings();
             ws.setJavaScriptEnabled(false);

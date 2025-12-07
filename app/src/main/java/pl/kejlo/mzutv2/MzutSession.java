@@ -3,6 +3,11 @@ package pl.kejlo.mzutv2;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -60,6 +65,7 @@ public final class MzutSession {
             instance = new MzutSession();
         }
         instance.loadFromPreferences(context);
+        ImageCache.init(context);
     }
 
     /**
@@ -86,6 +92,7 @@ public final class MzutSession {
     private static final String KEY_USERNAME = "username";
     private static final String KEY_IMAGE_URL = "image_url";
     private static final String KEY_ACTIVE_STUDY_INDEX = "active_study_idx";
+    private static final String KEY_STUDIES_JSON = "studies_json";
 
     /**
      * Returns SharedPreferences used by the session.
@@ -135,6 +142,24 @@ public final class MzutSession {
         this.username = prefs.getString(KEY_USERNAME, null);
         this.imageUrl = prefs.getString(KEY_IMAGE_URL, null);
         this.activeStudyIndex = prefs.getInt(KEY_ACTIVE_STUDY_INDEX, 0);
+
+        String studiesJson = prefs.getString(KEY_STUDIES_JSON, null);
+        if (studiesJson != null) {
+            try {
+                JSONArray arr = new JSONArray(studiesJson);
+                List<Study> list = new ArrayList<>();
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject o = arr.getJSONObject(i);
+                    Study s = new Study();
+                    s.przynaleznoscId = o.optString("id", null);
+                    s.label = o.optString("lbl", null);
+                    list.add(s);
+                }
+                this.studies = list;
+            } catch (JSONException e) {
+                // ignore
+            }
+        }
     }
 
     /**
@@ -150,6 +175,22 @@ public final class MzutSession {
         e.putString(KEY_USERNAME, username);
         e.putString(KEY_IMAGE_URL, imageUrl);
         e.putInt(KEY_ACTIVE_STUDY_INDEX, activeStudyIndex);
+
+        if (studies != null && !studies.isEmpty()) {
+            JSONArray arr = new JSONArray();
+            for (Study s : studies) {
+                JSONObject o = new JSONObject();
+                try {
+                    o.put("id", s.przynaleznoscId);
+                    o.put("lbl", s.label);
+                    arr.put(o);
+                } catch (JSONException ignored) {}
+            }
+            e.putString(KEY_STUDIES_JSON, arr.toString());
+        } else {
+            e.remove(KEY_STUDIES_JSON);
+        }
+
         e.apply();
     }
 

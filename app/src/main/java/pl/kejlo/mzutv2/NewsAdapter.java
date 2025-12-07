@@ -50,12 +50,12 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
             h.thumb.setVisibility(View.VISIBLE);
             h.thumb.setTag(n.thumbUrl);
 
-            // First, try to load from memory cache
-            Bitmap cached = ImageMemoryCache.get(n.thumbUrl);
+            // First, try to load from memory cache (FAST, safe for UI thread)
+            Bitmap cached = ImageCache.getInstance().getFromMemory(n.thumbUrl);
             if (cached != null) {
                 h.thumb.setImageBitmap(cached);
             } else {
-                // Not in cache – clear and load once
+                // Not in memory – clear and load async (checks disk -> downloads)
                 h.thumb.setImageDrawable(null);
                 new ThumbLoader(h.thumb, n.thumbUrl)
                         .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, n.thumbUrl);
@@ -84,7 +84,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         return items.size();
     }
 
-    // Thumbnail loader with ImageMemoryCache integration
+    // Thumbnail loader with ImageCache integration
     private static class ThumbLoader extends AsyncTask<String, Void, Bitmap> {
         private final WeakReference<ImageView> imageViewRef;
         private final String url;
@@ -97,47 +97,16 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         @Override
         protected Bitmap doInBackground(String... params) {
             String src = params[0];
+            if (src == null) return null;
 
-            // Try cache again (in case another loader already fetched it)
-            Bitmap fromCache = ImageMemoryCache.get(src);
-            if (fromCache != null) {
-                return fromCache;
+            // 1. Try Disk Cache (background thread is safe for IO)
+            Bitmap fromDisk = ImageCache.getInstance().getFromDisk(src);
+            if (fromDisk != null) {
+                return fromDisk;
             }
 
-            HttpURLConnection conn = null;
-            InputStream is = null;
-            try {
-                URL u = new URL(src);
-                conn = (HttpURLConnection) u.openConnection();
-                conn.setConnectTimeout(6000);
-                conn.setReadTimeout(6000);
-                conn.setInstanceFollowRedirects(true);
-                conn.setRequestProperty("User-Agent", "mZUTv2-Android-Img/1.0");
-                int code = conn.getResponseCode();
-                if (code != 200) {
-                    return null;
-                }
-                is = conn.getInputStream();
-                Bitmap bmp = BitmapFactory.decodeStream(is);
-
-                // Store in cache on success
-                if (bmp != null) {
-                    ImageMemoryCache.put(src, bmp);
-                }
-                return bmp;
-            } catch (Exception ignore) {
-                return null;
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (Exception ignored) {
-                    }
-                }
-                if (conn != null) {
-                    conn.disconnect();
-                }
-            }
+            // 2. Download via NewsRepository (uses MzutNetwork for SSL)
+            return NewsRepository.downloadImage(src);
         }
 
         @Override

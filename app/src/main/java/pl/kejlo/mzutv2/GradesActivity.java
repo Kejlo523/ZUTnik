@@ -374,6 +374,7 @@ public class GradesActivity extends AppCompatActivity {
     private class LoadSemestersTask extends AsyncTask<Void, Void, List<Semester>> {
 
         private Exception error;
+        private boolean fromCache = false;
 
         @Override
         protected void onPreExecute() {
@@ -383,13 +384,29 @@ public class GradesActivity extends AppCompatActivity {
 
         @Override
         protected List<Semester> doInBackground(Void... voids) {
+            List<Semester> result = null;
             try {
                 GradesRepository repo = new GradesRepository();
-                return repo.loadSemesters();
+                result = repo.loadSemesters();
             } catch (Exception e) {
                 error = e;
-                return null;
             }
+
+            if (result == null) {
+                // Try to load from disk cache
+                MzutSession s = MzutSession.getInstance();
+                List<Study> all = s.getStudies();
+                int idx = s.getActiveStudyIndex();
+                if (all != null && idx >= 0 && idx < all.size()) {
+                    result = loadSemestersFromCache(all.get(idx));
+                    if (result != null && !result.isEmpty()) {
+                        // Found in cache -> clear error, we are good offline
+                        error = null;
+                        fromCache = true;
+                    }
+                }
+            }
+            return result;
         }
 
         @Override
@@ -422,6 +439,16 @@ public class GradesActivity extends AppCompatActivity {
                 updateSummaryCards();
                 showEmptyState(true);
                 return;
+            }
+            
+            // If loaded successfully from network (not cache), persist it
+            if (!fromCache) {
+                 MzutSession s = MzutSession.getInstance();
+                 List<Study> all = s.getStudies();
+                 int idx = s.getActiveStudyIndex();
+                 if (all != null && idx >= 0 && idx < all.size()) {
+                     saveSemestersToCache(all.get(idx), result);
+                 }
             }
 
             semesters.clear();
@@ -738,6 +765,87 @@ public class GradesActivity extends AppCompatActivity {
             }
 
             return result;
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    // -----------------------
+    //   CACHE: PERSIST SEMESTERS LIST
+    // -----------------------
+    private static final String PREFS_GRADES_SEMESTERS_CACHE = "grades_semesters_cache";
+
+    private void saveSemestersToCache(Study study, List<Semester> list) {
+        if (study == null || list == null || study.przynaleznoscId == null) return;
+        
+        MzutSession s = MzutSession.getInstance();
+        String userId = s.getUserId();
+        if (userId == null) userId = "unknown";
+        
+        String key = userId + "_" + study.przynaleznoscId;
+        
+        try {
+            JSONArray arr = new JSONArray();
+            for (Semester sem : list) {
+                JSONObject o = new JSONObject();
+                o.put("id", sem.listaSemestrowId);
+                o.put("nr", sem.nrSemestru);
+                o.put("pora", sem.pora);
+                o.put("rok", sem.rokAkademicki);
+                o.put("stat", sem.status);
+                arr.put(o);
+            }
+            
+            JSONObject wrapper = new JSONObject();
+            wrapper.put("ts", System.currentTimeMillis());
+            wrapper.put("data", arr);
+            
+            getSharedPreferences(PREFS_GRADES_SEMESTERS_CACHE, MODE_PRIVATE)
+                    .edit()
+                    .putString(key, wrapper.toString())
+                    .apply();
+                    
+        } catch (JSONException ignored) {}
+    }
+
+    private List<Semester> loadSemestersFromCache(Study study) {
+        if (study == null || study.przynaleznoscId == null) return null;
+
+        MzutSession s = MzutSession.getInstance();
+        String userId = s.getUserId();
+        if (userId == null) userId = "unknown";
+
+        String key = userId + "_" + study.przynaleznoscId;
+        SharedPreferences prefs = getSharedPreferences(PREFS_GRADES_SEMESTERS_CACHE, MODE_PRIVATE);
+        
+        String json = prefs.getString(key, null);
+        if (json == null) return null;
+        
+        try {
+            JSONObject wrapper = new JSONObject(json);
+            // We can treat semester list cache as "long lived" or check TTL.
+            // Since repo uses 7 days, we can match that or just use it as persistent fallback.
+            // Let's use same TTL logic.
+            long ts = wrapper.optLong("ts", 0L);
+            if ((System.currentTimeMillis() - ts) > GRADES_CACHE_TTL_MS) {
+                return null;
+            }
+            
+            JSONArray arr = wrapper.optJSONArray("data");
+            if (arr == null) return null;
+            
+            List<Semester> list = new ArrayList<>();
+            for (int i=0; i<arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                Semester sem = new Semester();
+                sem.listaSemestrowId = o.optString("id");
+                sem.nrSemestru = o.optString("nr");
+                sem.pora = o.optString("pora");
+                sem.rokAkademicki = o.optString("rok");
+                sem.status = o.optString("stat");
+                list.add(sem);
+            }
+            return list;
         } catch (JSONException e) {
             return null;
         }
