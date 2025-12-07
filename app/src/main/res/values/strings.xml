@@ -325,4 +325,48 @@
     <string name="logout_confirm_positive">Wyloguj</string>
     <string name="logout_confirm_negative">Anuluj</string>
 
+    <!-- Tile Customization & Edit Mode -->
+    <string name="dialog_add_edit_tile_title_new">Nowy kafelek</string>
+    <string name="dialog_add_edit_tile_title_edit">Edytuj kafelek</string>
+    <string name="dialog_add_edit_tile_label_title">Tytuł</string>
+    <string name="dialog_add_edit_tile_hint_title">Np. Plan zajęć</string>
+    <string name="dialog_add_edit_tile_label_desc">Opis</string>
+    <string name="dialog_add_edit_tile_hint_desc">Krótki opis</string>
+    <string name="dialog_add_edit_tile_label_action">Typ Akcji</string>
+    <string name="dialog_add_edit_tile_label_url_section">Adres URL (https://...)</string>
+    <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
+    <string name="dialog_add_edit_tile_label_saved_search">Wybierz Zapisane Wyszukiwanie</string>
+    <string name="dialog_add_edit_tile_label_color">Kolor Kafelka</string>
+    <string name="dialog_add_edit_tile_btn_save">Zapisz</string>
+    <string name="dialog_add_edit_tile_btn_cancel">Anuluj</string>
+    <string name="dialog_add_edit_tile_toast_no_saved_searches">Brak zapisanych wyszukiwań!</string>
+    <string name="dialog_add_edit_tile_spinner_empty">(Brak zapisanych wyszukiwań)</string>
+
+    <string name="tile_action_plan">Plan zajęć</string>
+    <string name="tile_action_grades">Oceny</string>
+    <string name="tile_action_info">Informacje</string>
+    <string name="tile_action_news">Aktualności</string>
+    <string name="tile_action_news_latest">Najnowsza Wiadomość (Auto)</string>
+    <string name="tile_action_plan_search">Zapisane Wyszukiwanie Planu</string>
+    <string name="tile_action_useful">Przydatne linki</string>
+    <string name="tile_action_about">O aplikacji</string>
+    <string name="tile_action_url">Własny Link URL</string>
+
+    <string name="menu_home_edit">Edytuj kafelki</string>
+    <string name="menu_home_save">Zapisz</string>
+    <string name="menu_home_add">Dodaj kafelek</string>
+    <string name="menu_home_cancel">Anuluj</string>
+    <string name="menu_home_reset">Przywróć domyślne</string>
+
+    <string name="home_edit_mode_toast">Tryb edycji: Kliknij aby edytować, przytrzymaj by zmienić rozmiar</string>
+    <string name="home_save_toast">Zapisano zmiany</string>
+    <string name="home_cancel_toast">Anulowano zmiany</string>
+    <string name="home_reset_toast">Przywrócono domyślny układ</string>
+    <string name="home_reset_dialog_title">Przywrócić domyślne?</string>
+    <string name="home_reset_dialog_message">Czy na pewno chcesz przywrócić domyślny układ kafelków? Twoje zmiany zostaną utracone.</string>
+    <string name="home_reset_dialog_yes">Tak</string>
+    <string name="home_reset_dialog_no">Nie</string>
+    <string name="home_open_url_error">Nieprawidłowy URL</string>
+    <string name="home_open_error">Błąd otwierania: %1$s</string>
+
 </resources>

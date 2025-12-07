@@ -139,17 +139,18 @@ public class HomeActivity extends AppCompatActivity {
             cancelEditMode();
             return true;
         } else if (item.getItemId() == R.id.action_reset_defaults) {
+        } else if (item.getItemId() == R.id.action_reset_defaults) {
             new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Przywrócić domyślne?")
-                .setMessage("Czy na pewno chcesz przywrócić domyślny układ kafelków? Twoje zmiany zostaną utracone.")
-                .setPositiveButton("Tak", (d, w) -> {
+                .setTitle(R.string.home_reset_dialog_title)
+                .setMessage(R.string.home_reset_dialog_message)
+                .setPositiveButton(R.string.home_reset_dialog_yes, (d, w) -> {
                     tileGrid.setTiles(homeRepository.restoreDefaults());
                     tileGrid.setEditMode(false);
                     invalidateOptionsMenu();
                     drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-                    Toast.makeText(this, "Przywrócono domyślny układ", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.home_reset_toast, Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("Nie", null)
+                .setNegativeButton(R.string.home_reset_dialog_no, null)
                 .show();
             return true;
         }
@@ -160,7 +161,7 @@ public class HomeActivity extends AppCompatActivity {
         tileGrid.setEditMode(true);
         invalidateOptionsMenu();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-        Toast.makeText(this, "Tryb edycji: Kliknij aby edytować, przytrzymaj ikonę aby zmienić rozmiar", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.home_edit_mode_toast, Toast.LENGTH_LONG).show();
     }
     
     private void saveAndExitEditMode() {
@@ -169,7 +170,7 @@ public class HomeActivity extends AppCompatActivity {
         tileGrid.setEditMode(false);
         invalidateOptionsMenu();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-        Toast.makeText(this, "Zapisano zmiany", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.home_save_toast, Toast.LENGTH_SHORT).show();
     }
     
     private void cancelEditMode() {
@@ -178,7 +179,7 @@ public class HomeActivity extends AppCompatActivity {
         tileGrid.setEditMode(false);
         invalidateOptionsMenu();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-        Toast.makeText(this, "Anulowano zmiany", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.home_cancel_toast, Toast.LENGTH_SHORT).show();
     }
     
     @Override
@@ -188,7 +189,7 @@ public class HomeActivity extends AppCompatActivity {
         android.view.MenuItem editItem = menu.findItem(R.id.action_edit_home);
         if (editItem != null) {
             editItem.setIcon(isEdit ? android.R.drawable.ic_menu_save : R.drawable.ic_edit_small);
-            editItem.setTitle(isEdit ? "Zapisz" : "Edytuj");
+            editItem.setTitle(isEdit ? R.string.menu_home_save : R.string.menu_home_edit);
         }
         
         android.view.MenuItem addItem = menu.findItem(R.id.action_add_tile);
@@ -209,13 +210,7 @@ public class HomeActivity extends AppCompatActivity {
         return super.onPrepareOptionsMenu(menu);
     }
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (!tileGrid.isEditMode()) {
-            NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
-        }
-        return super.dispatchTouchEvent(ev);
-    }
+
 
     private void setupWelcomeText() {
         MzutSession s = MzutSession.getInstance(this);
@@ -290,7 +285,7 @@ public class HomeActivity extends AppCompatActivity {
                  try {
                      intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(tile.actionData));
                  } catch (Exception e) {
-                     Toast.makeText(this, "Nieprawidłowy URL", Toast.LENGTH_SHORT).show();
+                     Toast.makeText(this, R.string.home_open_url_error, Toast.LENGTH_SHORT).show();
                  }
              }
         } else {
@@ -338,7 +333,7 @@ public class HomeActivity extends AppCompatActivity {
             try {
                 startActivity(intent);
             } catch (Exception e) {
-                 Toast.makeText(this, "Błąd otwierania: " + tile.title, Toast.LENGTH_SHORT).show();
+                 Toast.makeText(this, getString(R.string.home_open_error, tile.title), Toast.LENGTH_SHORT).show();
             }
         }
     }

@@ -121,15 +121,15 @@ public class AddEditTileDialog extends DialogFragment {
         List<String> actionValues = new ArrayList<>();
         
         // Define actions
-        actionLabels.add("Plan zajęć"); actionValues.add(Tile.ACTION_PLAN);
-        actionLabels.add("Oceny"); actionValues.add(Tile.ACTION_GRADES);
-        actionLabels.add("Informacje"); actionValues.add(Tile.ACTION_INFO);
-        actionLabels.add("Aktualności"); actionValues.add(Tile.ACTION_NEWS);
-        actionLabels.add("Najnowsza Wiadomość (Auto)"); actionValues.add(Tile.ACTION_NEWS_LATEST);
-        actionLabels.add("Zapisane Wyszukiwanie Planu"); actionValues.add(Tile.ACTION_PLAN_SEARCH);
-        actionLabels.add("Przydatne linki"); actionValues.add("useful"); // Mapped later
-        actionLabels.add("O aplikacji"); actionValues.add("about");
-        actionLabels.add("Własny Link URL"); actionValues.add(Tile.ACTION_URL);
+        actionLabels.add(getString(R.string.tile_action_plan)); actionValues.add(Tile.ACTION_PLAN);
+        actionLabels.add(getString(R.string.tile_action_grades)); actionValues.add(Tile.ACTION_GRADES);
+        actionLabels.add(getString(R.string.tile_action_info)); actionValues.add(Tile.ACTION_INFO);
+        actionLabels.add(getString(R.string.tile_action_news)); actionValues.add(Tile.ACTION_NEWS);
+        actionLabels.add(getString(R.string.tile_action_news_latest)); actionValues.add(Tile.ACTION_NEWS_LATEST);
+        actionLabels.add(getString(R.string.tile_action_plan_search)); actionValues.add(Tile.ACTION_PLAN_SEARCH);
+        actionLabels.add(getString(R.string.tile_action_useful)); actionValues.add("useful"); // Mapped later
+        actionLabels.add(getString(R.string.tile_action_about)); actionValues.add("about");
+        actionLabels.add(getString(R.string.tile_action_url)); actionValues.add(Tile.ACTION_URL);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actionLabels);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -139,7 +139,7 @@ public class AddEditTileDialog extends DialogFragment {
         List<PlanRepository.SavedSearch> savedSearches = PlanRepository.loadSavedSearches(requireContext());
         List<String> savedLabels = new ArrayList<>();
         if (savedSearches.isEmpty()) {
-            savedLabels.add("(Brak zapisanych wyszukiwań)");
+            savedLabels.add(getString(R.string.dialog_add_edit_tile_spinner_empty));
         } else {
             for (PlanRepository.SavedSearch s : savedSearches) {
                 savedLabels.add(s.label + " (" + s.catLabel + ": " + s.query + ")");
@@ -170,7 +170,7 @@ public class AddEditTileDialog extends DialogFragment {
 
         // Pre-fill if editing
         if (tileToEdit != null) {
-            builder.setTitle("Edytuj kafelek");
+            builder.setTitle(R.string.dialog_add_edit_tile_title_edit);
             etTitle.setText(tileToEdit.title);
             etDesc.setText(tileToEdit.description);
             
@@ -211,11 +211,11 @@ public class AddEditTileDialog extends DialogFragment {
                  } catch(Exception ignored){}
             }
         } else {
-            builder.setTitle("Nowy kafelek");
+            builder.setTitle(R.string.dialog_add_edit_tile_title_new);
         }
 
         builder.setView(view)
-                .setPositiveButton("Zapisz", (dialog, id) -> {
+                .setPositiveButton(R.string.dialog_add_edit_tile_btn_save, (dialog, id) -> {
                     String title = etTitle.getText().toString();
                     String desc = etDesc.getText().toString();
                     int pos = spinnerAction.getSelectedItemPosition();
@@ -237,7 +237,7 @@ public class AddEditTileDialog extends DialogFragment {
                             } catch (Exception ignored) {}
                         } else {
                             if (savedSearches.isEmpty()) {
-                                Toast.makeText(getContext(), "Brak zapisanych wyszukiwań!", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), R.string.dialog_add_edit_tile_toast_no_saved_searches, Toast.LENGTH_SHORT).show();
                             }
                         }
                     } else if ("useful".equals(type)) {
@@ -271,7 +271,7 @@ public class AddEditTileDialog extends DialogFragment {
                         if (listener != null) listener.onTileSaved(t);
                     }
                 })
-                .setNegativeButton("Anuluj", (dialog, id) -> dialog.dismiss());
+                .setNegativeButton(R.string.dialog_add_edit_tile_btn_cancel, (dialog, id) -> dialog.dismiss());
 
         return builder.create();
     }

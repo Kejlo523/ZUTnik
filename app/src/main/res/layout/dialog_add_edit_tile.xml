@@ -12,33 +12,33 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tytuł"
+            android:text="@string/dialog_add_edit_tile_label_title"
             android:textStyle="bold" />
 
         <EditText
             android:id="@+id/etTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Np. Plan zajęć" />
+            android:hint="@string/dialog_add_edit_tile_hint_title" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Opis"
+            android:text="@string/dialog_add_edit_tile_label_desc"
             android:textStyle="bold" />
 
         <EditText
             android:id="@+id/etDesc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Krótki opis" />
+            android:hint="@string/dialog_add_edit_tile_hint_desc" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Typ Akcji"
+            android:text="@string/dialog_add_edit_tile_label_action"
             android:textStyle="bold" />
 
         <Spinner
@@ -58,7 +58,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Adres URL (https://...)"
+                android:text="@string/dialog_add_edit_tile_label_url_section"
                 android:textStyle="bold" />
 
             <EditText
@@ -66,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textUri"
-                android:hint="https://google.com" />
+                android:hint="@string/dialog_add_edit_tile_hint_url" />
         </LinearLayout>
 
         <LinearLayout
@@ -80,7 +80,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Wybierz Zapisane Wyszukiwanie"
+                android:text="@string/dialog_add_edit_tile_label_saved_search"
                 android:textStyle="bold" />
 
             <Spinner
@@ -93,7 +93,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Kolor Kafelka"
+            android:text="@string/dialog_add_edit_tile_label_color"
             android:textColor="@color/mz_muted"
             android:textSize="12sp"
             android:layout_marginTop="16dp"/>

@@ -54,10 +54,5 @@ public class AboutActivity extends AppCompatActivity {
         );
     }
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        // Only observe the gesture, do not block the event
-        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
-        return super.dispatchTouchEvent(ev);
-    }
+
 }

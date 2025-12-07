@@ -314,4 +314,48 @@
     <string name="logout_confirm_positive">Log out</string>
     <string name="logout_confirm_negative">Cancel</string>
 
+    <!-- Tile Customization & Edit Mode -->
+    <string name="dialog_add_edit_tile_title_new">New tile</string>
+    <string name="dialog_add_edit_tile_title_edit">Edit tile</string>
+    <string name="dialog_add_edit_tile_label_title">Title</string>
+    <string name="dialog_add_edit_tile_hint_title">E.g. Timetable</string>
+    <string name="dialog_add_edit_tile_label_desc">Description</string>
+    <string name="dialog_add_edit_tile_hint_desc">Short description</string>
+    <string name="dialog_add_edit_tile_label_action">Action Type</string>
+    <string name="dialog_add_edit_tile_label_url_section">URL Address (https://...)</string>
+    <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
+    <string name="dialog_add_edit_tile_label_saved_search">Select Saved Search</string>
+    <string name="dialog_add_edit_tile_label_color">Tile Color</string>
+    <string name="dialog_add_edit_tile_btn_save">Save</string>
+    <string name="dialog_add_edit_tile_btn_cancel">Cancel</string>
+    <string name="dialog_add_edit_tile_toast_no_saved_searches">No saved searches!</string>
+    <string name="dialog_add_edit_tile_spinner_empty">(No saved searches)</string>
+
+    <string name="tile_action_plan">Timetable</string>
+    <string name="tile_action_grades">Grades</string>
+    <string name="tile_action_info">Information</string>
+    <string name="tile_action_news">News</string>
+    <string name="tile_action_news_latest">Latest News (Auto)</string>
+    <string name="tile_action_plan_search">Saved Timetable Search</string>
+    <string name="tile_action_useful">Useful links</string>
+    <string name="tile_action_about">About app</string>
+    <string name="tile_action_url">Custom URL</string>
+
+    <string name="menu_home_edit">Edit tiles</string>
+    <string name="menu_home_save">Save</string>
+    <string name="menu_home_add">Add tile</string>
+    <string name="menu_home_cancel">Cancel</string>
+    <string name="menu_home_reset">Reset defaults</string>
+
+    <string name="home_edit_mode_toast">Edit mode: Click to edit, hold to resize</string>
+    <string name="home_save_toast">Changes saved</string>
+    <string name="home_cancel_toast">Changes cancelled</string>
+    <string name="home_reset_toast">Default layout restored</string>
+    <string name="home_reset_dialog_title">Reset defaults?</string>
+    <string name="home_reset_dialog_message">Are you sure you want to restore the default tile layout? Your changes will be lost.</string>
+    <string name="home_reset_dialog_yes">Yes</string>
+    <string name="home_reset_dialog_no">No</string>
+    <string name="home_open_url_error">Invalid URL</string>
+    <string name="home_open_error">Error opening: %1$s</string>
+
 </resources>

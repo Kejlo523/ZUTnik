@@ -92,11 +92,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
         loadAndSortLinksForUser();
     }
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        NavDrawerHelper.handleDrawerSwipe(this, drawerLayout, ev);
-        return super.dispatchTouchEvent(ev);
-    }
+
 
     // Main logic
 

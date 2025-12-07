@@ -2,8 +2,7 @@ package pl.kejlo.mzutv2;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
+
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,9 +17,7 @@ import com.google.android.material.navigation.NavigationView;
 
 public class NavDrawerHelper {
 
-    // Slightly more forgiving thresholds for swipe gesture
-    private static final int SWIPE_VELOCITY_THRESHOLD = 400;
-    private static final int SWIPE_DISTANCE_THRESHOLD = 80;
+
 
     /**
      * Logical screens that can be opened from the navigation drawer.
@@ -208,71 +205,53 @@ public class NavDrawerHelper {
         navLinkAbout.setOnClickListener(listener);
         navSettings.setOnClickListener(listener);
         navLogout.setOnClickListener(listener);
+        
+        // Ensure drawer is unlocked
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        
+        // Boost the swipe edge size (EXCEPT for PlanActivity where it conflicts with ViewPager)
+        if (currentScreen != null && !currentScreen.equals(Screen.PLAN.getId())) {
+            boostDrawerLeftEdgeSize(drawerLayout);
+        }
+    }
+
+    private static void boostDrawerLeftEdgeSize(DrawerLayout drawerLayout) {
+        if (drawerLayout == null) return;
+        
+        try {
+            // Robustly find the ViewDragHelper field(s) in DrawerLayout
+            java.lang.reflect.Field[] fields = DrawerLayout.class.getDeclaredFields();
+            
+            for (java.lang.reflect.Field field : fields) {
+                // We are looking for fields of type ViewDragHelper
+                if (field.getType().getName().contains("ViewDragHelper")) {
+                    field.setAccessible(true);
+                    Object draggerObj = field.get(drawerLayout);
+                    
+                    if (draggerObj != null) {
+                        // Now find the mEdgeSize field in this ViewDragHelper instance
+                        java.lang.reflect.Field[] draggerFields = draggerObj.getClass().getDeclaredFields();
+                        
+                        for (java.lang.reflect.Field dField : draggerFields) {
+                            if (dField.getName().equals("mEdgeSize") || dField.getName().equals("mDefaultEdgeSize")) {
+                                dField.setAccessible(true);
+                                
+                                // Set edge size to full screen width
+                                android.util.DisplayMetrics metrics = drawerLayout.getResources().getDisplayMetrics();
+                                dField.setInt(draggerObj, metrics.widthPixels);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fail silently or log if needed
+        }
     }
 
     // endregion
 
-    // Called from dispatchTouchEvent() in Activity.
-    // Does not block the event, only reacts to swipe gestures.
-    public static void handleDrawerSwipe(AppCompatActivity activity,
-                                         DrawerLayout drawerLayout,
-                                         MotionEvent event) {
-        if (drawerLayout == null) {
-            return;
-        }
 
-        Object tag = drawerLayout.getTag(R.id.nav_swipe_detector);
-        GestureDetector detector;
-
-        if (tag instanceof GestureDetector) {
-            detector = (GestureDetector) tag;
-        } else {
-            detector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
-
-                @Override
-                public boolean onDown(MotionEvent e) {
-                    // Must return true for onFling to be triggered
-                    return true;
-                }
-
-                @Override
-                public boolean onFling(MotionEvent e1, MotionEvent e2,
-                                       float velocityX, float velocityY) {
-                    if (e1 == null || e2 == null) {
-                        return false;
-                    }
-
-                    float diffX = e2.getX() - e1.getX();
-                    float diffY = e2.getY() - e1.getY();
-
-                    if (Math.abs(diffX) > Math.abs(diffY)
-                            && Math.abs(diffX) > SWIPE_DISTANCE_THRESHOLD
-                            && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-
-                        if (diffX > 0) {
-                            // Swipe right → open drawer
-                            if (!drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                                drawerLayout.openDrawer(GravityCompat.START);
-                            }
-                        } else {
-                            // Swipe left → close drawer
-                            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                                drawerLayout.closeDrawer(GravityCompat.START);
-                            }
-                        }
-                        // We can safely return true here but do not block dispatchTouchEvent
-                        return true;
-                    }
-                    return false;
-                }
-            });
-
-            drawerLayout.setTag(R.id.nav_swipe_detector, detector);
-        }
-
-        // Forward the event to the gesture detector without interrupting further dispatch
-        detector.onTouchEvent(event);
-    }
 
     private static void doLogout(AppCompatActivity activity) {
         MzutSession s = MzutSession.getInstance();
