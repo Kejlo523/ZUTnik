@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.animation.ObjectAnimator;
@@ -43,6 +44,9 @@ public class LoginActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "mzut_prefs";
     private static final String KEY_LAST_LOGIN = "last_login";
 
+    private static final String LIMBO_LOGIN = "Student";
+    private static final String LIMBO_PASSWORD = "Test";
+
     private ImageView appIcon;
     private View loginCard;
     private View headerContainer;
@@ -66,6 +70,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
@@ -279,6 +284,11 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        if (LIMBO_LOGIN.equals(login) && LIMBO_PASSWORD.equals(pass)) {
+            startLimboLogin(login);
+            return;
+        }
+
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(KEY_LAST_LOGIN, login).apply();
 
@@ -295,6 +305,27 @@ public class LoginActivity extends AppCompatActivity {
 
         currentTask = new AuthTask(login, pass, token, tokenJpg);
         currentTask.execute();
+    }
+
+    private void startLimboLogin(String login) {
+        if (currentTask != null) {
+            return;
+        }
+        startLoadingState();
+        MzutSession session = MzutSession.getInstance(this);
+        String userId = "st123456";
+        String username = "Student (tryb demo)";
+        String authKey = "Student_TOKEN";
+        String imageUrl = null;
+        session.updateUser(userId, username, authKey, imageUrl);
+        session.saveToPreferences(this);
+        stopLoadingState();
+        Toast.makeText(
+                this,
+                getString(R.string.login_success, username),
+                Toast.LENGTH_LONG
+        ).show();
+        runSuccessTransitionAndOpenHome();
     }
 
     private void startLoadingState() {

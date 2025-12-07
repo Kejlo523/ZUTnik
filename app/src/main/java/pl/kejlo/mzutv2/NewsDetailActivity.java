@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -10,11 +11,16 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.MenuItem;
+import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 public class NewsDetailActivity extends AppCompatActivity {
 
@@ -30,18 +36,27 @@ public class NewsDetailActivity extends AppCompatActivity {
     private TextView tvSource;
     private TextView tvFallback;
     private WebView webView;
+    private LinearLayout contentRoot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_news_detail);
 
+        contentRoot = findViewById(R.id.contentRoot);
         toolbar = findViewById(R.id.toolbarDetail);
         tvTitle = findViewById(R.id.tvNewsDetailTitle);
         tvDate = findViewById(R.id.tvNewsDetailDate);
         tvSource = findViewById(R.id.tvNewsDetailSource);
         tvFallback = findViewById(R.id.tvNewsDetailFallback);
         webView = findViewById(R.id.webNewsDetail);
+
+        ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
 
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
