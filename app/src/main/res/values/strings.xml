@@ -1,4 +1,8 @@
 <resources>
+    <string name="battery_opt_dialog_title">Wymagane uprawnienia</string>
+    <string name="battery_opt_dialog_message">Aplikacja potrzebuje działać w tle, aby widgety działały poprawnie. Proszę wyłączyć optymalizację baterii dla tej aplikacji.</string>
+    <string name="battery_opt_button_settings">Ustawienia</string>
+    <string name="battery_opt_button_cancel">Anuluj</string>
 
     <string name="app_name">mZUT v2</string>
     <string name="app_version">Wersja %1$s</string>

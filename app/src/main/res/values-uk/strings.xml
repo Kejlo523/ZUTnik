@@ -3,6 +3,11 @@
     <string name="app_name">mZUT v2</string>
     <string name="app_version">Версія %1$s</string>
 
+    <string name="battery_opt_dialog_title">Необхідні дозволи</string>
+    <string name="battery_opt_dialog_message">Програма повинна працювати у фоновому режимі, щоб віджети працювали коректно. Будь ласка, вимкніть оптимізацію батареї для цієї програми.</string>
+    <string name="battery_opt_button_settings">Налаштування</string>
+    <string name="battery_opt_button_cancel">Скасувати</string>
+
     <string name="nav_header_default_username">Студент</string>
     <string name="logout_success_message">Вихід виконано</string>
     <string name="nav_settings_label">Налаштування</string>
@@ -172,6 +177,17 @@
     <string name="plan_type_pass_retake">Перескладання заліку</string>
     <string name="plan_type_pass_remote">Дистанційний залік</string>
     <string name="plan_type_pass_remote_retake">Дистанційне перескладання заліку</string>
+
+    <string name="plan_search_saved_title">Збережені пошуки</string>
+    <string name="plan_search_save_label">Зберегти</string>
+    <string name="plan_search_save_hint_label">Назва (необов\'язково)</string>
+    <string name="plan_search_save_title">Зберегти пошук</string>
+    <string name="plan_search_save_confirm">Зберегти</string>
+    <string name="plan_search_saved_toast">Збережено!</string>
+    <string name="plan_search_no_saved">Немає збережених пошуків</string>
+    <string name="plan_search_saved_clear">Очистити список</string>
+    <string name="plan_search_saved_cleared">Список очищено</string>
+    <string name="plan_search_empty_query">Введіть фразу для пошуку</string>
 
     <string name="plan_search_hint">Пошук</string>
     <string name="grades_title">Оцінки</string>

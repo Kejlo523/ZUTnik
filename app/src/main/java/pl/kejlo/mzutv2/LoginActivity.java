@@ -144,6 +144,12 @@ public class LoginActivity extends AppCompatActivity {
         startKillerIntroAnimation();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        BatteryOptimizationHelper.checkBatteryOptimization(this);
+    }
+
     private void handleKeyboardVisibilityChange(boolean visible) {
         if (visible) {
             if (headerContainer != null) {
