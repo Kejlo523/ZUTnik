@@ -2,7 +2,7 @@
 
 Mobilna, nieoficjalna aplikacja dla studentów Zachodniopomorskiego Uniwersytetu Technologicznego, ułatwiająca korzystanie z systemu mZUT na Androidzie.
 <br>
-<img width="auto" height="600" alt="1227" src="https://github.com/user-attachments/assets/099357b4-7eed-4e6b-9f8c-b35249cdd42b" />
+<img width="auto" height="600" alt="1223" src="https://github.com/user-attachments/assets/8341b2eb-7f12-49b0-a142-022ee3496982" />
 <br>
 Aplikacja skupia się na:
 - czytelnym interfejsie w trybie ciemnym,
@@ -12,6 +12,7 @@ Aplikacja skupia się na:
 Więcej informacji o projekcie: https://mzut.endozero.pl
 
 ---
+
 
 ## Funkcje
 
