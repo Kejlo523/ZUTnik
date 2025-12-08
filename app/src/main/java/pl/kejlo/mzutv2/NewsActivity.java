@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
+
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
@@ -38,13 +38,13 @@ public class NewsActivity extends AppCompatActivity {
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
+
     // Cache
     private static final String PREFS_NEWS_CACHE = "mzut_news_cache";
     private static final String KEY_NEWS_LIST_JSON = "news_list_json";
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
     // Cache at most for one week – after that always refreshed from network
-    private static final long NEWS_CACHE_TTL_MS =
-            2L * 24L * 60L * 60L * 1000L; // 7 days
+    private static final long NEWS_CACHE_TTL_MS = 2L * 24L * 60L * 60L * 1000L; // 7 days
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -60,7 +60,12 @@ public class NewsActivity extends AppCompatActivity {
     private final List<NewsItem> items = new ArrayList<>();
 
     private NewsAdapter adapter;
-    private LoadNewsTask currentTask;
+
+    private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newCachedThreadPool();
+    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private java.util.concurrent.Future<?> currentNewsFuture;
+
     private boolean openLatestOnLoad = false;
 
     @Override
@@ -89,8 +94,7 @@ public class NewsActivity extends AppCompatActivity {
                 drawerLayout,
                 navigationView,
                 toolbar,
-                NavDrawerHelper.Screen.NEWS
-        );
+                NavDrawerHelper.Screen.NEWS);
 
         listNews = findViewById(R.id.listNews);
         progress = findViewById(R.id.newsProgress);
@@ -117,8 +121,7 @@ public class NewsActivity extends AppCompatActivity {
                 Toast.makeText(
                         NewsActivity.this,
                         R.string.news_refresh_toast,
-                        Toast.LENGTH_SHORT
-                ).show();
+                        Toast.LENGTH_SHORT).show();
                 startLoadNews(true);
             });
         }
@@ -138,13 +141,11 @@ public class NewsActivity extends AppCompatActivity {
         }
     }
 
-
-
     // Start loading
 
     private void startLoadNews(boolean forceReload) {
-        if (currentTask != null) {
-            currentTask.cancel(true);
+        if (currentNewsFuture != null) {
+            currentNewsFuture.cancel(true);
         }
 
         if (forceReload) {
@@ -158,70 +159,66 @@ public class NewsActivity extends AppCompatActivity {
             // Clear items from adapter to visual feedback of reload
             items.clear();
             adapter.notifyDataSetChanged();
-            
-            // Also suggest clearing image cache if desired, but user asked for "everything to be deleted" on new fetch
-            // We can clear memory/disk image cache too:
+
+            // Also suggest clearing image cache if desired
             ImageCache.getInstance().clear();
         }
 
-        currentTask = new LoadNewsTask();
-        currentTask.execute();
+        executeLoadNewsTask();
     }
 
-    private class LoadNewsTask extends AsyncTask<Void, Void, Boolean> {
-        Exception error;
-        List<NewsItem> loaded;
+    private void executeLoadNewsTask() {
+        progress.setVisibility(View.VISIBLE);
+        tvEmpty.setVisibility(View.GONE);
 
-        @Override
-        protected void onPreExecute() {
-            progress.setVisibility(View.VISIBLE);
-            tvEmpty.setVisibility(View.GONE);
-        }
+        currentNewsFuture = executor.submit(() -> {
+            List<NewsItem> loaded = null;
+            Exception error = null;
+            boolean success = false;
 
-        @Override
-        protected Boolean doInBackground(Void... voids) {
             try {
                 loaded = repo.loadNews();
-                return true;
+                success = true;
             } catch (Exception e) {
                 error = e;
-                return false;
             }
-        }
 
-        @Override
-        protected void onPostExecute(Boolean ok) {
-            progress.setVisibility(View.GONE);
+            final List<NewsItem> finalLoaded = loaded;
+            final Exception finalError = error;
+            final boolean finalSuccess = success;
 
-            if (!ok || loaded == null) {
+            handler.post(() -> {
+                progress.setVisibility(View.GONE);
+
+                if (!finalSuccess || finalLoaded == null) {
+                    if (items.isEmpty()) {
+                        tvEmpty.setVisibility(View.VISIBLE);
+                    }
+                    if (finalError != null) {
+                        String msg = finalError.getMessage() != null ? finalError.getMessage() : "";
+                        Toast.makeText(
+                                NewsActivity.this,
+                                getString(R.string.news_error_rss, msg),
+                                Toast.LENGTH_LONG).show();
+                    }
+                    return;
+                }
+
+                items.clear();
+                items.addAll(finalLoaded);
+                adapter.notifyDataSetChanged();
+
                 if (items.isEmpty()) {
                     tvEmpty.setVisibility(View.VISIBLE);
+                } else {
+                    tvEmpty.setVisibility(View.GONE);
                 }
-                if (error != null) {
-                    String msg = error.getMessage() != null ? error.getMessage() : "";
-                    Toast.makeText(
-                            NewsActivity.this,
-                            getString(R.string.news_error_rss, msg),
-                            Toast.LENGTH_LONG
-                    ).show();
-                }
-                return;
-            }
 
-            items.clear();
-            items.addAll(loaded);
-            adapter.notifyDataSetChanged();
-
-            if (items.isEmpty()) {
-                tvEmpty.setVisibility(View.VISIBLE);
-            } else {
-                tvEmpty.setVisibility(View.GONE);
-            }
-
-            // Save to cache after successful fetch
-            saveNewsToCache(loaded);
-            checkAutoOpen();
-        }
+                // Save to cache after successful fetch
+                saveNewsToCache(finalLoaded);
+                checkAutoOpen();
+            });
+        });
     }
 
     // Cache logic

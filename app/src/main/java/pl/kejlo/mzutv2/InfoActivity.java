@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
+
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
@@ -87,7 +87,12 @@ public class InfoActivity extends AppCompatActivity {
 
     // endregion
 
-    private LoadInfoTask currentTask;
+    // endregion
+
+    private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newCachedThreadPool();
+    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private java.util.concurrent.Future<?> currentInfoFuture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,8 +120,7 @@ public class InfoActivity extends AppCompatActivity {
                 drawerLayout,
                 navigationView,
                 toolbar,
-                NavDrawerHelper.Screen.INFO
-        );
+                NavDrawerHelper.Screen.INFO);
 
         tvName = findViewById(R.id.tvInfoName);
         tvUserId = findViewById(R.id.tvInfoUserId);
@@ -156,7 +160,7 @@ public class InfoActivity extends AppCompatActivity {
         // Avatar image
         String imageUrl = session.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            new LoadImageTask(imageAvatar).execute(imageUrl);
+            loadAvatar(imageUrl);
         } else {
             imageAvatar.setVisibility(View.GONE);
         }
@@ -180,71 +184,67 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
-
-
     // region Network loading
 
     private void startInfoLoad(boolean forceReload) {
         // forceReload simply ignores TTL at the call site and always fetches
         Toast.makeText(this, R.string.info_sync_in_progress, Toast.LENGTH_SHORT).show();
 
-        if (currentTask != null) {
-            currentTask.cancel(true);
+        if (currentInfoFuture != null) {
+            currentInfoFuture.cancel(true);
         }
-        currentTask = new LoadInfoTask();
-        currentTask.execute();
+        executeLoadInfoTask();
     }
 
-    private class LoadInfoTask extends AsyncTask<Void, Void, Boolean> {
-        StudiesInfoRepository.StudyDetails details;
-        List<StudiesInfoRepository.StudyHistoryItem> history;
-        Exception error;
+    private void executeLoadInfoTask() {
+        progress.setVisibility(View.VISIBLE);
+        infoContentRoot.setAlpha(0.3f);
 
-        @Override
-        protected void onPreExecute() {
-            progress.setVisibility(View.VISIBLE);
-            infoContentRoot.setAlpha(0.3f);
-        }
+        currentInfoFuture = executor.submit(() -> {
+            StudiesInfoRepository.StudyDetails details = null;
+            List<StudiesInfoRepository.StudyHistoryItem> history = null;
+            Exception error = null;
+            boolean success = false;
 
-        @Override
-        protected Boolean doInBackground(Void... voids) {
             try {
                 StudiesInfoRepository repo = new StudiesInfoRepository();
                 details = repo.loadCurrentStudyDetails();
                 history = repo.loadStudyHistory();
-                return true;
+                success = true;
             } catch (Exception e) {
                 error = e;
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean ok) {
-            progress.setVisibility(View.GONE);
-            infoContentRoot.setAlpha(1f);
-
-            if (!ok) {
-                String message = error != null ? error.getMessage() : "";
-                Toast.makeText(
-                        InfoActivity.this,
-                        getString(R.string.info_error_loading, message),
-                        Toast.LENGTH_LONG
-                ).show();
-                return;
             }
 
-            if (details != null) {
-                bindDetails(details);
-            }
+            final StudiesInfoRepository.StudyDetails finalDetails = details;
+            final List<StudiesInfoRepository.StudyHistoryItem> finalHistory = history;
+            final Exception finalError = error;
+            final boolean finalSuccess = success;
 
-            bindHistory(history);
-            // Ensure studies spinner is updated, e.g. after the first login
-            setupStudiesSpinner();
+            handler.post(() -> {
+                progress.setVisibility(View.GONE);
+                infoContentRoot.setAlpha(1f);
 
-            // Save to cache after successful refresh
-            saveInfoToCache(MzutSession.getInstance().getActiveStudyIndex(), details, history);
-        }
+                if (!finalSuccess) {
+                    String message = finalError != null ? finalError.getMessage() : "";
+                    Toast.makeText(
+                            InfoActivity.this,
+                            getString(R.string.info_error_loading, message),
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                if (finalDetails != null) {
+                    bindDetails(finalDetails);
+                }
+
+                bindHistory(finalHistory);
+                // Ensure studies spinner is updated, e.g. after the first login
+                setupStudiesSpinner();
+
+                // Save to cache after successful refresh
+                saveInfoToCache(MzutSession.getInstance().getActiveStudyIndex(), finalDetails, finalHistory);
+            });
+        });
     }
 
     // endregion
@@ -263,7 +263,7 @@ public class InfoActivity extends AppCompatActivity {
         SharedPreferences prefs = getPreferences(MODE_PRIVATE); // Use default or specific? File is separate.
         // Actually code uses specific file: PREFS_INFO_CACHE
         SharedPreferences cache = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
-        
+
         long ts = cache.getLong(getCacheKey(KEY_INFO_TIMESTAMP, index), 0L);
         if (ts == 0L) {
             return true;
@@ -315,38 +315,38 @@ public class InfoActivity extends AppCompatActivity {
     }
 
     private void bindDetailsFromCache(JSONObject obj) {
-        setOrHide(tvAlbum,         obj.optString("album", null));
-        setOrHide(tvWydzial,       obj.optString("wydzial", null));
-        setOrHide(tvKierunek,      obj.optString("kierunek", null));
-        setOrHide(tvForma,         obj.optString("forma", null));
-        setOrHide(tvPoziom,        obj.optString("poziom", null));
-        setOrHide(tvSpecjalnosc,   obj.optString("specjalnosc", null));
+        setOrHide(tvAlbum, obj.optString("album", null));
+        setOrHide(tvWydzial, obj.optString("wydzial", null));
+        setOrHide(tvKierunek, obj.optString("kierunek", null));
+        setOrHide(tvForma, obj.optString("forma", null));
+        setOrHide(tvPoziom, obj.optString("poziom", null));
+        setOrHide(tvSpecjalnosc, obj.optString("specjalnosc", null));
         setOrHide(tvSpecjalizacja, obj.optString("specjalizacja", null));
-        setOrHide(tvStatus,        obj.optString("status", null));
-        setOrHide(tvRok,           obj.optString("rokAkademicki", null));
-        setOrHide(tvSemestr,       obj.optString("semestrLabel", null));
+        setOrHide(tvStatus, obj.optString("status", null));
+        setOrHide(tvRok, obj.optString("rokAkademicki", null));
+        setOrHide(tvSemestr, obj.optString("semestrLabel", null));
     }
 
     // Saves the data fetched from the API into cache.
     private void saveInfoToCache(int index,
-                                 StudiesInfoRepository.StudyDetails d,
-                                 List<StudiesInfoRepository.StudyHistoryItem> history) {
+            StudiesInfoRepository.StudyDetails d,
+            List<StudiesInfoRepository.StudyHistoryItem> history) {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
         JSONObject detailsObj = new JSONObject();
         JSONArray historyArr = new JSONArray();
 
         try {
             if (d != null) {
-                detailsObj.put("album",         d.album != null ? d.album : "");
-                detailsObj.put("wydzial",       d.wydzial != null ? d.wydzial : "");
-                detailsObj.put("kierunek",      d.kierunek != null ? d.kierunek : "");
-                detailsObj.put("forma",         d.forma != null ? d.forma : "");
-                detailsObj.put("poziom",        d.poziom != null ? d.poziom : "");
-                detailsObj.put("specjalnosc",   d.specjalnosc != null ? d.specjalnosc : "");
+                detailsObj.put("album", d.album != null ? d.album : "");
+                detailsObj.put("wydzial", d.wydzial != null ? d.wydzial : "");
+                detailsObj.put("kierunek", d.kierunek != null ? d.kierunek : "");
+                detailsObj.put("forma", d.forma != null ? d.forma : "");
+                detailsObj.put("poziom", d.poziom != null ? d.poziom : "");
+                detailsObj.put("specjalnosc", d.specjalnosc != null ? d.specjalnosc : "");
                 detailsObj.put("specjalizacja", d.specjalizacja != null ? d.specjalizacja : "");
-                detailsObj.put("status",        d.status != null ? d.status : "");
+                detailsObj.put("status", d.status != null ? d.status : "");
                 detailsObj.put("rokAkademicki", d.rokAkademicki != null ? d.rokAkademicki : "");
-                detailsObj.put("semestrLabel",  d.semestrLabel != null ? d.semestrLabel : "");
+                detailsObj.put("semestrLabel", d.semestrLabel != null ? d.semestrLabel : "");
             }
 
             if (history != null) {
@@ -355,7 +355,7 @@ public class InfoActivity extends AppCompatActivity {
                         continue;
                     }
                     JSONObject h = new JSONObject();
-                    h.put("label",  item.label  != null ? item.label  : "");
+                    h.put("label", item.label != null ? item.label : "");
                     h.put("status", item.status != null ? item.status : "");
                     historyArr.put(h);
                 }
@@ -378,8 +378,7 @@ public class InfoActivity extends AppCompatActivity {
         if (arr == null || arr.length() == 0) {
             addHistoryTextView(
                     getString(R.string.info_history_empty),
-                    true
-            );
+                    true);
             return;
         }
 
@@ -418,8 +417,7 @@ public class InfoActivity extends AppCompatActivity {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(
                     this,
                     R.layout.spinner_item_dark,
-                    labels
-            );
+                    labels);
             adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
             spinnerStudies.setAdapter(adapter);
             spinnerInitialized = true;
@@ -438,11 +436,11 @@ public class InfoActivity extends AppCompatActivity {
                         return;
                     }
                     s.setActiveStudyIndex(position);
-                    
-                    // Smart switching: 
+
+                    // Smart switching:
                     // 1. Try to load cached data for this index
                     boolean loaded = loadInfoFromCacheIfAvailable(position);
-                    
+
                     // 2. If no valid cache or expired, fetch from network
                     if (!loaded || shouldFetchFromNetwork(position)) {
                         startInfoLoad(false);
@@ -468,16 +466,16 @@ public class InfoActivity extends AppCompatActivity {
     // region Binding data from API
 
     private void bindDetails(StudiesInfoRepository.StudyDetails d) {
-        setOrHide(tvAlbum,         d.album);
-        setOrHide(tvWydzial,       d.wydzial);
-        setOrHide(tvKierunek,      d.kierunek);
-        setOrHide(tvForma,         d.forma);
-        setOrHide(tvPoziom,        d.poziom);
-        setOrHide(tvSpecjalnosc,   d.specjalnosc);
+        setOrHide(tvAlbum, d.album);
+        setOrHide(tvWydzial, d.wydzial);
+        setOrHide(tvKierunek, d.kierunek);
+        setOrHide(tvForma, d.forma);
+        setOrHide(tvPoziom, d.poziom);
+        setOrHide(tvSpecjalnosc, d.specjalnosc);
         setOrHide(tvSpecjalizacja, d.specjalizacja);
-        setOrHide(tvStatus,        d.status);
-        setOrHide(tvRok,           d.rokAkademicki);
-        setOrHide(tvSemestr,       d.semestrLabel);
+        setOrHide(tvStatus, d.status);
+        setOrHide(tvRok, d.rokAkademicki);
+        setOrHide(tvSemestr, d.semestrLabel);
     }
 
     private void bindHistory(List<StudiesInfoRepository.StudyHistoryItem> history) {
@@ -485,8 +483,7 @@ public class InfoActivity extends AppCompatActivity {
         if (history == null || history.isEmpty()) {
             addHistoryTextView(
                     getString(R.string.info_history_empty),
-                    true
-            );
+                    true);
             return;
         }
 
@@ -530,23 +527,25 @@ public class InfoActivity extends AppCompatActivity {
 
     // region Avatar loading
 
-    private static class LoadImageTask extends android.os.AsyncTask<String, Void, android.graphics.Bitmap> {
-        private final java.lang.ref.WeakReference<android.widget.ImageView> targetRef;
+    // region Avatar loading
 
-        LoadImageTask(android.widget.ImageView target) {
-            this.targetRef = new java.lang.ref.WeakReference<>(target);
-        }
+    private void loadAvatar(String url) {
+        if (url == null || url.isEmpty())
+            return;
 
-        @Override
-        protected android.graphics.Bitmap doInBackground(String... urls) {
-            String url = urls[0];
-            if (url == null || url.isEmpty()) return null;
-
+        executor.execute(() -> {
             // 1. Try cache (Disk check is safe here as this is background thread)
             try {
                 android.graphics.Bitmap cached = ImageCache.getInstance().getFromDisk(url);
-                if (cached != null) return cached;
-            } catch (Exception ignored) {}
+                if (cached != null) {
+                    handler.post(() -> {
+                        if (imageAvatar != null)
+                            imageAvatar.setImageBitmap(cached);
+                    });
+                    return;
+                }
+            } catch (Exception ignored) {
+            }
 
             // 2. Fetch via MzutNetwork (handles SSL/certs)
             try {
@@ -564,29 +563,29 @@ public class InfoActivity extends AppCompatActivity {
                         if (bmp != null) {
                             try {
                                 ImageCache.getInstance().put(url, bmp);
-                            } catch (Exception ignored) {}
+                            } catch (Exception ignored) {
+                            }
                         }
-                        return bmp;
+
+                        final android.graphics.Bitmap finalBmp = bmp;
+                        handler.post(() -> {
+                            if (imageAvatar != null) {
+                                if (finalBmp != null) {
+                                    imageAvatar.setImageBitmap(finalBmp);
+                                } else {
+                                    imageAvatar.setVisibility(View.GONE);
+                                }
+                            }
+                        });
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(android.graphics.Bitmap bmp) {
-            android.widget.ImageView target = targetRef.get();
-            if (target == null) return;
-
-            if (bmp != null) {
-                target.setImageBitmap(bmp);
-            } else {
-                target.setVisibility(View.GONE);
-            }
-        }
+        });
     }
+
+    // endregion
 
     // endregion
 }

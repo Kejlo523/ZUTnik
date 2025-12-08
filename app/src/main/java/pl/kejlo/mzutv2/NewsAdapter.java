@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +24,11 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
     private final List<NewsItem> items;
     private final Context ctx;
+
+    // Static executor for image loading across all adapter instances
+    private static final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors
+            .newFixedThreadPool(4);
+    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     public NewsAdapter(Context ctx, List<NewsItem> items) {
         this.ctx = ctx;
@@ -57,8 +62,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
             } else {
                 // Not in memory – clear and load async (checks disk -> downloads)
                 h.thumb.setImageDrawable(null);
-                new ThumbLoader(h.thumb, n.thumbUrl)
-                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, n.thumbUrl);
+                loadThumbnail(h.thumb, n.thumbUrl);
             }
         } else {
             h.thumb.setVisibility(View.GONE);
@@ -85,49 +89,39 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
     }
 
     // Thumbnail loader with ImageCache integration
-    private static class ThumbLoader extends AsyncTask<String, Void, Bitmap> {
-        private final WeakReference<ImageView> imageViewRef;
-        private final String url;
+    private void loadThumbnail(ImageView iv, String url) {
+        if (iv == null || url == null)
+            return;
 
-        ThumbLoader(ImageView iv, String url) {
-            this.imageViewRef = new WeakReference<>(iv);
-            this.url = url;
-        }
-
-        @Override
-        protected Bitmap doInBackground(String... params) {
-            String src = params[0];
-            if (src == null) return null;
+        executor.execute(() -> {
+            Bitmap bitmap = null;
 
             // 1. Try Disk Cache (background thread is safe for IO)
-            Bitmap fromDisk = ImageCache.getInstance().getFromDisk(src);
-            if (fromDisk != null) {
-                return fromDisk;
+            try {
+                Bitmap fromDisk = ImageCache.getInstance().getFromDisk(url);
+                if (fromDisk != null) {
+                    bitmap = fromDisk;
+                } else {
+                    // 2. Download via NewsRepository (uses MzutNetwork for SSL)
+                    bitmap = NewsRepository.downloadImage(url);
+                }
+            } catch (Exception ignored) {
             }
 
-            // 2. Download via NewsRepository (uses MzutNetwork for SSL)
-            return NewsRepository.downloadImage(src);
-        }
+            final Bitmap finalBitmap = bitmap;
+            handler.post(() -> {
+                if (finalBitmap == null)
+                    return;
 
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            if (bitmap == null) {
-                return;
-            }
-            ImageView iv = imageViewRef.get();
-            if (iv == null) {
-                return;
-            }
-            Object tag = iv.getTag();
-            if (!(tag instanceof String)) {
-                return;
-            }
-            if (!url.equals(tag)) {
-                // Row was recycled for another item
-                return;
-            }
-            iv.setImageBitmap(bitmap);
-        }
+                Object tag = iv.getTag();
+                if (!(tag instanceof String))
+                    return;
+
+                if (url.equals(tag)) {
+                    iv.setImageBitmap(finalBitmap);
+                }
+            });
+        });
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
