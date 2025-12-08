@@ -104,6 +104,12 @@ public class HomeActivity extends AppCompatActivity {
         runIntroAnimations();
     }
     
+    @Override
+    protected void onResume() {
+        super.onResume();
+        BatteryOptimizationHelper.checkBatteryOptimization(this);
+    }
+    
     private void setupGrid() {
         homeRepository = new HomeRepository(this);
         List<Tile> tiles = homeRepository.loadTiles();
