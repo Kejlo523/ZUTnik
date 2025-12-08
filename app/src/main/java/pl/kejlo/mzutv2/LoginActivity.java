@@ -9,7 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
-import android.os.AsyncTask;
+
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
@@ -61,8 +61,6 @@ public class LoginActivity extends AppCompatActivity {
     private int headerExpandedBottomMargin = 0;
     private int headerCollapsedBottomMargin = 0;
 
-    private AuthTask currentTask;
-
     private static final long ANIM_DURATION_ENTER = 600;
     private static final long ANIM_STAGGER_DELAY = 100;
     private ObjectAnimator loadingAnimator;
@@ -71,8 +69,6 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
@@ -297,18 +293,17 @@ public class LoginActivity extends AppCompatActivity {
 
         Log.d(TAG, "Generated token: " + token);
 
-        if (currentTask != null) {
+        if (isAuthTaskRunning) {
             return;
         }
 
         startLoadingState();
 
-        currentTask = new AuthTask(login, pass, token, tokenJpg);
-        currentTask.execute();
+        executeAuthTask(login, pass, token, tokenJpg);
     }
 
     private void startLimboLogin(String login) {
-        if (currentTask != null) {
+        if (isAuthTaskRunning) {
             return;
         }
         startLoadingState();
@@ -323,8 +318,7 @@ public class LoginActivity extends AppCompatActivity {
         Toast.makeText(
                 this,
                 getString(R.string.login_success, username),
-                Toast.LENGTH_LONG
-        ).show();
+                Toast.LENGTH_LONG).show();
         runSuccessTransitionAndOpenHome();
     }
 
@@ -340,8 +334,7 @@ public class LoginActivity extends AppCompatActivity {
                 btnLogin,
                 PropertyValuesHolder.ofFloat("scaleX", 1f, 0.95f),
                 PropertyValuesHolder.ofFloat("scaleY", 1f, 0.95f),
-                PropertyValuesHolder.ofFloat("alpha", 1f, 0.8f)
-        );
+                PropertyValuesHolder.ofFloat("alpha", 1f, 0.8f));
         loadingAnimator.setDuration(600);
         loadingAnimator.setRepeatCount(ObjectAnimator.INFINITE);
         loadingAnimator.setRepeatMode(ObjectAnimator.REVERSE);
@@ -376,7 +369,8 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void runSuccessTransitionAndOpenHome() {
-        if (loadingAnimator != null) loadingAnimator.cancel();
+        if (loadingAnimator != null)
+            loadingAnimator.cancel();
 
         appIcon.animate()
                 .translationY(-1000f)
@@ -408,23 +402,24 @@ public class LoginActivity extends AppCompatActivity {
                 .start();
     }
 
-    private class AuthTask extends AsyncTask<Void, Void, JSONObject> {
+    // --- Refactored Auth Logic (ExecutorService instead of AsyncTask) ---
 
-        private final String login;
-        private final String password;
-        private final String token;
-        private final String tokenJpg;
-        private Exception error;
+    // Simple executor for background tasks
+    private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors
+            .newSingleThreadExecutor();
+    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean isAuthTaskRunning = false;
 
-        AuthTask(String login, String password, String token, String tokenJpg) {
-            this.login = login;
-            this.password = password;
-            this.token = token;
-            this.tokenJpg = tokenJpg;
+    private void executeAuthTask(String login, String password, String token, String tokenJpg) {
+        if (isAuthTaskRunning) {
+            return;
         }
+        isAuthTaskRunning = true;
 
-        @Override
-        protected JSONObject doInBackground(Void... voids) {
+        executor.execute(() -> {
+            JSONObject result = null;
+            Exception error = null;
+
             try {
                 Map<String, String> params = new HashMap<>();
                 params.put("login", login);
@@ -432,89 +427,87 @@ public class LoginActivity extends AppCompatActivity {
                 params.put("token", token);
                 params.put("tokenJpg", tokenJpg);
 
-                return MzutApi.callApi("getAuthorization", params);
+                result = MzutApi.callApi("getAuthorization", params);
             } catch (Exception e) {
                 error = e;
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject auth) {
-            currentTask = null;
-
-            if (error != null) {
-                stopLoadingState();
-                String errorMessage = error.getMessage() != null ? error.getMessage() : "";
-                Toast.makeText(
-                        LoginActivity.this,
-                        getString(R.string.login_error_generic, errorMessage),
-                        Toast.LENGTH_LONG
-                ).show();
-                Log.e(TAG, "API error", error);
-                return;
             }
 
-            if (auth == null) {
-                stopLoadingState();
-                Toast.makeText(
-                        LoginActivity.this,
-                        R.string.login_no_server_response,
-                        Toast.LENGTH_LONG
-                ).show();
-                return;
-            }
+            final JSONObject finalResult = result;
+            final Exception finalError = error;
 
-            Log.d(TAG, "AUTH RESULT: " + auth.toString());
+            handler.post(() -> handleAuthResult(finalResult, finalError, login, token, tokenJpg));
+        });
+    }
 
-            String status = auth.optString(
-                    "logInStatus",
-                    auth.optString("loginInStatus", "")
-            );
+    private void handleAuthResult(JSONObject auth, Exception error, String originalLogin, String originalToken,
+            String originalTokenJpg) {
+        isAuthTaskRunning = false; // Task finished
 
-            if (!"OK".equalsIgnoreCase(status)) {
-                stopLoadingState();
-                if ("SYSTEM ERROR".equalsIgnoreCase(status)) {
-                    Toast.makeText(
-                            LoginActivity.this,
-                            R.string.login_system_error,
-                            Toast.LENGTH_LONG
-                    ).show();
-                } else {
-                    Toast.makeText(
-                            LoginActivity.this,
-                            R.string.login_invalid_credentials,
-                            Toast.LENGTH_LONG
-                    ).show();
-                    animateFailureShake(loginCard);
-                }
-                return;
-            }
-
-            String userId = auth.optString("login", login);
-            String first = auth.optString("pierwszeImie", "");
-            String last = auth.optString("nazwisko", "");
-            String username = (first + " " + last).trim();
-            String authKey = auth.optString("token", token);
-            String imageUrl = "https://www.zut.edu.pl/app-json-proxy/image/?userId="
-                    + userId + "&tokenJpg="
-                    + auth.optString("tokenJpg", tokenJpg);
-
-            MzutSession session = MzutSession.getInstance(LoginActivity.this);
-            session.updateUser(userId, username, authKey, imageUrl);
-            session.saveToPreferences(LoginActivity.this);
-
-            String displayName = username.isEmpty()
-                    ? getString(R.string.nav_header_default_username)
-                    : username;
-
+        if (error != null) {
+            stopLoadingState();
+            String errorMessage = error.getMessage() != null ? error.getMessage() : "";
             Toast.makeText(
                     LoginActivity.this,
-                    getString(R.string.login_success, displayName),
-                    Toast.LENGTH_LONG
-            ).show();
-
-            runSuccessTransitionAndOpenHome();
+                    getString(R.string.login_error_generic, errorMessage),
+                    Toast.LENGTH_LONG).show();
+            Log.e(TAG, "API error", error);
+            return;
         }
+
+        if (auth == null) {
+            stopLoadingState();
+            Toast.makeText(
+                    LoginActivity.this,
+                    R.string.login_no_server_response,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Log.d(TAG, "AUTH RESULT: " + auth.toString());
+
+        String status = auth.optString(
+                "logInStatus",
+                auth.optString("loginInStatus", ""));
+
+        if (!"OK".equalsIgnoreCase(status)) {
+            stopLoadingState();
+            if ("SYSTEM ERROR".equalsIgnoreCase(status)) {
+                Toast.makeText(
+                        LoginActivity.this,
+                        R.string.login_system_error,
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(
+                        LoginActivity.this,
+                        R.string.login_invalid_credentials,
+                        Toast.LENGTH_LONG).show();
+                animateFailureShake(loginCard);
+            }
+            return;
+        }
+
+        String userId = auth.optString("login", originalLogin);
+        String first = auth.optString("pierwszeImie", "");
+        String last = auth.optString("nazwisko", "");
+        String username = (first + " " + last).trim();
+        String authKey = auth.optString("token", originalToken);
+        String imageUrl = "https://www.zut.edu.pl/app-json-proxy/image/?userId="
+                + userId + "&tokenJpg="
+                + auth.optString("tokenJpg", originalTokenJpg);
+
+        MzutSession session = MzutSession.getInstance(LoginActivity.this);
+        session.updateUser(userId, username, authKey, imageUrl);
+        session.saveToPreferences(LoginActivity.this);
+
+        String displayName = username.isEmpty()
+                ? getString(R.string.nav_header_default_username)
+                : username;
+
+        Toast.makeText(
+                LoginActivity.this,
+                getString(R.string.login_success, displayName),
+                Toast.LENGTH_LONG).show();
+
+        runSuccessTransitionAndOpenHome();
     }
 }

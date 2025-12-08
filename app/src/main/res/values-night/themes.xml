@@ -6,16 +6,15 @@
         <item name="colorOnPrimary">@color/mz_text</item>
 
         <!-- status bar w darku -->
-        <item name="colorPrimaryDark">@color/mz_bg</item>
-        <item name="android:statusBarColor">@color/mz_bg</item>
-        
-        <!-- Ciemny status bar – jasne ikonki -->
+        <!-- Status Bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         
-        <!-- Nawigacja na dole -->
+        <!-- Navigation Bar -->
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>
 
+        <!-- No Title -->
         <item name="windowActionBar">false</item>
         <item name="android:windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
