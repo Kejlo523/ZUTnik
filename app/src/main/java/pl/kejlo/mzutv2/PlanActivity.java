@@ -17,6 +17,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
+import android.provider.Settings;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -382,8 +385,37 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
 
-        loadPlanForCurrentMode();
+    loadPlanForCurrentMode();
         runIntroAnimations();
+        checkBatteryOptimization();
+    }
+
+    private void checkBatteryOptimization() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.battery_opt_dialog_title)
+                        .setMessage(R.string.battery_opt_dialog_message)
+                        .setPositiveButton(R.string.battery_opt_button_settings, (dialog, which) -> {
+                            Intent intent = new Intent();
+                            intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                            intent.setData(Uri.parse("package:" + getPackageName()));
+                            try {
+                                startActivity(intent);
+                            } catch (Exception e) {
+                                // Fallback to generic settings if specific intent fails
+                                intent.setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                                intent.setData(null);
+                                try {
+                                    startActivity(intent);
+                                } catch (Exception ignored) {}
+                            }
+                        })
+                        .setNegativeButton(R.string.battery_opt_button_cancel, null)
+                        .show();
+            }
+        }
     }
 
     private void runIntroAnimations() {
