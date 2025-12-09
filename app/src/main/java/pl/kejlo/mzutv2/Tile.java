@@ -29,15 +29,19 @@ public class Tile {
     public String actionType;
     public String actionData; // e.g. class name or url
     public int color = 0; // 0 = default
+    public int titleResId = 0;
+    public int descResId = 0;
 
     public Tile() {
     }
 
-    public Tile(long id, int col, int row, int colSpan, int rowSpan, String title, String description, String actionType, @Nullable String actionData) {
+    public Tile(long id, int col, int row, int colSpan, int rowSpan, String title, String description,
+            String actionType, @Nullable String actionData) {
         this(id, col, row, colSpan, rowSpan, title, description, actionType, actionData, 0);
     }
 
-    public Tile(long id, int col, int row, int colSpan, int rowSpan, String title, String description, String actionType, @Nullable String actionData, int color) {
+    public Tile(long id, int col, int row, int colSpan, int rowSpan, String title, String description,
+            String actionType, @Nullable String actionData, int color) {
         this.id = id;
         this.col = col;
         this.row = row;
@@ -64,6 +68,8 @@ public class Tile {
             json.put("actionData", actionData);
         }
         json.put("color", color);
+        json.put("titleResId", titleResId);
+        json.put("descResId", descResId);
         return json;
     }
 
@@ -79,13 +85,17 @@ public class Tile {
         t.actionType = json.optString("actionType", "");
         t.actionData = json.optString("actionData", null);
         t.color = json.optInt("color", 0);
+        t.titleResId = json.optInt("titleResId", 0);
+        t.descResId = json.optInt("descResId", 0);
         return t;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Tile tile = (Tile) o;
         return id == tile.id;
     }

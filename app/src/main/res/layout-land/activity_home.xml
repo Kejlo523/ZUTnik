@@ -8,182 +8,208 @@
     android:fitsSystemWindows="true"
     app:statusBarBackground="@color/mz_bg">
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/drawerContentRoot"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@drawable/bg_toolbar"
-            android:elevation="0dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:titleTextColor="@color/mz_text" />
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:baselineAligned="false"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <ScrollView
-                android:layout_width="0dp"
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@drawable/bg_toolbar"
+                android:elevation="0dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:titleTextColor="@color/mz_text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="0.4"
-                android:contentDescription="Panel boczny"
-                android:fillViewport="true">
+                android:baselineAligned="false"
+                android:orientation="horizontal">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="vertical"
-                    android:padding="24dp">
+                <ScrollView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.4"
+                    android:contentDescription="Panel boczny"
+                    android:fillViewport="true">
 
                     <LinearLayout
-                        android:id="@+id/homeHero"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_card_primary"
-                        android:elevation="4dp"
-                        android:gravity="center_horizontal"
+                        android:gravity="center_vertical"
                         android:orientation="vertical"
                         android:padding="24dp">
 
-                        <TextView
-                            android:id="@+id/textHeroPill"
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:id="@+id/homeHero"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_card_soft"
-                            android:letterSpacing="0.05"
-                            android:paddingStart="12dp"
-                            android:paddingTop="6dp"
-                            android:paddingEnd="12dp"
-                            android:paddingBottom="6dp"
-                            android:text="@string/app_name"
-                            android:textAllCaps="true"
-                            android:textColor="@color/mz_text"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
+                            android:background="@drawable/bg_card_primary"
+                            android:elevation="4dp"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:padding="24dp">
 
-                        <TextView
-                            android:id="@+id/textWelcome"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:gravity="center"
-                            android:text="@string/home_welcome_fallback"
-                            android:textColor="@color/mz_text"
-                            android:textSize="24sp"
-                            android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/textHeroPill"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_card_soft"
+                                android:letterSpacing="0.05"
+                                android:paddingStart="12dp"
+                                android:paddingTop="6dp"
+                                android:paddingEnd="12dp"
+                                android:paddingBottom="6dp"
+                                android:text="@string/app_name"
+                                android:textAllCaps="true"
+                                android:textColor="@color/mz_text"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
 
-                        <TextView
-                            android:id="@+id/textWelcomeSub"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="24dp"
-                            android:gravity="center"
-                            android:text="@string/home_welcome_subtitle"
-                            android:textColor="@color/mz_muted"
-                            android:textSize="13sp" />
+                            <TextView
+                                android:id="@+id/textWelcome"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:gravity="center"
+                                android:text="@string/home_welcome_fallback"
+                                android:textColor="@color/mz_text"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textWelcomeSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="24dp"
+                                android:gravity="center"
+                                android:text="@string/home_welcome_subtitle"
+                                android:textColor="@color/mz_muted"
+                                android:textSize="13sp" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/btnHeroPlan"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="48dp"
+                                    android:layout_marginBottom="8dp"
+                                    android:background="@drawable/bg_card_soft"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center"
+                                    android:text="@string/home_action_plan_label"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/btnHeroGrades"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="48dp"
+                                    android:background="@drawable/bg_card_soft"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center"
+                                    android:text="@string/home_action_grades_label"
+                                    android:textColor="@color/mz_text"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <Space
+                            android:layout_width="match_parent"
+                            android:layout_height="24dp" />
 
                         <LinearLayout
+                            android:id="@+id/homeSection"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
+                            android:background="@drawable/bg_card_soft"
+                            android:gravity="center"
+                            android:padding="16dp">
                             <TextView
-                                android:id="@+id/btnHeroPlan"
+                                android:id="@+id/textFooterMeta"
                                 android:layout_width="match_parent"
-                                android:layout_height="48dp"
-                                android:layout_marginBottom="8dp"
-                                android:background="@drawable/bg_card_soft"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
+                                android:layout_height="wrap_content"
                                 android:gravity="center"
-                                android:text="@string/home_action_plan_label"
-                                android:textColor="@color/mz_text"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/btnHeroGrades"
-                                android:layout_width="match_parent"
-                                android:layout_height="48dp"
-                                android:background="@drawable/bg_card_soft"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:gravity="center"
-                                android:text="@string/home_action_grades_label"
-                                android:textColor="@color/mz_text"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:text="@string/home_footer_meta"
+                                android:textColor="@color/mz_muted"
+                                android:textSize="11sp" />
                         </LinearLayout>
-                    </LinearLayout>
 
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="24dp" />
+                    </LinearLayout>
+                </ScrollView>
+
+                <ScrollView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.6"
+                    android:clipToPadding="false"
+                    android:padding="16dp"
+                    android:scrollbars="vertical">
 
                     <LinearLayout
-                        android:id="@+id/homeSection"
+                        android:id="@+id/homeShortcuts"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_card_soft"
-                        android:gravity="center"
-                        android:padding="16dp">
+                        android:orientation="vertical">
+
                         <TextView
-                            android:id="@+id/textFooterMeta"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:text="@string/home_footer_meta"
-                            android:textColor="@color/mz_muted"
-                            android:textSize="11sp" />
+                            android:layout_marginBottom="16dp"
+                            android:text="@string/home_shortcuts_title"
+                            android:textColor="@color/mz_text"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <pl.kejlo.mzutv2.TileGridLayout
+                            android:id="@+id/tileGrid"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp" />
                     </LinearLayout>
-
-                </LinearLayout>
-            </ScrollView>
-
-            <ScrollView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.6"
-                android:clipToPadding="false"
-                android:padding="16dp"
-                android:scrollbars="vertical">
-
-                <LinearLayout
-                    android:id="@+id/homeShortcuts"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:text="@string/home_shortcuts_title"
-                        android:textColor="@color/mz_text"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <pl.kejlo.mzutv2.TileGridLayout
-                        android:id="@+id/tileGrid"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp" />
-                </LinearLayout>
-            </ScrollView>
+                </ScrollView>
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+
+        <!-- Indicator Overlay (Bottom Left) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/indicatorOverlay"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="24dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@color/mz_primary"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/indicatorIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_check"
+                app:tint="#FFFFFF" />
+        </androidx.cardview.widget.CardView>
+    </FrameLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
