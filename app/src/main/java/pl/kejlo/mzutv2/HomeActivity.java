@@ -151,7 +151,6 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        BatteryOptimizationHelper.checkBatteryOptimization(this);
     }
 
     private void setupGrid() {

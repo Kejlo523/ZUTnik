@@ -514,7 +514,6 @@ public class PlanActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        BatteryOptimizationHelper.checkBatteryOptimization(this);
         nowLineHandler.removeCallbacks(nowLineRunnable);
         if (!isMonthMode()) {
             updateNowLineInVisiblePage();

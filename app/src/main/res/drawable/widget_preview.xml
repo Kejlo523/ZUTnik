@@ -1,6 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#FF000000" />
-    <size android:width="300dp" android:height="150dp"/>
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background (bg_card_soft simulation) -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#F5F5F7" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+
+    <!-- Header: Date (Text simulation) -->
+    <item android:top="16dp" android:left="16dp" android:width="120dp" android:height="16dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#4A4A4A" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+
+    <!-- Header: Icon (Circle) -->
+    <item android:top="14dp" android:right="16dp" android:width="20dp" android:height="20dp" android:gravity="top|end">
+        <shape android:shape="oval">
+            <solid android:color="#B0B0B0" />
+        </shape>
+    </item>
+
+    <!-- Subtitle (Text simulation) -->
+    <item android:top="40dp" android:left="16dp" android:width="180dp" android:height="10dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#9E9E9E" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+
+    <!-- List Item 1 -->
+    <item android:top="64dp" android:left="12dp" android:right="12dp" android:height="48dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+    <!-- List Item 1 Content (Text simulation) -->
+    <item android:top="74dp" android:left="24dp" android:width="80dp" android:height="10dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#E0E0E0" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+    <item android:top="92dp" android:left="24dp" android:width="140dp" android:height="8dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#F0F0F0" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+
+    <!-- List Item 2 -->
+    <item android:top="120dp" android:left="12dp" android:right="12dp" android:height="48dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+    <!-- List Item 2 Content (Text simulation) -->
+    <item android:top="130dp" android:left="24dp" android:width="90dp" android:height="10dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#E0E0E0" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+    <item android:top="148dp" android:left="24dp" android:width="120dp" android:height="8dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#F0F0F0" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+
+    <!-- List Item 3 -->
+    <item android:top="176dp" android:left="12dp" android:right="12dp" android:height="48dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+
+</layer-list>

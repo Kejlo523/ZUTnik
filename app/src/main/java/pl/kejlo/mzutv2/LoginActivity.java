@@ -147,7 +147,6 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        BatteryOptimizationHelper.checkBatteryOptimization(this);
     }
 
     private void handleKeyboardVisibilityChange(boolean visible) {
