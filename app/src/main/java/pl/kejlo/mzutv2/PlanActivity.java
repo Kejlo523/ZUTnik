@@ -60,6 +60,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import androidx.core.content.ContextCompat;
 
@@ -127,7 +129,6 @@ public class PlanActivity extends AppCompatActivity {
 
     private TextView tvHeaderLabel;
 
-
     private LinearLayout layoutTimeColumn;
 
     private LinearLayout layoutWeekHeadersFixed;
@@ -145,6 +146,7 @@ public class PlanActivity extends AppCompatActivity {
     private LocalDate currentDate = LocalDate.now();
 
     private PlanRepository planRepository;
+
     private final DateTimeFormatter YMD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private SharedPreferences prefs;
@@ -395,7 +397,7 @@ public class PlanActivity extends AppCompatActivity {
             }
         }
 
-    loadPlanForCurrentMode();
+        loadPlanForCurrentMode();
         runIntroAnimations();
     }
 
@@ -635,8 +637,10 @@ public class PlanActivity extends AppCompatActivity {
     private void setupViewModeButtons() {
         View.OnClickListener modeClick = v -> {
             ViewMode newMode = ViewMode.WEEK;
-            if (v == btnViewDay) newMode = ViewMode.DAY;
-            else if (v == btnViewMonth) newMode = ViewMode.MONTH;
+            if (v == btnViewDay)
+                newMode = ViewMode.DAY;
+            else if (v == btnViewMonth)
+                newMode = ViewMode.MONTH;
 
             if (!newMode.getId().equals(viewModeId)) {
                 setCurrentViewMode(newMode);
@@ -675,7 +679,7 @@ public class PlanActivity extends AppCompatActivity {
                             goToToday();
                             return true;
                         case 3:
-                            new LoadSubjectsForFilterTask(PlanActivity.this, false).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            loadSubjectsForFilterAsync(false);
                             return true;
                         default:
                             return false;
@@ -726,7 +730,6 @@ public class PlanActivity extends AppCompatActivity {
     }
 
     // --- Saved Searches ---
-
 
     private void showSearchDialog() {
         LinearLayout layout = new LinearLayout(this);
@@ -1024,8 +1027,7 @@ public class PlanActivity extends AppCompatActivity {
                 }
             } else {
                 showLoadingState(holder);
-                new LoadPageTask(PlanActivity.this, position, pageDate, viewModeId)
-                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                loadPageAsync(position, pageDate, viewModeId);
             }
         }
 
@@ -1227,123 +1229,92 @@ public class PlanActivity extends AppCompatActivity {
         }
     }
 
-    private static class LoadPageTask extends AsyncTask<Void, Void, PlanRepository.PlanResult> {
-        private final WeakReference<PlanActivity> activityRef;
-        private final int pos;
-        private final LocalDate date;
-        private final String modeId;
-
-        LoadPageTask(PlanActivity activity, int p, LocalDate d, String m) {
-            activityRef = new WeakReference<>(activity);
-            pos = p;
-            date = d;
-            modeId = m;
-        }
-
-        @Override
-        protected PlanRepository.PlanResult doInBackground(Void... voids) {
-            PlanActivity activity = activityRef.get();
-            if (activity == null) return null;
+    private void loadPageAsync(int position, LocalDate date, String modeId) {
+        executor.execute(() -> {
+            PlanRepository.PlanResult res = null;
             try {
-                if (activity.currentSearchQuery != null) {
-                    return activity.planRepository.searchPlan(modeId, date, activity.currentSearchQuery);
+                if (currentSearchQuery != null) {
+                    res = planRepository.searchPlan(modeId, date, currentSearchQuery);
                 } else {
-                    return activity.planRepository.loadPlan(modeId, date, false);
+                    res = planRepository.loadPlan(modeId, date, false);
                 }
             } catch (Exception ignored) {
             }
 
-        @Override
-        protected void onPostExecute(PlanRepository.PlanResult res) {
-            PlanActivity activity = activityRef.get();
-            if (activity == null) return;
+            final PlanRepository.PlanResult finalRes = res;
+            runOnUiThread(() -> {
+                if (isDestroyed() || isFinishing())
+                    return;
 
-            if (res != null) {
-                activity.putPlanInCache(modeId, date, res);
-                if (modeId.equals(activity.viewModeId) && activity.pagerAdapter != null) {
-                    activity.pagerAdapter.notifyItemChanged(pos);
-                }
+                if (finalRes != null) {
+                    putPlanInCache(modeId, date, finalRes);
+                    if (pagerAdapter != null) {
+                        pagerAdapter.notifyItemChanged(position);
+                    }
 
-                if (date.equals(activity.currentDate)) {
-                    if (res.headerLabel != null) {
-                        activity.tvHeaderLabel.setText(res.headerLabel);
-                    }
-                    if (!activity.isMonthMode()) {
-                        activity.updateFixedWeekHeaders(res.dayColumns, date);
+                    if (date.equals(currentDate)) {
+                        if (finalRes.headerLabel != null) {
+                            tvHeaderLabel.setText(finalRes.headerLabel);
+                        }
+                        if (!isMonthMode()) {
+                            updateFixedWeekHeaders(finalRes.dayColumns, date);
+                        }
                     }
                 }
-            }
-            activity.stopRefreshAnimation();
-        }
+                stopRefreshAnimation();
+            });
+        });
     }
 
-    private static class LoadSubjectsForFilterTask extends AsyncTask<Void, Void, List<PlanRepository.SubjectFilterItem>> {
-        private final WeakReference<PlanActivity> activityRef;
-        Exception error;
-        private final boolean forceRefresh;
-
-        LoadSubjectsForFilterTask(PlanActivity activity, boolean forceRefresh) {
-            activityRef = new WeakReference<>(activity);
-            this.forceRefresh = forceRefresh;
+    private void loadSubjectsForFilterAsync(boolean forceRefresh) {
+        if (progress != null) {
+            progress.setVisibility(View.VISIBLE);
         }
-
-        @Override
-        protected void onPreExecute() {
-            PlanActivity activity = activityRef.get();
-            if (activity != null && activity.progress != null) {
-                activity.progress.setVisibility(View.VISIBLE);
-            }
-        }
-
-        @Override
-        protected List<PlanRepository.SubjectFilterItem> doInBackground(Void... voids) {
-            PlanActivity activity = activityRef.get();
-            if (activity == null) return null;
+        executor.execute(() -> {
+            List<PlanRepository.SubjectFilterItem> result = null;
+            Exception error = null;
             try {
                 if (!forceRefresh) {
-                    List<PlanRepository.SubjectFilterItem> cached = activity.loadFilterCache();
-                    if (cached != null && !cached.isEmpty()) {
-                        result = cached;
-                    }
+                    result = loadFilterCache();
                 }
-
-                List<PlanRepository.SubjectFilterItem> fresh =
-                        activity.planRepository.loadSubjectsForFilter();
-                if (fresh != null && !fresh.isEmpty()) {
-                    activity.saveFilterCache(fresh);
+                if (result == null) {
+                    result = planRepository.loadSubjectsForFilter();
+                    if (result != null && !result.isEmpty()) {
+                        saveFilterCache(result);
+                    }
                 }
             } catch (Exception e) {
                 error = e;
             }
 
-        @Override
-        protected void onPostExecute(List<PlanRepository.SubjectFilterItem> items) {
-            PlanActivity activity = activityRef.get();
-            if (activity == null) return;
+            final List<PlanRepository.SubjectFilterItem> finalRes = result;
+            final Exception finalErr = error;
+            runOnUiThread(() -> {
+                if (isDestroyed() || isFinishing())
+                    return;
 
-            if (activity.progress != null) {
-                activity.progress.setVisibility(View.GONE);
-            }
-
-            if (items == null || items.isEmpty()) {
-                if (error != null) {
-                    String msg = error.getMessage() != null ? error.getMessage() : "";
-                    Toast.makeText(
-                            activity,
-                            activity.getString(R.string.plan_filters_error, msg),
-                            Toast.LENGTH_LONG
-                    ).show();
-                } else {
-                    Toast.makeText(
-                            activity,
-                            R.string.plan_filters_empty,
-                            Toast.LENGTH_SHORT
-                    ).show();
+                if (progress != null) {
+                    progress.setVisibility(View.GONE);
                 }
-                return;
-            }
-            activity.showFiltersDialog(items);
-        }
+
+                if (finalRes == null || finalRes.isEmpty()) {
+                    if (finalErr != null) {
+                        String msg = finalErr.getMessage() != null ? finalErr.getMessage() : "";
+                        Toast.makeText(
+                                PlanActivity.this,
+                                getString(R.string.plan_filters_error, msg),
+                                Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(
+                                PlanActivity.this,
+                                R.string.plan_filters_empty,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    return;
+                }
+                showFiltersDialog(finalRes);
+            });
+        });
     }
 
     private void showFiltersDialog(List<PlanRepository.SubjectFilterItem> items) {
@@ -1431,8 +1402,6 @@ public class PlanActivity extends AppCompatActivity {
         } catch (org.json.JSONException ignored) {
         }
     }
-
-
 
     private void addHourLines(FrameLayoutWithChildren dayBody) {
         for (int h = START_HOUR; h < END_HOUR; h++) {
