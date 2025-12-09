@@ -102,8 +102,17 @@ public class TileView extends FrameLayout {
             return;
 
         // Content
-        textTitle.setText(tile.title);
-        textDesc.setText(tile.description);
+        if (tile.titleResId != 0) {
+            textTitle.setText(tile.titleResId);
+        } else {
+            textTitle.setText(tile.title);
+        }
+
+        if (tile.descResId != 0) {
+            textDesc.setText(tile.descResId);
+        } else {
+            textDesc.setText(tile.description);
+        }
 
         // Mode: 1x1 (Icon), 1x2 (Small Title), Default (Normal)
         boolean is1x1 = (tile.colSpan == 1 && tile.rowSpan == 1);
