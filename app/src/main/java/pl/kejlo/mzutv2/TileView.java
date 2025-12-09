@@ -24,14 +24,14 @@ public class TileView extends FrameLayout {
     private ImageView btnResizeRight;
     private ImageView btnResizeLeft;
     private ImageView btnDrag;
-    
+
     private boolean isEditMode = false;
-    
+
     // Listeners for edit actions
     public interface OnDeleteListener {
         void onDelete(TileView view);
     }
-    
+
     private OnDeleteListener deleteListener;
 
     public TileView(@NonNull Context context) {
@@ -55,37 +55,38 @@ public class TileView extends FrameLayout {
         btnResizeRight = findViewById(R.id.btnResizeRight);
         btnResizeLeft = findViewById(R.id.btnResizeLeft);
         btnDrag = findViewById(R.id.btnDrag);
-        
+
         btnDelete.setOnClickListener(v -> {
-            if (deleteListener != null) deleteListener.onDelete(this);
+            if (deleteListener != null)
+                deleteListener.onDelete(this);
         });
-        
+
         // Resize handle logic Right
         btnResizeRight.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                 if (getParent() instanceof TileGridLayout) {
-                     ((TileGridLayout) getParent()).startResizing(TileView.this, 1);
-                 }
+                if (getParent() instanceof TileGridLayout) {
+                    ((TileGridLayout) getParent()).startResizing(TileView.this, 1);
+                }
             }
             return true;
         });
 
         // Resize handle logic Left
         btnResizeLeft.setOnTouchListener((v, event) -> {
-             if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                  if (getParent() instanceof TileGridLayout) {
-                      ((TileGridLayout) getParent()).startResizing(TileView.this, -1);
-                  }
-             }
-             return true;
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (getParent() instanceof TileGridLayout) {
+                    ((TileGridLayout) getParent()).startResizing(TileView.this, -1);
+                }
+            }
+            return true;
         });
-        
+
         // Drag handle logic
         btnDrag.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                 if (getParent() instanceof TileGridLayout) {
-                     ((TileGridLayout) getParent()).startDragging(TileView.this, event.getRawX(), event.getRawY());
-                 }
+                if (getParent() instanceof TileGridLayout) {
+                    ((TileGridLayout) getParent()).startDragging(TileView.this, event.getRawX(), event.getRawY());
+                }
             }
             return true;
         });
@@ -95,48 +96,53 @@ public class TileView extends FrameLayout {
         this.tile = tile;
         updateLayout();
     }
-    
+
     private void updateLayout() {
-        if (tile == null) return;
+        if (tile == null)
+            return;
 
         // Content
         textTitle.setText(tile.title);
         textDesc.setText(tile.description);
-        
+
         // Mode: 1x1 (Icon), 1x2 (Small Title), Default (Normal)
         boolean is1x1 = (tile.colSpan == 1 && tile.rowSpan == 1);
         boolean is1x2 = (tile.colSpan == 1 && tile.rowSpan == 2); // Unlikely to be row=2 col=1? But possible vertical.
-        // Wait, user said "if 1x2 to only title small font". Usually width x height. 
-        // Let's assume user meant 1 column X 2 rows (vertical), or maybe 2 columns X 1 row? 
-        // "1x2 -> small font". 1 width, 2 height is TALL. 
+        // Wait, user said "if 1x2 to only title small font". Usually width x height.
+        // Let's assume user meant 1 column X 2 rows (vertical), or maybe 2 columns X 1
+        // row?
+        // "1x2 -> small font". 1 width, 2 height is TALL.
         // If 2 width, 1 height (WIDE) -> plenty of space.
         // Let's assume standard grid notation: Col x Row.
         // If 1x1: Icon.
         // If 1x2 (1 wide, 2 high): Title Only.
         // If 2x1 (2 wide, 1 high): Title + Desc ? Or Title only if short?
         // Let's stick strictly to what user implies: small tiles get simplified.
-        
+
         if (is1x1) {
             // Show Icon, Hide Text
             textTitle.setVisibility(GONE);
             textDesc.setVisibility(GONE);
             iconView.setVisibility(VISIBLE);
-            
+
             // Resolve icon
             iconView.setImageResource(getIconForAction(tile));
-            
+
         } else if (tile.rowSpan == 1 || tile.colSpan == 1) {
-             // Small/Narrow tiles (1x2, 2x1, 3x1, 1x3 etc) - logic: hide desc, small title
-             iconView.setVisibility(GONE);
-             textTitle.setVisibility(VISIBLE);
-             textDesc.setVisibility(GONE);
-             textTitle.setTextSize(14f);
+            // Small/Narrow tiles (1x2, 2x1, 3x1, 1x3 etc) - logic: hide desc, small title
+            iconView.setVisibility(GONE);
+            textTitle.setVisibility(VISIBLE);
+            textDesc.setVisibility(GONE);
+            textTitle.setTextSize(14f);
+            textTitle.setGravity(android.view.Gravity.CENTER);
         } else {
-             // Default (Big tiles, e.g. 2x2, 2x4)
-             iconView.setVisibility(GONE);
-             textTitle.setVisibility(VISIBLE);
-             textDesc.setVisibility(VISIBLE);
-             textTitle.setTextSize(16f);
+            // Default (Big tiles, e.g. 2x2, 2x4)
+            iconView.setVisibility(GONE);
+            textTitle.setVisibility(VISIBLE);
+            textDesc.setVisibility(VISIBLE);
+            textTitle.setTextSize(16f);
+            textTitle.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL); // Reset to default
+            // Ensure textDesc is also aligned if needed, usually it is below title
         }
 
         // Color Logic
@@ -144,7 +150,7 @@ public class TileView extends FrameLayout {
             cardContent.setCardBackgroundColor(tile.color);
             boolean isDark = androidx.core.graphics.ColorUtils.calculateLuminance(tile.color) < 0.5;
             int tint = isDark ? android.graphics.Color.WHITE : android.graphics.Color.BLACK;
-            
+
             textTitle.setTextColor(tint);
             textDesc.setTextColor(isDark ? 0xFFCCCCCC : 0xFF666666); // Muted variant
             iconView.setColorFilter(tint);
@@ -156,27 +162,38 @@ public class TileView extends FrameLayout {
             iconView.setColorFilter(getResources().getColor(R.color.mz_primary, null));
         }
     }
-    
+
     private int getIconForAction(Tile t) {
         String action = t.actionType;
-        if (action == null) return R.drawable.ic_android;
-        
+        if (action == null)
+            return R.drawable.ic_android;
+
         switch (action) {
-            case Tile.ACTION_PLAN: return R.drawable.ic_calendar;
-            case Tile.ACTION_GRADES: return R.drawable.ic_school;
-            case Tile.ACTION_NEWS: return R.drawable.ic_newspaper;
-            case Tile.ACTION_NEWS_LATEST: return R.drawable.ic_flash_on;
-            case Tile.ACTION_INFO: return R.drawable.ic_map;
-            case Tile.ACTION_URL: return R.drawable.ic_link;
-            case Tile.ACTION_PLAN_SEARCH: return R.drawable.ic_search;
+            case Tile.ACTION_PLAN:
+                return R.drawable.ic_calendar;
+            case Tile.ACTION_GRADES:
+                return R.drawable.ic_school;
+            case Tile.ACTION_NEWS:
+                return R.drawable.ic_newspaper;
+            case Tile.ACTION_NEWS_LATEST:
+                return R.drawable.ic_flash_on;
+            case Tile.ACTION_INFO:
+                return R.drawable.ic_map;
+            case Tile.ACTION_URL:
+                return R.drawable.ic_link;
+            case Tile.ACTION_PLAN_SEARCH:
+                return R.drawable.ic_search;
             case Tile.ACTION_ACTIVITY:
                 // Check data
                 if (t.actionData != null) {
-                    if (t.actionData.contains("UsefulLinksActivity")) return R.drawable.ic_link;
-                    if (t.actionData.contains("AboutActivity")) return R.drawable.ic_info;
+                    if (t.actionData.contains("UsefulLinksActivity"))
+                        return R.drawable.ic_link;
+                    if (t.actionData.contains("AboutActivity"))
+                        return R.drawable.ic_info;
                 }
                 return R.drawable.ic_android;
-            default: return R.drawable.ic_android;
+            default:
+                return R.drawable.ic_android;
         }
     }
 
@@ -193,7 +210,7 @@ public class TileView extends FrameLayout {
             btnResizeLeft.setVisibility(VISIBLE);
             btnDrag.setVisibility(VISIBLE);
             this.setForeground(null); // Disable ripple
-            
+
             // Visual "Shrink" for edit mode feeling
             animate().scaleX(0.92f).scaleY(0.92f).setDuration(200).start();
         } else {
@@ -202,12 +219,12 @@ public class TileView extends FrameLayout {
             btnResizeRight.setVisibility(GONE);
             btnResizeLeft.setVisibility(GONE);
             btnDrag.setVisibility(GONE);
-            
+
             // Restore scale
             animate().scaleX(1f).scaleY(1f).setDuration(200).start();
         }
     }
-    
+
     public void setOnDeleteListener(OnDeleteListener listener) {
         this.deleteListener = listener;
     }
