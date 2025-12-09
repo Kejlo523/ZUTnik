@@ -205,25 +205,6 @@
         
     </com.google.android.material.navigation.NavigationView>
 
-    <!-- Indicator Overlay (Bottom Left) -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/indicatorOverlay"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="bottom|start"
-        android:layout_margin="24dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="6dp"
-        app:cardBackgroundColor="@color/mz_primary"
-        android:visibility="gone">
 
-        <ImageView
-            android:id="@+id/indicatorIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_check"
-            app:tint="#FFFFFF" />
-    </androidx.cardview.widget.CardView>
 
 </androidx.drawerlayout.widget.DrawerLayout>
