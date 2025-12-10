@@ -32,7 +32,7 @@
             android:textStyle="bold"
             android:textSize="15sp"
             android:fontFamily="sans-serif-medium"
-            android:textColor="@color/mz_text" />
+            android:textColor="?attr/mzText" />
 
         <!-- Opis linku -->
         <TextView
@@ -42,7 +42,7 @@
             android:layout_marginTop="4dp"
             android:text="Krótki opis do czego służy ten link."
             android:textSize="13sp"
-            android:textColor="@color/mz_muted" />
+            android:textColor="?attr/mzMuted" />
 
         <!-- Adres URL -->
         <TextView
@@ -66,7 +66,7 @@
             android:paddingBottom="4dp"
             android:text="Twój kierunek"
             android:textSize="11sp"
-            android:textColor="@color/mz_text"
+            android:textColor="?attr/mzText"
             android:background="@drawable/bg_card_primary"
             android:visibility="gone" />
 

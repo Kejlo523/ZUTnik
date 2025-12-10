@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Tło dopasowane do motywu -->
-    <solid android:color="@color/mz_card_soft" />
+    <solid android:color="?attr/mzCardSoft" />
 
     <!-- Zaokrąglenie pod itemy nav -->
     <corners android:radius="999dp" />
@@ -9,5 +9,5 @@
     <!-- Obramowanie motywowane -->
     <stroke
         android:width="1dp"
-        android:color="@color/mz_border_soft" />
+        android:color="?attr/mzBorderSoft" />
 </shape>

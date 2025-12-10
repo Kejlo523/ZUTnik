@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
     android:fitsSystemWindows="true"
-    app:statusBarBackground="@color/mz_bg">
+    app:statusBarBackground="?attr/mzBg">
 
     <LinearLayout
         android:id="@+id/drawerContentRoot"
@@ -22,7 +22,7 @@
             android:elevation="0dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:titleTextColor="@color/mz_text" />
+            android:titleTextColor="?attr/mzText" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -53,7 +53,7 @@
                         android:layout_gravity="top|end"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@android:drawable/ic_popup_sync"
-                        app:tint="@color/mz_text"
+                        app:tint="?attr/mzText"
                         android:alpha="0.6" />
 
                     <LinearLayout
@@ -72,7 +72,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/grades_summary_average_label"
                                 android:textAllCaps="true"
-                                android:textColor="@color/mz_muted"
+                                android:textColor="?attr/mzMuted"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
 
@@ -86,7 +86,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/grades_average_placeholder"
-                                android:textColor="@color/mz_text"
+                                android:textColor="?attr/mzText"
                                 android:textSize="32sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -96,7 +96,7 @@
                             android:layout_height="1dp"
                             android:layout_marginTop="8dp"
                             android:layout_marginBottom="8dp"
-                            android:background="@color/mz_border_soft" />
+                            android:background="?attr/mzBorderSoft" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -109,7 +109,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/grades_summary_ects_label"
                                 android:textAllCaps="true"
-                                android:textColor="@color/mz_muted"
+                                android:textColor="?attr/mzMuted"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
 
@@ -123,7 +123,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0"
-                                android:textColor="@color/mz_text"
+                                android:textColor="?attr/mzText"
                                 android:textSize="32sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -184,7 +184,7 @@
                     android:layout_gravity="center"
                     android:gravity="center"
                     android:text="@string/grades_empty_state"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="14sp"
                     android:visibility="gone" />
 
@@ -205,7 +205,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/mz_bg"
+        android:background="?attr/mzBg"
         android:fitsSystemWindows="true">
         <include layout="@layout/nav_header" />
     </com.google.android.material.navigation.NavigationView>

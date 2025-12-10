@@ -29,7 +29,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="Przedmiot"
-            android:textColor="@color/mz_text"
+            android:textColor="?attr/mzText"
             android:textSize="13sp"
             android:textStyle="bold" />
 
@@ -44,7 +44,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginRight="8dp"
                 android:text="08:00 - 09:30"
-                android:textColor="@color/mz_text"
+                android:textColor="?attr/mzText"
                 android:textSize="11sp" />
 
             <TextView
@@ -54,7 +54,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="Sala 123"
-                android:textColor="@color/mz_muted"
+                android:textColor="?attr/mzMuted"
                 android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>

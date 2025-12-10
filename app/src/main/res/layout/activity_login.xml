@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mz_bg"
+    android:background="?attr/mzBg"
     android:fillViewport="true"
     android:fitsSystemWindows="true"
     android:isScrollContainer="true"
@@ -43,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:letterSpacing="0.05"
                 android:text="@string/app_name"
-                android:textColor="@color/mz_text"
+                android:textColor="?attr/mzText"
                 android:textSize="28sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -52,7 +52,7 @@
             android:id="@+id/loginCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/mz_bg_soft"
+            app:cardBackgroundColor="?attr/mzBgSoft"
             app:cardCornerRadius="24dp"
             app:cardElevation="8dp">
 
@@ -71,7 +71,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="16dp"
                     android:text="@string/login_card_title"
-                    android:textColor="@color/mz_text"
+                    android:textColor="?attr/mzText"
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
@@ -83,13 +83,13 @@
                     android:layout_marginBottom="12dp"
                     android:layout_marginHorizontal="4dp"
                     android:hint="@string/login_hint"
-                    app:boxBackgroundColor="@color/mz_bg"
-                    app:boxStrokeColor="@color/mz_primary"
+                    app:boxBackgroundColor="?attr/mzBg"
+                    app:boxStrokeColor="?attr/mzPrimary"
                     app:boxStrokeWidth="1dp"
                     app:boxStrokeWidthFocused="2dp"
-                    app:hintTextColor="@color/mz_primary"
+                    app:hintTextColor="?attr/mzPrimary"
                     app:startIconDrawable="@drawable/ic_person"
-                    app:startIconTint="@color/mz_muted">
+                    app:startIconTint="?attr/mzMuted">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editLogin"
@@ -98,7 +98,7 @@
                         android:inputType="text"
                         android:padding="0dp"
                         android:paddingStart="12dp"
-                        android:textColor="@color/mz_text" />
+                        android:textColor="?attr/mzText" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -109,15 +109,15 @@
                     android:layout_marginBottom="24dp"
                     android:layout_marginHorizontal="4dp"
                     android:hint="@string/login_password_hint"
-                    app:boxBackgroundColor="@color/mz_bg"
-                    app:boxStrokeColor="@color/mz_primary"
+                    app:boxBackgroundColor="?attr/mzBg"
+                    app:boxStrokeColor="?attr/mzPrimary"
                     app:boxStrokeWidth="1dp"
                     app:boxStrokeWidthFocused="2dp"
                     app:passwordToggleEnabled="true"
-                    app:passwordToggleTint="@color/mz_muted"
-                    app:hintTextColor="@color/mz_primary"
+                    app:passwordToggleTint="?attr/mzMuted"
+                    app:hintTextColor="?attr/mzPrimary"
                     app:startIconDrawable="@drawable/ic_lock"
-                    app:startIconTint="@color/mz_muted">
+                    app:startIconTint="?attr/mzMuted">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editPass"
@@ -126,14 +126,14 @@
                         android:inputType="textPassword"
                         android:padding="0dp"
                         android:paddingStart="12dp"
-                        android:textColor="@color/mz_text" />
+                        android:textColor="?attr/mzText" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:backgroundTint="@color/mz_primary"
+                    android:backgroundTint="?attr/mzPrimary"
                     android:elevation="4dp"
                     android:text="@string/login_button"
                     android:textColor="@android:color/white"
@@ -148,7 +148,7 @@
                     android:layout_marginTop="16dp"
                     android:gravity="center"
                     android:text="@string/login_info_text"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="12sp" />
 
             </LinearLayout>

@@ -28,6 +28,7 @@ public class NewsDetailActivity extends AppCompatActivity {
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
+
     private static final String ZUT_BASE_URL = "https://www.zut.edu.pl";
 
     private Toolbar toolbar;
@@ -41,6 +42,7 @@ public class NewsDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_news_detail);
 
@@ -93,7 +95,7 @@ public class NewsDetailActivity extends AppCompatActivity {
             webView.setWebViewClient(new WebViewClient() {
                 @Override
                 public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view,
-                                                                                 android.webkit.WebResourceRequest request) {
+                        android.webkit.WebResourceRequest request) {
                     if (request == null || request.getUrl() == null) {
                         return super.shouldInterceptRequest(view, request);
                     }
@@ -134,8 +136,7 @@ public class NewsDetailActivity extends AppCompatActivity {
                     styled,
                     "text/html",
                     "utf-8",
-                    null
-            );
+                    null);
 
             webView.setVisibility(WebView.VISIBLE);
             tvFallback.setVisibility(TextView.GONE);
@@ -171,14 +172,12 @@ public class NewsDetailActivity extends AppCompatActivity {
         // src="/fileadmin/..."
         out = out.replaceAll(
                 "src=\"/(fileadmin/[^\"]*)\"",
-                "src=\"" + ZUT_BASE_URL + "/$1\""
-        );
+                "src=\"" + ZUT_BASE_URL + "/$1\"");
 
         // src="fileadmin/..."
         out = out.replaceAll(
                 "src=\"(fileadmin/[^\"]*)\"",
-                "src=\"" + ZUT_BASE_URL + "/$1\""
-        );
+                "src=\"" + ZUT_BASE_URL + "/$1\"");
 
         return out;
     }
@@ -212,10 +211,11 @@ public class NewsDetailActivity extends AppCompatActivity {
         }
 
         // pobranie kolorów z resources (automatycznie weźmie -night w dark mode)
-        int bg = ContextCompat.getColor(this, R.color.mz_bg);
-        int text = ContextCompat.getColor(this, R.color.mz_text);
-        int link = ContextCompat.getColor(this, R.color.mz_primary);
-        int border = ContextCompat.getColor(this, R.color.mz_border_strong);
+        // pobranie kolorów z resources (automatycznie weźmie -night w dark mode)
+        int bg = ThemeManager.resolveColor(this, R.attr.mzBg);
+        int text = ThemeManager.resolveColor(this, R.attr.mzText);
+        int link = ThemeManager.resolveColor(this, R.attr.mzPrimary);
+        int border = ThemeManager.resolveColor(this, R.attr.mzBorderStrong);
 
         String bgHex = toHtmlColor(bg);
         String textHex = toHtmlColor(text);

@@ -11,7 +11,7 @@
         android:layout_margin="10dp"
         app:cardCornerRadius="12dp"
         app:cardElevation="2dp"
-        app:cardBackgroundColor="@color/mz_bg_surface"
+        app:cardBackgroundColor="?attr/mzBgSurface"
         xmlns:app="http://schemas.android.com/apk/res-auto">
 
         <LinearLayout
@@ -29,14 +29,14 @@
                 android:layout_gravity="center"
                 android:src="@drawable/ic_launcher_foreground"
                 android:visibility="gone"
-                app:tint="@color/mz_primary" />
+                app:tint="?attr/mzPrimary" />
 
             <TextView
                 android:id="@+id/textTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Title"
-                android:textColor="@color/mz_text"
+                android:textColor="?attr/mzText"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:maxLines="2"
@@ -48,7 +48,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Description"
-                android:textColor="@color/mz_muted"
+                android:textColor="?attr/mzMuted"
                 android:textSize="12sp"
                 android:maxLines="3"
                 android:ellipsize="end" />
@@ -89,7 +89,7 @@
         android:layout_margin="0dp"
         android:src="@drawable/ic_drag_handle"
         android:background="@drawable/bg_circle_soft"
-        android:backgroundTint="@color/mz_primary"
+        android:backgroundTint="?attr/mzPrimary"
         android:elevation="4dp"
         android:padding="6dp"
         android:visibility="gone"

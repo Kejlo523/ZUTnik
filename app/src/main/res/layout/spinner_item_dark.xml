@@ -8,7 +8,7 @@
 
     android:drawableEnd="@drawable/ic_spinner_arrow"
     android:drawablePadding="12dp"
-    android:drawableTint="@color/mz_muted"
+    android:drawableTint="?attr/mzMuted"
 
     android:gravity="center_vertical"
 
@@ -17,5 +17,5 @@
     android:paddingEnd="12dp"
     android:paddingBottom="10dp"
 
-    android:textColor="@color/mz_text"
+    android:textColor="?attr/mzText"
     android:textSize="12sp" />

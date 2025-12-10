@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_opt_dialog_title">Kapitanie, problem!</string>
+    <string name="battery_opt_dialog_message">Łajba musi płynąć w tle, żeby widgety nie poszły na dno. Wyłącz oszczędzanie energii dla tej krypy.</string>
+    <string name="battery_opt_button_settings">Ustawienia Łajby</string>
+    <string name="battery_opt_button_cancel">Poddaj się</string>
+
+    <string name="app_name">mZUT v2 (Pirate Ed.)</string>
+    <string name="app_version">Wersja %1$s (Alpha &amp; Omega)</string>
+
+    <string name="nav_header_default_username">Majtek</string>
+    <string name="logout_success_message">Opuszczono pokład!</string>
+    <string name="nav_settings_label">Kajuta Kapitana</string>
+    <string name="nav_useful_links">Mapy Skarbów</string>
+    <string name="nav_logout_label">Opuszczam Okręt</string>
+
+    <string name="login_card_title">Pokaż Przepustkę</string>
+    <string name="login_hint">Ksywa (Login)</string>
+    <string name="login_password_hint">Tajny Kod (Hasło)</string>
+    <string name="login_button">Wchodzę na pokład</string>
+    <string name="login_info_text">
+        Twoje dane lecą prosto do ZUT (Krakena). Login zostanie wyryty na tym urządzeniu.
+    </string>
+
+    <string name="login_enter_credentials">Podaj Ksywę i Tajny Kod, szczurze lądowy!</string>
+    <string name="login_error_generic">Sztorm: %1$s</string>
+    <string name="login_no_server_response">Kraken nie odpowiada (Brak serwera)</string>
+    <string name="login_system_error">Statek tonie! (SYSTEM ERROR).</string>
+    <string name="login_invalid_credentials">Zła przepustka! (Błędny login/hasło).</string>
+    <string name="login_success">Ahoj, %1$s!</string>
+
+    <string name="home_title">Mostek Kapitański</string>
+
+    <string name="home_welcome_message">Ahoj, %1$s!</string>
+    <string name="home_welcome_subtitle">
+        Tu masz mapę zajęć, swoje łupy (oceny) i wieści ze świata. Nie zgub się!
+    </string>
+    <string name="home_welcome_fallback">Ahoj, Majtku 👋</string>
+
+    <string name="home_grades_not_available">Skrzynia ze skarbami jest zamknięta (Oceny niedostępne).</string>
+    <string name="home_news_not_available">Bocianie gniazdo puste (Aktualności niedostępne).</string>
+
+    <string name="home_tip_plan">Mapa: gdzie dziś płyniemy (zajęcia).</string>
+    <string name="home_tip_grades">Łupy: ile złota zebrałeś (ECTS, Oceny).</string>
+    <string name="home_tip_info">Info: kto ty jesteś, dokąd zmierzasz.</string>
+    <string name="home_tip_news">Wieści: co tam słychać na morzu.</string>
+
+    <string name="home_shortcuts_title">Szybka Szalupa</string>
+
+    <string name="home_action_plan_label">📅 Plan Rejsu</string>
+    <string name="home_action_grades_label">⭐ Złoto i Łupy</string>
+
+    <string name="home_tile_plan_title">📅 Plan Rejsu</string>
+    <string name="home_tile_plan_desc">
+        Gdzie i kiedy masz wiosłować.
+    </string>
+
+    <string name="home_tile_grades_title">⭐ Złoto i Łupy</string>
+    <string name="home_tile_grades_desc">
+        Podsumowanie Twoich zdobyczy i punktów.
+    </string>
+
+    <string name="home_tile_info_title">🎓 O Tobie</string>
+    <string name="home_tile_info_desc">
+        Kierunek rejsu, ranga i inne papiery.
+    </string>
+
+    <string name="home_tile_news_title">📰 Wieści z Portu</string>
+    <string name="home_tile_news_desc">
+        Co tam krzyczą w porcie (Komunikaty).
+    </string>
+
+    <string name="home_footer_meta">
+        Dane kradzione z ZUT i kitrane lokalnie. Jak coś śmierdzi, sprawdź w oficjalnym dzienniku pokładowym.
+    </string>
+
+    <string name="info_title">Papiery Majtka</string>
+    <string name="info_user_id">ID Pirata: %1$s</string>
+    <string name="info_user_id_placeholder">ID Pirata: -</string>
+
+    <string name="info_sync_in_progress">Szorowanie pokładu (Sync)…</string>
+    <string name="info_error_loading">Mapa zamokła: %1$s</string>
+
+    <string name="info_history_empty">Brak historii rejsów.</string>
+    <string name="info_history_item">%1$s – %2$s</string>
+    <string name="info_history_title">Historia Rejsów</string>
+
+    <string name="info_header_title">Twoje Papiery</string>
+    <string name="info_header_subtitle">
+        Wszystko co o Tobie wiedzą: ranga, cel podróży i przebyte mile morskie.
+    </string>
+
+    <string name="info_study_switch_label">Cel podróży / Kierunek</string>
+
+    <string name="info_current_studies_title">Obecny Kurs</string>
+    <string name="info_label_album">Nr tatuażu (Album):</string>
+    <string name="info_label_faculty">Banderola (Wydział):</string>
+    <string name="info_label_field">Kurs (Kierunek):</string>
+    <string name="info_label_form">Tryb żeglugi:</string>
+    <string name="info_label_level">Poziom wtajemniczenia:</string>
+    <string name="info_label_specialty">Fach:</string>
+    <string name="info_label_specialisation">Specjalizacja:</string>
+    <string name="info_label_status">Status:</string>
+    <string name="info_label_academic_year">Rok na morzu:</string>
+    <string name="info_label_semester">Wachta (Semestr):</string>
+
+    <string name="plan_title">Plan Rejsu</string>
+
+    <string name="plan_filters_cache_cleared">
+        Wyczyszczono lunetę. Nowa mapa przy następnym otwarciu.
+    </string>
+    <string name="plan_filters_loading">Rozwijam żagle…</string>
+    <string name="plan_filters_error">Nie widać lądu (Błąd): %1$s</string>
+    <string name="plan_filters_empty">Pusto na horyzoncie.</string>
+    <string name="plan_filters_dialog_title">Wyrzuć za burtę (Filtr)</string>
+    <string name="plan_filters_apply">Tak ma być!</string>
+    <string name="plan_filters_reset">Od nowa</string>
+    <string name="plan_filters_cancel">Wrrróć</string>
+
+    <string name="plan_error_loading_plan_with_message">Zgubiono mapę: %1$s</string>
+    <string name="plan_error_loading_plan_generic">Zgubiono mapę.</string>
+    <string name="plan_no_classes_in_range">Wolne! Pijemy rum!</string>
+    <string name="plan_no_data_for_month">Brak rozkazów na ten miesiąc.</string>
+
+    <string name="plan_month_cell_has_events_hint">Robota w ten dzień</string>
+
+    <string name="plan_event_default_title">Robota</string>
+    <string name="plan_event_room_prefix">Kajuta: </string>
+    <string name="plan_event_group_prefix">Załoga: </string>
+    <string name="plan_event_teacher_prefix">Bosman: </string>
+
+    <string name="plan_header_mon_short">Pn</string>
+    <string name="plan_header_tue_short">Wt</string>
+    <string name="plan_header_wed_short">Śr</string>
+    <string name="plan_header_thu_short">Cz</string>
+    <string name="plan_header_fri_short">Pt</string>
+    <string name="plan_header_sat_short">Sb</string>
+    <string name="plan_header_sun_short">Nd</string>
+
+    <string name="plan_month_weekday_mon">Pon</string>
+    <string name="plan_month_weekday_tue">Wt</string>
+    <string name="plan_month_weekday_wed">Śr</string>
+    <string name="plan_month_weekday_thu">Czw</string>
+    <string name="plan_month_weekday_fri">Pt</string>
+    <string name="plan_month_weekday_sat">Sob</string>
+    <string name="plan_month_weekday_sun">Nd</string>
+
+    <string name="plan_view_day">Dzień</string>
+    <string name="plan_view_week">Tydzień</string>
+    <string name="plan_view_month">Miesiąc</string>
+
+    <string name="plan_button_today">Dziś</string>
+    <string name="plan_button_refresh">Przetrzyj lunetę</string>
+    <string name="plan_button_filters">Filtr</string>
+
+    <string name="plan_search_hint">Gdzie to jest?</string>
+
+    <string name="plan_toast_resetting_search">Zwijam mapę…</string>
+    <string name="plan_toast_refreshed">Luneta przetarta (Odświeżono)</string>
+    <string name="plan_toast_search_prefix">Szukam: %1$s %2$s</string>
+    <string name="plan_search_dialog_title">Szukaj na mapie</string>
+    <string name="plan_search_hint_input">Co chcesz znaleźć?</string>
+    <string name="plan_search_button">Szukaj!</string>
+    <string name="plan_search_saved_title">Zakopane mapy</string>
+    <string name="plan_search_save_label">Zakop (Zapisz)</string>
+    <string name="plan_search_save_hint_label">Nazwa skarbu (opcjonalnie)</string>
+    <string name="plan_search_save_title">Zakop mapę</string>
+    <string name="plan_search_save_confirm">Zakop</string>
+    <string name="plan_search_saved_toast">Zakopane!</string>
+    <string name="plan_search_no_saved">Brak zakopanych map</string>
+    <string name="plan_search_saved_clear">Spal mapy</string>
+    <string name="plan_search_saved_cleared">Mapy spalone</string>
+    <string name="plan_search_empty_query">Wpisz coś, niemoto</string>
+
+    <string name="plan_search_cat_album">Nr tatuażu</string>
+    <string name="plan_search_cat_teacher">Bosman</string>
+    <string name="plan_search_cat_room">Kajuta</string>
+    <string name="plan_search_cat_subject">Robota</string>
+    <string name="plan_search_cat_group">Załoga</string>
+
+    <string name="plan_type_lecture">Wykład (Spanie)</string>
+    <string name="plan_type_lab">Laboratorium (Wybuchy)</string>
+    <string name="plan_type_auditory">Ćwiczenia (Męczarnia)</string>
+    <string name="plan_type_exam">Walka z Bossem (Egzamin)</string>
+    <string name="plan_type_cancelled">Odwołane (Pijemy!)</string>
+    <string name="plan_type_rector">Dzień Kapitana</string>
+    <string name="plan_type_remote">Zaleganie w koi (Zdalne)</string>
+    <string name="plan_type_pass">Walka (Zaliczenie)</string>
+    <string name="plan_type_pass_retake">Druga szansa (Poprawka)</string>
+    <string name="plan_type_pass_remote">Walka z koi (Zdalne zal.)</string>
+    <string name="plan_type_pass_remote_retake">Druga szansa z koi</string>
+
+    <string name="grades_title">Skarbiec</string>
+    <string name="grades_refresh_toast">Liczenie złota…</string>
+
+    <string name="grades_error_initial_load">Ktoś ukradł skrzynię: %1$s</string>
+    <string name="grades_error_loading_semesters">Błąd wacht: %1$s</string>
+    <string name="grades_no_semesters_for_study">Brak wacht na tym kursie.</string>
+    <string name="grades_refresh_network_failed_using_cache">
+        Nie mogę policzyć złota. Pokazuję stare zapiski.
+    </string>
+    <string name="grades_load_network_failed_using_cache">
+        Sztorm na łączach. Pokazuję stare zapiski.
+    </string>
+    <string name="grades_error_loading_grades">Nie mogę otworzyć skrzyni: %1$s</string>
+
+    <string name="grades_semester_label">Wachta %1$s (%2$s)</string>
+
+    <string name="grades_average_placeholder">?</string>
+
+    <string name="grades_hero_title">Twój Łup</string>
+    <string name="grades_hero_subtitle">
+        Ile masz złota (ECTS), średnia jakość łupu i lista zdobyczy.
+    </string>
+
+    <string name="grades_summary_average_label">Jakość łupu (Średnia)</string>
+    <string name="grades_summary_average_description">
+        Warzona jakość Twoich zdobyczy.
+    </string>
+
+    <string name="grades_summary_ects_label">Suma Złota (ECTS)</string>
+    <string name="grades_summary_ects_description">
+        Ile złota zebrałeś na tej wachcie.
+    </string>
+
+    <string name="grades_study_label">Obecny Rejs</string>
+    <string name="grades_semester_caption">Wachta</string>
+
+    <string name="grades_table_header_subject">Cel</string>
+    <string name="grades_table_header_type">Typ walki</string>
+    <string name="grades_table_header_grade">Wynik</string>
+    <string name="grades_table_header_date">Data</string>
+
+    <string name="grades_empty_state">Pusta skrzynia. Do roboty!</string>
+
+    <string name="news_title">Wieści z Portu</string>
+    <string name="news_refresh_toast">Nasłuchuję mew…</string>
+    <string name="news_error_rss">Mewy milczą: %1$s</string>
+
+    <string name="news_detail_title">Plotka</string>
+    <string name="news_detail_source_label">Z portu: zut.edu.pl</string>
+    <string name="news_detail_no_content">
+        Pusta butelka (Brak treści).
+    </string>
+
+    <string name="news_header_title">Krzyki w Porcie</string>
+    <string name="news_header_source_info">Źródło: Majtkowie ZUT</string>
+
+    <string name="news_empty_state">
+        Cisza na morzu.
+    </string>
+
+    <string name="news_detail_tag">📰 Plotka</string>
+
+    <string name="plan_widget_subtitle_today">Dzisiejsza Orka</string>
+    <string name="plan_widget_subtitle_in_progress">Wiosłujesz teraz</string>
+    <string name="plan_widget_subtitle_next_prefix">Kolejna fala za </string>
+    <string name="plan_widget_hours_suffix"> h</string>
+    <string name="plan_widget_minutes_suffix"> min</string>
+    <string name="plan_widget_subtitle_no_classes_tomorrow">Jutro leżymy do góry brzuchem</string>
+    <string name="plan_widget_subtitle_tomorrow">Jutrzejsza Orka</string>
+    <string name="plan_widget_subtitle_login_required">
+        Pokaż przepustkę w apce!
+    </string>
+    <string name="plan_widget_date_tomorrow_suffix">(jutro)</string>
+    <string name="plan_widget_refreshed_prefix">Sprawdzono: </string>
+
+    <string name="about_title">O tej łajbie</string>
+
+    <string name="about_subtitle">
+        Piracka apka dla szczurów lądowych z ZUT. Plan, łupy i wieści - bez szpiegów i reklam.
+    </string>
+
+    <string name="about_section_project_title">Kto to zbudował?</string>
+    <string name="about_author_line">Szkutnik: Jędrzej Nowak.</string>
+    <string name="about_project_description_1">
+        mZUT v2 powstał, bo oryginalne mapy były do niczego. Szybko i bez zbędnego balastu.
+    </string>
+    <string name="about_project_description_2">
+        Bierzemy dane z portu, ale Twoje klucze zostają w Twojej kieszeni.
+    </string>
+
+    <string name="about_section_contact_title">Gołąb pocztowy</string>
+    <string name="about_contact_email">List w butelce: kejlo@endozero.pl</string>
+    <string name="about_contact_website">Port: endozero.pl</string>
+    <string name="about_contact_app_website">Dok: mzut.endozero.pl</string>
+    <string name="about_contact_github">Stocznia: https://github.com/Kejlo523/mzut-v2</string>
+
+    <string name="about_section_privacy_title">Sekrety</string>
+    <string name="about_privacy_text_1">
+        Zero szpiegów. Zero kapusiów.
+    </string>
+    <string name="about_privacy_text_2">
+        Twoje klucze służą tylko do otwierania bram portu ZUT. Nikomu ich nie dajemy.
+    </string>
+
+    <string name="about_footer_disclaimer">
+        To jest piracka łajba, a nie oficjalny okręt ZUT.
+    </string>
+
+    <string name="settings_title">Kajuta Kapitana (Ustawienia)</string>
+    <string name="settings_subtitle">
+        Wybierz dialekt. Może trzeba będzie przeładować armaty (restart).
+    </string>
+
+    <string name="settings_language_label">Język załogi</string>
+    <string name="settings_language_polish">Polski (Nudy)</string>
+    <string name="settings_language_english">Angielski</string>
+    <string name="settings_language_ukrainian">Ukraiński</string>
+
+    <string name="settings_language_info_hint">
+        Jak zmienisz język, może trzeba będzie zrestartować łajbę.
+    </string>
+
+    <string name="settings_language_changed_toast">
+        Język zmieniony. Ahoj!
+    </string>
+
+    <string name="useful_links_header_title">Ważne Mapy</string>
+    <string name="useful_links_header_sub">
+        Dziekanat, regulaminy i inne nudy.
+    </string>
+    <string name="useful_links_section_title">Lista Map</string>
+    <string name="useful_links_empty">
+        Pusto. Dodaj coś w kajucie albo weź standardowe.
+    </string>
+
+    <string name="logout_confirm_title">Uciekasz?</string>
+    <string name="logout_confirm_message">Chcesz opuścić okręt?</string>
+    <string name="logout_confirm_positive">Skaczę!</string>
+    <string name="logout_confirm_negative">Zostaję</string>
+
+    <!-- Tile Customization & Edit Mode -->
+    <string name="dialog_add_edit_tile_title_new">Nowa łata na żagiel</string>
+    <string name="dialog_add_edit_tile_title_edit">Zmień łatę</string>
+    <string name="dialog_add_edit_tile_label_title">Nazwa</string>
+    <string name="dialog_add_edit_tile_hint_title">Np. Mapa</string>
+    <string name="dialog_add_edit_tile_label_desc">O co chodzi</string>
+    <string name="dialog_add_edit_tile_hint_desc">Krótko</string>
+    <string name="dialog_add_edit_tile_label_action">Co robić</string>
+    <string name="dialog_add_edit_tile_label_url_section">Gdzie płynąć (URL)</string>
+    <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
+    <string name="dialog_add_edit_tile_label_saved_search">Wybierz zakopaną mapę</string>
+    <string name="dialog_add_edit_tile_label_color">Kolor</string>
+    <string name="dialog_add_edit_tile_btn_save">Zaklep</string>
+    <string name="dialog_add_edit_tile_btn_cancel">Wrrróć</string>
+    <string name="dialog_add_edit_tile_toast_no_saved_searches">Brak zakopanych map!</string>
+    <string name="dialog_add_edit_tile_spinner_empty">(Pusto)</string>
+
+    <string name="tile_action_plan">Plan Rejsu</string>
+    <string name="tile_action_grades">Złoto</string>
+    <string name="tile_action_info">Papiery</string>
+    <string name="tile_action_news">Plotki</string>
+    <string name="tile_action_news_latest">Najświeższa Plotka</string>
+    <string name="tile_action_plan_search">Zapisana Mapa</string>
+    <string name="tile_action_useful">Przydatne</string>
+    <string name="tile_action_about">O łajbie</string>
+    <string name="tile_action_url">Własny Kurs</string>
+
+    <string name="menu_home_edit">Przemebluj pokład</string>
+    <string name="menu_home_save">Zapisz ustawienie</string>
+    <string name="menu_home_add">Dodaj coś</string>
+    <string name="menu_home_cancel">Anuluj</string>
+    <string name="menu_home_reset">Jak było na początku</string>
+
+    <string name="home_edit_mode_toast">Remont! Kliknij, żeby zmienić, przytrzymaj, żeby rozciągnąć.</string>
+    <string name="home_save_toast">Zapisano!</string>
+    <string name="home_cancel_toast">Anulowano!</string>
+    <string name="home_reset_toast">Przywrócono porządek.</string>
+    <string name="home_reset_dialog_title">Zrobić jak było?</string>
+    <string name="home_reset_dialog_message">Na pewno chcesz zresetować układ? Twoje zmiany pójdą na dno.</string>
+    <string name="home_reset_dialog_yes">Tak!</string>
+    <string name="home_reset_dialog_no">Nie!</string>
+    <string name="home_open_url_error">Zły adres!</string>
+    <string name="home_open_error">Błąd: %1$s</string>
+
+    <string name="settings_theme_label">Malowanie Okrętu</string>
+    <string name="theme_deep_blue">Głębia Oceanu</string>
+    <string name="theme_imjustgirl">Różowe Żagle</string>
+    <string name="theme_hacker">Matrix (Cyfrowy)</string>
+    <string name="theme_premium">Złoty Galeon</string>
+    <string name="theme_obsidian">Czarna Perła</string>
+    <string name="theme_high_contrast">Sokoli Wzrok</string>
+    <string name="theme_vintage">Stara Mapa (Win98)</string>
+</resources>

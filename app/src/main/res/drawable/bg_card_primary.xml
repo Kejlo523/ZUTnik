@@ -3,12 +3,12 @@
     <gradient
         android:type="linear"
         android:angle="180"
-        android:startColor="@color/mz_card_soft"
-        android:endColor="@color/mz_bg" />
+        android:startColor="?attr/mzCardSoft"
+        android:endColor="?attr/mzBg" />
     <corners android:radius="18dp" />
     <stroke
         android:width="1dp"
-        android:color="@color/mz_border_strong" />
+        android:color="?attr/mzBorderStrong" />
     <padding
         android:left="14dp"
         android:top="12dp"

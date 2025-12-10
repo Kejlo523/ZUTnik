@@ -25,14 +25,14 @@
             android:id="@+id/newsTitle"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="@color/mz_text"
+            android:textColor="?attr/mzText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/newsDate"
             android:textSize="11sp"
-            android:textColor="@color/mz_muted"
+            android:textColor="?attr/mzMuted"
             android:layout_marginTop="2dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
@@ -40,7 +40,7 @@
         <TextView
             android:id="@+id/newsSnippet"
             android:textSize="12sp"
-            android:textColor="@color/mz_text"
+            android:textColor="?attr/mzText"
             android:layout_marginTop="4dp"
             android:maxLines="3"
             android:ellipsize="end"

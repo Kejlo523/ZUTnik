@@ -16,7 +16,7 @@
         android:elevation="0dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        app:titleTextColor="@color/mz_text" />
+        app:titleTextColor="?attr/mzText" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -41,7 +41,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:lineSpacingMultiplier="1.1"
-                android:textColor="@color/mz_text"
+                android:textColor="?attr/mzText"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -49,7 +49,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginBottom="12dp"
-                android:background="@color/mz_border_soft" />
+                android:background="?attr/mzBorderSoft" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -61,14 +61,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvNewsDetailSource"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/mz_primary"
+                    android:textColor="?attr/mzPrimary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -87,7 +87,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
                 android:lineSpacingMultiplier="1.2"
-                android:textColor="@color/mz_text"
+                android:textColor="?attr/mzText"
                 android:textSize="14sp"
                 android:visibility="gone" />
 

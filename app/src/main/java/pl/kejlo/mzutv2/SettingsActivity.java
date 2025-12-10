@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -37,6 +38,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_settings);
 
@@ -70,13 +72,13 @@ public class SettingsActivity extends AppCompatActivity {
         String currentLang = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getString(KEY_APP_LANGUAGE, "pl");
 
-        int initialPos;
-        if ("en".equals(currentLang)) {
-            initialPos = 1;
-        } else if ("uk".equals(currentLang)) {
-            initialPos = 2;
-        } else {
-            initialPos = 0; // default to PL
+        String[] values = getResources().getStringArray(R.array.settings_language_values);
+        int initialPos = 0; // Default to first (PL)
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(currentLang)) {
+                initialPos = i;
+                break;
+            }
         }
         spinnerLanguage.setSelection(initialPos);
 
@@ -91,19 +93,11 @@ public class SettingsActivity extends AppCompatActivity {
                     return;
                 }
 
-                // 0 -> pl, 1 -> en, 2 -> uk
-                String langCode;
-                switch (position) {
-                    case 1:
-                        langCode = "en";
-                        break;
-                    case 2:
-                        langCode = "uk";
-                        break;
-                    case 0:
-                    default:
-                        langCode = "pl";
-                        break;
+                // Get values dynamically
+                String[] values = getResources().getStringArray(R.array.settings_language_values);
+                String langCode = "pl";
+                if (position >= 0 && position < values.length) {
+                    langCode = values[position];
                 }
 
                 applyLanguage(langCode);
@@ -163,6 +157,61 @@ public class SettingsActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
+        // Theme Setup
+        Spinner spinnerTheme = findViewById(R.id.spinnerTheme);
+        ArrayAdapter<CharSequence> adapterTheme = ArrayAdapter.createFromResource(
+                this,
+                R.array.settings_theme_entries,
+                R.layout.spinner_item_dark);
+        adapterTheme.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
+        spinnerTheme.setAdapter(adapterTheme);
+
+        String currentTheme = ThemeManager.getTheme(this);
+        String[] themeValues = getResources().getStringArray(R.array.settings_theme_values);
+        int themePos = 0;
+        for (int i = 0; i < themeValues.length; i++) {
+            if (themeValues[i].equals(currentTheme)) {
+                themePos = i;
+                break;
+            }
+        }
+        spinnerTheme.setSelection(themePos);
+
+        spinnerTheme.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            boolean firstCall = true;
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (firstCall) {
+                    firstCall = false;
+                    return;
+                }
+                String val = themeValues[position];
+                String current = ThemeManager.getTheme(SettingsActivity.this);
+                if (!val.equals(current)) {
+                    ThemeManager.setTheme(SettingsActivity.this, val);
+                    Toast.makeText(SettingsActivity.this, "Zmieniono motyw", Toast.LENGTH_SHORT).show();
+
+                    // Restart app or recreate to apply
+                    // Recreating only affects this activity, but backstack remains old.
+                    // Best to restart the app flow.
+                    Intent i = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                    if (i != null) {
+                        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                        finish();
+                    } else {
+                        recreate();
+                    }
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
     }
 
     @Override

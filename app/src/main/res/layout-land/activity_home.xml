@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
     android:fitsSystemWindows="true"
-    app:statusBarBackground="@color/mz_bg">
+    app:statusBarBackground="?attr/mzBg">
 
     <FrameLayout
         android:id="@+id/drawerContentRoot"
@@ -26,7 +26,7 @@
                 android:elevation="0dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:titleTextColor="@color/mz_text" />
+                android:titleTextColor="?attr/mzText" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -70,7 +70,7 @@
                                 android:paddingBottom="6dp"
                                 android:text="@string/app_name"
                                 android:textAllCaps="true"
-                                android:textColor="@color/mz_text"
+                                android:textColor="?attr/mzText"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
 
@@ -81,7 +81,7 @@
                                 android:layout_marginTop="16dp"
                                 android:gravity="center"
                                 android:text="@string/home_welcome_fallback"
-                                android:textColor="@color/mz_text"
+                                android:textColor="?attr/mzText"
                                 android:textSize="24sp"
                                 android:textStyle="bold" />
 
@@ -93,7 +93,7 @@
                                 android:layout_marginBottom="24dp"
                                 android:gravity="center"
                                 android:text="@string/home_welcome_subtitle"
-                                android:textColor="@color/mz_muted"
+                                android:textColor="?attr/mzMuted"
                                 android:textSize="13sp" />
 
                             <LinearLayout
@@ -112,7 +112,7 @@
                                     android:foreground="?attr/selectableItemBackground"
                                     android:gravity="center"
                                     android:text="@string/home_action_plan_label"
-                                    android:textColor="@color/mz_text"
+                                    android:textColor="?attr/mzText"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
 
@@ -126,7 +126,7 @@
                                     android:foreground="?attr/selectableItemBackground"
                                     android:gravity="center"
                                     android:text="@string/home_action_grades_label"
-                                    android:textColor="@color/mz_text"
+                                    android:textColor="?attr/mzText"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
@@ -149,7 +149,7 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:text="@string/home_footer_meta"
-                                android:textColor="@color/mz_muted"
+                                android:textColor="?attr/mzMuted"
                                 android:textSize="11sp" />
                         </LinearLayout>
 
@@ -175,7 +175,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
                             android:text="@string/home_shortcuts_title"
-                            android:textColor="@color/mz_text"
+                            android:textColor="?attr/mzText"
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
@@ -198,7 +198,7 @@
             android:layout_margin="24dp"
             app:cardCornerRadius="24dp"
             app:cardElevation="6dp"
-            app:cardBackgroundColor="@color/mz_primary"
+            app:cardBackgroundColor="?attr/mzPrimary"
             android:visibility="gone">
 
             <ImageView
@@ -216,7 +216,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/mz_bg"
+        android:background="?attr/mzBg"
         android:fitsSystemWindows="true">
         <include layout="@layout/nav_header" />
     </com.google.android.material.navigation.NavigationView>

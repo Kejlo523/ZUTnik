@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
     android:fitsSystemWindows="true"
-    app:statusBarBackground="@color/mz_bg">
+    app:statusBarBackground="?attr/mzBg">
 
     <LinearLayout
         android:id="@+id/drawerContentRoot"
@@ -22,7 +22,7 @@
             android:elevation="0dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            app:titleTextColor="@color/mz_text" />
+            app:titleTextColor="?attr/mzText" />
 
         <ScrollView
             android:layout_width="match_parent"
@@ -57,7 +57,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/app_name"
-                            android:textColor="@color/mz_text"
+                            android:textColor="?attr/mzText"
                             android:textSize="26sp"
                             android:textStyle="bold" />
 
@@ -67,7 +67,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="@string/about_subtitle"
-                            android:textColor="@color/mz_muted"
+                            android:textColor="?attr/mzMuted"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -84,7 +84,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp"
                             android:text="@string/about_section_project_title"
-                            android:textColor="@color/mz_text"
+                            android:textColor="?attr/mzText"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -94,7 +94,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
                             android:text="@string/about_author_line"
-                            android:textColor="@color/mz_primary"
+                            android:textColor="?attr/mzPrimary"
                             android:textSize="14sp"
                             android:textStyle="bold" />
 
@@ -104,7 +104,7 @@
                             android:layout_marginBottom="8dp"
                             android:lineSpacingMultiplier="1.2"
                             android:text="@string/about_project_description_1"
-                            android:textColor="@color/mz_muted"
+                            android:textColor="?attr/mzMuted"
                             android:textSize="14sp" />
 
                         <TextView
@@ -112,7 +112,7 @@
                             android:layout_height="wrap_content"
                             android:lineSpacingMultiplier="1.2"
                             android:text="@string/about_project_description_2"
-                            android:textColor="@color/mz_muted"
+                            android:textColor="?attr/mzMuted"
                             android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -137,7 +137,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp"
                             android:text="@string/about_section_contact_title"
-                            android:textColor="@color/mz_text"
+                            android:textColor="?attr/mzText"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -148,7 +148,7 @@
                             android:autoLink="email"
                             android:paddingVertical="4dp"
                             android:text="@string/about_contact_email"
-                            android:textColor="@color/mz_primary"
+                            android:textColor="?attr/mzPrimary"
                             android:textSize="14sp" />
 
                         <TextView
@@ -158,7 +158,7 @@
                             android:autoLink="web"
                             android:paddingVertical="4dp"
                             android:text="@string/about_contact_website"
-                            android:textColor="@color/mz_primary"
+                            android:textColor="?attr/mzPrimary"
                             android:textSize="14sp" />
 
                         <TextView
@@ -168,7 +168,7 @@
                             android:autoLink="web"
                             android:paddingVertical="4dp"
                             android:text="@string/about_contact_app_website"
-                            android:textColor="@color/mz_primary"
+                            android:textColor="?attr/mzPrimary"
                             android:textSize="14sp" />
 
                         <TextView
@@ -178,7 +178,7 @@
                             android:autoLink="web"
                             android:paddingVertical="4dp"
                             android:text="@string/about_contact_github"
-                            android:textColor="@color/mz_primary"
+                            android:textColor="?attr/mzPrimary"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -195,7 +195,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp"
                             android:text="@string/about_section_privacy_title"
-                            android:textColor="@color/mz_text"
+                            android:textColor="?attr/mzText"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -205,7 +205,7 @@
                             android:layout_marginBottom="8dp"
                             android:lineSpacingMultiplier="1.1"
                             android:text="@string/about_privacy_text_1"
-                            android:textColor="@color/mz_muted"
+                            android:textColor="?attr/mzMuted"
                             android:textSize="13sp" />
 
                         <TextView
@@ -213,7 +213,7 @@
                             android:layout_height="wrap_content"
                             android:lineSpacingMultiplier="1.1"
                             android:text="@string/about_privacy_text_2"
-                            android:textColor="@color/mz_muted"
+                            android:textColor="?attr/mzMuted"
                             android:textSize="13sp" />
                     </LinearLayout>
 
@@ -223,7 +223,7 @@
                         android:layout_marginBottom="8dp"
                         android:gravity="end"
                         android:text="@string/about_footer_disclaimer"
-                        android:textColor="@color/mz_muted"
+                        android:textColor="?attr/mzMuted"
                         android:textSize="11sp" />
 
                 </LinearLayout>
@@ -236,7 +236,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/mz_bg"
+        android:background="?attr/mzBg"
         android:fitsSystemWindows="true">
 
         <include
