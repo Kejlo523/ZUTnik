@@ -10,7 +10,7 @@ android {
         applicationId = "pl.kejlo.mzutv2"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9_1
+        versionCode = 9_2
         versionName = "1.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -505,7 +505,8 @@ public class TileGridLayout extends ViewGroup {
 
                 child.layout(left, top, right, bottom);
 
-                if (child != activeTileView || (!isDragging && !isResizing)) {
+                // Only reset visuals if we are NOT currently interacting
+                if (!isDragging && !isResizing) {
                     child.setTranslationX(0f);
                     child.setTranslationY(0f);
                     child.animate().cancel();
