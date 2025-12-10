@@ -108,6 +108,65 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     private void updateOneWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_glass);
 
+        // Apply Theme Background
+        String theme = ThemeManager.getTheme(context);
+        int bgRes = R.drawable.bg_widget_dark_glass; // Default
+        int textColorPrimary = context.getColor(R.color.glass_text_primary);
+        int textColorSecondary = context.getColor(R.color.glass_text_secondary);
+
+        switch (theme) {
+            case ThemeManager.THEME_HACKER:
+                // Black background, Green text
+                views.setInt(R.id.widgetRoot, "setBackgroundColor", 0xFF000000);
+                textColorPrimary = 0xFF00FF00;
+                textColorSecondary = 0xFF008800;
+                break;
+            case ThemeManager.THEME_IMJUSTGIRL:
+                // Pink background
+                views.setInt(R.id.widgetRoot, "setBackgroundColor", 0xFFFFE4E1); // MistyRose
+                textColorPrimary = 0xFFC71585; // MediumVioletRed
+                textColorSecondary = 0xFFDB7093; // PaleVioletRed
+                break;
+            case ThemeManager.THEME_OBSIDIAN:
+                // Pure Black
+                views.setInt(R.id.widgetRoot, "setBackgroundColor", 0xFF000000);
+                textColorPrimary = 0xFFE0E0E0;
+                textColorSecondary = 0xFFB0B0B0;
+                break;
+            case ThemeManager.THEME_PREMIUM:
+                // Dark Grey / Gold
+                views.setInt(R.id.widgetRoot, "setBackgroundColor", 0xFF121212);
+                textColorPrimary = 0xFFFFD700; // Gold
+                textColorSecondary = 0xFFBDBDBD;
+                break;
+            case ThemeManager.THEME_VINTAGE:
+                // Windows 98 Grey
+                views.setInt(R.id.widgetRoot, "setBackgroundColor", 0xFFC0C0C0);
+                textColorPrimary = 0xFF000000;
+                textColorSecondary = 0xFF000080; // Navy
+                break;
+            case ThemeManager.THEME_HIGH_CONTRAST:
+                // White High Contrast
+                views.setInt(R.id.widgetRoot, "setBackgroundColor", 0xFFFFFFFF);
+                textColorPrimary = 0xFF000000;
+                textColorSecondary = 0xFF000000;
+                break;
+            case ThemeManager.THEME_DEEP_BLUE:
+                // Deep Blue Glass (reuse existing drawable or similar tint)
+                views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
+                // Maybe tint it blue? For now keep glass.
+                break;
+            default:
+                views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
+                break;
+        }
+
+        views.setTextColor(R.id.widgetDate, textColorPrimary);
+        views.setTextColor(R.id.widgetSubtitle, textColorSecondary);
+        views.setTextColor(R.id.widgetLastRefresh, textColorSecondary);
+        // Loading spinner tint
+        views.setInt(R.id.widgetRefresh, "setColorFilter", textColorSecondary);
+
         views.setViewVisibility(R.id.widgetRefresh, android.view.View.VISIBLE);
         views.setViewVisibility(R.id.widgetLoading, android.view.View.GONE);
 

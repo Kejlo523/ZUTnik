@@ -97,6 +97,7 @@ public class InfoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_info);
 
@@ -507,10 +508,10 @@ public class InfoActivity extends AppCompatActivity {
         tv.setText(text);
 
         if (isEmpty) {
-            tv.setTextColor(ContextCompat.getColor(this, R.color.mz_muted));
+            tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzMuted));
             tv.setTextSize(HISTORY_EMPTY_TEXT_SIZE_SP);
         } else {
-            tv.setTextColor(ContextCompat.getColor(this, R.color.mz_text));
+            tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzText));
             tv.setTextSize(HISTORY_TEXT_SIZE_SP);
             int padV = dpToPx(HISTORY_ITEM_VERTICAL_PADDING_DP);
             tv.setPadding(0, padV, 0, padV);

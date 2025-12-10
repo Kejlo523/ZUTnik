@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
-    android:fitsSystemWindows="true"
-    app:statusBarBackground="@color/mz_bg">
+    android:fitsSystemWindows="false"
+    app:statusBarBackground="@android:color/transparent">
 
     <LinearLayout
         android:id="@+id/drawerContentRoot"
@@ -22,7 +22,7 @@
             android:elevation="0dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:titleTextColor="@color/mz_text" />
+            android:titleTextColor="?attr/mzText" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -52,7 +52,7 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:padding="2dp"
                         android:src="@android:drawable/ic_popup_sync"
-                        app:tint="@color/mz_muted" />
+                        app:tint="?attr/mzMuted" />
                 </RelativeLayout>
 
                 <TextView
@@ -60,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:text="@string/news_header_title"
-                    android:textColor="@color/mz_text"
+                    android:textColor="?attr/mzText"
                     android:textSize="26sp"
                     android:textStyle="bold" />
 
@@ -70,7 +70,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/news_header_source_info"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="14sp" />
             </LinearLayout>
 
@@ -102,7 +102,7 @@
                     android:layout_gravity="center"
                     android:gravity="center"
                     android:text="@string/news_empty_state"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="14sp"
                     android:visibility="gone" />
             </FrameLayout>
@@ -115,7 +115,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/mz_bg"
+        android:background="?attr/mzBg"
         android:fitsSystemWindows="true">
         <include layout="@layout/nav_header" />
     </com.google.android.material.navigation.NavigationView>

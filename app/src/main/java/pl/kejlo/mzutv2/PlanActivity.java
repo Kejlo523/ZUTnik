@@ -258,6 +258,7 @@ public class PlanActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
 
         MzutSession.initializeFromPreferences(this);
@@ -943,7 +944,7 @@ public class PlanActivity extends AppCompatActivity {
         for (int h = START_HOUR; h < END_HOUR; h++) {
             TextView tv = new TextView(this);
             tv.setText(String.format(java.util.Locale.US, "%02d:00", h));
-            tv.setTextColor(ContextCompat.getColor(this, R.color.plan_time_column_text));
+            tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzPlanColumnText));
             tv.setTextSize(11f);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -971,7 +972,7 @@ public class PlanActivity extends AppCompatActivity {
         for (String d : days) {
             TextView tv = new TextView(this);
             tv.setText(d);
-            tv.setTextColor(ContextCompat.getColor(this, R.color.plan_month_weekday_text));
+            tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzPlanHeaderText));
             tv.setTextSize(11f);
             tv.setGravity(Gravity.CENTER);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -1105,9 +1106,9 @@ public class PlanActivity extends AppCompatActivity {
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         columnHeight);
                 dayBody.setLayoutParams(bodyLp);
-                dayBody.setBackgroundColor(ContextCompat.getColor(
+                dayBody.setBackgroundColor(ThemeManager.resolveColor(
                         context,
-                        highlight ? R.color.plan_week_day_selected_bg : R.color.plan_week_day_bg));
+                        highlight ? R.attr.mzPlanGridBgSelected : R.attr.mzPlanGridBg));
 
                 addHourLines(dayBody);
 
@@ -1413,7 +1414,7 @@ public class PlanActivity extends AppCompatActivity {
                     dpToPx(1));
             lp.topMargin = (int) topPx;
             line.setLayoutParams(lp);
-            line.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_hour_line));
+            line.setBackgroundColor(ThemeManager.resolveColor(this, R.attr.mzPlanHourLine));
             dayBody.addView(line);
         }
     }
@@ -1459,7 +1460,7 @@ public class PlanActivity extends AppCompatActivity {
         if (line == null) {
             line = new View(this);
             line.setTag("NOW_LINE");
-            line.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_now_line));
+            line.setBackgroundColor(ThemeManager.resolveColor(this, R.attr.mzPlanNowLine));
             parent.addView(line);
         }
 
@@ -1676,7 +1677,7 @@ public class PlanActivity extends AppCompatActivity {
             TextView tv = new TextView(this);
             tv.setLayoutParams(lp);
             tv.setText(formatDayHeader(col.date));
-            tv.setTextColor(ContextCompat.getColor(this, R.color.plan_week_header_text));
+            tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzPlanHeaderText));
             tv.setTextSize(12f);
             tv.setGravity(Gravity.CENTER);
             tv.setPadding(0, dpToPx(4), 0, dpToPx(4));
@@ -1685,7 +1686,7 @@ public class PlanActivity extends AppCompatActivity {
             boolean highlight = isToday;
 
             if (highlight) {
-                tv.setBackgroundColor(ContextCompat.getColor(this, R.color.plan_week_header_selected_bg));
+                tv.setBackgroundColor(ThemeManager.resolveColor(this, R.attr.planWeekHeaderSelectedBg));
             }
 
             layoutWeekHeadersRow.addView(tv);
@@ -1718,11 +1719,13 @@ public class PlanActivity extends AppCompatActivity {
 
         tv.setText(sb.toString());
         tv.setTextSize(11f);
-        tv.setTextColor(ContextCompat.getColor(this, R.color.plan_event_text));
+        tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzPlanEventTextColor));
         tv.setPadding(dpToPx(4), dpToPx(3), dpToPx(4), dpToPx(3));
         tv.setClickable(true);
 
-        int color = ContextCompat.getColor(this, colorResForType(ev.typeClass));
+        tv.setClickable(true);
+
+        int color = ThemeManager.resolveEventColor(this, ev.typeClass);
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(color);
         bg.setCornerRadius(dpToPx(6));

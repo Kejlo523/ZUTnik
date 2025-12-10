@@ -1,12 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Kolory brandu -->
-        <item name="colorPrimary">@color/mz_primary</item>
-        <item name="colorPrimaryVariant">@color/mz_primary_alt</item>
-        <item name="colorOnPrimary">@color/mz_text</item>
-
-        <!-- BARDZO WAŻNE: to zabija fiolet -->
+    <!-- Base Application Theme -->
+    <style name="Base.Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Status Bar -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
@@ -21,10 +16,276 @@
         <item name="windowNoTitle">true</item>
 
         <!-- Splash -->
-        <item name="android:windowSplashScreenBackground">@color/mz_bg</item>
+        <item name="android:windowSplashScreenBackground">?attr/mzBg</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_zut_logo</item>
         <item name="android:windowSplashScreenAnimationDuration">200</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
     </style>
 
+    <!-- Default Theme (Light/Reference) uses colors.xml -->
+    <style name="Theme.MZUTv2" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">@color/mz_primary</item>
+        <item name="colorPrimaryVariant">@color/mz_primary_alt</item>
+        <item name="colorOnPrimary">@color/mz_text</item>
+
+        <item name="mzBg">@color/mz_bg</item>
+        <item name="mzBgSoft">@color/mz_bg_soft</item>
+        <item name="mzCard">@color/mz_card</item>
+        <item name="mzCardSoft">@color/mz_card_soft</item>
+        <item name="mzBgSurface">@color/mz_bg_surface</item>
+        <item name="mzText">@color/mz_text</item>
+        <item name="mzMuted">@color/mz_muted</item>
+        <item name="mzBorderSoft">@color/mz_border_soft</item>
+        <item name="mzBorderStrong">@color/mz_border_strong</item>
+        <item name="mzPrimary">@color/mz_primary</item>
+        <item name="mzPrimaryAlt">@color/mz_primary_alt</item>
+        <item name="mzAccent">@color/mz_accent</item>
+        <item name="mzSuccess">@color/mz_success</item>
+        <item name="mzDanger">@color/mz_danger</item>
+        <item name="mzDangerSoft">@color/mz_danger_soft</item>
+        <item name="mzToolbarGradStart">@color/mz_toolbar_grad_start</item>
+        <item name="mzToolbarGradEnd">@color/mz_toolbar_grad_end</item>
+        
+        <item name="planWeekHeaderSelectedBg">@color/plan_week_header_selected_bg</item>
+        <item name="planWeekDaySelectedBg">@color/plan_week_day_selected_bg</item>
+
+        <!-- Plan Defaults -->
+        <item name="mzPlanHourLine">@color/plan_hour_line</item>
+        <item name="mzPlanNowLine">@color/plan_now_line</item>
+        <item name="mzPlanColumnText">@color/plan_time_column_text</item>
+        <item name="mzPlanHeaderText">@color/plan_week_header_text</item>
+        <item name="mzPlanGridBg">@color/plan_week_day_bg</item>
+        <item name="mzPlanGridBgSelected">@color/plan_week_day_selected_bg</item>
+        <item name="mzPlanEventTextColor">@color/plan_event_text</item>
+    </style>
+
+    <!-- Deep Blue Theme (Day/Light) -->
+    <style name="Theme.MZUTv2.DeepBlue" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#1E3A8A</item> <!-- Blue 900 -->
+        <item name="colorPrimaryVariant">#172554</item> <!-- Blue 950 -->
+        <item name="colorOnPrimary">#FFFFFF</item>
+
+        <!-- Overrides for Deep Blue -->
+        <item name="mzBg">#F0F8FF</item> <!-- AliceBlue -->
+        <item name="mzBgSoft">#E0F2FE</item> <!-- Sky 100 -->
+        <item name="mzCard">#FFFFFF</item>
+        <item name="mzCardSoft">#F1F5F9</item>
+        <item name="mzBgSurface">#FFFFFF</item>
+        <item name="mzText">#1E293B</item> <!-- Slate 800 -->
+        <item name="mzMuted">#64748B</item> <!-- Slate 500 -->
+        <item name="mzBorderSoft">#E2E8F0</item>
+        <item name="mzBorderStrong">#94A3B8</item>
+        <item name="mzPrimary">#1E3A8A</item>
+        <item name="mzToolbarGradStart">#FFFFFF</item>
+        <item name="mzToolbarGradEnd">#F0F8FF</item>
+        
+        <item name="android:statusBarColor">#F0F8FF</item> 
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Plan Deep Blue Overrides -->
+        <item name="mzPlanHourLine">#20000000</item> 
+        <item name="mzPlanNowLine">#DC2626</item> <!-- Red 600 -->
+        <item name="mzPlanColumnText">#334155</item> 
+        <item name="mzPlanHeaderText">#1E293B</item>
+        <item name="mzPlanGridBg">@android:color/transparent</item> 
+        <item name="mzPlanGridBgSelected">#201E3A8A</item> 
+        <item name="mzPlanEventTextColor">#1E293B</item>
+        <item name="planWeekHeaderSelectedBg">#DBEAFE</item>
+        <item name="planWeekDaySelectedBg">#EFF6FF</item>
+    </style>
+
+    <!-- ImJustGirl Theme (Pink/Magenta) -->
+    <style name="Theme.MZUTv2.ImJustGirl" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#FF00FF</item> <!-- Magenta -->
+        <item name="colorPrimaryVariant">#FF69B4</item> <!-- Hot Pink -->
+        <item name="colorOnPrimary">#FFFFFF</item>
+        
+        <item name="mzBg">#FFF0F5</item> <!-- LavenderBlush -->
+        <item name="mzBgSoft">#FFE4E1</item> <!-- MistyRose -->
+        <item name="mzCard">#FFFFFF</item>
+        <item name="mzCardSoft">#FFC0CB</item> <!-- Pink -->
+        <item name="mzBgSurface">#FFFFFF</item>
+        <item name="mzText">#C71585</item> <!-- MediumVioletRed -->
+        <item name="mzMuted">#DB7093</item> <!-- PaleVioletRed -->
+        <item name="mzBorderSoft">#FFB6C1</item>
+        <item name="mzBorderStrong">#FF69B4</item>
+        <item name="mzPrimary">#FF00FF</item>
+        
+        <item name="android:statusBarColor">#FFF0F5</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Plan Attributes -->
+        <item name="mzPlanHourLine">#20FF00FF</item>
+        <item name="mzPlanNowLine">#FF1493</item> <!-- DeepPink -->
+        <item name="mzPlanColumnText">#DB7093</item>
+        <item name="mzPlanHeaderText">#C71585</item>
+        <item name="mzPlanGridBg">#FFF0F5</item>
+        <item name="mzPlanGridBgSelected">#20FF00FF</item>
+        <item name="mzPlanEventTextColor">#8B008B</item>
+        <item name="planWeekHeaderSelectedBg">#FF69B4</item>
+        <item name="planWeekDaySelectedBg">#FFE4E1</item>
+    </style>
+
+    <!-- Hacker Theme (Matrix) -->
+    <style name="Theme.MZUTv2.Hacker" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#00FF00</item>
+        <item name="colorPrimaryVariant">#008000</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="android:textColorPrimary">#00FF00</item> 
+        <item name="titleTextColor">#00FF00</item> <!-- Force Toolbar Title Green -->
+        
+        <item name="mzBg">#000000</item>
+        <item name="mzBgSoft">#0a0a0a</item>
+        <item name="mzCard">#001100</item>
+        <item name="mzCardSoft">#002200</item>
+        <item name="mzBgSurface">#000000</item>
+        <item name="mzText">#00FF00</item>
+        <item name="mzMuted">#008000</item>
+        <item name="mzBorderSoft">#003300</item>
+        <item name="mzBorderStrong">#00FF00</item>
+        <item name="mzPrimary">#00FF00</item>
+        
+        <item name="android:statusBarColor">#000000</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+         <!-- Plan Attributes -->
+        <item name="mzPlanHourLine">#2000FF00</item>
+        <item name="mzPlanNowLine">#FF0000</item>
+        <item name="mzPlanColumnText">#008000</item>
+        <item name="mzPlanHeaderText">#00FF00</item>
+        <item name="mzPlanGridBg">#000000</item>
+        <item name="mzPlanGridBgSelected">#1000FF00</item>
+        <item name="mzPlanEventTextColor">#00FF00</item>
+        <item name="planWeekHeaderSelectedBg">#003300</item>
+        <item name="planWeekDaySelectedBg">#002200</item>
+    </style>
+
+    <!-- Premium Theme (Gold/Dark Gray) -->
+    <style name="Theme.MZUTv2.Premium" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#D4AF37</item> <!-- Gold -->
+        <item name="colorPrimaryVariant">#C5A028</item>
+        <item name="colorOnPrimary">#000000</item>
+        
+        <item name="mzBg">#1A1A1A</item>
+        <item name="mzBgSoft">#252525</item>
+        <item name="mzCard">#2C2C2C</item>
+        <item name="mzCardSoft">#333333</item>
+        <item name="mzBgSurface">#1A1A1A</item>
+        <item name="mzText">#D4AF37</item> 
+        <item name="mzMuted">#A0A0A0</item>
+        <item name="mzBorderSoft">#444444</item>
+        <item name="mzBorderStrong">#D4AF37</item>
+        <item name="mzPrimary">#D4AF37</item>
+
+        <item name="android:statusBarColor">#1A1A1A</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Plan Attributes -->
+        <item name="mzPlanHourLine">#20D4AF37</item>
+        <item name="mzPlanNowLine">#FFFFFF</item>
+        <item name="mzPlanColumnText">#A0A0A0</item>
+        <item name="mzPlanHeaderText">#D4AF37</item>
+        <item name="mzPlanGridBg">#1A1A1A</item>
+        <item name="mzPlanGridBgSelected">#20D4AF37</item>
+        <item name="mzPlanEventTextColor">#E0E0E0</item>
+        <item name="planWeekHeaderSelectedBg">#333333</item>
+        <item name="planWeekDaySelectedBg">#2C2C2C</item>
+    </style>
+
+    <!-- Obsidian Theme (Silver/Violet Remake) -->
+    <style name="Theme.MZUTv2.Obsidian" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#9370DB</item> <!-- Medium Purple -->
+        <item name="colorPrimaryVariant">#663399</item> <!-- RebeccaPurple -->
+        <item name="colorOnPrimary">#FFFFFF</item>
+        
+        <item name="mzBg">#F0F0F0</item> <!-- Silver/Light Gray -->
+        <item name="mzBgSoft">#E0E0E0</item>
+        <item name="mzCard">#FFFFFF</item>
+        <item name="mzCardSoft">#F8F8FF</item> <!-- GhostWhite -->
+        <item name="mzBgSurface">#F0F0F0</item>
+        <item name="mzText">#4B0082</item> <!-- Indigo -->
+        <item name="mzMuted">#808080</item>
+        <item name="mzBorderSoft">#B0C4DE</item> <!-- LightSteelBlue -->
+        <item name="mzBorderStrong">#9370DB</item>
+        <item name="mzPrimary">#9370DB</item>
+        
+        <item name="android:statusBarColor">#F0F0F0</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Plan Attributes -->
+        <item name="mzPlanHourLine">#809370DB</item>
+        <item name="mzPlanNowLine">#FF0000</item>
+        <item name="mzPlanColumnText">#483D8B</item> <!-- DarkSlateBlue -->
+        <item name="mzPlanHeaderText">#4B0082</item>
+        <item name="mzPlanGridBg">#F0F0F0</item>
+        <item name="mzPlanGridBgSelected">#209370DB</item>
+        <item name="mzPlanEventTextColor">#FFFFFF</item>
+        <item name="planWeekHeaderSelectedBg">#E6E6FA</item> <!-- Lavender -->
+        <item name="planWeekDaySelectedBg">#F8F8FF</item>
+    </style>
+
+    <!-- High Contrast Theme -->
+    <style name="Theme.MZUTv2.HighContrast" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#0000FF</item>
+        <item name="colorPrimaryVariant">#000080</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        
+        <item name="mzBg">#FFFFFF</item>
+        <item name="mzBgSoft">#F0F0F0</item>
+        <item name="mzCard">#FFFFFF</item>
+        <item name="mzCardSoft">#E0E0E0</item>
+        <item name="mzBgSurface">#FFFFFF</item>
+        <item name="mzText">#000000</item>
+        <item name="mzMuted">#000000</item>
+        <item name="mzBorderSoft">#000000</item>
+        <item name="mzBorderStrong">#000000</item>
+        <item name="mzPrimary">#0000FF</item>
+        
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Plan Attributes -->
+        <item name="mzPlanHourLine">#FF000000</item>
+        <item name="mzPlanNowLine">#FF0000</item>
+        <item name="mzPlanColumnText">#000000</item>
+        <item name="mzPlanHeaderText">#000000</item>
+        <item name="mzPlanGridBg">#FFFFFF</item>
+        <item name="mzPlanGridBgSelected">#400000FF</item>
+        <item name="mzPlanEventTextColor">#000000</item>
+        <item name="planWeekHeaderSelectedBg">#CCCCCC</item>
+        <item name="planWeekDaySelectedBg">#E0E0E0</item>
+    </style>
+
+    <!-- Vintage Theme (Win98) -->
+    <style name="Theme.MZUTv2.Vintage" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#000080</item> <!-- Navy -->
+        <item name="colorPrimaryVariant">#1084D0</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        
+        <item name="mzBg">#C0C0C0</item> <!-- Standard Grey -->
+        <item name="mzBgSoft">#DFDFDF</item>
+        <item name="mzCard">#FFFFFF</item> <!-- Windows -->
+        <item name="mzCardSoft">#C0C0C0</item>
+        <item name="mzBgSurface">#C0C0C0</item>
+        <item name="mzText">#000000</item>
+        <item name="mzMuted">#808080</item>
+        <item name="mzBorderSoft">#808080</item>
+        <item name="mzBorderStrong">#000000</item>
+        <item name="mzPrimary">#000080</item>
+        
+        <item name="android:statusBarColor">#C0C0C0</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Plan Attributes -->
+        <item name="mzPlanHourLine">#808080</item>
+        <item name="mzPlanNowLine">#FF0000</item>
+        <item name="mzPlanColumnText">#000000</item>
+        <item name="mzPlanHeaderText">#000000</item>
+        <item name="mzPlanGridBg">#FFFFFF</item>
+        <item name="mzPlanGridBgSelected">#000080</item> <!-- Selection is Blue -->
+        <item name="mzPlanEventTextColor">#000000</item>
+        <item name="planWeekHeaderSelectedBg">#C0C0C0</item> <!-- Button face -->
+        <item name="planWeekDaySelectedBg">#FFFFFF</item>
+    </style>
 </resources>

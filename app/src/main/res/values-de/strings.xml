@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_opt_dialog_title">Erforderliche Berechtigungen</string>
+    <string name="battery_opt_dialog_message">Die App muss im Hintergrund laufen, damit Widgets korrekt funktionieren. Bitte deaktivieren Sie die Batterieoptimierung für diese App.</string>
+    <string name="battery_opt_button_settings">Einstellungen</string>
+    <string name="battery_opt_button_cancel">Abbrechen</string>
+
+    <string name="app_name">mZUT v2</string>
+    <string name="app_version">Version %1$s</string>
+
+    <string name="nav_header_default_username">Student</string>
+    <string name="logout_success_message">Ausgeloggt</string>
+    <string name="nav_settings_label">Einstellungen</string>
+    <string name="nav_useful_links">Nützliche Links</string>
+    <string name="nav_logout_label">Ausloggen</string>
+
+    <string name="login_card_title">Bei mZUT anmelden</string>
+    <string name="login_hint">Benutzername</string>
+    <string name="login_password_hint">Passwort</string>
+    <string name="login_button">Anmelden</string>
+    <string name="login_info_text">
+        Anmeldedaten werden über die offizielle mZUT-API gesendet. Der Login wird auf diesem Gerät gespeichert.
+    </string>
+
+    <string name="login_enter_credentials">Benutzername und Passwort eingeben!</string>
+    <string name="login_error_generic">Fehler: %1$s</string>
+    <string name="login_no_server_response">Keine Antwort vom Server</string>
+    <string name="login_system_error">ZUT Systemfehler (SYSTEM ERROR).</string>
+    <string name="login_invalid_credentials">Ungültiger Benutzername oder Passwort.</string>
+    <string name="login_success">Angemeldet als %1$s</string>
+
+    <string name="home_title">Startbildschirm</string>
+
+    <string name="home_welcome_message">Willkommen, %1$s</string>
+    <string name="home_welcome_subtitle">
+        Schneller Zugriff auf Stundenplan, Noten, Studieninformationen und ZUT-Neuigkeiten – alles an einem Ort.
+    </string>
+    <string name="home_welcome_fallback">Willkommen, Student 👋</string>
+
+    <string name="home_grades_not_available">Notenbildschirm ist noch nicht verbunden.</string>
+    <string name="home_news_not_available">Nachrichtenbildschirm ist noch nicht verbunden.</string>
+
+    <string name="home_tip_plan">Plan: Tages-, Wochen-, Monatsansicht + Fächerfilter.</string>
+    <string name="home_tip_grades">Noten: ECTS-Durchschnitt, Leistungsübersicht, Prüfungen.</string>
+    <string name="home_tip_info">Info: Studiengang, Semester, Studentenstatus.</string>
+    <string name="home_tip_news">Neuigkeiten: Ankündigungen vom ZUT RSS (Studenten).</string>
+
+    <string name="home_shortcuts_title">Schnellzugriff</string>
+
+    <string name="home_action_plan_label">📅 Stundenplan</string>
+    <string name="home_action_grades_label">⭐ Noten</string>
+
+    <string name="home_tile_plan_title">📅 Stundenplan</string>
+    <string name="home_tile_plan_desc">
+        Tages-, Wochen- und Monatsansicht + Fächerfilter.
+    </string>
+
+    <string name="home_tile_grades_title">⭐ Noten</string>
+    <string name="home_tile_grades_desc">
+        Durchschnitt, ECTS und Leistungsdetails an einem Ort.
+    </string>
+
+    <string name="home_tile_info_title">🎓 Studieninformationen</string>
+    <string name="home_tile_info_desc">
+        Studiengang, Fakultät, Studentenstatus, Studienverlauf.
+    </string>
+
+    <string name="home_tile_news_title">📰 ZUT Neuigkeiten</string>
+    <string name="home_tile_news_desc">
+        Mitteilungen und Ankündigungen vom RSS-Kanal für Studenten.
+    </string>
+
+    <string name="home_footer_meta">
+        Daten werden aus den ZUT-Systemen abgerufen und lokal zwischengespeichert. Bei Unstimmigkeiten bitte in den offiziellen Panels überprüfen.
+    </string>
+
+    <string name="info_title">Studentendaten</string>
+    <string name="info_user_id">Benutzer-ID: %1$s</string>
+    <string name="info_user_id_placeholder">Benutzer-ID: -</string>
+
+    <string name="info_sync_in_progress">Synchronisierung…</string>
+    <string name="info_error_loading">Fehler beim Laden der Daten: %1$s</string>
+
+    <string name="info_history_empty">Kein Studienverlauf.</string>
+    <string name="info_history_item">%1$s – %2$s</string>
+    <string name="info_history_title">Studienverlauf</string>
+
+    <string name="info_header_title">Daten</string>
+    <string name="info_header_subtitle">
+        Daten aus ZUT-Systemen: Studiengang, Status, Semester und Studienverlauf — alles an einem Ort.
+    </string>
+
+    <string name="info_study_switch_label">Studiengang / Programm</string>
+
+    <string name="info_current_studies_title">Aktuelles Studium</string>
+    <string name="info_label_album">Matrikelnr.:</string>
+    <string name="info_label_faculty">Fakultät:</string>
+    <string name="info_label_field">Richtung:</string>
+    <string name="info_label_form">Form:</string>
+    <string name="info_label_level">Niveau:</string>
+    <string name="info_label_specialty">Spezialität:</string>
+    <string name="info_label_specialisation">Spezialisierung:</string>
+    <string name="info_label_status">Status:</string>
+    <string name="info_label_academic_year">Studienjahr:</string>
+    <string name="info_label_semester">Semester:</string>
+
+    <string name="plan_title">Stundenplan</string>
+
+    <string name="plan_filters_cache_cleared">
+        Fächer-Cache geleert. Neue Liste wird beim nächsten Öffnen geladen.
+    </string>
+    <string name="plan_filters_loading">Laden…</string>
+    <string name="plan_filters_error">Fehler beim Laden der Fächerliste: %1$s</string>
+    <string name="plan_filters_empty">Keine Fächer zum Filtern.</string>
+    <string name="plan_filters_dialog_title">Fächerfilter – ausblenden</string>
+    <string name="plan_filters_apply">Anwenden</string>
+    <string name="plan_filters_reset">Zurücksetzen</string>
+    <string name="plan_filters_cancel">Abbrechen</string>
+
+    <string name="plan_error_loading_plan_with_message">Fehler beim Laden des Plans: %1$s</string>
+    <string name="plan_error_loading_plan_generic">Fehler beim Laden des Plans.</string>
+    <string name="plan_no_classes_in_range">Keine Veranstaltungen im ausgewählten Bereich.</string>
+    <string name="plan_no_data_for_month">Keine Plandaten für diesen Monat.</string>
+
+    <string name="plan_month_cell_has_events_hint">Veranstaltungen an diesem Tag</string>
+
+    <string name="plan_event_default_title">Verstaltung</string>
+    <string name="plan_event_room_prefix">Raum: </string>
+    <string name="plan_event_group_prefix">Gruppe: </string>
+    <string name="plan_event_teacher_prefix">Dozent: </string>
+
+    <string name="plan_header_mon_short">Mo</string>
+    <string name="plan_header_tue_short">Di</string>
+    <string name="plan_header_wed_short">Mi</string>
+    <string name="plan_header_thu_short">Do</string>
+    <string name="plan_header_fri_short">Fr</string>
+    <string name="plan_header_sat_short">Sa</string>
+    <string name="plan_header_sun_short">So</string>
+
+    <string name="plan_month_weekday_mon">Mo</string>
+    <string name="plan_month_weekday_tue">Di</string>
+    <string name="plan_month_weekday_wed">Mi</string>
+    <string name="plan_month_weekday_thu">Do</string>
+    <string name="plan_month_weekday_fri">Fr</string>
+    <string name="plan_month_weekday_sat">Sa</string>
+    <string name="plan_month_weekday_sun">So</string>
+
+    <string name="plan_view_day">Tag</string>
+    <string name="plan_view_week">Woche</string>
+    <string name="plan_view_month">Monat</string>
+
+    <string name="plan_button_today">Heute</string>
+    <string name="plan_button_refresh">Aktualisieren</string>
+    <string name="plan_button_filters">Fächerfilter</string>
+
+    <string name="plan_search_hint">Suchen</string>
+
+    <string name="plan_toast_resetting_search">Suche wird zurückgesetzt…</string>
+    <string name="plan_toast_refreshed">Plan aktualisiert</string>
+    <string name="plan_toast_search_prefix">Suche: %1$s %2$s</string>
+    <string name="plan_search_dialog_title">Im Plan suchen</string>
+    <string name="plan_search_hint_input">Suchbegriff eingeben…</string>
+    <string name="plan_search_button">Suchen</string>
+    <string name="plan_search_saved_title">Gespeicherte Suchen</string>
+    <string name="plan_search_save_label">Speichern</string>
+    <string name="plan_search_save_hint_label">Name (optional)</string>
+    <string name="plan_search_save_title">Suche speichern</string>
+    <string name="plan_search_save_confirm">Speichern</string>
+    <string name="plan_search_saved_toast">Gespeichert!</string>
+    <string name="plan_search_no_saved">Keine gespeicherten Suchen</string>
+    <string name="plan_search_saved_clear">Liste löschen</string>
+    <string name="plan_search_saved_cleared">Liste gelöscht</string>
+    <string name="plan_search_empty_query">Suchbegriff eingeben</string>
+
+    <string name="plan_search_cat_album">Matrikelnummer</string>
+    <string name="plan_search_cat_teacher">Dozent</string>
+    <string name="plan_search_cat_room">Raum</string>
+    <string name="plan_search_cat_subject">Fach</string>
+    <string name="plan_search_cat_group">Gruppe</string>
+
+    <string name="plan_type_lecture">Vorlesung</string>
+    <string name="plan_type_lab">Labor</string>
+    <string name="plan_type_auditory">Übung</string>
+    <string name="plan_type_exam">Prüfung</string>
+    <string name="plan_type_cancelled">Abgesagt</string>
+    <string name="plan_type_rector">Rektortag</string>
+    <string name="plan_type_remote">Fernunterricht</string>
+    <string name="plan_type_pass">Leistungsnachweis</string>
+    <string name="plan_type_pass_retake">Wiederholungsprüfung</string>
+    <string name="plan_type_pass_remote">Fernprüfung</string>
+    <string name="plan_type_pass_remote_retake">Wiederholungsfernprüfung</string>
+
+    <string name="grades_title">Noten</string>
+    <string name="grades_refresh_toast">Aktualisiere Noten und ECTS…</string>
+
+    <string name="grades_error_initial_load">Fehler beim Laden der Daten: %1$s</string>
+    <string name="grades_error_loading_semesters">Fehler beim Laden der Semester: %1$s</string>
+    <string name="grades_no_semesters_for_study">Keine Semester für den gewählten Studiengang.</string>
+    <string name="grades_refresh_network_failed_using_cache">
+        Notenaktualisierung fehlgeschlagen. Zeige zuletzt gespeicherte Daten.
+    </string>
+    <string name="grades_load_network_failed_using_cache">
+        Notenabruf fehlgeschlagen. Zeige zuletzt gespeicherte Daten.
+    </string>
+    <string name="grades_error_loading_grades">Fehler beim Laden der Noten: %1$s</string>
+
+    <string name="grades_semester_label">Semester %1$s (%2$s)</string>
+
+    <string name="grades_average_placeholder">–</string>
+
+    <string name="grades_hero_title">Notenübersicht nach Semestern</string>
+    <string name="grades_hero_subtitle">
+        Gewichteter ECTS-Durchschnitt, Punktesumme und detaillierte Leistungsliste.
+    </string>
+
+    <string name="grades_summary_average_label">Durchschnitt</string>
+    <string name="grades_summary_average_description">
+        Gewichteter ECTS-Durchschnitt (nur numerische Noten).
+    </string>
+
+    <string name="grades_summary_ects_label">ECTS Summe</string>
+    <string name="grades_summary_ects_description">
+        Summe der ECTS-Punkte im ausgewählten Semester.
+    </string>
+
+    <string name="grades_study_label">Aktiver Studiengang</string>
+    <string name="grades_semester_caption">Semester</string>
+
+    <string name="grades_table_header_subject">Fach</string>
+    <string name="grades_table_header_type">Art</string>
+    <string name="grades_table_header_grade">Note</string>
+    <string name="grades_table_header_date">Datum</string>
+
+    <string name="grades_empty_state">Keine Noten für das ausgewählte Semester.</string>
+
+    <string name="news_title">ZUT Neuigkeiten</string>
+    <string name="news_refresh_toast">Lade neueste Daten…</string>
+    <string name="news_error_rss">RSS-Ladefehler: %1$s</string>
+
+    <string name="news_detail_title">Eintrag</string>
+    <string name="news_detail_source_label">Quelle: zut.edu.pl</string>
+    <string name="news_detail_no_content">
+        Kein Inhalt im RSS-Feed für diesen Eintrag.
+    </string>
+
+    <string name="news_header_title">Studenten-Nachrichtenkanal</string>
+    <string name="news_header_source_info">RSS-Quelle: ZUT Studenten</string>
+
+    <string name="news_empty_state">
+        Keine Nachrichten oder Problem beim RSS-Download.
+    </string>
+
+    <string name="news_detail_tag">📰 ZUT Nachricht</string>
+
+    <string name="plan_widget_subtitle_today">Heutige Veranstaltungen</string>
+    <string name="plan_widget_subtitle_in_progress">Laufende Veranstaltungen</string>
+    <string name="plan_widget_subtitle_next_prefix">Nächste in </string>
+    <string name="plan_widget_hours_suffix"> Std</string>
+    <string name="plan_widget_minutes_suffix"> Min</string>
+    <string name="plan_widget_subtitle_no_classes_tomorrow">Morgen keine Veranstaltungen</string>
+    <string name="plan_widget_subtitle_tomorrow">Morgige Veranstaltungen</string>
+    <string name="plan_widget_subtitle_login_required">
+        Bitte in mZUT App anmelden
+    </string>
+    <string name="plan_widget_date_tomorrow_suffix">(morgen)</string>
+    <string name="plan_widget_refreshed_prefix">Aktualisiert: </string>
+
+    <string name="about_title">Über die App</string>
+
+    <string name="about_subtitle">
+        Inoffizielle mobile App für ZUT-Studenten, mit Stundenplan, Noten, Studieninformationen und Tageswidget — ohne Werbung und Tracking.
+    </string>
+
+    <string name="about_section_project_title">Projekt und Autor</string>
+    <string name="about_author_line">Der Autor der App ist Jędrzej Nowak.</string>
+    <string name="about_project_description_1">
+        mZUT v2 wurde als inoffizielle, leichte Alternative erstellt, um Stundenplan, Noten und Studieninformationen schnell einzusehen.
+    </string>
+    <string name="about_project_description_2">
+        Die App nutzt öffentlich verfügbare Systeme und APIs der Universität. Anmeldedaten bleiben auf Ihrem Gerät.
+    </string>
+
+    <string name="about_section_contact_title">Kontakt und Links</string>
+    <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
+    <string name="about_contact_website">Webseite: endozero.pl</string>
+    <string name="about_contact_app_website">App-Webseite: mzut.endozero.pl</string>
+    <string name="about_contact_github">GitHub: https://github.com/Kejlo523/mzut-v2</string>
+
+    <string name="about_section_privacy_title">Datenschutz</string>
+    <string name="about_privacy_text_1">
+        mZUT v2 verwendet keine externen Analysesysteme, zeigt keine Werbung und verfolgt Ihre Aktivitäten nicht.
+    </string>
+    <string name="about_privacy_text_2">
+        Anmeldedaten werden nur zur Authentifizierung in den Universitätssystemen verwendet und lokal gespeichert.
+    </string>
+
+    <string name="about_footer_disclaimer">
+        mZUT v2 ist ein inoffizielles Projekt und keine offizielle App der Westpommerschen Technischen Universität.
+    </string>
+
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_subtitle">
+        Schnittstellensprache wählen. Änderung erfordert möglicherweise Neustart der App.
+    </string>
+
+    <string name="settings_language_label">App-Sprache</string>
+    <string name="settings_language_polish">Polnisch</string>
+    <string name="settings_language_english">Englisch</string>
+    <string name="settings_language_ukrainian">Ukrainisch</string>
+
+    <string name="settings_language_info_hint">
+        Sprachänderung kann Neustart der App erfordern.
+    </string>
+
+    <string name="settings_language_changed_toast">
+        Sprache geändert. Schnittstelle wurde neu geladen.
+    </string>
+
+    <string name="useful_links_header_title">Wichtige Adressen an einem Ort</string>
+    <string name="useful_links_header_sub">
+        Links zu Dekanat, Fakultät, Plan, Vorschriften und anderen ZUT-Diensten.
+    </string>
+    <string name="useful_links_section_title">Linkliste</string>
+    <string name="useful_links_empty">
+        Keine Links definiert.\nFügen Sie in den Einstellungen etwas hinzu oder prüfen Sie die Standardvorschläge.
+    </string>
+
+    <string name="logout_confirm_title">Ausloggen?</string>
+    <string name="logout_confirm_message">Möchten Sie sich wirklich ausloggen?</string>
+    <string name="logout_confirm_positive">Ausloggen</string>
+    <string name="logout_confirm_negative">Abbrechen</string>
+
+    <!-- Tile Customization & Edit Mode -->
+    <string name="dialog_add_edit_tile_title_new">Neue Kachel</string>
+    <string name="dialog_add_edit_tile_title_edit">Kachel bearbeiten</string>
+    <string name="dialog_add_edit_tile_label_title">Titel</string>
+    <string name="dialog_add_edit_tile_hint_title">Z.B. Stundenplan</string>
+    <string name="dialog_add_edit_tile_label_desc">Beschreibung</string>
+    <string name="dialog_add_edit_tile_hint_desc">Kurze Beschreibung</string>
+    <string name="dialog_add_edit_tile_label_action">Aktionstyp</string>
+    <string name="dialog_add_edit_tile_label_url_section">URL-Adresse (https://...)</string>
+    <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
+    <string name="dialog_add_edit_tile_label_saved_search">Gespeicherte Suche wählen</string>
+    <string name="dialog_add_edit_tile_label_color">Kachelfarbe</string>
+    <string name="dialog_add_edit_tile_btn_save">Speichern</string>
+    <string name="dialog_add_edit_tile_btn_cancel">Abbrechen</string>
+    <string name="dialog_add_edit_tile_toast_no_saved_searches">Keine gespeicherten Suchen!</string>
+    <string name="dialog_add_edit_tile_spinner_empty">(Keine gespeicherten Suchen)</string>
+
+    <string name="tile_action_plan">Stundenplan</string>
+    <string name="tile_action_grades">Noten</string>
+    <string name="tile_action_info">Informationen</string>
+    <string name="tile_action_news">Neuigkeiten</string>
+    <string name="tile_action_news_latest">Neueste Nachricht (Auto)</string>
+    <string name="tile_action_plan_search">Gespeicherte Plansuche</string>
+    <string name="tile_action_useful">Nützliche Links</string>
+    <string name="tile_action_about">Über App</string>
+    <string name="tile_action_url">Eigener URL-Link</string>
+
+    <string name="menu_home_edit">Kacheln bearbeiten</string>
+    <string name="menu_home_save">Speichern</string>
+    <string name="menu_home_add">Kachel hinzufügen</string>
+    <string name="menu_home_cancel">Abbrechen</string>
+    <string name="menu_home_reset">Standard wiederherstellen</string>
+
+    <string name="home_edit_mode_toast">Bearbeitungsmodus: Klicken zum Bearbeiten, Halten zum Ändern der Größe</string>
+    <string name="home_save_toast">Änderungen gespeichert</string>
+    <string name="home_cancel_toast">Änderungen verworfen</string>
+    <string name="home_reset_toast">Standardlayout wiederhergestellt</string>
+    <string name="home_reset_dialog_title">Standard wiederherstellen?</string>
+    <string name="home_reset_dialog_message">Möchten Sie wirklich das Standardlayout wiederherstellen? Ihre Änderungen gehen verloren.</string>
+    <string name="home_reset_dialog_yes">Ja</string>
+    <string name="home_reset_dialog_no">Nein</string>
+    <string name="home_open_url_error">Ungültige URL</string>
+    <string name="home_open_error">Fehler beim Öffnen: %1$s</string>
+
+    <string name="settings_theme_label">App Motiv</string>
+    <string name="theme_deep_blue">Deep Blue</string>
+    <string name="theme_imjustgirl">ImJustGirl (Rosa)</string>
+    <string name="theme_hacker">Hacker (Matrix)</string>
+    <string name="theme_premium">Premium (Gold)</string>
+    <string name="theme_obsidian">Obsidian (Schwarz)</string>
+    <string name="theme_high_contrast">Hoher Kontrast</string>
+    <string name="theme_vintage">Vintage (Win98)</string>
+</resources>

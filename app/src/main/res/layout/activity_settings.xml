@@ -15,7 +15,7 @@
         android:elevation="0dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:titleTextColor="@color/mz_text" />
+        android:titleTextColor="?attr/mzText" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -47,7 +47,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:text="@string/settings_title"
-                    android:textColor="@color/mz_text"
+                    android:textColor="?attr/mzText"
                     android:textSize="28sp"
                     android:textStyle="bold" />
 
@@ -57,7 +57,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:text="@string/settings_subtitle"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="14sp" />
             </LinearLayout>
 
@@ -68,13 +68,44 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
+                
+                <TextView
+                    android:id="@+id/settingsSectionThemeTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:text="@string/settings_theme_label"
+                    android:textColor="?attr/mzText"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <Spinner
+                        android:id="@+id/spinnerTheme"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@android:color/transparent"
+                        android:popupBackground="?attr/mzBg"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="24dp"
+                    android:background="?attr/mzBorderSoft" />
+
                 <TextView
                     android:id="@+id/settingsSectionLanguageTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:text="@string/settings_language_label"
-                    android:textColor="@color/mz_text"
+                    android:textColor="?attr/mzText"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -87,7 +118,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:background="@android:color/transparent"
-                        android:popupBackground="@color/mz_bg"
+                        android:popupBackground="?attr/mzBg"
                         android:spinnerMode="dropdown" />
                 </LinearLayout>
 
@@ -98,7 +129,7 @@
                     android:layout_marginTop="24dp"
                     android:layout_marginBottom="16dp"
                     android:text="Częstotliwość odświeżania widgetu"
-                    android:textColor="@color/mz_text"
+                    android:textColor="?attr/mzText"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -111,7 +142,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:background="@android:color/transparent"
-                        android:popupBackground="@color/mz_bg"
+                        android:popupBackground="?attr/mzBg"
                         android:spinnerMode="dropdown" />
                 </LinearLayout>
             </LinearLayout>

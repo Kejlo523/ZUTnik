@@ -13,7 +13,7 @@
         android:src="@drawable/ic_battery_alert"
         android:layout_marginBottom="16dp"
         android:layout_gravity="center_horizontal"
-        android:tint="@color/mz_primary"
+        android:tint="?attr/mzPrimary"
         />
 
     <TextView
@@ -23,7 +23,7 @@
         android:text="@string/battery_opt_dialog_title"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@color/mz_text"
+        android:textColor="?attr/mzText"
         android:gravity="center"
         android:layout_marginBottom="12dp"
         />
@@ -33,7 +33,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/battery_opt_dialog_message"
-        android:textColor="@color/mz_text"
+        android:textColor="?attr/mzText"
         android:textSize="16sp"
         android:lineSpacingMultiplier="1.2"
         android:gravity="center"
@@ -45,8 +45,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/battery_opt_button_settings"
-        android:backgroundTint="@color/mz_primary"
-        android:textColor="@color/mz_bg"
+        android:backgroundTint="?attr/mzPrimary"
+        android:textColor="?attr/mzBg"
         android:layout_marginBottom="8dp"
         android:paddingTop="12dp"
         android:paddingBottom="12dp"
@@ -58,7 +58,7 @@
         android:layout_height="wrap_content"
         android:text="@string/battery_opt_button_cancel"
         android:backgroundTint="@android:color/transparent"
-        android:textColor="@color/mz_muted"
+        android:textColor="?attr/mzMuted"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         />
 

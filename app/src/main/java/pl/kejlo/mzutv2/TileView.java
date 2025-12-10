@@ -165,10 +165,10 @@ public class TileView extends FrameLayout {
             iconView.setColorFilter(tint);
         } else {
             // Default colors (Theme-dependent)
-            cardContent.setCardBackgroundColor(getResources().getColor(R.color.mz_bg_surface, null));
-            textTitle.setTextColor(getResources().getColor(R.color.mz_text, null));
-            textDesc.setTextColor(getResources().getColor(R.color.mz_muted, null));
-            iconView.setColorFilter(getResources().getColor(R.color.mz_primary, null));
+            cardContent.setCardBackgroundColor(ThemeManager.resolveColor(getContext(), R.attr.mzBgSurface));
+            textTitle.setTextColor(ThemeManager.resolveColor(getContext(), R.attr.mzText));
+            textDesc.setTextColor(ThemeManager.resolveColor(getContext(), R.attr.mzMuted));
+            iconView.setColorFilter(ThemeManager.resolveColor(getContext(), R.attr.mzPrimary));
         }
     }
 

@@ -32,7 +32,24 @@ public class LocaleManager {
     }
 
     private static Context updateResources(Context context, String langCode) {
-        Locale locale = new Locale(langCode);
+        Locale locale;
+        if (langCode.contains("-")) {
+            String[] split = langCode.split("-");
+            if (split.length > 1) {
+                locale = new Locale(split[0], split[1]);
+            } else {
+                locale = new Locale(langCode);
+            }
+        } else if (langCode.contains("_")) {
+            String[] split = langCode.split("_");
+            if (split.length > 1) {
+                locale = new Locale(split[0], split[1]);
+            } else {
+                locale = new Locale(langCode);
+            }
+        } else {
+            locale = new Locale(langCode);
+        }
         Locale.setDefault(locale);
 
         Resources res = context.getResources();

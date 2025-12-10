@@ -94,7 +94,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/dialog_add_edit_tile_label_color"
-            android:textColor="@color/mz_muted"
+            android:textColor="?attr/mzMuted"
             android:textSize="12sp"
             android:layout_marginTop="16dp"/>
 
@@ -125,7 +125,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="HEX:"
-                android:textColor="@color/mz_text"/>
+                android:textColor="?attr/mzText"/>
 
             <EditText
                 android:id="@+id/inputColorHex"
@@ -136,7 +136,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/login_input_background"
                 android:padding="10dp"
-                android:textColor="@color/mz_text"
+                android:textColor="?attr/mzText"
                 android:textSize="14sp"/>
         </LinearLayout>
 

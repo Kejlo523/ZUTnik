@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
     android:fitsSystemWindows="true"
-    app:statusBarBackground="@color/mz_bg">
+    app:statusBarBackground="?attr/mzBg">
 
     <LinearLayout
         android:id="@+id/drawerContentRoot"
@@ -21,7 +21,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
-            android:titleTextColor="@color/mz_text" />
+            android:titleTextColor="?attr/mzText" />
 
         <LinearLayout
             android:orientation="horizontal"
@@ -35,21 +35,21 @@
                 android:layout_weight="0.25"
                 android:orientation="vertical"
                 android:padding="16dp"
-                android:background="@color/mz_bg">
+                android:background="?attr/mzBg">
 
                 <TextView
                     android:id="@+id/tvHeaderLabel"
                     android:text="-"
                     android:textSize="24sp"
                     android:textStyle="bold"
-                    android:textColor="@color/mz_text"
+                    android:textColor="?attr/mzText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp" />
 
                 <TextView
                     android:text="Widok"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="8dp"
@@ -112,7 +112,7 @@
 
                 <TextView
                     android:text="Akcje"
-                    android:textColor="@color/mz_muted"
+                    android:textColor="?attr/mzMuted"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="8dp"
@@ -131,7 +131,7 @@
                         android:layout_weight="1"
                         android:background="@drawable/bg_card_soft"
                         android:src="@drawable/ic_search"
-                        app:tint="@color/mz_text"
+                        app:tint="?attr/mzText"
                         android:layout_marginEnd="6dp" />
 
                     <ImageButton
@@ -141,7 +141,7 @@
                         android:layout_weight="1"
                         android:background="@drawable/bg_card_soft"
                         android:src="@drawable/ic_refresh"
-                        app:tint="@color/mz_text"
+                        app:tint="?attr/mzText"
                         android:layout_marginEnd="6dp" />
 
                     <ImageButton
@@ -151,7 +151,7 @@
                         android:layout_weight="1"
                         android:background="@drawable/bg_card_soft"
                         android:src="@drawable/ic_more_vert"
-                        app:tint="@color/mz_text" />
+                        app:tint="?attr/mzText" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -167,7 +167,7 @@
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    app:cardBackgroundColor="@color/mz_bg"
+                    app:cardBackgroundColor="?attr/mzBg"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="4dp">
 
@@ -183,7 +183,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:visibility="gone"
-                            android:background="@color/mz_bg_soft"
+                            android:background="?attr/mzBgSoft"
                             android:paddingTop="12dp"
                             android:paddingBottom="12dp">
                             <View android:layout_width="40dp" android:layout_height="match_parent" />
@@ -201,7 +201,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:visibility="gone"
-                            android:background="@color/mz_bg_soft"
+                            android:background="?attr/mzBgSoft"
                             android:paddingTop="12dp"
                             android:paddingBottom="12dp" />
 
@@ -224,7 +224,7 @@
                                     android:orientation="horizontal"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:background="@color/mz_bg">
+                                    android:background="?attr/mzBg">
 
                                     <LinearLayout
                                         android:id="@+id/layoutTimeColumn"
@@ -256,7 +256,7 @@
                         <TextView
                             android:id="@+id/tvEmpty"
                             android:text="@string/plan_no_classes_in_range"
-                            android:textColor="@color/mz_muted"
+                            android:textColor="?attr/mzMuted"
                             android:textSize="14sp"
                             android:gravity="center"
                             android:visibility="gone"
@@ -273,7 +273,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/mz_bg"
+        android:background="?attr/mzBg"
         android:fitsSystemWindows="true">
         <include layout="@layout/nav_header" />
     </com.google.android.material.navigation.NavigationView>
