@@ -37,7 +37,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
-    private static final long REFRESH_INTERVAL_MS = 30L * 60L * 1000L;
+    private static final String PREFS_SETTINGS = "mzut_settings";
+    // private static final long REFRESH_INTERVAL_MS = 30L * 60L * 1000L; // Removed
+    // constant
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -276,12 +278,37 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (am == null)
             return;
+
+        // 1. Cancel existing
+        cancelPeriodicRefresh(context);
+
+        // 2. Read interval
+        String intervalStr = context.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE)
+                .getString("widget_refresh_interval", "30");
+        long intervalMin = 30;
+        try {
+            intervalMin = Long.parseLong(intervalStr);
+        } catch (NumberFormatException e) {
+            intervalMin = 30;
+        }
+
+        if (intervalMin <= 0) {
+            // "Never" / Manual only
+            return;
+        }
+
+        long intervalMs = intervalMin * 60L * 1000L;
+
         Intent i = new Intent(context, PlanDayWidgetProvider.class);
         i.setAction(ACTION_REFRESH);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, i,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + REFRESH_INTERVAL_MS,
-                REFRESH_INTERVAL_MS, pi);
+        am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + intervalMs,
+                intervalMs, pi);
+    }
+
+    public static void rescheduleRefresh(Context context) {
+        schedulePeriodicRefresh(context);
     }
 
     private static void cancelPeriodicRefresh(Context context) {

@@ -43,13 +43,13 @@ public class SettingsActivity extends AppCompatActivity {
         contentRoot = findViewById(R.id.contentRoot);
         // Toolbar setup, same pattern as other screens
         Toolbar toolbar = findViewById(R.id.toolbar);
-        
+
         ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
-        
+
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.settings_title);
@@ -62,8 +62,7 @@ public class SettingsActivity extends AppCompatActivity {
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this,
                 R.array.settings_language_entries,
-                R.layout.spinner_item_dark
-        );
+                R.layout.spinner_item_dark);
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerLanguage.setAdapter(adapter);
 
@@ -115,6 +114,55 @@ public class SettingsActivity extends AppCompatActivity {
                 // no-op
             }
         });
+
+        // Widget Refresh Setup
+        Spinner spinnerRefresh = findViewById(R.id.spinnerWidgetRefresh);
+        ArrayAdapter<CharSequence> adapterRefresh = ArrayAdapter.createFromResource(
+                this,
+                R.array.settings_widget_refresh_entries,
+                R.layout.spinner_item_dark);
+        adapterRefresh.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
+        spinnerRefresh.setAdapter(adapterRefresh);
+
+        // Load current
+        SharedPreferences prefs = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE);
+        String currentRefreshVal = prefs.getString("widget_refresh_interval", "30"); // default 30
+
+        String[] refreshValues = getResources().getStringArray(R.array.settings_widget_refresh_values);
+        int refreshPos = 1; // Default to 30 (index 1)
+        for (int i = 0; i < refreshValues.length; i++) {
+            if (refreshValues[i].equals(currentRefreshVal)) {
+                refreshPos = i;
+                break;
+            }
+        }
+        spinnerRefresh.setSelection(refreshPos);
+
+        spinnerRefresh.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            boolean firstCall = true;
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (firstCall) {
+                    firstCall = false;
+                    return;
+                }
+                String val = refreshValues[position];
+                getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                        .edit()
+                        .putString("widget_refresh_interval", val)
+                        .apply();
+
+                // Reschedule widget
+                PlanDayWidgetProvider.rescheduleRefresh(SettingsActivity.this);
+
+                Toast.makeText(SettingsActivity.this, "Zapisano ustawienia widgetu", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
     }
 
     @Override
@@ -137,8 +185,7 @@ public class SettingsActivity extends AppCompatActivity {
         Toast.makeText(
                 this,
                 getString(R.string.settings_language_changed_toast),
-                Toast.LENGTH_SHORT
-        ).show();
+                Toast.LENGTH_SHORT).show();
 
         // Closing Settings is usually enough for changes to apply
         finish();
