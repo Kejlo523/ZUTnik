@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Background (bg_card_soft simulation) -->
+    <!-- Background: Card Soft -->
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#F5F5F7" />
@@ -9,76 +9,118 @@
         </shape>
     </item>
 
-    <!-- Header: Date (Text simulation) -->
-    <item android:top="16dp" android:left="16dp" android:width="120dp" android:height="16dp">
+    <!-- Header Area -->
+    <!-- Date: "Dziś" -->
+    <item android:top="16dp" android:left="16dp" android:width="80dp" android:height="14dp">
         <shape android:shape="rectangle">
-            <solid android:color="#4A4A4A" />
+            <solid android:color="#4A4A4A" /> <!-- Dark Text -->
             <corners android:radius="4dp" />
         </shape>
     </item>
-
-    <!-- Header: Icon (Circle) -->
+    
+    <!-- Refresh Icon Placeholder (Top Right) -->
     <item android:top="14dp" android:right="16dp" android:width="20dp" android:height="20dp" android:gravity="top|end">
         <shape android:shape="oval">
-            <solid android:color="#B0B0B0" />
+            <stroke android:width="2dp" android:color="#B0B0B0" />
+            <solid android:color="#00000000" />
         </shape>
     </item>
 
-    <!-- Subtitle (Text simulation) -->
-    <item android:top="40dp" android:left="16dp" android:width="180dp" android:height="10dp">
+    <!-- Subtitle: "Dzisiejsze zajęcia" -->
+    <item android:top="40dp" android:left="16dp" android:width="120dp" android:height="8dp">
+         <shape android:shape="rectangle">
+            <solid android:color="#9E9E9E" /> <!-- Muted Text -->
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+
+    <!-- Divider Line -->
+    <item android:top="56dp" android:left="0dp" android:right="0dp" android:height="1dp">
         <shape android:shape="rectangle">
-            <solid android:color="#9E9E9E" />
-            <corners android:radius="4dp" />
+            <solid android:color="#E0E0E0" />
         </shape>
     </item>
 
     <!-- List Item 1 -->
-    <item android:top="64dp" android:left="12dp" android:right="12dp" android:height="48dp">
+    <!-- Time Column -->
+    <item android:top="68dp" android:left="16dp" android:width="40dp" android:height="12dp">
         <shape android:shape="rectangle">
-            <solid android:color="#FFFFFF" />
-            <corners android:radius="8dp" />
+            <solid android:color="#4A4A4A" /> 
+            <corners android:radius="2dp" />
         </shape>
     </item>
-    <!-- List Item 1 Content (Text simulation) -->
-    <item android:top="74dp" android:left="24dp" android:width="80dp" android:height="10dp">
+    
+    <!-- Vertical Line Indicator -->
+    <item android:top="68dp" android:left="64dp" android:width="2dp" android:height="32dp">
+         <shape android:shape="rectangle">
+            <solid android:color="#2196F3" /> <!-- Accent Color -->
+        </shape>
+    </item>
+
+    <!-- Content Block -->
+    <item android:top="68dp" android:left="74dp" android:right="16dp" android:height="32dp">
         <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="6dp" />
+        </shape>
+    </item>
+    
+    <!-- Subject Name inside block -->
+    <item android:top="74dp" android:left="82dp" android:width="100dp" android:height="8dp">
+         <shape android:shape="rectangle">
             <solid android:color="#E0E0E0" />
             <corners android:radius="2dp" />
         </shape>
     </item>
-    <item android:top="92dp" android:left="24dp" android:width="140dp" android:height="8dp">
-        <shape android:shape="rectangle">
+     <item android:top="86dp" android:left="82dp" android:width="60dp" android:height="6dp">
+         <shape android:shape="rectangle">
             <solid android:color="#F0F0F0" />
             <corners android:radius="2dp" />
         </shape>
     </item>
 
     <!-- List Item 2 -->
-    <item android:top="120dp" android:left="12dp" android:right="12dp" android:height="48dp">
+    <!-- Time Column -->
+    <item android:top="110dp" android:left="16dp" android:width="40dp" android:height="12dp">
         <shape android:shape="rectangle">
-            <solid android:color="#FFFFFF" />
-            <corners android:radius="8dp" />
+            <solid android:color="#9E9E9E" /> 
+            <corners android:radius="2dp" />
         </shape>
     </item>
-    <!-- List Item 2 Content (Text simulation) -->
-    <item android:top="130dp" android:left="24dp" android:width="90dp" android:height="10dp">
+    
+    <!-- Vertical Line Indicator -->
+    <item android:top="110dp" android:left="64dp" android:width="2dp" android:height="32dp">
+         <shape android:shape="rectangle">
+            <solid android:color="#BDBDBD" /> 
+        </shape>
+    </item>
+
+    <!-- Content Block -->
+    <item android:top="110dp" android:left="74dp" android:right="16dp" android:height="32dp">
         <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="6dp" />
+        </shape>
+    </item>
+     <!-- Subject Name inside block -->
+    <item android:top="116dp" android:left="82dp" android:width="100dp" android:height="8dp">
+         <shape android:shape="rectangle">
             <solid android:color="#E0E0E0" />
             <corners android:radius="2dp" />
         </shape>
     </item>
-    <item android:top="148dp" android:left="24dp" android:width="120dp" android:height="8dp">
-        <shape android:shape="rectangle">
+     <item android:top="128dp" android:left="82dp" android:width="60dp" android:height="6dp">
+         <shape android:shape="rectangle">
             <solid android:color="#F0F0F0" />
             <corners android:radius="2dp" />
         </shape>
     </item>
 
-    <!-- List Item 3 -->
-    <item android:top="176dp" android:left="12dp" android:right="12dp" android:height="48dp">
-        <shape android:shape="rectangle">
-            <solid android:color="#FFFFFF" />
-            <corners android:radius="8dp" />
+    <!-- Bottom Refresh Text -->
+    <item android:gravity="bottom|end" android:bottom="8dp" android:right="16dp" android:width="100dp" android:height="8dp">
+         <shape android:shape="rectangle">
+            <solid android:color="#B0B0B0" />
+            <corners android:radius="2dp" />
         </shape>
     </item>
 

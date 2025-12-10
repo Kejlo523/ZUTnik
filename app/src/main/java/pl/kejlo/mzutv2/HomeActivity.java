@@ -126,6 +126,10 @@ public class HomeActivity extends AppCompatActivity {
                         // 4. Horizontal motion dominant (deltaX > deltaY) - prevents opening on
                         // diagonal scroll
                         if (deltaX > 50 && velocityX > 100 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                            // BLOCK if in edit mode
+                            if (tileGrid.isEditMode()) {
+                                return false;
+                            }
                             if (!drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START)) {
                                 drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
                                 return true;

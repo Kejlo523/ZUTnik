@@ -236,6 +236,10 @@ public class NavDrawerHelper {
                             float deltaX = e2.getX() - e1.getX();
                             float deltaY = e2.getY() - e1.getY();
                             if (deltaX > 50 && velocityX > 100 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                                if (drawerLayout.getDrawerLockMode(
+                                        androidx.core.view.GravityCompat.START) == DrawerLayout.LOCK_MODE_LOCKED_CLOSED) {
+                                    return false;
+                                }
                                 if (!drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START)) {
                                     drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
                                     return true;

@@ -46,6 +46,12 @@ public class TileGridLayout extends ViewGroup {
     private final Rect previewRect = new Rect();
     private final Paint previewPaint = new Paint();
 
+    // Optimization state
+    private int lastPreviewCol = -1;
+    private int lastPreviewRow = -1;
+    private int lastPreviewColSpan = -1;
+    private int lastPreviewRowSpan = -1;
+
     public interface OnTilesChangedListener {
         void onTilesChanged(List<Tile> newTiles);
     }
@@ -179,6 +185,13 @@ public class TileGridLayout extends ViewGroup {
         initialTileX = tileView.getX();
         initialTileY = tileView.getY();
 
+        // Reset optimization state
+        lastPreviewCol = -1;
+        lastPreviewRow = -1;
+        lastPreviewColSpan = -1;
+        lastPreviewRowSpan = -1;
+        updatePreviewRect(); // Initialize preview rect immediately
+
         // We use raw coords for offsets to be safe from coordinate space confusion
         touchDownX = rawX;
         touchDownY = rawY;
@@ -197,6 +210,12 @@ public class TileGridLayout extends ViewGroup {
         activeTileView = tileView;
         isResizing = true;
         resizeDirection = direction;
+
+        // Reset optimization state
+        lastPreviewCol = -1;
+        lastPreviewRow = -1;
+        lastPreviewColSpan = -1;
+        lastPreviewRowSpan = -1;
 
         // Stop ScrollView from stealing
         requestDisallowInterceptTouchEvent(true);
@@ -242,15 +261,20 @@ public class TileGridLayout extends ViewGroup {
                 activeTileView.setTranslationX(dx);
                 activeTileView.setTranslationY(dy);
 
-                updatePreviewRect();
-                invalidate();
-                simulateLayout(); // Live Preview
+                activeTileView.setTranslationX(dx);
+                activeTileView.setTranslationY(dy);
+
+                if (updatePreviewRect()) {
+                    invalidate();
+                    simulateLayout(); // Only simulate if grid pos changed
+                }
                 return true;
             }
 
             if (isResizing && activeTileView != null) {
-                handleResizeDrag(event);
-                simulateLayout(); // Live Preview
+                if (handleResizeDrag(event)) {
+                    simulateLayout(); // Only simulate if grid pos changed
+                }
                 return true;
             }
 
@@ -277,9 +301,16 @@ public class TileGridLayout extends ViewGroup {
     }
 
     // Improved Bi-directional Resize Logic (Snapped)
-    private void handleResizeDrag(MotionEvent event) {
+    // Returns TRUE if grid state changed
+    private boolean handleResizeDrag(MotionEvent event) {
         float rawX = event.getX();
         float rawY = event.getY();
+
+        // ... (rest of logic same until calculation)
+
+        // ... (This function needs to be rewritten slightly to return boolean, see next
+        // Chunk)
+        // Actually I'll rewrite the whole method signature and end part.
 
         int tileTop = activeTileView.getTop();
         int tileLeft = activeTileView.getLeft();
@@ -325,6 +356,18 @@ public class TileGridLayout extends ViewGroup {
             newColSpan = potentialSpan;
         }
 
+        // Check change
+        boolean changed = (newCol != lastPreviewCol || anchorRow != lastPreviewRow ||
+                newColSpan != lastPreviewColSpan || newRowSpan != lastPreviewRowSpan);
+
+        if (!changed)
+            return false;
+
+        lastPreviewCol = newCol;
+        lastPreviewRow = anchorRow;
+        lastPreviewColSpan = newColSpan;
+        lastPreviewRowSpan = newRowSpan;
+
         // --- Calculate Target Pixel Bounds (Snapped) ---
         int l = getPaddingLeft() + newCol * (cellWidth + gap);
         int top = getPaddingTop() + anchorRow * (cellHeight + gap);
@@ -337,19 +380,9 @@ public class TileGridLayout extends ViewGroup {
         previewRect.set(l, top, r, b);
 
         // --- Update Actual View (Snapped) ---
-        // We MUST measure before layout to ensure generic view content updates (like
-        // text wrapping)
-
-        // Update spans and position on the tile object so setTile triggers correct
-        // visual mode
         t.colSpan = newColSpan;
         t.rowSpan = newRowSpan;
         t.col = newCol;
-        // t.row doesn't change for resize (top anchor is fixed for height resize
-        // usually, unless we resized top? No, resize is Height (Bottom)).
-        // Wait, current logic:
-        // Height (Bottom Control): anchorRow = t.row. newRowSpan calculated.
-        // So Row doesn't change.
         t.row = anchorRow;
 
         activeTileView.setTile(t); // Force visual refresh (Icon vs Text)
@@ -361,12 +394,14 @@ public class TileGridLayout extends ViewGroup {
         // Layout to snapped position
         activeTileView.layout(l, top, r, b);
 
-        invalidate(); // Redraw preview (it will overlap view exactly, acts as border/highlight)
+        invalidate(); // Redraw preview
+        return true;
     }
 
-    private void updatePreviewRect() {
+    // Returns TRUE if grid position changed
+    private boolean updatePreviewRect() {
         if (activeTileView == null)
-            return;
+            return false;
         // With snapped logic, handleResizeDrag updates it.
         // We only need this for Drag (Move) logic.
 
@@ -380,13 +415,23 @@ public class TileGridLayout extends ViewGroup {
             col = Math.max(0, Math.min(COLUMN_COUNT - activeTileView.getTile().colSpan, col));
             row = Math.max(0, row); // Bound row > 0
 
+            // Optimization Check
+            if (col == lastPreviewCol && row == lastPreviewRow) {
+                return false;
+            }
+
+            lastPreviewCol = col;
+            lastPreviewRow = row;
+
             int l = getPaddingLeft() + col * (cellWidth + gap);
             int t = getPaddingTop() + row * (cellHeight + gap);
             int w = activeTileView.getTile().colSpan * cellWidth + (activeTileView.getTile().colSpan - 1) * gap;
             int h = activeTileView.getTile().rowSpan * cellHeight + (activeTileView.getTile().rowSpan - 1) * gap;
 
             previewRect.set(l, t, l + w, t + h);
+            return true;
         }
+        return false;
     }
 
     private boolean isPointInView(View view, int x, int y) {

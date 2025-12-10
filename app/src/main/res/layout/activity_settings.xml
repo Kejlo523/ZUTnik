@@ -90,6 +90,30 @@
                         android:popupBackground="@color/mz_bg"
                         android:spinnerMode="dropdown" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/settingsSectionRefreshTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="Częstotliwość odświeżania widgetu"
+                    android:textColor="@color/mz_text"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                    <Spinner
+                        android:id="@+id/spinnerWidgetRefresh"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@android:color/transparent"
+                        android:popupBackground="@color/mz_bg"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
             </LinearLayout>
 
         </LinearLayout>
