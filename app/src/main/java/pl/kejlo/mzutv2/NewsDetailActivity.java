@@ -31,6 +31,40 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private static final String ZUT_BASE_URL = "https://www.zut.edu.pl";
 
+    // Cache for the generated placeholder image (PNG bytes)
+    private byte[] offlinePlaceholderBytes = null;
+
+    private byte[] generateOfflinePlaceholder() {
+        try {
+            int drawableId = R.drawable.ic_newspaper;
+            android.graphics.drawable.Drawable d = androidx.core.content.ContextCompat.getDrawable(this, drawableId);
+            if (d != null) {
+                int w = d.getIntrinsicWidth() > 0 ? d.getIntrinsicWidth() : 96;
+                int h = d.getIntrinsicHeight() > 0 ? d.getIntrinsicHeight() : 96;
+                if (w < 128) {
+                    w *= 2;
+                    h *= 2;
+                }
+
+                android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(w, h,
+                        android.graphics.Bitmap.Config.ARGB_8888);
+                android.graphics.Canvas c = new android.graphics.Canvas(b);
+                c.drawColor(0xFFEEEEEE);
+                d.setBounds(20, 20, w - 20, h - 20);
+                d.setTint(0xFFAAAAAA);
+                d.draw(c);
+
+                java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                b.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bos);
+                return bos.toByteArray();
+            }
+        } catch (Exception ignored) {
+        }
+        // Fallback
+        String base64Grey = "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAQAAADa6x0KAAAAZElEQVR42u3PQREAAAgEwS971rqWUDTi2uaAyUgZmIyUgclIGZiMlIHJSBmYjJSByUgZmIyUgclIGZiMlIHJSBmYjJSByUgZmIyUgclIGZiMlIHJSBmYjJSByUgZmIyUgclIGajBA17wAQLy6ZEvAAAAAElFTkSuQmCC";
+        return android.util.Base64.decode(base64Grey, android.util.Base64.DEFAULT);
+    }
+
     private Toolbar toolbar;
     private TextView tvTitle;
     private TextView tvDate;
@@ -110,13 +144,27 @@ public class NewsDetailActivity extends AppCompatActivity {
                         try {
                             // 1. Ensure it's in cache (download/resize if needed)
                             // This runs on background thread (WebView calls this on background usually)
-                            NewsRepository.downloadImage(url);
+                            if (NetworkStatusHelper.isNetworkAvailable(NewsDetailActivity.this)) {
+                                NewsRepository.downloadImage(url);
+                            }
 
                             // 2. Get stream from cache (it's saved as JPEG 50%)
                             java.io.InputStream is = ImageCache.getInstance().getStream(url);
                             if (is != null) {
                                 // Always serving as jpeg per our cache logic
                                 return new android.webkit.WebResourceResponse("image/jpeg", "UTF-8", is);
+                            } else if (!NetworkStatusHelper.isNetworkAvailable(NewsDetailActivity.this)) {
+                                // 3. Offline and missing from cache -> Placeholder (Icon)
+                                // Use cached bytes to avoid "colossal lag" from repeated Bitmap compression
+                                if (offlinePlaceholderBytes == null) {
+                                    offlinePlaceholderBytes = generateOfflinePlaceholder();
+                                }
+                                if (offlinePlaceholderBytes != null) {
+                                    return new android.webkit.WebResourceResponse(
+                                            "image/png",
+                                            "UTF-8",
+                                            new java.io.ByteArrayInputStream(offlinePlaceholderBytes));
+                                }
                             }
                         } catch (Exception e) {
                             // fall back to network

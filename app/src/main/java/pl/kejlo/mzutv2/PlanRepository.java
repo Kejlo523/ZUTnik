@@ -289,6 +289,19 @@ public class PlanRepository {
             return sCachedAlbum;
         }
 
+        // Try to recover album from persisted cache (offline support)
+        if (sFullPlanCache == null) {
+            FullPlanCache fromDisk = readCacheFromDisk();
+            if (fromDisk != null) {
+                sFullPlanCache = fromDisk;
+            }
+        }
+        if (sFullPlanCache != null && sFullPlanCache.album != null && !sFullPlanCache.album.isEmpty()) {
+            sCachedAlbum = sFullPlanCache.album;
+            sCachedAlbumTs = now;
+            return sCachedAlbum;
+        }
+
         MzutSession session = MzutSession.getInstance();
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
@@ -1029,6 +1042,7 @@ public class PlanRepository {
         long now = System.currentTimeMillis();
 
         synchronized (PlanRepository.class) {
+            // Check again inside lock
             if (sFullPlanCache == null || album == null || !album.equals(sFullPlanCache.album)) {
                 FullPlanCache fromDisk = readCacheFromDisk();
                 if (fromDisk != null && album != null && album.equals(fromDisk.album)) {
@@ -1054,26 +1068,39 @@ public class PlanRepository {
 
             boolean needRefresh = forceScopeRefresh || (lastScopeMs == null) || ((now - lastScopeMs) > ttl);
 
+            // If offline, disable refresh to prevent errors and rely on cache
+            if (appContext != null && !NetworkStatusHelper.isNetworkAvailable(appContext)) {
+                needRefresh = false;
+            }
+
             if (needRefresh) {
-                List<PlanEventRaw> fresh = fetchPlanRangeByAlbum(album, rangeStart, rangeEnd, debug);
-                // If we get data, update cache. If we get NOTHING (and not error), it might be
-                // empty period.
-                // But if fresh is empty, we still update timestamp to avoid re-fetching
-                // immediately empty range.
-                if (fresh != null) {
-                    Map<LocalDate, List<PlanEventRaw>> tmp = groupByDay(fresh);
-                    LocalDate d = rangeStart;
-                    while (!d.isAfter(rangeEnd)) {
-                        List<PlanEventRaw> list = tmp.get(d);
-                        if (list != null)
-                            sFullPlanCache.byDate.put(d, list);
-                        else
-                            sFullPlanCache.byDate.remove(d); // Clear empty days in range
-                        d = d.plusDays(1);
+                try {
+                    List<PlanEventRaw> fresh = fetchPlanRangeByAlbum(album, rangeStart, rangeEnd, debug);
+                    // If we get data, update cache. If we get NOTHING (and not error), it might be
+                    // empty period.
+                    // But if fresh is empty, we still update timestamp to avoid re-fetching
+                    // immediately empty range.
+                    if (fresh != null) {
+                        Map<LocalDate, List<PlanEventRaw>> tmp = groupByDay(fresh);
+                        LocalDate d = rangeStart;
+                        while (!d.isAfter(rangeEnd)) {
+                            List<PlanEventRaw> list = tmp.get(d);
+                            if (list != null)
+                                sFullPlanCache.byDate.put(d, list);
+                            else
+                                sFullPlanCache.byDate.remove(d); // Clear empty days in range
+                            d = d.plusDays(1);
+                        }
+                        sFullPlanCache.scopeTimestamps.put(scopeKey, now);
+                        sFullPlanCache.timestampMs = now;
+                        writeCacheToDisk(sFullPlanCache);
                     }
-                    sFullPlanCache.scopeTimestamps.put(scopeKey, now);
-                    sFullPlanCache.timestampMs = now;
-                    writeCacheToDisk(sFullPlanCache);
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to refresh plan scope (offline?): " + e.getMessage());
+                    // We suppress the error and return what we have in cache
+                    // (sFullPlanCache.byDate)
+                    // If cache is missing for this range, it will return null/empty, which is safer
+                    // than crashing app
                 }
             }
 
@@ -1269,17 +1296,21 @@ public class PlanRepository {
         r.debug.rangeEnd = rangeEnd.format(YMD);
 
         if (forceFullRefresh) {
-            long now = System.currentTimeMillis();
-            List<PlanEventRaw> allEvents = fetchFullPlanByAlbum(album, r.debug);
-            Map<LocalDate, List<PlanEventRaw>> grouped = groupByDay(allEvents);
-            synchronized (PlanRepository.class) {
-                FullPlanCache newCache = new FullPlanCache();
-                newCache.album = album;
-                newCache.timestampMs = now;
-                newCache.byDate = new ConcurrentHashMap<>(grouped);
-                newCache.scopeTimestamps = new ConcurrentHashMap<>();
-                sFullPlanCache = newCache;
-                writeCacheToDisk(newCache);
+            try {
+                long now = System.currentTimeMillis();
+                List<PlanEventRaw> allEvents = fetchFullPlanByAlbum(album, r.debug);
+                Map<LocalDate, List<PlanEventRaw>> grouped = groupByDay(allEvents);
+                synchronized (PlanRepository.class) {
+                    FullPlanCache newCache = new FullPlanCache();
+                    newCache.album = album;
+                    newCache.timestampMs = now;
+                    newCache.byDate = new ConcurrentHashMap<>(grouped);
+                    newCache.scopeTimestamps = new ConcurrentHashMap<>();
+                    sFullPlanCache = newCache;
+                    writeCacheToDisk(newCache);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Full refresh failed: " + e.getMessage());
             }
         }
 

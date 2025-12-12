@@ -34,7 +34,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GradesActivity extends AppCompatActivity {
+public class GradesActivity extends MzutBaseActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -172,6 +172,8 @@ public class GradesActivity extends AppCompatActivity {
         currentInitFuture = executor.submit(() -> {
             List<Semester> result = null;
             Exception error = null;
+            boolean fromCache = false;
+
             try {
                 GradesRepository repo = new GradesRepository();
                 result = repo.loadSemesters();
@@ -179,20 +181,54 @@ public class GradesActivity extends AppCompatActivity {
                 error = e;
             }
 
+            // Fallback: If network failed (result is null or empty), try disk cache
+            if (result == null || result.isEmpty()) {
+                MzutSession s = MzutSession.getInstance();
+                List<Study> all = s.getStudies();
+                int idx = s.getActiveStudyIndex();
+                if (all != null && idx >= 0 && idx < all.size()) {
+                    List<Semester> cached = loadSemestersFromCache(all.get(idx));
+                    if (cached != null && !cached.isEmpty()) {
+                        result = cached;
+                        fromCache = true;
+                        error = null; // Clear error
+                    }
+                }
+            }
+
             final List<Semester> finalResult = result;
             final Exception finalError = error;
+            final boolean finalFromCache = fromCache;
 
             handler.post(() -> {
                 showLoading(false);
 
                 if (finalError != null) {
                     String message = finalError.getMessage() != null ? finalError.getMessage() : "";
-                    Toast.makeText(
-                            GradesActivity.this,
-                            getString(R.string.grades_error_initial_load, message),
-                            Toast.LENGTH_LONG).show();
+                    // Support suppression of "Unable to resolve host" toast
+                    boolean isDnsError = message.contains("Unable to resolve host");
+                    boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
+
+                    if (isOffline || isDnsError) {
+                        android.util.Log.d("GradesActivity", "Suppressed toast error: " + message);
+                    } else {
+                        Toast.makeText(
+                                GradesActivity.this,
+                                getString(R.string.grades_error_initial_load, message),
+                                Toast.LENGTH_LONG).show();
+                    }
                     showEmptyState(true);
                     return;
+                }
+
+                // If loaded successfully from network (not cache), persist it
+                if (!finalFromCache && finalResult != null && !finalResult.isEmpty()) {
+                    MzutSession s = MzutSession.getInstance();
+                    List<Study> all = s.getStudies();
+                    int idx = s.getActiveStudyIndex();
+                    if (all != null && idx >= 0 && idx < all.size()) {
+                        saveSemestersToCache(all.get(idx), finalResult);
+                    }
                 }
 
                 // 1) Update the list of semesters
@@ -538,10 +574,17 @@ public class GradesActivity extends AppCompatActivity {
                     }
 
                     String message = finalError.getMessage() != null ? finalError.getMessage() : "";
-                    Toast.makeText(
-                            GradesActivity.this,
-                            getString(R.string.grades_error_loading_grades, message),
-                            Toast.LENGTH_LONG).show();
+                    boolean isDnsError = message.contains("Unable to resolve host");
+                    boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
+
+                    if (isOffline || isDnsError) {
+                        android.util.Log.d("GradesActivity", "Suppressed toast error: " + message);
+                    } else {
+                        Toast.makeText(
+                                GradesActivity.this,
+                                getString(R.string.grades_error_loading_grades, message),
+                                Toast.LENGTH_LONG).show();
+                    }
                     showEmptyState(true);
                     return;
                 }
@@ -699,8 +742,11 @@ public class GradesActivity extends AppCompatActivity {
             long now = System.currentTimeMillis();
 
             if (!ignoreTtl && ts > 0 && (now - ts) > GRADES_CACHE_TTL_MS) {
-                // Cache expired
-                return null;
+                // If offline, we can ignore TTL to show old data instead of error
+                if (NetworkStatusHelper.isNetworkAvailable(this)) {
+                    // Cache expired and we are online -> return null to force refresh
+                    return null;
+                }
             }
 
             JSONArray arr = wrapper.optJSONArray("grades");
@@ -792,7 +838,9 @@ public class GradesActivity extends AppCompatActivity {
             // Let's use same TTL logic.
             long ts = wrapper.optLong("ts", 0L);
             if ((System.currentTimeMillis() - ts) > GRADES_CACHE_TTL_MS) {
-                return null;
+                if (NetworkStatusHelper.isNetworkAvailable(this)) {
+                    return null;
+                }
             }
 
             JSONArray arr = wrapper.optJSONArray("data");

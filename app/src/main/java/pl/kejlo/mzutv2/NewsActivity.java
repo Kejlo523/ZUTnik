@@ -32,7 +32,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NewsActivity extends AppCompatActivity {
+public class NewsActivity extends MzutBaseActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -56,7 +56,7 @@ public class NewsActivity extends AppCompatActivity {
     private TextView tvEmpty;
     private ImageView btnNewsRefresh;
 
-    private final NewsRepository repo = new NewsRepository();
+    private NewsRepository repo;
     private final List<NewsItem> items = new ArrayList<>();
 
     private NewsAdapter adapter;
@@ -71,6 +71,7 @@ public class NewsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        repo = new NewsRepository(this);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_news);

@@ -145,26 +145,6 @@ public class PlanDayWidgetService extends RemoteViewsService {
             int textColorPrimary = context.getColor(R.color.glass_text_primary); // Default White
             int textColorSecondary = context.getColor(R.color.glass_text_secondary);
 
-            if (ThemeManager.THEME_IMJUSTGIRL.equals(theme)) {
-                textColorPrimary = 0xFFC71585; // MediumVioletRed
-                textColorSecondary = 0xFFDB7093; // PaleVioletRed
-            } else if (ThemeManager.THEME_VINTAGE.equals(theme)) {
-                textColorPrimary = 0xFF000000;
-                textColorSecondary = 0xFF000080;
-            } else if (ThemeManager.THEME_HACKER.equals(theme)) {
-                textColorPrimary = 0xFF00FF00;
-                textColorSecondary = 0xFF008800;
-            } else if (ThemeManager.THEME_PREMIUM.equals(theme)) {
-                textColorPrimary = 0xFFFFD700;
-                textColorSecondary = 0xFFBDBDBD;
-            } else if (ThemeManager.THEME_HIGH_CONTRAST.equals(theme)) {
-                textColorPrimary = 0xFF000000;
-                textColorSecondary = 0xFF000000;
-            } else if (ThemeManager.THEME_OBSIDIAN.equals(theme)) {
-                textColorPrimary = 0xFFE0E0E0;
-                textColorSecondary = 0xFFB0B0B0;
-            }
-
             rv.setTextColor(R.id.itemTitle, textColorPrimary);
             rv.setTextColor(R.id.itemTime, textColorSecondary);
             rv.setTextColor(R.id.itemRoom, textColorSecondary);

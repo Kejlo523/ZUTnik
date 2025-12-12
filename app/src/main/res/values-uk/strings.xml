@@ -374,4 +374,6 @@
     <string name="home_open_url_error">Неправильна URL-адреса</string>
     <string name="home_open_error">Помилка відкриття: %1$s</string>
 
+    <string name="offline_mode_label">Офлайн режим</string>
+
 </resources>

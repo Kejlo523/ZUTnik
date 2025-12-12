@@ -375,10 +375,6 @@
 
     <string name="settings_theme_label">Motyw aplikacji</string>
     <string name="theme_deep_blue">Deep Blue</string>
-    <string name="theme_imjustgirl">ImJustGirl (Pink)</string>
-    <string name="theme_hacker">Hacker (Matrix)</string>
-    <string name="theme_premium">Premium (Gold)</string>
-    <string name="theme_obsidian">Obsidian (Black)</string>
-    <string name="theme_high_contrast">Wysoki Kontrast</string>
-    <string name="theme_vintage">Vintage (Win98)</string>
+
+    <string name="offline_mode_label">Tryb offline</string>
 </resources>
