@@ -25,7 +25,28 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import android.content.Context;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 public class NewsRepository {
+
+    private Context context;
+    private static final String NEWS_CACHE_FILE = "news_cache.json";
+
+    public NewsRepository(Context context) {
+        if (context != null) {
+            this.context = context.getApplicationContext();
+        }
+    }
+
+    public NewsRepository() {
+    }
 
     private static final String TAG = "mZUTv2-NEWS";
 
@@ -33,12 +54,32 @@ public class NewsRepository {
     private static final String RSS_URL = "https://www.zut.edu.pl/rssfeed-studenci";
 
     // Pattern for extracting <img src="...">
-    private static final Pattern IMG_PATTERN =
-            Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>",
-                    Pattern.CASE_INSENSITIVE);
+    private static final Pattern IMG_PATTERN = Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>",
+            Pattern.CASE_INSENSITIVE);
 
     // --- Fetch news list (RSS) ---
     public List<NewsItem> loadNews() throws Exception {
+        Exception networkError = null;
+        try {
+            return fetchFromNetwork();
+        } catch (Exception e) {
+            networkError = e;
+            Log.w(TAG, "Network failed, trying cache: " + e.getMessage());
+        }
+
+        // Fallback to cache
+        List<NewsItem> cached = loadFromDisk();
+        if (cached != null && !cached.isEmpty()) {
+            return cached;
+        }
+
+        if (networkError != null) {
+            throw networkError;
+        }
+        return new ArrayList<>();
+    }
+
+    private List<NewsItem> fetchFromNetwork() throws Exception {
         Request request = new Request.Builder()
                 .url(RSS_URL)
                 .header("User-Agent", "mZUTv2-Android-News/1.2-RSS")
@@ -77,8 +118,7 @@ public class NewsRepository {
                 String contentHtml = getChildTextNs(
                         itemNode,
                         "http://purl.org/rss/1.0/modules/content/",
-                        "encoded"
-                );
+                        "encoded");
 
                 String descText = "";
                 if (descHtml != null && !descHtml.trim().isEmpty()) {
@@ -122,6 +162,7 @@ public class NewsRepository {
                 items.add(ni);
             }
 
+            saveToDisk(items);
             return items;
         }
     }
@@ -149,7 +190,8 @@ public class NewsRepository {
             if (response.isSuccessful() && response.body() != null) {
                 // 3. Read bytes to allow double-decoding (bounds checks + actual decode)
                 byte[] data = response.body().bytes();
-                if (data.length == 0) return null;
+                if (data.length == 0)
+                    return null;
 
                 // 4. Decode bounds only
                 BitmapFactory.Options options = new BitmapFactory.Options();
@@ -234,9 +276,77 @@ public class NewsRepository {
     }
 
     private String fixImageUrl(String src) {
-        if (src == null || src.isEmpty()) return src;
-        if (src.startsWith("http")) return src;
-        if (src.startsWith("/")) return "https://www.zut.edu.pl" + src;
+        if (src == null || src.isEmpty())
+            return src;
+        if (src.startsWith("http"))
+            return src;
+        if (src.startsWith("/"))
+            return "https://www.zut.edu.pl" + src;
         return "https://www.zut.edu.pl/" + src;
+    }
+
+    // --- Cache impl ---
+
+    private void saveToDisk(List<NewsItem> items) {
+        if (context == null || items == null)
+            return;
+        try {
+            JSONArray arr = new JSONArray();
+            for (NewsItem ni : items) {
+                JSONObject o = new JSONObject();
+                o.put("id", ni.id);
+                o.put("title", ni.title);
+                o.put("link", ni.link);
+                o.put("pub", ni.pubDateRaw);
+                o.put("date", ni.date);
+                o.put("snp", ni.snippet);
+                o.put("dh", ni.descriptionHtml);
+                o.put("dt", ni.descriptionText);
+                o.put("ch", ni.contentHtml);
+                o.put("tu", ni.thumbUrl);
+                arr.put(o);
+            }
+            try (FileOutputStream fos = context.openFileOutput(NEWS_CACHE_FILE, Context.MODE_PRIVATE)) {
+                fos.write(arr.toString().getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to save news cache: " + e.getMessage());
+        }
+    }
+
+    private List<NewsItem> loadFromDisk() {
+        if (context == null)
+            return null;
+        try (FileInputStream fis = context.openFileInput(NEWS_CACHE_FILE)) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null)
+                sb.append(line);
+
+            JSONArray arr = new JSONArray(sb.toString());
+            List<NewsItem> meta = new ArrayList<>();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.optJSONObject(i);
+                if (o == null)
+                    continue;
+                NewsItem ni = new NewsItem();
+                ni.id = o.optInt("id");
+                ni.title = o.optString("title");
+                ni.link = o.optString("link");
+                ni.pubDateRaw = o.optString("pub");
+                ni.date = o.optString("date");
+                ni.snippet = o.optString("snp");
+                ni.descriptionHtml = o.optString("dh");
+                ni.descriptionText = o.optString("dt");
+                ni.contentHtml = o.optString("ch");
+                ni.thumbUrl = o.optString("tu");
+                meta.add(ni);
+            }
+            return meta;
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to load news cache: " + e.getMessage());
+            return null;
+        }
     }
 }

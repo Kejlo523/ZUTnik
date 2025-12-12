@@ -32,7 +32,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InfoActivity extends AppCompatActivity {
+public class InfoActivity extends MzutBaseActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -227,10 +227,18 @@ public class InfoActivity extends AppCompatActivity {
 
                 if (!finalSuccess) {
                     String message = finalError != null ? finalError.getMessage() : "";
-                    Toast.makeText(
-                            InfoActivity.this,
-                            getString(R.string.info_error_loading, message),
-                            Toast.LENGTH_LONG).show();
+                    // Support suppression of "Unable to resolve host" toast
+                    boolean isDnsError = message != null && message.contains("Unable to resolve host");
+                    boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(InfoActivity.this);
+
+                    if (isOffline || isDnsError) {
+                        android.util.Log.d("InfoActivity", "Suppressed toast error: " + message);
+                    } else {
+                        Toast.makeText(
+                                InfoActivity.this,
+                                getString(R.string.info_error_loading, message),
+                                Toast.LENGTH_LONG).show();
+                    }
                     return;
                 }
 
@@ -268,6 +276,11 @@ public class InfoActivity extends AppCompatActivity {
         long ts = cache.getLong(getCacheKey(KEY_INFO_TIMESTAMP, index), 0L);
         if (ts == 0L) {
             return true;
+        }
+
+        // If offline, don't try to refresh expired cache
+        if (!NetworkStatusHelper.isNetworkAvailable(this)) {
+            return false;
         }
 
         long now = System.currentTimeMillis();

@@ -13,12 +13,6 @@ public class ThemeManager {
 
     public static final String THEME_DEFAULT = "default";
     public static final String THEME_DEEP_BLUE = "deep_blue";
-    public static final String THEME_IMJUSTGIRL = "imjustgirl";
-    public static final String THEME_HACKER = "hacker";
-    public static final String THEME_PREMIUM = "premium";
-    public static final String THEME_OBSIDIAN = "obsidian";
-    public static final String THEME_HIGH_CONTRAST = "high_contrast";
-    public static final String THEME_VINTAGE = "vintage";
 
     public static void applyTheme(Activity activity) {
         SharedPreferences prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -27,24 +21,6 @@ public class ThemeManager {
         switch (theme) {
             case THEME_DEEP_BLUE:
                 activity.setTheme(R.style.Theme_MZUTv2_DeepBlue);
-                break;
-            case THEME_IMJUSTGIRL:
-                activity.setTheme(R.style.Theme_MZUTv2_ImJustGirl);
-                break;
-            case THEME_HACKER:
-                activity.setTheme(R.style.Theme_MZUTv2_Hacker);
-                break;
-            case THEME_PREMIUM:
-                activity.setTheme(R.style.Theme_MZUTv2_Premium);
-                break;
-            case THEME_OBSIDIAN:
-                activity.setTheme(R.style.Theme_MZUTv2_Obsidian);
-                break;
-            case THEME_HIGH_CONTRAST:
-                activity.setTheme(R.style.Theme_MZUTv2_HighContrast);
-                break;
-            case THEME_VINTAGE:
-                activity.setTheme(R.style.Theme_MZUTv2_Vintage);
                 break;
             case THEME_DEFAULT:
             default:
@@ -70,31 +46,6 @@ public class ThemeManager {
         int color = 0;
 
         switch (theme) {
-            case THEME_HACKER:
-                // Matrix Style: Dark Green / Black variants
-                color = 0xFF003300; // Very Dark Green
-                break;
-            case THEME_OBSIDIAN:
-                // Grayscale / Dark variants
-                color = 0xFF121212; // Almost Black
-                break;
-            case THEME_IMJUSTGIRL:
-                // Pastel / Pink variants - override type colors or unify?
-                // Unify for aesthetic coherence
-                color = 0xFFFFC0CB; // Pink
-                break;
-            case THEME_VINTAGE:
-                // Win98 Grey/Blue
-                color = 0xFFC0C0C0; // Silver
-                break;
-            case THEME_HIGH_CONTRAST:
-                // Black/White
-                color = 0xFF000000;
-                break;
-            case THEME_PREMIUM:
-                // Gold/Dark Grey
-                color = 0xFF2C2C2C;
-                break;
             default:
                 // Standard Color Coding
                 int resId = getDefaultEventColorResId(typeClass);

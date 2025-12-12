@@ -376,10 +376,5 @@
 
     <string name="settings_theme_label">Malowanie Okrętu</string>
     <string name="theme_deep_blue">Głębia Oceanu</string>
-    <string name="theme_imjustgirl">Różowe Żagle</string>
-    <string name="theme_hacker">Matrix (Cyfrowy)</string>
-    <string name="theme_premium">Złoty Galeon</string>
-    <string name="theme_obsidian">Czarna Perła</string>
-    <string name="theme_high_contrast">Sokoli Wzrok</string>
-    <string name="theme_vintage">Stara Mapa (Win98)</string>
+    <string name="offline_mode_label">Bez wiatru (Offline)</string>
 </resources>

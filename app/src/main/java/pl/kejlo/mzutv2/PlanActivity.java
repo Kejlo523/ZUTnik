@@ -65,7 +65,7 @@ import java.util.concurrent.Executors;
 
 import androidx.core.content.ContextCompat;
 
-public class PlanActivity extends AppCompatActivity {
+public class PlanActivity extends MzutBaseActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -1300,10 +1300,17 @@ public class PlanActivity extends AppCompatActivity {
                 if (finalRes == null || finalRes.isEmpty()) {
                     if (finalErr != null) {
                         String msg = finalErr.getMessage() != null ? finalErr.getMessage() : "";
-                        Toast.makeText(
-                                PlanActivity.this,
-                                getString(R.string.plan_filters_error, msg),
-                                Toast.LENGTH_LONG).show();
+                        boolean isDnsError = msg.contains("Unable to resolve host");
+                        boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(PlanActivity.this);
+
+                        if (isOffline || isDnsError) {
+                            android.util.Log.d("PlanActivity", "Suppressed toast error: " + msg);
+                        } else {
+                            Toast.makeText(
+                                    PlanActivity.this,
+                                    getString(R.string.plan_filters_error, msg),
+                                    Toast.LENGTH_LONG).show();
+                        }
                     } else {
                         Toast.makeText(
                                 PlanActivity.this,

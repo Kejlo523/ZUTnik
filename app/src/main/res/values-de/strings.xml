@@ -374,12 +374,7 @@
     <string name="home_open_url_error">Ungültige URL</string>
     <string name="home_open_error">Fehler beim Öffnen: %1$s</string>
 
-    <string name="settings_theme_label">App Motiv</string>
-    <string name="theme_deep_blue">Deep Blue</string>
-    <string name="theme_imjustgirl">ImJustGirl (Rosa)</string>
-    <string name="theme_hacker">Hacker (Matrix)</string>
-    <string name="theme_premium">Premium (Gold)</string>
-    <string name="theme_obsidian">Obsidian (Schwarz)</string>
-    <string name="theme_high_contrast">Hoher Kontrast</string>
-    <string name="theme_vintage">Vintage (Win98)</string>
+    <string name="settings_theme_label">App-Design</string>
+    <string name="theme_deep_blue">Tiefblau</string>
+    <string name="offline_mode_label">Offline-Modus</string>
 </resources>

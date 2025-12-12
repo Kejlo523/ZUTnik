@@ -16,11 +16,11 @@ import java.util.List;
  * - Keeps session data in RAM
  * - Can load/save itself to SharedPreferences
  * - After process kill we still have:
- *   - userId
- *   - authKey
- *   - username
- *   - imageUrl
- *   - activeStudyIndex
+ * - userId
+ * - authKey
+ * - username
+ * - imageUrl
+ * - activeStudyIndex
  *
  * Notes:
  * - In Activities / Services / Widgets prefer calling getInstance(context)
@@ -31,6 +31,8 @@ public final class MzutSession {
     // region Singleton
 
     private static MzutSession instance;
+
+    private boolean loaded = false;
 
     /**
      * Old version – does NOT load from SharedPreferences.
@@ -46,26 +48,45 @@ public final class MzutSession {
 
     /**
      * Preferred method – loads session from SharedPreferences if the singleton
-     * does not exist yet.
+     * does not exist yet OR if it hasn't been loaded.
      */
     public static synchronized MzutSession getInstance(Context context) {
         if (instance == null) {
             instance = new MzutSession();
-            instance.loadFromPreferences(context);
+        }
+        // Always update context to ensure we have a valid reference
+        if (context != null) {
+            instance.appContext = context.getApplicationContext();
+        }
+        if (!instance.loaded && instance.appContext != null) {
+            instance.loadFromPreferences(instance.appContext);
+            instance.loaded = true;
+        }
+        if (instance.appContext != null) {
+            ImageCache.init(instance.appContext); // Ensure cache is ready
         }
         return instance;
     }
 
     /**
-     * Can be called e.g. in onCreate() of HomeActivity / PlanActivity / widget service
+     * Can be called e.g. in onCreate() of HomeActivity / PlanActivity / widget
+     * service
      * when we only want to ensure that data from SharedPreferences is loaded.
      */
     public static synchronized void initializeFromPreferences(Context context) {
         if (instance == null) {
             instance = new MzutSession();
         }
-        instance.loadFromPreferences(context);
-        ImageCache.init(context);
+        if (context != null) {
+            instance.appContext = context.getApplicationContext();
+        }
+        if (!instance.loaded && instance.appContext != null) {
+            instance.loadFromPreferences(instance.appContext);
+            instance.loaded = true;
+        }
+        if (instance.appContext != null) {
+            ImageCache.init(instance.appContext);
+        }
     }
 
     /**
@@ -93,6 +114,8 @@ public final class MzutSession {
     private static final String KEY_IMAGE_URL = "image_url";
     private static final String KEY_ACTIVE_STUDY_INDEX = "active_study_idx";
     private static final String KEY_STUDIES_JSON = "studies_json";
+
+    private Context appContext;
 
     /**
      * Returns SharedPreferences used by the session.
@@ -156,9 +179,22 @@ public final class MzutSession {
                     list.add(s);
                 }
                 this.studies = list;
+                android.util.Log.d("MzutSession", "Loaded " + list.size() + " studies from prefs.");
             } catch (JSONException e) {
-                // ignore
+                android.util.Log.e("MzutSession", "Error loading studies", e);
             }
+        }
+    }
+
+    /**
+     * Saves the current session state to SharedPreferences using stored appContext.
+     * Safe to call from Repositories if session was initialized with context.
+     */
+    public void saveToPreferences() {
+        if (appContext != null) {
+            saveToPreferences(appContext);
+        } else {
+            android.util.Log.e("MzutSession", "Cannot save session: appContext is null!");
         }
     }
 
@@ -184,7 +220,8 @@ public final class MzutSession {
                     o.put("id", s.przynaleznoscId);
                     o.put("lbl", s.label);
                     arr.put(o);
-                } catch (JSONException ignored) {}
+                } catch (JSONException ignored) {
+                }
             }
             e.putString(KEY_STUDIES_JSON, arr.toString());
         } else {
@@ -203,6 +240,7 @@ public final class MzutSession {
         this.username = username;
         this.authKey = authKey;
         this.imageUrl = imageUrl;
+        this.loaded = true;
     }
 
     // endregion

@@ -40,22 +40,10 @@
     <string-array name="settings_theme_entries">
         <item>Domyślny</item>
         <item>@string/theme_deep_blue</item>
-        <item>@string/theme_imjustgirl</item>
-        <item>@string/theme_hacker</item>
-        <item>@string/theme_premium</item>
-        <item>@string/theme_obsidian</item>
-        <item>@string/theme_high_contrast</item>
-        <item>@string/theme_vintage</item>
     </string-array>
 
     <string-array name="settings_theme_values">
         <item>default</item>
         <item>deep_blue</item>
-        <item>imjustgirl</item>
-        <item>hacker</item>
-        <item>premium</item>
-        <item>obsidian</item>
-        <item>high_contrast</item>
-        <item>vintage</item>
     </string-array>
 </resources>

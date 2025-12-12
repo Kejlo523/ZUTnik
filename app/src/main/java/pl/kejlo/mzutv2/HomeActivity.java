@@ -23,7 +23,7 @@ import com.google.android.material.navigation.NavigationView;
 import java.util.List;
 import java.util.ArrayList;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends MzutBaseActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {

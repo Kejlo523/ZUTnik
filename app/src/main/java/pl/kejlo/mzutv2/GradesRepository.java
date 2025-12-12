@@ -27,8 +27,7 @@ public class GradesRepository {
 
     // Cache for studies
 
-    private static final long STUDIES_TTL_MS =
-            7L * 24L * 60L * 60L * 1000L;
+    private static final long STUDIES_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
 
     private static class StudiesCacheEntry {
         long ts;
@@ -40,8 +39,7 @@ public class GradesRepository {
 
     // Cache for semesters
 
-    private static final long SEMESTERS_TTL_MS =
-            7L * 24L * 60L * 60L * 1000L;
+    private static final long SEMESTERS_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
 
     private static class SemesterCacheEntry {
         long ts;
@@ -138,6 +136,7 @@ public class GradesRepository {
         // Save to session
         session.setStudies(studies);
         session.setActiveStudyIndex(0);
+        session.saveToPreferences(); // Persist changes!
 
         return studies;
     }
@@ -268,13 +267,11 @@ public class GradesRepository {
 
             String przedmiot = firstNonEmpty(
                     row.optString("przedmiot", ""),
-                    row.optString("przedmiotO", "")
-            );
+                    row.optString("przedmiotO", ""));
 
             String forma = firstNonEmpty(
                     row.optString("formaZajec", ""),
-                    row.optString("formaZajecO", "")
-            );
+                    row.optString("formaZajecO", ""));
 
             if (!forma.isEmpty()) {
                 if (!przedmiot.isEmpty()) {
@@ -291,8 +288,7 @@ public class GradesRepository {
 
             String termin = firstNonEmpty(
                     row.optString("termin", ""),
-                    row.optString("terminO", "")
-            );
+                    row.optString("terminO", ""));
             String data = row.optString("data", "");
 
             g.date = termin.isEmpty()
