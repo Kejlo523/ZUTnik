@@ -506,6 +506,101 @@ public class GradesActivity extends MzutBaseActivity {
      *                     false -> regular semester switching / initial load – uses
      *                     7-day cache
      */
+    // -----------------------
+    // GROUPING HELPER
+    // -----------------------
+    private List<Grade> groupGrades(List<Grade> source) {
+        if (source == null || source.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Map: SubjectName -> Grade (accumulated)
+        // Since "subjectName" includes form (e.g. "Math (Lecture)"), distinct forms
+        // will be separate entries.
+        java.util.Map<String, Grade> map = new java.util.LinkedHashMap<>();
+
+        for (Grade g : source) {
+            String key = g.subjectName; // e.g. "Programowanie (Laboratorium)"
+            if (key == null)
+                key = "";
+
+            if (map.containsKey(key)) {
+                // Merge
+                Grade existing = map.get(key);
+
+                // 1. Add to history
+                if (g.grade != null && !g.grade.trim().isEmpty()) {
+                    existing.gradeHistory.add(g.grade);
+                    // Update display grade to be a combination or just the latest?
+                    // UI will mostly use gradeHistory now, but let's keep grade updated as "latest"
+                    // or concatenated just in case
+                    existing.grade = existing.grade + " / " + g.grade;
+                }
+
+                // 2. Update date (take the latest/current one)
+                if (g.date != null && !g.date.isEmpty()) {
+                    existing.date = g.date;
+                }
+
+            } else {
+                // New entry
+                Grade copy = new Grade();
+                copy.subjectName = g.subjectName;
+                copy.grade = g.grade;
+                copy.weight = g.weight;
+                copy.type = g.type;
+                copy.teacher = g.teacher;
+                copy.date = g.date;
+
+                // Initialize history
+                if (g.grade != null && !g.grade.trim().isEmpty()) {
+                    copy.gradeHistory.add(g.grade);
+                }
+
+                map.put(key, copy);
+            }
+        }
+
+        // Sort history for each grade (Ascending: 2.0 -> 3.0)
+        for (Grade g : map.values()) {
+            if (g.gradeHistory != null && g.gradeHistory.size() > 1) {
+                java.util.Collections.sort(g.gradeHistory, (o1, o2) -> {
+                    double v1 = parseGradeValue(o1);
+                    double v2 = parseGradeValue(o2);
+                    return Double.compare(v1, v2);
+                });
+
+                // Also update the display string to match the order?
+                // Currently 'grade' field is concatenated during loop. Let's rebuild it from
+                // sorted history for consistency.
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < g.gradeHistory.size(); i++) {
+                    if (i > 0)
+                        sb.append(" / ");
+                    sb.append(g.gradeHistory.get(i));
+                }
+                g.grade = sb.toString();
+            }
+        }
+
+        return new ArrayList<>(map.values());
+    }
+
+    private double parseGradeValue(String s) {
+        if (s == null)
+            return 0.0;
+        String p = s.trim().toLowerCase().replace(",", ".");
+        if ("nk".equals(p) || "2".equals(p) || "2.0".equals(p) || "nzal".equals(p))
+            return 2.0;
+        if ("zal".equals(p) || "z".equals(p))
+            return 3.0; // Treat Pass as > Fail
+        try {
+            return Double.parseDouble(p);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+    }
+
     private void reloadGrades(Semester semester, boolean forceNetwork) {
         if (semester == null) {
             return;
@@ -517,7 +612,8 @@ public class GradesActivity extends MzutBaseActivity {
             List<Grade> cached = loadGradesFromCache(semester, false);
             if (cached != null && !cached.isEmpty()) {
                 currentGrades.clear();
-                currentGrades.addAll(cached);
+                // Grouping from fresh cache
+                currentGrades.addAll(groupGrades(cached));
                 gradesAdapter.notifyDataSetChanged();
                 showEmptyState(false);
                 updateSummaryCards();
@@ -557,7 +653,8 @@ public class GradesActivity extends MzutBaseActivity {
                     List<Grade> cached = loadGradesFromCache(semester, true);
                     if (cached != null && !cached.isEmpty()) {
                         currentGrades.clear();
-                        currentGrades.addAll(cached);
+                        // Grouping from cache fallback
+                        currentGrades.addAll(groupGrades(cached));
                         gradesAdapter.notifyDataSetChanged();
                         showEmptyState(false);
                         updateSummaryCards();
@@ -591,8 +688,9 @@ public class GradesActivity extends MzutBaseActivity {
 
                 currentGrades.clear();
                 if (finalGrades != null) {
-                    currentGrades.addAll(finalGrades);
-                    // Save to cache – only on successful load
+                    // Grouping from network load
+                    currentGrades.addAll(groupGrades(finalGrades));
+                    // Save to cache – only on successful load (RAW data)
                     saveGradesToCache(semester, finalGrades);
                 }
                 gradesAdapter.notifyDataSetChanged();
