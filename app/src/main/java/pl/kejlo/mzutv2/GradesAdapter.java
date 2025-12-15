@@ -34,6 +34,14 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         h.colGrade.setText(g.grade);
         h.colDate.setText(g.date);
 
+        // Show ECTS only for 'ocena końcowa'
+        if (g.type != null && g.type.trim().equalsIgnoreCase("ocena końcowa")) {
+            h.colEcts.setVisibility(View.VISIBLE);
+            h.colEcts.setText(String.format(java.util.Locale.getDefault(), "%.1f ECTS", g.weight));
+        } else {
+            h.colEcts.setVisibility(View.GONE);
+        }
+
         // Grade pill style
         String raw = g.grade != null ? g.grade.trim() : "";
         String lower = raw.toLowerCase();
@@ -76,7 +84,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView colSubject, colType, colGrade, colDate;
+        TextView colSubject, colType, colGrade, colDate, colEcts;
 
         public ViewHolder(@NonNull View v) {
             super(v);
@@ -84,6 +92,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
             colType = v.findViewById(R.id.colType);
             colGrade = v.findViewById(R.id.colGrade);
             colDate = v.findViewById(R.id.colDate);
+            colEcts = v.findViewById(R.id.colEcts);
         }
     }
 }
