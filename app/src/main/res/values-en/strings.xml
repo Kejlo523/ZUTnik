@@ -165,6 +165,7 @@
     <string name="plan_search_cat_room">Room</string>
     <string name="plan_search_cat_subject">Subject</string>
     <string name="plan_search_cat_group">Group</string>
+    <string name="plan_search_no_suggestions">No suggestions</string>
 
     <string name="plan_type_lecture">Lecture</string>
     <string name="plan_type_lab">Laboratory</string>

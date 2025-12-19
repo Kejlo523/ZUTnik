@@ -486,6 +486,50 @@ public class PlanRepository {
         }
     }
 
+    /**
+     * Fetches autocomplete suggestions for search queries.
+     * 
+     * @param kind  One of: "teacher", "room", "subject", "group"
+     * @param query The search query (minimum 1 character)
+     * @return List of suggestion strings (item names)
+     */
+    public List<String> fetchSearchSuggestions(String kind, String query) throws IOException, JSONException {
+        List<String> suggestions = new ArrayList<>();
+        if (kind == null || kind.isEmpty() || query == null || query.isEmpty()) {
+            return suggestions;
+        }
+
+        String url = "https://plan.zut.edu.pl/schedule.php?kind="
+                + URLEncoder.encode(kind, "UTF-8")
+                + "&query=" + URLEncoder.encode(query, "UTF-8");
+
+        Request request = new Request.Builder()
+                .url(url)
+                .header("User-Agent", "mZUTv2-Android-Plan/1.0")
+                .build();
+
+        try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                return suggestions;
+            }
+
+            String body = response.body() != null ? response.body().string() : "";
+            JSONArray arr = new JSONArray(body);
+
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.optJSONObject(i);
+                if (obj != null && obj.has("item")) {
+                    String item = obj.optString("item", "");
+                    if (!item.isEmpty()) {
+                        suggestions.add(item);
+                    }
+                }
+            }
+        }
+
+        return suggestions;
+    }
+
     // --- End Search ---
 
     // Fetch range
