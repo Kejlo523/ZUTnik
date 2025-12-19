@@ -818,10 +818,32 @@ public class PlanActivity extends MzutBaseActivity {
         input.setAdapter(suggestionsAdapter);
         input.setDropDownWidth(ViewGroup.LayoutParams.MATCH_PARENT);
 
-        // Debounce handler for fetching suggestions
+        // Debounce handler for fetching suggestions (declare first - used in listeners
+        // below)
         final Handler debounceHandler = new Handler(Looper.getMainLooper());
         final Runnable[] fetchRunnable = { null };
         final boolean[] isDialogDismissed = { false };
+
+        // Track if user selected an item (to pause auto-search)
+        final boolean[] itemSelected = { false };
+
+        // When user clicks a suggestion, stop searching and hide dropdown
+        input.setOnItemClickListener((parent, view, position, id) -> {
+            itemSelected[0] = true;
+            input.dismissDropDown();
+            // Cancel any pending fetch
+            if (fetchRunnable[0] != null) {
+                debounceHandler.removeCallbacks(fetchRunnable[0]);
+            }
+        });
+
+        // When user focuses back on field, show dropdown if there are suggestions
+        input.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && suggestionsAdapter.getCount() > 0 && !isDialogDismissed[0]) {
+                itemSelected[0] = false; // Reset so typing resumes search
+                input.showDropDown();
+            }
+        });
 
         input.addTextChangedListener(new TextWatcher() {
             @Override
