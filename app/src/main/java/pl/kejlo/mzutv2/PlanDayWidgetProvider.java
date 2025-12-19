@@ -62,6 +62,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         executor.execute(() -> {
             for (int appWidgetId : appWidgetIds) {
                 updateOneWidget(context, appWidgetManager, appWidgetId);
+                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
             }
             // Schedule next refresh
             schedulePeriodicRefresh(context);
