@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -39,6 +40,8 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.Editable;
+import android.text.TextWatcher;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -786,10 +789,109 @@ public class PlanActivity extends MzutBaseActivity {
         btnClipboard.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
         headerRow.addView(btnClipboard);
 
-        final EditText input = new EditText(this);
+        final AutoCompleteTextView input = new AutoCompleteTextView(this);
         input.setHint(R.string.plan_search_hint_input);
         input.setSingleLine(true);
+        input.setThreshold(1); // Start suggesting after 1 character
         layout.addView(input);
+
+        // Loading indicator (small ProgressBar next to input)
+        LinearLayout inputRow = new LinearLayout(this);
+        inputRow.setOrientation(LinearLayout.HORIZONTAL);
+        inputRow.setGravity(Gravity.CENTER_VERTICAL);
+        layout.removeView(input); // Remove and re-add in row
+
+        LinearLayout.LayoutParams inputLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        inputRow.addView(input, inputLp);
+
+        final ProgressBar loadingIndicator = new ProgressBar(this, null, android.R.attr.progressBarStyleSmall);
+        loadingIndicator.setVisibility(View.GONE);
+        LinearLayout.LayoutParams loadingLp = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
+        loadingLp.setMarginStart(dpToPx(8));
+        inputRow.addView(loadingIndicator, loadingLp);
+
+        layout.addView(inputRow);
+
+        // Autocomplete adapter with multiline support
+        final ArrayAdapter<String> suggestionsAdapter = new ArrayAdapter<>(this,
+                R.layout.dropdown_item_multiline, new ArrayList<>());
+        input.setAdapter(suggestionsAdapter);
+        input.setDropDownWidth(ViewGroup.LayoutParams.MATCH_PARENT);
+
+        // Debounce handler for fetching suggestions
+        final Handler debounceHandler = new Handler(Looper.getMainLooper());
+        final Runnable[] fetchRunnable = { null };
+        final boolean[] isDialogDismissed = { false };
+
+        input.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (fetchRunnable[0] != null) {
+                    debounceHandler.removeCallbacks(fetchRunnable[0]);
+                }
+
+                String query = s.toString().trim();
+                int pos = spinner.getSelectedItemPosition();
+
+                // Skip album (pos == 0) - no autocomplete API for album numbers
+                if (query.length() < 1 || pos == 0) {
+                    loadingIndicator.setVisibility(View.GONE);
+                    return;
+                }
+
+                String kind = getKindFromCategory(apiCategories[pos]);
+                if (kind.isEmpty()) {
+                    loadingIndicator.setVisibility(View.GONE);
+                    return;
+                }
+
+                // Show loading indicator
+                loadingIndicator.setVisibility(View.VISIBLE);
+
+                fetchRunnable[0] = () -> {
+                    executor.execute(() -> {
+                        try {
+                            List<String> suggestions = planRepository.fetchSearchSuggestions(kind, query);
+                            handler.post(() -> {
+                                // Check if dialog was dismissed
+                                if (isDialogDismissed[0]) {
+                                    return;
+                                }
+
+                                loadingIndicator.setVisibility(View.GONE);
+                                suggestionsAdapter.clear();
+
+                                if (suggestions.isEmpty()) {
+                                    // Show "no results" hint
+                                    suggestionsAdapter.add(getString(R.string.plan_search_no_suggestions));
+                                } else {
+                                    suggestionsAdapter.addAll(suggestions);
+                                }
+                                suggestionsAdapter.notifyDataSetChanged();
+
+                                if (input.hasFocus() && !isDialogDismissed[0]) {
+                                    input.showDropDown();
+                                }
+                            });
+                        } catch (Exception e) {
+                            handler.post(() -> {
+                                loadingIndicator.setVisibility(View.GONE);
+                            });
+                            e.printStackTrace();
+                        }
+                    });
+                };
+                debounceHandler.postDelayed(fetchRunnable[0], 300); // 300ms debounce
+            }
+        });
 
         // Save Search Button (small, below input or next to Search? Dialog buttons are
         // standard)
@@ -823,6 +925,16 @@ public class PlanActivity extends MzutBaseActivity {
                 })
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .create();
+
+        // Prevent ghost dropdown after dialog dismissal
+        dialog.setOnDismissListener(d -> {
+            isDialogDismissed[0] = true;
+            if (fetchRunnable[0] != null) {
+                debounceHandler.removeCallbacks(fetchRunnable[0]);
+            }
+            input.dismissDropDown();
+            suggestionsAdapter.clear();
+        });
 
         btnClipboard.setOnClickListener(v -> {
             dialog.dismiss();
@@ -916,6 +1028,26 @@ public class PlanActivity extends MzutBaseActivity {
 
         String msg = getString(R.string.plan_toast_search_prefix, categoryLabel, query);
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Maps API category names to schedule.php "kind" parameter.
+     */
+    private String getKindFromCategory(String apiCategory) {
+        if (apiCategory == null)
+            return "";
+        switch (apiCategory) {
+            case "Wykładowca":
+                return "teacher";
+            case "Sala":
+                return "room";
+            case "Przedmiot":
+                return "subject";
+            case "Grupa":
+                return "group";
+            default:
+                return "";
+        }
     }
 
     private void startRefreshAnimation() {
