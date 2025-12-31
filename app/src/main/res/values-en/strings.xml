@@ -166,6 +166,8 @@
     <string name="plan_search_cat_subject">Subject</string>
     <string name="plan_search_cat_group">Group</string>
     <string name="plan_search_no_suggestions">No suggestions</string>
+    <string name="plan_search_album_no_autocomplete">Enter album number and press Search</string>
+    <string name="plan_search_type_to_search">Start typing to see suggestions…</string>
 
     <string name="plan_type_lecture">Lecture</string>
     <string name="plan_type_lab">Laboratory</string>

@@ -739,7 +739,7 @@ public class PlanActivity extends MzutBaseActivity {
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(dpToPx(24), dpToPx(16), dpToPx(24), dpToPx(8));
 
-        // Header row: Spinner + Save Button + Clipboard Button
+        // Header row: Spinner + Clipboard Button
         LinearLayout headerRow = new LinearLayout(this);
         headerRow.setOrientation(LinearLayout.HORIZONTAL);
         headerRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -763,44 +763,28 @@ public class PlanActivity extends MzutBaseActivity {
                 "Grupa"
         };
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
                 displayCategories);
-        spinner.setAdapter(adapter);
+        spinner.setAdapter(spinnerAdapter);
 
         LinearLayout.LayoutParams spinnerLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         headerRow.addView(spinner, spinnerLp);
 
         // Clipboard (List) Button
         ImageButton btnClipboard = new ImageButton(this);
-        btnClipboard.setImageResource(android.R.drawable.ic_menu_save); // Using a generic save/list icon available in
-                                                                        // standard android or AppCompat
-        // Better: use a specific icon if available, but ic_menu_save or similar works
-        // for "Saved items" context somewhat
-        // Let's use a standard localized string "Saved" on a small button if icon is
-        // risky, but ImageButton is requested ("new icon").
-        // Safest standard icon: android.R.drawable.ic_menu_agenda or similar. Let's try
-        // basic "ic_menu_save" as placeholder for "Saved"
-        // Actually, user said "clipboard icon". android.R.drawable.ic_menu_paste is
-        // close?
-        // Let's use android.R.drawable.ic_menu_my_calendar as it looks like a
-        // list/clipboard often.
         btnClipboard.setImageResource(android.R.drawable.ic_menu_my_calendar);
         btnClipboard.setBackgroundColor(0); // transparent
         btnClipboard.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
         headerRow.addView(btnClipboard);
 
-        final AutoCompleteTextView input = new AutoCompleteTextView(this);
-        input.setHint(R.string.plan_search_hint_input);
-        input.setSingleLine(true);
-        input.setThreshold(1); // Start suggesting after 1 character
-        layout.addView(input);
-
-        // Loading indicator (small ProgressBar next to input)
+        // Input row: EditText + Loading indicator
         LinearLayout inputRow = new LinearLayout(this);
         inputRow.setOrientation(LinearLayout.HORIZONTAL);
         inputRow.setGravity(Gravity.CENTER_VERTICAL);
-        layout.removeView(input); // Remove and re-add in row
 
+        final EditText input = new EditText(this);
+        input.setHint(R.string.plan_search_hint_input);
+        input.setSingleLine(true);
         LinearLayout.LayoutParams inputLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         inputRow.addView(input, inputLp);
 
@@ -812,38 +796,107 @@ public class PlanActivity extends MzutBaseActivity {
 
         layout.addView(inputRow);
 
-        // Autocomplete adapter with multiline support
-        final ArrayAdapter<String> suggestionsAdapter = new ArrayAdapter<>(this,
-                R.layout.dropdown_item_multiline, new ArrayList<>());
-        input.setAdapter(suggestionsAdapter);
-        input.setDropDownWidth(ViewGroup.LayoutParams.MATCH_PARENT);
+        // RecyclerView for suggestions - always visible, max 2.5 items height
+        final RecyclerView suggestionsRecycler = new RecyclerView(this);
+        suggestionsRecycler.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
 
-        // Debounce handler for fetching suggestions (declare first - used in listeners
-        // below)
+        // Calculate height for 2.5 items (each item ~48dp)
+        int itemHeight = dpToPx(48);
+        int maxHeight = (int) (itemHeight * 2.5f);
+
+        LinearLayout.LayoutParams recyclerLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, maxHeight);
+        recyclerLp.setMargins(0, dpToPx(8), 0, dpToPx(8));
+        suggestionsRecycler.setLayoutParams(recyclerLp);
+
+        // Use theme-aware background with rounded corners
+        GradientDrawable bgDrawable = new GradientDrawable();
+        bgDrawable.setColor(ThemeManager.resolveColor(this, android.R.attr.colorBackground));
+        bgDrawable.setCornerRadius(dpToPx(8));
+        bgDrawable.setStroke(dpToPx(1), ThemeManager.resolveColor(this, android.R.attr.textColorHint));
+        suggestionsRecycler.setBackground(bgDrawable);
+        suggestionsRecycler.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+        suggestionsRecycler.setNestedScrollingEnabled(true);
+        suggestionsRecycler.setClipToPadding(false);
+
+        layout.addView(suggestionsRecycler);
+
+        // Suggestions data
+        final List<String> suggestionsList = new ArrayList<>();
+
+        // Simple RecyclerView Adapter
+        final RecyclerView.Adapter<RecyclerView.ViewHolder> suggestionsAdapter = new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            @NonNull
+            @Override
+            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View itemView = getLayoutInflater().inflate(R.layout.item_search_suggestion, parent, false);
+                return new RecyclerView.ViewHolder(itemView) {
+                };
+            }
+
+            @Override
+            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+                TextView textView = holder.itemView.findViewById(R.id.suggestionText);
+                String suggestion = suggestionsList.get(position);
+                textView.setText(suggestion);
+
+                // Check if it's a placeholder/hint message (not a real suggestion)
+                boolean isPlaceholder = suggestion.equals(getString(R.string.plan_search_no_suggestions))
+                        || suggestion.equals(getString(R.string.plan_search_album_no_autocomplete))
+                        || suggestion.equals(getString(R.string.plan_search_type_to_search));
+
+                holder.itemView.setOnClickListener(v -> {
+                    if (!isPlaceholder) {
+                        input.setText(suggestion);
+                        input.setSelection(suggestion.length());
+                    }
+                });
+
+                // Gray out placeholder
+                if (isPlaceholder) {
+                    textView.setAlpha(0.5f);
+                } else {
+                    textView.setAlpha(1.0f);
+                }
+            }
+
+            @Override
+            public int getItemCount() {
+                return suggestionsList.size();
+            }
+        };
+
+        suggestionsRecycler.setAdapter(suggestionsAdapter);
+
+        // Initialize with hint based on default category (album = 0)
+        suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
+        suggestionsAdapter.notifyDataSetChanged();
+
+        // Update hint when category changes
+        spinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                suggestionsList.clear();
+                if (position == 0) {
+                    suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
+                } else {
+                    String currentText = input.getText().toString().trim();
+                    if (currentText.isEmpty()) {
+                        suggestionsList.add(getString(R.string.plan_search_type_to_search));
+                    }
+                }
+                suggestionsAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+            }
+        });
+
+        // Debounce handler for fetching suggestions
         final Handler debounceHandler = new Handler(Looper.getMainLooper());
         final Runnable[] fetchRunnable = { null };
         final boolean[] isDialogDismissed = { false };
-
-        // Track if user selected an item (to pause auto-search)
-        final boolean[] itemSelected = { false };
-
-        // When user clicks a suggestion, stop searching and hide dropdown
-        input.setOnItemClickListener((parent, view, position, id) -> {
-            itemSelected[0] = true;
-            input.dismissDropDown();
-            // Cancel any pending fetch
-            if (fetchRunnable[0] != null) {
-                debounceHandler.removeCallbacks(fetchRunnable[0]);
-            }
-        });
-
-        // When user focuses back on field, show dropdown if there are suggestions
-        input.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus && suggestionsAdapter.getCount() > 0 && !isDialogDismissed[0]) {
-                itemSelected[0] = false; // Reset so typing resumes search
-                input.showDropDown();
-            }
-        });
 
         input.addTextChangedListener(new TextWatcher() {
             @Override
@@ -864,8 +917,19 @@ public class PlanActivity extends MzutBaseActivity {
                 int pos = spinner.getSelectedItemPosition();
 
                 // Skip album (pos == 0) - no autocomplete API for album numbers
-                if (query.length() < 1 || pos == 0) {
+                if (pos == 0) {
                     loadingIndicator.setVisibility(View.GONE);
+                    suggestionsList.clear();
+                    suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
+                    suggestionsAdapter.notifyDataSetChanged();
+                    return;
+                }
+
+                if (query.length() < 1) {
+                    loadingIndicator.setVisibility(View.GONE);
+                    suggestionsList.clear();
+                    suggestionsList.add(getString(R.string.plan_search_type_to_search));
+                    suggestionsAdapter.notifyDataSetChanged();
                     return;
                 }
 
@@ -883,25 +947,19 @@ public class PlanActivity extends MzutBaseActivity {
                         try {
                             List<String> suggestions = planRepository.fetchSearchSuggestions(kind, query);
                             handler.post(() -> {
-                                // Check if dialog was dismissed
                                 if (isDialogDismissed[0]) {
                                     return;
                                 }
 
                                 loadingIndicator.setVisibility(View.GONE);
-                                suggestionsAdapter.clear();
+                                suggestionsList.clear();
 
                                 if (suggestions.isEmpty()) {
-                                    // Show "no results" hint
-                                    suggestionsAdapter.add(getString(R.string.plan_search_no_suggestions));
+                                    suggestionsList.add(getString(R.string.plan_search_no_suggestions));
                                 } else {
-                                    suggestionsAdapter.addAll(suggestions);
+                                    suggestionsList.addAll(suggestions);
                                 }
                                 suggestionsAdapter.notifyDataSetChanged();
-
-                                if (input.hasFocus() && !isDialogDismissed[0]) {
-                                    input.showDropDown();
-                                }
                             });
                         } catch (Exception e) {
                             handler.post(() -> {
@@ -915,14 +973,9 @@ public class PlanActivity extends MzutBaseActivity {
             }
         });
 
-        // Save Search Button (small, below input or next to Search? Dialog buttons are
-        // standard)
-        // User asked for "Save option in this window".
-        // Let's put a "Save this query" button/icon inside the layout.
-
+        // Save Search Button
         Button btnSaveQuery = new Button(this);
         btnSaveQuery.setText(R.string.plan_search_save_label);
-        btnSaveQuery.setVisibility(View.VISIBLE);
         btnSaveQuery.setTextSize(12f);
 
         LinearLayout.LayoutParams saveLp = new LinearLayout.LayoutParams(
@@ -948,14 +1001,11 @@ public class PlanActivity extends MzutBaseActivity {
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .create();
 
-        // Prevent ghost dropdown after dialog dismissal
         dialog.setOnDismissListener(d -> {
             isDialogDismissed[0] = true;
             if (fetchRunnable[0] != null) {
                 debounceHandler.removeCallbacks(fetchRunnable[0]);
             }
-            input.dismissDropDown();
-            suggestionsAdapter.clear();
         });
 
         btnClipboard.setOnClickListener(v -> {

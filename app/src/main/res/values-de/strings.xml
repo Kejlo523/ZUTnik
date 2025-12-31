@@ -178,6 +178,8 @@
     <string name="plan_search_cat_subject">Fach</string>
     <string name="plan_search_cat_group">Gruppe</string>
     <string name="plan_search_no_suggestions">Keine Vorschläge</string>
+    <string name="plan_search_album_no_autocomplete">Albumnummer eingeben und Suchen drücken</string>
+    <string name="plan_search_type_to_search">Tippen Sie, um Vorschläge zu sehen…</string>
 
     <string name="plan_type_lecture">Vorlesung</string>
     <string name="plan_type_lab">Labor</string>

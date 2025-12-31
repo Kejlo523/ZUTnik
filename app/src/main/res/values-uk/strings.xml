@@ -166,6 +166,8 @@
     <string name="plan_search_cat_subject">Предмет</string>
     <string name="plan_search_cat_group">Група</string>
     <string name="plan_search_no_suggestions">Немає пропозицій</string>
+    <string name="plan_search_album_no_autocomplete">Введіть номер альбому та натисніть Пошук</string>
+    <string name="plan_search_type_to_search">Почніть вводити, щоб побачити пропозиції…</string>
 
     <string name="plan_type_lecture">Лекція</string>
     <string name="plan_type_lab">Лабораторна</string>

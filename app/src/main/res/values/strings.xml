@@ -177,6 +177,8 @@
     <string name="plan_search_cat_subject">Przedmiot</string>
     <string name="plan_search_cat_group">Grupa</string>
     <string name="plan_search_no_suggestions">Brak podpowiedzi</string>
+    <string name="plan_search_album_no_autocomplete">Wpisz numer albumu i naciśnij Szukaj</string>
+    <string name="plan_search_type_to_search">Zacznij pisać, aby zobaczyć podpowiedzi…</string>
 
     <string name="plan_type_lecture">Wykład</string>
     <string name="plan_type_lab">Laboratorium</string>
