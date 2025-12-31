@@ -2,7 +2,6 @@ package pl.kejlo.mzutv2;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.widget.LinearLayout;
 
 import androidx.activity.EdgeToEdge;
@@ -21,6 +20,7 @@ public class AboutActivity extends AppCompatActivity {
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
+
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private Toolbar toolbar;
@@ -37,7 +37,7 @@ public class AboutActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
-        
+
         ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
@@ -51,9 +51,7 @@ public class AboutActivity extends AppCompatActivity {
                 drawerLayout,
                 navigationView,
                 toolbar,
-                NavDrawerHelper.Screen.ABOUT
-        );
+                NavDrawerHelper.Screen.ABOUT);
     }
-
 
 }

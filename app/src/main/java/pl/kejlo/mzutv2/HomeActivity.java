@@ -214,12 +214,7 @@ public class HomeActivity extends MzutBaseActivity {
         tileGrid.setEditMode(true);
         invalidateOptionsMenu();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-        // Toast removed as per request for less intrusion, or keep simple?
-        // User asked to replace "Saved" toast. "Edit mode" toast is instruction.
-        // I'll leave it or replace with snackbar? User said "wywal toast, denerwują".
-        // I will remove it.
-        // Toast.makeText(this, R.string.home_edit_mode_toast,
-        // Toast.LENGTH_LONG).show();
+
     }
 
     private void saveAndExitEditMode() {

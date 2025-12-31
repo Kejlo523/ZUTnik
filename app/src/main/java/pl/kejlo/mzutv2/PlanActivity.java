@@ -732,7 +732,7 @@ public class PlanActivity extends MzutBaseActivity {
         }
     }
 
-    // --- Saved Searches ---
+    // Saved searches
 
     private void showSearchDialog() {
         LinearLayout layout = new LinearLayout(this);

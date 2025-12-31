@@ -154,7 +154,7 @@ public class NavDrawerHelper {
                 targetScreen = Screen.ABOUT;
                 targetActivity = AboutActivity.class;
             } else if (id == R.id.navSettings) {
-                // ZĘBATKA -> USTAWIENIA
+                // Settings
                 Intent intent = new Intent(activity, SettingsActivity.class);
                 activity.startActivity(intent);
                 drawerLayout.closeDrawers();

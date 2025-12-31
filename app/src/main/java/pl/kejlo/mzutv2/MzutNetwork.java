@@ -4,7 +4,6 @@ import android.util.Log;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HostnameVerifier;
@@ -36,16 +35,18 @@ public class MzutNetwork {
             final TrustManager[] trustAllCerts = new TrustManager[] {
                     new X509TrustManager() {
                         @Override
-                        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                        public void checkClientTrusted(X509Certificate[] chain, String authType)
+                                throws CertificateException {
                         }
 
                         @Override
-                        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                        public void checkServerTrusted(X509Certificate[] chain, String authType)
+                                throws CertificateException {
                         }
 
                         @Override
                         public X509Certificate[] getAcceptedIssuers() {
-                            return new X509Certificate[]{};
+                            return new X509Certificate[] {};
                         }
                     }
             };

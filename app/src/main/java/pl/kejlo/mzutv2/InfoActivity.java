@@ -50,7 +50,7 @@ public class InfoActivity extends MzutBaseActivity {
     // History text appearance
     private static final float HISTORY_EMPTY_TEXT_SIZE_SP = 12f;
     private static final float HISTORY_TEXT_SIZE_SP = 13f;
-    // w dp, potem przeliczymy na px
+    // in dp, converted to px later
     private static final int HISTORY_ITEM_VERTICAL_PADDING_DP = 6;
 
     // endregion

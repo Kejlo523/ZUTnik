@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -93,8 +92,6 @@ public class UsefulLinksActivity extends AppCompatActivity {
         loadAndSortLinksForUser();
     }
 
-
-
     // Main logic
 
     private void loadAndSortLinksForUser() {
@@ -163,31 +160,31 @@ public class UsefulLinksActivity extends AppCompatActivity {
             }
             String l = label.toLowerCase(Locale.ROOT);
 
-            // Informatyka – Faculty of Computer Science (WI)
+            // Computer Science (WI)
             if (l.contains("informatyka")) {
                 majors.add("INF");
                 faculties.add("WI");
             }
 
-            // Ekonomia – Faculty of Economics / WNEIZ
+            // Economics (WNEIZ)
             if (l.contains("ekonomia")) {
                 majors.add("EKO");
                 faculties.add("WNEIZ");
             }
 
-            // Mechanika i budowa maszyn – WIMiM
+            // Mechanical Engineering (WIMiM)
             if (l.contains("mechanika") || l.contains("budowa maszyn")) {
                 majors.add("MIB");
                 faculties.add("WIMIM");
             }
 
-            // Elektrotechnika / Automatyka – WE (Wydział Elektryczny)
+            // Electrical Engineering (WE)
             if (l.contains("elektrotechnika") || l.contains("automatyka")) {
                 majors.add("ELE");
                 faculties.add("WE");
             }
 
-            // Budownictwo / Architektura – WBiA
+            // Architecture and Civil Engineering (WBiA)
             if (l.contains("budownictwo") || l.contains("architektura")) {
                 majors.add("BUD");
                 faculties.add("WBIA");
@@ -203,8 +200,8 @@ public class UsefulLinksActivity extends AppCompatActivity {
      * 3 – everything else.
      */
     private int computeWeightForUser(LinkItem li,
-                                     Set<String> majors,
-                                     Set<String> faculties) {
+            Set<String> majors,
+            Set<String> faculties) {
 
         if (li.scope == LinkScope.MAJOR && li.majorCode != null &&
                 majors.contains(li.majorCode)) {
@@ -225,14 +222,11 @@ public class UsefulLinksActivity extends AppCompatActivity {
         return 3;
     }
 
-    /**
-     * Defines selected, most frequently used links.
-     * Lista zweryfikowana i zaktualizowana.
-     */
+    /** Builds the list of useful links. */
     private List<LinkItem> buildAllLinks() {
         List<LinkItem> list = new ArrayList<>();
 
-        // --- GLOBALNE (Najważniejsze systemy) ---
+        // Global
 
         list.add(new LinkItem(
                 "global_plan_zajec",
@@ -241,8 +235,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Aktualny rozkład zajęć dla wszystkich kierunków i grup.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_usosweb",
@@ -251,8 +244,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Oceny, zapisy na przedmioty, płatności, wnioski.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_office365",
@@ -261,8 +253,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Poczta studencka, Teams, OneDrive (Dysk).",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_elearning",
@@ -271,8 +262,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Kursy online, materiały wykładowe, przesyłanie prac.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_zut_home",
@@ -281,10 +271,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Aktualności uczelniane i komunikaty rektora.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
-        // --- IT / Konto / Legitymacja ---
+        // IT / Account
 
         list.add(new LinkItem(
                 "global_konto_zut",
@@ -293,8 +282,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Zmiana hasła, odzyskiwanie dostępu, konfiguracja WiFi (Eduroam).",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_mleg",
@@ -303,8 +291,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Aktywacja i przedłużanie mLegitymacji w aplikacji mObywatel.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_uci",
@@ -313,10 +300,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Instrukcje konfiguracji sieci, VPN, zgłaszanie awarii.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
-        // --- Sprawy Studenckie / Życie ---
+        // Student life
 
         list.add(new LinkItem(
                 "global_library",
@@ -325,8 +311,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Katalog książek, dostęp do baz danych i artykułów.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_pomoc_materialna",
@@ -335,8 +320,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Regulaminy, terminy i wzory wniosków o stypendia.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_osiedle_studenckie",
@@ -345,8 +329,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Opłaty, kwaterowanie, regulaminy domów studenckich.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_samorzad",
@@ -355,8 +338,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Wydarzenia, juwenalia, prawa studenta, koła naukowe.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_biuro_karier",
@@ -365,8 +347,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Oferty pracy, staże, targi pracy.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "global_prk_portal",
@@ -375,12 +356,11 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Wyszukiwarka sylabusów (kart przedmiotów) i programów studiów.",
                 LinkScope.GLOBAL,
                 null,
-                null
-        ));
+                null));
 
-        // --- WYDZIAŁY (Przykłady - sortowane dynamicznie) ---
+        // Faculties
 
-        // Wydział Informatyki (WI)
+        // Faculty of Computer Science (WI)
         list.add(new LinkItem(
                 "inf_wi_home",
                 "Wydział Informatyki (WI)",
@@ -388,8 +368,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Strona główna wydziału, ogłoszenia dziekanatu.",
                 LinkScope.FACULTY,
                 "WI",
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "inf_wi_students",
@@ -398,10 +377,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Plany studiów, dyplomowanie, druki do pobrania.",
                 LinkScope.FACULTY,
                 "WI",
-                null
-        ));
+                null));
 
-        // Wydział Ekonomiczny (WNEiZ)
+        // Faculty of Economics (WNEiZ)
         list.add(new LinkItem(
                 "eko_faculty_home",
                 "Wydział Ekonomiczny",
@@ -409,8 +387,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Aktualności wydziałowe i informacje dla studentów.",
                 LinkScope.FACULTY,
                 "WNEIZ",
-                null
-        ));
+                null));
 
         list.add(new LinkItem(
                 "eko_plany",
@@ -419,10 +396,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Szczegółowa organizacja roku i plany na WNEiZ.",
                 LinkScope.FACULTY,
                 "WNEIZ",
-                null
-        ));
+                null));
 
-        // Wydział Inżynierii Mechanicznej i Mechatroniki (WIMiM)
+        // Faculty of Mechanical Engineering (WIMiM)
         list.add(new LinkItem(
                 "mech_faculty_home",
                 "Wydział Inżynierii Mech. i Mechatroniki",
@@ -430,10 +406,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Strona wydziału WIMiM.",
                 LinkScope.FACULTY,
                 "WIMIM",
-                null
-        ));
+                null));
 
-        // Wydział Elektryczny (WE)
+        // Faculty of Electrical Engineering (WE)
         list.add(new LinkItem(
                 "we_faculty_home",
                 "Wydział Elektryczny (WE)",
@@ -441,10 +416,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Strona wydziału, aktualności dla elektryków i automatyków.",
                 LinkScope.FACULTY,
                 "WE",
-                null
-        ));
+                null));
 
-        // Wydział Budownictwa i Architektury (WBiA)
+        // Faculty of Civil Engineering and Architecture (WBiA)
         list.add(new LinkItem(
                 "wbia_faculty_home",
                 "Wydział Budownictwa i Architektury",
@@ -452,8 +426,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "Strona wydziału WBiA.",
                 LinkScope.FACULTY,
                 "WBIA",
-                null
-        ));
+                null));
 
         return list;
     }
@@ -474,18 +447,18 @@ public class UsefulLinksActivity extends AppCompatActivity {
         String description;
         LinkScope scope;
         String facultyCode; // e.g. WI, WNEIZ, WIMIM
-        String majorCode;   // e.g. INF, EKO, MIB
+        String majorCode; // e.g. INF, EKO, MIB
 
         int priorityWeight = 3;
         boolean highlight = false;
 
         LinkItem(String id,
-                 String title,
-                 String url,
-                 String description,
-                 LinkScope scope,
-                 String facultyCode,
-                 String majorCode) {
+                String title,
+                String url,
+                String description,
+                LinkScope scope,
+                String facultyCode,
+                String majorCode) {
             this.id = id;
             this.title = title;
             this.url = url;
