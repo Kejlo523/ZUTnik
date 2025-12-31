@@ -157,9 +157,7 @@ public class GradesActivity extends MzutBaseActivity {
         runInitialLoad();
     }
 
-    // -----------------------
-    // INITIAL LOAD
-    // -----------------------
+    // Initial load
     private void runInitialLoad() {
         if (currentInitFuture != null) {
             currentInitFuture.cancel(true);
@@ -271,9 +269,7 @@ public class GradesActivity extends MzutBaseActivity {
         });
     }
 
-    // -----------------------
-    // SPINNER: STUDY
-    // -----------------------
+    // Study spinner
     private void setupStudiesSpinner() {
         MzutSession session = MzutSession.getInstance();
         List<Study> sessionStudies = session.getStudies();
@@ -341,9 +337,7 @@ public class GradesActivity extends MzutBaseActivity {
         }
     }
 
-    // -----------------------
-    // SPINNER: SEMESTER
-    // -----------------------
+    // Semester spinner
     private void setupSemestersSpinner() {
         semestersAdapter = new ArrayAdapter<>(
                 this,
@@ -373,9 +367,7 @@ public class GradesActivity extends MzutBaseActivity {
         });
     }
 
-    // -----------------------
-    // LOADING SEMESTERS (for study change)
-    // -----------------------
+    // Loading semesters
     private void reloadSemesters() {
         if (currentSemestersFuture != null) {
             currentSemestersFuture.cancel(true);
@@ -493,9 +485,7 @@ public class GradesActivity extends MzutBaseActivity {
         });
     }
 
-    // -----------------------
-    // LOADING GRADES + CACHE
-    // -----------------------
+    // Loading grades
     private void reloadGrades(Semester semester) {
         reloadGrades(semester, false);
     }
@@ -506,9 +496,7 @@ public class GradesActivity extends MzutBaseActivity {
      *                     false -> regular semester switching / initial load – uses
      *                     7-day cache
      */
-    // -----------------------
-    // GROUPING HELPER
-    // -----------------------
+    // Grade grouping
     private List<Grade> groupGrades(List<Grade> source) {
         if (source == null || source.isEmpty()) {
             return new ArrayList<>();
@@ -703,9 +691,7 @@ public class GradesActivity extends MzutBaseActivity {
         });
     }
 
-    // -----------------------
-    // SUMMARY: ECTS + AVERAGE
-    // -----------------------
+    // Summary calculations
     private void updateSummaryCards() {
         double sumWeighted = 0.0;
         double sumWeights = 0.0;
@@ -767,9 +753,7 @@ public class GradesActivity extends MzutBaseActivity {
         }
     }
 
-    // -----------------------
-    // CACHE: SAVE / LOAD GRADES
-    // -----------------------
+    // Grades cache
     private SharedPreferences getGradesCachePrefs() {
         return getSharedPreferences(GRADES_CACHE_PREFS_NAME, MODE_PRIVATE);
     }
@@ -871,9 +855,7 @@ public class GradesActivity extends MzutBaseActivity {
         }
     }
 
-    // -----------------------
-    // CACHE: PERSIST SEMESTERS LIST
-    // -----------------------
+    // Semesters cache
     private static final String PREFS_GRADES_SEMESTERS_CACHE = "grades_semesters_cache";
 
     private void saveSemestersToCache(Study study, List<Semester> list) {
@@ -962,9 +944,7 @@ public class GradesActivity extends MzutBaseActivity {
         }
     }
 
-    // -----------------------
-    // UI HELPERS
-    // -----------------------
+    // UI helpers
     private void showLoading(boolean loading) {
         if (gradesProgress != null) {
             gradesProgress.setVisibility(loading ? View.VISIBLE : View.GONE);

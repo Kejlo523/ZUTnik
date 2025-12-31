@@ -104,7 +104,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
             }
         }
 
-        // Show ECTS only for 'ocena końcowa'
+        // Show ECTS only for final grade
         if (g.type != null && g.type.trim().equalsIgnoreCase("ocena końcowa")) {
             h.colEcts.setVisibility(View.VISIBLE);
             h.colEcts.setText(String.format(java.util.Locale.getDefault(), "%.1f ECTS", g.weight));

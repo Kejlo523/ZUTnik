@@ -258,8 +258,7 @@ public class NewsDetailActivity extends AppCompatActivity {
             innerHtml = "";
         }
 
-        // pobranie kolorów z resources (automatycznie weźmie -night w dark mode)
-        // pobranie kolorów z resources (automatycznie weźmie -night w dark mode)
+        // Get colors from resources (will automatically use -night in dark mode)
         int bg = ThemeManager.resolveColor(this, R.attr.mzBg);
         int text = ThemeManager.resolveColor(this, R.attr.mzText);
         int link = ThemeManager.resolveColor(this, R.attr.mzPrimary);

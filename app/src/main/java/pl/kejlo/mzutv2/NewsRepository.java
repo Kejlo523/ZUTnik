@@ -57,7 +57,7 @@ public class NewsRepository {
     private static final Pattern IMG_PATTERN = Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>",
             Pattern.CASE_INSENSITIVE);
 
-    // --- Fetch news list (RSS) ---
+    // Fetch news list from RSS
     public List<NewsItem> loadNews() throws Exception {
         Exception networkError = null;
         try {
@@ -167,8 +167,7 @@ public class NewsRepository {
         }
     }
 
-    // --- New method: Image download (uses MzutNetwork) ---
-    // Static for easy calls from Adapters: NewsRepository.downloadImage(url)
+    // Image download
     public static Bitmap downloadImage(String url) {
         if (url == null || url.isEmpty()) {
             return null;
@@ -220,12 +219,12 @@ public class NewsRepository {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Błąd pobierania obrazka: " + url, e);
+            Log.e(TAG, "Error downloading image: " + url, e);
         }
         return null;
     }
 
-    // --- Helpers ---
+    // Helpers
 
     private String getChildText(Node parent, String tagName) {
         NodeList children = parent.getChildNodes();
@@ -285,7 +284,7 @@ public class NewsRepository {
         return "https://www.zut.edu.pl/" + src;
     }
 
-    // --- Cache impl ---
+    // Cache
 
     private void saveToDisk(List<NewsItem> items) {
         if (context == null || items == null)

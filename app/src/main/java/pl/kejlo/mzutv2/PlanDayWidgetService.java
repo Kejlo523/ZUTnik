@@ -158,7 +158,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
             if (ev.group != null && !ev.group.isEmpty())
                 roomStr += (roomStr.isEmpty() ? "" : " · ") + ev.group;
 
-            rv.setTextViewText(R.id.itemRoom, roomStr); // Zmieniłem na itemRoom
+            rv.setTextViewText(R.id.itemRoom, roomStr);
 
             int color = ThemeManager.resolveEventColor(context, ev.typeClass);
             rv.setInt(R.id.itemColorStrip, "setBackgroundColor", color);

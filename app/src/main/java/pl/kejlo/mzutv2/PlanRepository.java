@@ -351,7 +351,7 @@ public class PlanRepository {
         return album;
     }
 
-    // --- Search Functionality ---
+    // Search functionality
 
     public PlanResult searchPlan(String viewMode, LocalDate currentDate, SearchParams search)
             throws IOException, JSONException {
@@ -529,8 +529,6 @@ public class PlanRepository {
 
         return suggestions;
     }
-
-    // --- End Search ---
 
     // Fetch range
     private List<PlanEventRaw> fetchPlanRangeByAlbum(
@@ -773,7 +771,7 @@ public class PlanRepository {
         }
     }
 
-    // --- Saved Search Persistence ---
+    // Saved search persistence
 
     public static class SavedSearch {
         public String label;

@@ -3,7 +3,7 @@ package pl.kejlo.mzutv2;
 public class Study {
 
     public String przynaleznoscId;
-    public String label; // Display label for the study (e.g., "Informatyka dzienne I stopień")
+    public String label; // Display label (e.g., "Computer Science full-time BSc")
 
     @Override
     public String toString() {

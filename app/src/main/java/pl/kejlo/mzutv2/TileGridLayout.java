@@ -320,7 +320,7 @@ public class TileGridLayout extends ViewGroup {
         int anchorCol = t.col;
         int anchorRow = t.row;
 
-        // --- Calculate Target Spans (Logic from updatePreviewRect) ---
+        // Calculate target spans
 
         int newColSpan = t.colSpan;
         int newRowSpan = t.rowSpan;
@@ -368,7 +368,7 @@ public class TileGridLayout extends ViewGroup {
         lastPreviewColSpan = newColSpan;
         lastPreviewRowSpan = newRowSpan;
 
-        // --- Calculate Target Pixel Bounds (Snapped) ---
+        // Calculate pixel bounds
         int l = getPaddingLeft() + newCol * (cellWidth + gap);
         int top = getPaddingTop() + anchorRow * (cellHeight + gap);
         int w = newColSpan * cellWidth + (newColSpan - 1) * gap;
@@ -376,10 +376,10 @@ public class TileGridLayout extends ViewGroup {
         int r = l + w;
         int b = top + h;
 
-        // --- Update Preview Rect ---
+        // Update preview rect
         previewRect.set(l, top, r, b);
 
-        // --- Update Actual View (Snapped) ---
+        // Update view position
         t.colSpan = newColSpan;
         t.rowSpan = newRowSpan;
         t.col = newCol;
@@ -638,7 +638,7 @@ public class TileGridLayout extends ViewGroup {
         }
     }
 
-    // --- Overloaded for internal usage with current state ---
+    // Internal collision resolution
     private void resolveCollisions() {
         resolveCollisions(this.tiles, activeTileView != null ? activeTileView.getTile() : null);
     }

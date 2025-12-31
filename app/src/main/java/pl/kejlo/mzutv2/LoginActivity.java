@@ -408,7 +408,7 @@ public class LoginActivity extends AppCompatActivity {
                 .start();
     }
 
-    // --- Refactored Auth Logic (ExecutorService instead of AsyncTask) ---
+    // Auth logic
 
     // Simple executor for background tasks
     private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors
