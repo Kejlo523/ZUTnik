@@ -373,14 +373,10 @@ public class PlanRepository {
             r.headerLabel = fmtPlDate(currentDate);
         } else if ("week".equals(viewMode)) {
             LocalDate weekStart;
-            if (currentDate.equals(r.today) && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                weekStart = currentDate.plusDays(1);
-            } else {
-                weekStart = currentDate;
-                int dow = weekStart.getDayOfWeek().getValue();
-                if (dow > 1)
-                    weekStart = weekStart.minusDays(dow - 1);
-            }
+            weekStart = currentDate;
+            int dow = weekStart.getDayOfWeek().getValue();
+            if (dow > 1)
+                weekStart = weekStart.minusDays(dow - 1);
             LocalDate weekEnd = weekStart.plusDays(6);
             rangeStart = weekStart;
             rangeEnd = weekEnd;
@@ -1313,14 +1309,10 @@ public class PlanRepository {
             r.headerLabel = fmtPlDate(currentDate);
         } else if ("week".equals(viewMode)) {
             LocalDate weekStart;
-            if (currentDate.equals(r.today) && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                weekStart = currentDate.plusDays(1);
-            } else {
-                weekStart = currentDate;
-                int dow = weekStart.getDayOfWeek().getValue();
-                if (dow > 1)
-                    weekStart = weekStart.minusDays(dow - 1);
-            }
+            weekStart = currentDate;
+            int dow = weekStart.getDayOfWeek().getValue();
+            if (dow > 1)
+                weekStart = weekStart.minusDays(dow - 1);
             LocalDate weekEnd = weekStart.plusDays(6);
             rangeStart = weekStart;
             rangeEnd = weekEnd;

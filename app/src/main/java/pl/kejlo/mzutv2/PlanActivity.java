@@ -401,6 +401,13 @@ public class PlanActivity extends MzutBaseActivity {
             }
         }
 
+        // Initial "Smart Sunday" logic: If opening in Week view and it's Sunday, show
+        // next week
+        if (isWeekMode() && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            currentDate = currentDate.plusDays(1);
+            baseDate = currentDate;
+        }
+
         loadPlanForCurrentMode();
         runIntroAnimations();
     }
@@ -695,8 +702,15 @@ public class PlanActivity extends MzutBaseActivity {
 
     private void goToToday() {
         LocalDate today = LocalDate.now();
-        currentDate = today;
-        baseDate = today;
+
+        if (isWeekMode() && today.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            // Smart Sunday: If clicked "Today" on Sunday, show next week
+            currentDate = today.plusDays(1);
+            baseDate = currentDate;
+        } else {
+            currentDate = today;
+            baseDate = today;
+        }
 
         if (isMonthMode()) {
             baseDate = today.with(TemporalAdjusters.firstDayOfMonth());
