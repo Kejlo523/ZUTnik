@@ -32,6 +32,8 @@
 
         <activity android:name=".GradesActivity" />
 
+        <activity android:name=".AttendanceActivity" />
+
         <activity android:name=".NewsActivity" />
 
         <activity android:name=".NewsDetailActivity" />

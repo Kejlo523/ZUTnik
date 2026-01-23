@@ -134,6 +134,25 @@
                 android:foreground="?attr/selectableItemBackground" />
 
             <TextView
+                android:id="@+id/navLinkAttendance"
+                android:text="@string/attendance_title"
+                android:textSize="14sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="?attr/mzText"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:layout_marginTop="6dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_nav_item"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground" />
+
+            <TextView
                 android:id="@+id/navLinkInfo"
                 android:text="@string/info_title"
                 android:textSize="14sp"

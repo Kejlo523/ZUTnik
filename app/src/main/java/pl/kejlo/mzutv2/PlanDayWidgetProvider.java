@@ -151,9 +151,29 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
                         .getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
 
-                // Optimized: Load 'week' view which fetches 7 days around today efficiently
-                // This call ensures scope data is cached for the week
+                // Load current week AND next week to ensure we find future events
                 PlanRepository.PlanResult weekResult = repo.loadPlan("week", today);
+                PlanRepository.PlanResult nextWeekResult = repo.loadPlan("week", today.plusDays(7));
+
+                // Merge next week's data into result
+                if (nextWeekResult != null && nextWeekResult.dayColumns != null && weekResult != null) {
+                    if (weekResult.dayColumns == null) {
+                        weekResult.dayColumns = new java.util.ArrayList<>();
+                    }
+                    for (PlanRepository.DayColumn col : nextWeekResult.dayColumns) {
+                        // Only add if not already present
+                        boolean found = false;
+                        for (PlanRepository.DayColumn existing : weekResult.dayColumns) {
+                            if (existing.date != null && existing.date.equals(col.date)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            weekResult.dayColumns.add(col);
+                        }
+                    }
+                }
 
                 // Now find the suitable day to show
                 targetDate = findBestDateToShow(weekResult, today, nowMin, hiddenSubjectKeys);

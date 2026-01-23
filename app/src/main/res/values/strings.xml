@@ -378,6 +378,26 @@
 
     <string name="settings_theme_label">Motyw aplikacji</string>
     <string name="theme_deep_blue">Deep Blue</string>
+    <string name="theme_high_contrast">Wysoki kontrast</string>
+    <string name="settings_widget_refresh_label">Częstotliwość odświeżania widgetu</string>
 
     <string name="offline_mode_label">Tryb offline</string>
+
+    <!-- Attendance / Obecności -->
+    <string name="attendance_title">Obecności</string>
+    <string name="attendance_summary_label">Frekwencja</string>
+    <string name="attendance_subtitle">Całkowita frekwencja</string>
+    <string name="attendance_summary_detail">Godzin: %1$d | Nieobecności: %2$d</string>
+    <string name="attendance_hours_format">Godzin: %1$d</string>
+    <string name="attendance_empty_state">Brak przedmiotów w planie.\nOdśwież plan zajęć, aby załadować przedmioty.</string>
+    <string name="attendance_refreshing">Odświeżam listę przedmiotów…</string>
+    <string name="attendance_increase">Zwiększ nieobecności</string>
+    <string name="attendance_decrease">Zmniejsz nieobecności</string>
+    <string name="attendance_edit_hours_title">Edytuj liczbę godzin</string>
+    <string name="attendance_edit_hours_message">Wprowadź łączną liczbę godzin dla przedmiotu:\n%1$s</string>
+    <string name="attendance_hours_tap_to_set">Kliknij aby ustawić godziny</string>
+    <string name="attendance_summary_title">Łącznie nieobecności</string>
+    <string name="attendance_no_absences">Brak nieobecności</string>
+    <string name="attendance_one_absence">1 nieobecność</string>
+    <string name="attendance_absences_count">%1$d nieobecności</string>
 </resources>

@@ -41,7 +41,6 @@ public class HomeActivity extends MzutBaseActivity {
     private LinearLayout homeHero;
     private LinearLayout homeSection;
 
-    private TextView btnHeroPlan, btnHeroGrades;
     private androidx.cardview.widget.CardView indicatorOverlay;
     private android.widget.ImageView indicatorIcon;
 
@@ -96,9 +95,6 @@ public class HomeActivity extends MzutBaseActivity {
         textWelcomeSub = findViewById(R.id.textWelcomeSub);
         homeHero = findViewById(R.id.homeHero);
         homeSection = findViewById(R.id.homeSection);
-
-        btnHeroPlan = findViewById(R.id.btnHeroPlan);
-        btnHeroGrades = findViewById(R.id.btnHeroGrades);
 
         tileGrid = findViewById(R.id.tileGrid);
 
@@ -308,8 +304,7 @@ public class HomeActivity extends MzutBaseActivity {
             }
         };
 
-        btnHeroPlan.setOnClickListener(openPlan);
-        btnHeroGrades.setOnClickListener(openGrades);
+        // Buttons removed from layout
     }
 
     private void runIntroAnimations() {

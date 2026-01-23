@@ -379,4 +379,18 @@
 
     <string name="offline_mode_label">Offline mode</string>
 
+    <!-- Attendance -->
+    <string name="attendance_title">Attendance</string>
+    <string name="attendance_summary_label">Attendance</string>
+    <string name="attendance_subtitle">Overall attendance rate</string>
+    <string name="attendance_summary_detail">Hours: %1$d | Absences: %2$d</string>
+    <string name="attendance_hours_format">Hours: %1$d</string>
+    <string name="attendance_empty_state">No subjects in schedule.\nRefresh your timetable to load subjects.</string>
+    <string name="attendance_refreshing">Refreshing subject list…</string>
+    <string name="attendance_increase">Increase absences</string>
+    <string name="attendance_decrease">Decrease absences</string>
+    <string name="attendance_edit_hours_title">Edit hours</string>
+    <string name="attendance_edit_hours_message">Enter total hours for subject:\n%1$s</string>
+    <string name="attendance_hours_tap_to_set">Tap to set hours</string>
+
 </resources>

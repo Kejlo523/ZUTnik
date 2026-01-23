@@ -49,12 +49,14 @@
                         android:id="@+id/homeHero"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="24dp"
+                        android:layout_marginBottom="20dp"
                         android:background="@drawable/bg_card_primary"
-                        android:elevation="4dp"
                         android:gravity="center_horizontal"
                         android:orientation="vertical"
-                        android:padding="24dp">
+                        android:paddingStart="20dp"
+                        android:paddingTop="16dp"
+                        android:paddingEnd="20dp"
+                        android:paddingBottom="16dp">
 
                         <TextView
                             android:id="@+id/textHeroPill"
@@ -62,75 +64,36 @@
                             android:layout_height="wrap_content"
                             android:background="@drawable/bg_card_soft"
                             android:letterSpacing="0.05"
-                            android:paddingStart="12dp"
-                            android:paddingTop="6dp"
-                            android:paddingEnd="12dp"
-                            android:paddingBottom="6dp"
+                            android:paddingStart="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="4dp"
                             android:text="@string/app_name"
                             android:textAllCaps="true"
                             android:textColor="?attr/mzText"
-                            android:textSize="11sp"
+                            android:textSize="10sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/textWelcome"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
+                            android:layout_marginTop="10dp"
                             android:gravity="center"
                             android:text="@string/home_welcome_fallback"
                             android:textColor="?attr/mzText"
-                            android:textSize="28sp"
+                            android:textSize="22sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/textWelcomeSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="24dp"
+                            android:layout_marginTop="4dp"
                             android:gravity="center"
                             android:text="@string/home_welcome_subtitle"
                             android:textColor="?attr/mzMuted"
-                            android:textSize="14sp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:id="@+id/btnHeroPlan"
-                                android:layout_width="0dp"
-                                android:layout_height="match_parent"
-                                android:layout_weight="1"
-                                android:layout_marginEnd="8dp"
-                                android:background="@drawable/bg_card_soft"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:gravity="center"
-                                android:text="@string/home_action_plan_label"
-                                android:textColor="?attr/mzText"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/btnHeroGrades"
-                                android:layout_width="0dp"
-                                android:layout_height="match_parent"
-                                android:layout_weight="1"
-                                android:layout_marginStart="8dp"
-                                android:background="@drawable/bg_card_soft"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:gravity="center"
-                                android:text="@string/home_action_grades_label"
-                                android:textColor="?attr/mzText"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <TextView

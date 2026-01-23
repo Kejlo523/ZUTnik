@@ -13,6 +13,7 @@ public class ThemeManager {
 
     public static final String THEME_DEFAULT = "default";
     public static final String THEME_DEEP_BLUE = "deep_blue";
+    public static final String THEME_HIGH_CONTRAST = "high_contrast";
 
     public static void applyTheme(Activity activity) {
         SharedPreferences prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -21,6 +22,9 @@ public class ThemeManager {
         switch (theme) {
             case THEME_DEEP_BLUE:
                 activity.setTheme(R.style.Theme_MZUTv2_DeepBlue);
+                break;
+            case THEME_HIGH_CONTRAST:
+                activity.setTheme(R.style.Theme_MZUTv2_HighContrast);
                 break;
             case THEME_DEFAULT:
             default:

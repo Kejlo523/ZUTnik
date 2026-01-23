@@ -95,5 +95,46 @@
         <item name="planWeekDaySelectedBg">#334155</item>
     </style>
 
+    <!-- High Contrast Theme (Night) - Accessibility focused -->
+    <style name="Theme.MZUTv2.HighContrast" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorPrimaryVariant">#FFFFFF</item>
+        <item name="colorOnPrimary">#000000</item>
+
+        <!-- High Contrast Night - Pure black bg, bright white text -->
+        <item name="mzBg">#000000</item>
+        <item name="mzBgSoft">#111111</item>
+        <item name="mzCard">#111111</item>
+        <item name="mzCardSoft">#222222</item>
+        <item name="mzBgSurface">#000000</item>
+        <item name="mzText">#FFFFFF</item>
+        <item name="mzMuted">#CCCCCC</item>
+        <item name="mzBorderSoft">#FFFFFF</item>
+        <item name="mzBorderStrong">#FFFFFF</item>
+        <item name="mzPrimary">#00FFFF</item>
+        <item name="mzPrimaryAlt">#00CCCC</item>
+        <item name="mzAccent">#00FFFF</item>
+        <item name="mzSuccess">#00FF00</item>
+        <item name="mzDanger">#FF0000</item>
+        <item name="mzDangerSoft">#330000</item>
+        <item name="mzToolbarGradStart">#000000</item>
+        <item name="mzToolbarGradEnd">#000000</item>
+
+        <item name="android:statusBarColor">#000000</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Plan High Contrast Night -->
+        <item name="mzPlanHourLine">#FFFFFF</item>
+        <item name="mzPlanNowLine">#FF0000</item>
+        <item name="mzPlanColumnText">#FFFFFF</item>
+        <item name="mzPlanHeaderText">#FFFFFF</item>
+        <item name="mzPlanGridBg">#000000</item>
+        <item name="mzPlanGridBgSelected">#333333</item>
+        <item name="mzPlanEventTextColor">#FFFFFF</item>
+        <item name="planWeekHeaderSelectedBg">#333333</item>
+        <item name="planWeekDaySelectedBg">#222222</item>
+    </style>
+
 
 </resources>
