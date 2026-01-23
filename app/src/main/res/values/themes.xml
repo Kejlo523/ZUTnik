@@ -95,5 +95,46 @@
         <item name="planWeekDaySelectedBg">#EFF6FF</item>
     </style>
 
+    <!-- High Contrast Theme (Day) - Accessibility focused -->
+    <style name="Theme.MZUTv2.HighContrast" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#000000</item>
+        <item name="colorPrimaryVariant">#000000</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+
+        <!-- High Contrast - Pure white bg, black text -->
+        <item name="mzBg">#FFFFFF</item>
+        <item name="mzBgSoft">#F5F5F5</item>
+        <item name="mzCard">#FFFFFF</item>
+        <item name="mzCardSoft">#EEEEEE</item>
+        <item name="mzBgSurface">#FFFFFF</item>
+        <item name="mzText">#000000</item>
+        <item name="mzMuted">#333333</item>
+        <item name="mzBorderSoft">#000000</item>
+        <item name="mzBorderStrong">#000000</item>
+        <item name="mzPrimary">#0000EE</item>
+        <item name="mzPrimaryAlt">#0000CC</item>
+        <item name="mzAccent">#0000EE</item>
+        <item name="mzSuccess">#006600</item>
+        <item name="mzDanger">#CC0000</item>
+        <item name="mzDangerSoft">#FFCCCC</item>
+        <item name="mzToolbarGradStart">#FFFFFF</item>
+        <item name="mzToolbarGradEnd">#FFFFFF</item>
+
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Plan High Contrast -->
+        <item name="mzPlanHourLine">#000000</item>
+        <item name="mzPlanNowLine">#CC0000</item>
+        <item name="mzPlanColumnText">#000000</item>
+        <item name="mzPlanHeaderText">#000000</item>
+        <item name="mzPlanGridBg">#FFFFFF</item>
+        <item name="mzPlanGridBgSelected">#DDDDDD</item>
+        <item name="mzPlanEventTextColor">#000000</item>
+        <item name="planWeekHeaderSelectedBg">#CCCCCC</item>
+        <item name="planWeekDaySelectedBg">#EEEEEE</item>
+    </style>
+
 
 </resources>

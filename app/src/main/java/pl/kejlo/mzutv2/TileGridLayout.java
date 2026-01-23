@@ -72,10 +72,7 @@ public class TileGridLayout extends ViewGroup {
     }
 
     private void init(Context context) {
-        LayoutTransition lt = new LayoutTransition();
-        lt.enableTransitionType(LayoutTransition.CHANGING);
-        setLayoutTransition(lt);
-
+        // No LayoutTransition - we handle animations manually during drag
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         setWillNotDraw(false); // To draw preview rect
 
@@ -812,35 +809,87 @@ public class TileGridLayout extends ViewGroup {
             return;
         Tile activeTile = activeTileView.getTile();
 
-        List<Tile> simulatedTiles = calculateSimulation();
-        if (simulatedTiles.isEmpty())
-            return;
+        // Calculate where the CENTER of the dragged tile is
+        float centerX = activeTileView.getX() + activeTileView.getWidth() / 2f;
+        float centerY = activeTileView.getY() + activeTileView.getHeight() / 2f;
 
-        // 4. Animate Real Views to Simulated Positions
+        // Find which tile the center is over (if any)
+        TileView targetView = null;
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
             if (!(child instanceof TileView))
                 continue;
             TileView tv = (TileView) child;
-            Tile realTile = tv.getTile();
-
-            if (realTile == activeTile)
+            if (tv == activeTileView)
                 continue;
 
-            int index = tiles.indexOf(realTile);
-            if (index == -1 || index >= simulatedTiles.size())
-                continue;
+            // Get the current visual bounds (including any animation)
+            float tvLeft = tv.getX();
+            float tvTop = tv.getY();
+            float tvRight = tvLeft + tv.getWidth();
+            float tvBottom = tvTop + tv.getHeight();
 
-            Tile sim = simulatedTiles.get(index);
+            // Add a dead zone - only trigger swap when entering central 60% of tile
+            float deadZone = 0.2f;
+            float dzWidth = tv.getWidth() * deadZone;
+            float dzHeight = tv.getHeight() * deadZone;
 
-            int targetLeft = getPaddingLeft() + sim.col * (cellWidth + gap);
-            int targetTop = getPaddingTop() + sim.row * (cellHeight + gap);
+            if (centerX > tvLeft + dzWidth && centerX < tvRight - dzWidth &&
+                    centerY > tvTop + dzHeight && centerY < tvBottom - dzHeight) {
+                targetView = tv;
+                break;
+            }
+        }
 
-            tv.animate()
+        if (targetView != null) {
+            Tile targetTile = targetView.getTile();
+
+            // Only swap if sizes are compatible OR if target would fit in active's spot
+            boolean canSwap = true;
+
+            // Simple swap: exchange row/col positions
+            int tempRow = activeTile.row;
+            int tempCol = activeTile.col;
+
+            // Check if target can fit in active's original spot
+            if (targetTile.col + targetTile.colSpan > COLUMN_COUNT) {
+                // Would overflow, adjust
+                targetTile.col = COLUMN_COUNT - targetTile.colSpan;
+            }
+
+            activeTile.row = targetTile.row;
+            activeTile.col = targetTile.col;
+            targetTile.row = tempRow;
+            targetTile.col = tempCol;
+
+            // Clamp active tile position
+            if (activeTile.col + activeTile.colSpan > COLUMN_COUNT) {
+                activeTile.col = COLUMN_COUNT - activeTile.colSpan;
+            }
+            if (activeTile.col < 0)
+                activeTile.col = 0;
+            if (activeTile.row < 0)
+                activeTile.row = 0;
+
+            // Animate target tile to its new position
+            int targetLeft = getPaddingLeft() + targetTile.col * (cellWidth + gap);
+            int targetTop = getPaddingTop() + targetTile.row * (cellHeight + gap);
+
+            targetView.animate()
                     .x(targetLeft)
                     .y(targetTop)
-                    .setDuration(200)
+                    .setDuration(150)
                     .start();
+
+            // Update preview rect to new active tile position
+            lastPreviewCol = activeTile.col;
+            lastPreviewRow = activeTile.row;
+            int l = getPaddingLeft() + activeTile.col * (cellWidth + gap);
+            int t = getPaddingTop() + activeTile.row * (cellHeight + gap);
+            int w = activeTile.colSpan * cellWidth + (activeTile.colSpan - 1) * gap;
+            int h = activeTile.rowSpan * cellHeight + (activeTile.rowSpan - 1) * gap;
+            previewRect.set(l, t, l + w, t + h);
+            invalidate();
         }
     }
 
@@ -848,23 +897,37 @@ public class TileGridLayout extends ViewGroup {
         if (activeTileView == null)
             return;
 
-        // Ensure preview rect is up to date (though handleResizeDrag keeps it updated)
-        List<Tile> finalState = calculateSimulation();
-        applyFinalState(finalState);
+        // Position was already updated during handleResizeDrag
+        // Just resolve any collisions and relayout
+        resolveCollisions();
+        requestLayout();
+        if (tilesChangedListener != null)
+            tilesChangedListener.onTilesChanged(tiles);
     }
 
     private void finishDrag(MotionEvent event) {
         if (activeTileView == null)
             return;
 
-        // Ensure preview rect is up to date based on final position
-        updatePreviewRect();
-        List<Tile> finalState = calculateSimulation();
-        applyFinalState(finalState);
-
-        // Reset view props (translation was used for drag visual)
+        // Position was already updated during simulateLayout swaps
+        // Reset view translation (was used for drag visual)
         activeTileView.setTranslationX(0f);
         activeTileView.setTranslationY(0f);
+
+        // Reset all tile animations to their final grid positions
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof TileView) {
+                child.animate().cancel();
+                child.setTranslationX(0f);
+                child.setTranslationY(0f);
+            }
+        }
+
+        // Just relayout - swap already handled positioning, no resolveCollisions
+        requestLayout();
+        if (tilesChangedListener != null)
+            tilesChangedListener.onTilesChanged(tiles);
     }
 
     private void applyFinalState(List<Tile> finalState) {

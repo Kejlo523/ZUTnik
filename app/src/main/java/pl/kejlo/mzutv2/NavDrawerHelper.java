@@ -26,6 +26,7 @@ public class NavDrawerHelper {
         INFO("info"),
         PLAN("plan"),
         GRADES("grades"),
+        ATTENDANCE("attendance"),
         NEWS("news"),
         USEFUL("useful"),
         ABOUT("about");
@@ -95,6 +96,7 @@ public class NavDrawerHelper {
         TextView navLinkHome = navigationView.findViewById(R.id.navLinkHome);
         TextView navLinkPlan = navigationView.findViewById(R.id.navLinkPlan);
         TextView navLinkGrades = navigationView.findViewById(R.id.navLinkGrades);
+        TextView navLinkAttendance = navigationView.findViewById(R.id.navLinkAttendance);
         TextView navLinkInfo = navigationView.findViewById(R.id.navLinkInfo);
         TextView navLinkNews = navigationView.findViewById(R.id.navLinkNews);
         TextView navLinkUseful = navigationView.findViewById(R.id.navLinkUsefull);
@@ -144,6 +146,9 @@ public class NavDrawerHelper {
             } else if (id == R.id.navLinkGrades) {
                 targetScreen = Screen.GRADES;
                 targetActivity = GradesActivity.class;
+            } else if (id == R.id.navLinkAttendance) {
+                targetScreen = Screen.ATTENDANCE;
+                targetActivity = AttendanceActivity.class;
             } else if (id == R.id.navLinkNews) {
                 targetScreen = Screen.NEWS;
                 targetActivity = NewsActivity.class;
@@ -194,6 +199,7 @@ public class NavDrawerHelper {
         navLinkHome.setOnClickListener(listener);
         navLinkPlan.setOnClickListener(listener);
         navLinkGrades.setOnClickListener(listener);
+        navLinkAttendance.setOnClickListener(listener);
         navLinkInfo.setOnClickListener(listener);
         navLinkNews.setOnClickListener(listener);
         navLinkUseful.setOnClickListener(listener);

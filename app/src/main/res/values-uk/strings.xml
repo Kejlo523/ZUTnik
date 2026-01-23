@@ -379,4 +379,18 @@
 
     <string name="offline_mode_label">Офлайн режим</string>
 
+    <!-- Attendance / Відвідуваність -->
+    <string name="attendance_title">Відвідуваність</string>
+    <string name="attendance_summary_label">Відвідуваність</string>
+    <string name="attendance_subtitle">Загальний рівень відвідуваності</string>
+    <string name="attendance_summary_detail">Годин: %1$d | Пропусків: %2$d</string>
+    <string name="attendance_hours_format">Годин: %1$d</string>
+    <string name="attendance_empty_state">Немає предметів у розкладі.\nОновіть розклад, щоб завантажити предмети.</string>
+    <string name="attendance_refreshing">Оновлюю список предметів…</string>
+    <string name="attendance_increase">Збільшити пропуски</string>
+    <string name="attendance_decrease">Зменшити пропуски</string>
+    <string name="attendance_edit_hours_title">Редагувати години</string>
+    <string name="attendance_edit_hours_message">Введіть загальну кількість годин для предмету:\n%1$s</string>
+    <string name="attendance_hours_tap_to_set">Натисніть, щоб встановити години</string>
+
 </resources>
