@@ -193,17 +193,11 @@ public class SettingsActivity extends AppCompatActivity {
                     ThemeManager.setTheme(SettingsActivity.this, val);
                     Toast.makeText(SettingsActivity.this, "Zmieniono motyw", Toast.LENGTH_SHORT).show();
 
-                    // Restart app or recreate to apply
-                    // Recreating only affects this activity, but backstack remains old.
-                    // Best to restart the app flow.
-                    Intent i = getPackageManager().getLaunchIntentForPackage(getPackageName());
-                    if (i != null) {
-                        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(i);
-                        finish();
-                    } else {
-                        recreate();
-                    }
+                    // Restart app with cleared back stack to apply theme everywhere
+                    Intent i = new Intent(SettingsActivity.this, HomeActivity.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(i);
+                    finish();
                 }
             }
 
@@ -236,7 +230,10 @@ public class SettingsActivity extends AppCompatActivity {
                 getString(R.string.settings_language_changed_toast),
                 Toast.LENGTH_SHORT).show();
 
-        // Closing Settings is usually enough for changes to apply
+        // Restart app with cleared back stack to apply language everywhere
+        Intent i = new Intent(this, HomeActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(i);
         finish();
     }
 }

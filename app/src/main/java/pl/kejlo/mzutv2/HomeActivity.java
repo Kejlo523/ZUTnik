@@ -308,30 +308,32 @@ public class HomeActivity extends MzutBaseActivity {
     }
 
     private void runIntroAnimations() {
+        // Hero section - fade + slide up
         homeHero.setAlpha(0f);
-        tileGrid.setAlpha(0f);
-        homeSection.setAlpha(0f);
-
-        animateIn(homeHero, 100);
-        animateIn(tileGrid, 200);
-        animateIn(homeSection, 300);
-    }
-
-    private void animateIn(View v, long delayMs) {
-        if (v == null) {
-            return;
-        }
-        v.setTranslationY(100f);
-        v.setScaleX(0.95f);
-        v.setScaleY(0.95f);
-        v.animate()
+        homeHero.setTranslationY(60f);
+        homeHero.animate()
                 .alpha(1f)
                 .translationY(0f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setStartDelay(delayMs)
-                .setDuration(400)
+                .setDuration(500)
                 .setInterpolator(new DecelerateInterpolator(1.5f))
+                .start();
+
+        // Tile grid - staggered entrance for each tile
+        // We need to wait for layout to complete before animating tiles
+        tileGrid.setAlpha(1f); // Grid container is visible
+        tileGrid.post(() -> {
+            tileGrid.animateTilesEntrance(80); // 80ms delay between tiles
+        });
+
+        // Footer section - subtle fade in
+        homeSection.setAlpha(0f);
+        homeSection.setTranslationY(40f);
+        homeSection.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setStartDelay(400)
+                .setDuration(400)
+                .setInterpolator(new DecelerateInterpolator())
                 .start();
     }
 
