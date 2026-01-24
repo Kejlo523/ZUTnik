@@ -105,6 +105,13 @@ public class PlanRepository {
         public String typeLabel;
         public String subjectKey;
         public String teacher;
+
+        // Custom event fields
+        public boolean isCustomEvent = false; // True if this is a standalone custom event
+        public String customEventType = null; // "exam", "pass", "test"
+        public boolean hasCustomOverlay = false; // True if official event has custom overlay
+        public String customOverlayLabel = null; // "EGZAMIN!", "KOLOKWIUM!", etc.
+        public String customEventId = null; // ID of the custom event (for editing/deleting)
     }
 
     // Day column model
@@ -1378,6 +1385,10 @@ public class PlanRepository {
                 col.date = iter;
                 List<PlanEventRaw> rawList = byDateRange.getOrDefault(iter, Collections.emptyList());
                 col.events = buildDayLayout(rawList);
+
+                // Integrate custom events for this day
+                col.events = mergeCustomEvents(col.events, iter);
+
                 if (!col.events.isEmpty())
                     any = true;
                 r.dayColumns.add(col);
@@ -1519,5 +1530,112 @@ public class PlanRepository {
             }
             return items;
         }
+    }
+
+    /**
+     * Merges custom events (exams, tests) with official plan events for a given
+     * day.
+     * - If a custom event matches an official event (same subject on same day), add
+     * overlay label
+     * - If no matching official event, create a standalone custom event in the grid
+     */
+    private List<PlanEventUi> mergeCustomEvents(List<PlanEventUi> events, LocalDate date) {
+        if (appContext == null)
+            return events;
+
+        CustomPlanEventRepository customRepo = new CustomPlanEventRepository(appContext);
+        List<CustomPlanEvent> customEvents = customRepo.getEventsForDate(date);
+
+        if (customEvents == null || customEvents.isEmpty()) {
+            return events;
+        }
+
+        List<PlanEventUi> result = new ArrayList<>(events);
+
+        for (CustomPlanEvent customEvent : customEvents) {
+            boolean foundMatch = false;
+            String subjectLower = customEvent.subjectName != null ? customEvent.subjectName.toLowerCase() : "";
+
+            // Check if any official event matches this custom event (by subject name AND
+            // type)
+            // Exam (egzamin) matches only lectures (W), Pass/Test matches labs/exercises
+            for (PlanEventUi event : result) {
+                if (event.title != null && event.title.toLowerCase().contains(subjectLower)) {
+                    // Check if type matches
+                    boolean typeMatches = false;
+                    String typeClass = event.typeClass != null ? event.typeClass.toLowerCase() : "";
+
+                    if (CustomPlanEvent.TYPE_EXAM.equals(customEvent.eventType)) {
+                        // Exam only matches lectures: typeClass contains "lec" or title ends with "(W)"
+                        typeMatches = typeClass.contains("lec") ||
+                                (event.title != null && event.title.trim().endsWith("(W)"));
+                    } else {
+                        // Pass/Test matches exercises, labs, auditorium: not lecture
+                        typeMatches = !typeClass.contains("lec") &&
+                                (event.title == null || !event.title.trim().endsWith("(W)"));
+                    }
+
+                    if (typeMatches) {
+                        // Found matching official event - add overlay
+                        event.hasCustomOverlay = true;
+                        event.customOverlayLabel = customEvent.getTypeShortLabel(appContext);
+                        event.customEventId = String.valueOf(customEvent.id);
+                        event.customEventType = customEvent.eventType;
+                        // Transfer notes to tooltip for display
+                        if (customEvent.notes != null && !customEvent.notes.isEmpty()) {
+                            event.tooltip = customEvent.notes;
+                        }
+                        foundMatch = true;
+                        break;
+                    }
+                }
+            }
+
+            // If no matching official event, create standalone custom event
+            if (!foundMatch && customEvent.startTime != null) {
+                PlanEventUi standaloneEvent = new PlanEventUi();
+                standaloneEvent.isCustomEvent = true;
+                standaloneEvent.customEventType = customEvent.eventType;
+                standaloneEvent.customEventId = String.valueOf(customEvent.id);
+                standaloneEvent.title = customEvent.subjectName;
+                standaloneEvent.typeLabel = customEvent.getTypeLabel(appContext);
+                standaloneEvent.typeClass = "custom-" + customEvent.eventType;
+
+                // Calculate time
+                int startMinutes = customEvent.startTime.getHour() * 60 + customEvent.startTime.getMinute();
+                int endMinutes = customEvent.endTime != null
+                        ? customEvent.endTime.getHour() * 60 + customEvent.endTime.getMinute()
+                        : startMinutes + 90;
+
+                standaloneEvent.startMin = startMinutes;
+                standaloneEvent.endMin = endMinutes;
+                standaloneEvent.startStr = customEvent.startTime
+                        .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                standaloneEvent.endStr = customEvent.endTime != null
+                        ? customEvent.endTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+                        : "";
+
+                // Calculate layout position (relative to START_HOUR = 6)
+                int gridStartMin = 6 * 60;
+                float hourHeightDp = 48f;
+                float density = appContext.getResources().getDisplayMetrics().density;
+                float hourHeightPx = hourHeightDp * density;
+                float dayHeaderHeightPx = 48f * density;
+
+                standaloneEvent.topPx = dayHeaderHeightPx + ((startMinutes - gridStartMin) / 60f) * hourHeightPx;
+                standaloneEvent.heightPx = ((endMinutes - startMinutes) / 60f) * hourHeightPx;
+                standaloneEvent.leftPct = 0f;
+                standaloneEvent.widthPct = 100f;
+
+                // Notes as tooltip
+                if (customEvent.notes != null && !customEvent.notes.isEmpty()) {
+                    standaloneEvent.tooltip = customEvent.notes;
+                }
+
+                result.add(standaloneEvent);
+            }
+        }
+
+        return result;
     }
 }

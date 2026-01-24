@@ -136,5 +136,18 @@
         <item name="planWeekDaySelectedBg">#EEEEEE</item>
     </style>
 
+    <!-- Dialog Theme for Custom Event Wizard -->
+    <style name="Theme.MZUTv2.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
+        <item name="android:windowMinWidthMajor">90%</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+        <item name="colorPrimary">@color/mz_primary</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="mzBgSurface">@color/mz_bg_surface</item>
+        <item name="mzText">@color/mz_text</item>
+        <item name="mzMuted">@color/mz_muted</item>
+        <item name="mzPrimary">@color/mz_primary</item>
+    </style>
+
 
 </resources>
