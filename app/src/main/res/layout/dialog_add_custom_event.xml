@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="?attr/mzBgSurface">
+
+    <!-- Header with Step Indicator and Close Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
+
+        <!-- Back arrow button (for previous step) -->
+        <ImageButton
+            android:id="@+id/btnBackArrow"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_arrow_left"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/plan_custom_btn_back"
+            android:visibility="gone"
+            app:tint="?attr/mzText" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/textStepIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Krok 1 z 5"
+                android:textSize="12sp"
+                android:textColor="?attr/mzMuted"
+                android:textAllCaps="true"
+                android:letterSpacing="0.1" />
+
+            <TextView
+                android:id="@+id/textStepTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_custom_step_subject"
+                android:textSize="20sp"
+                android:textColor="?attr/mzText"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Close button (X) -->
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/plan_custom_btn_cancel"
+            app:tint="?attr/mzMuted" />
+    </LinearLayout>
+
+    <!-- Step Content Container -->
+    <FrameLayout
+        android:id="@+id/stepContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="200dp">
+
+        <!-- Step 1: Subject Selection -->
+        <LinearLayout
+            android:id="@+id/step1Subject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/inputLayoutSubject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/plan_custom_subject_hint"
+                app:boxBackgroundMode="outline"
+                app:boxStrokeColor="?attr/mzPrimary"
+                app:hintTextColor="?attr/mzMuted">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editSubject"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="?attr/mzText" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/textSubjectsFromPlan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_custom_subject_from_plan"
+                android:textSize="12sp"
+                android:textColor="?attr/mzMuted"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerSubjects"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxHeight="200dp"
+                android:nestedScrollingEnabled="true" />
+
+            <TextView
+                android:id="@+id/textNoSubjects"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_custom_no_subjects"
+                android:textColor="?attr/mzMuted"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:padding="16dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Step 2: Event Type Selection -->
+        <LinearLayout
+            android:id="@+id/step2Type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <RadioGroup
+                android:id="@+id/radioGroupType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/radioExam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_custom_type_exam"
+                    android:textColor="?attr/mzText"
+                    android:textSize="16sp"
+                    android:padding="12dp"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/radioPass"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_custom_type_pass"
+                    android:textColor="?attr/mzText"
+                    android:textSize="16sp"
+                    android:padding="12dp" />
+
+                <RadioButton
+                    android:id="@+id/radioTest"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_custom_type_test"
+                    android:textColor="?attr/mzText"
+                    android:textSize="16sp"
+                    android:padding="12dp" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <!-- Step 3: Date Selection -->
+        <LinearLayout
+            android:id="@+id/step3Date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textSelectedDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--.--.----"
+                android:textSize="24sp"
+                android:textColor="?attr/mzPrimary"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btnPickDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Wybierz datę"
+                android:textColor="@android:color/white"
+                android:backgroundTint="?attr/mzPrimary" />
+        </LinearLayout>
+
+        <!-- Step 4: Time Selection -->
+        <LinearLayout
+            android:id="@+id/step4Time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textTimeInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="13sp"
+                android:textColor="?attr/mzMuted"
+                android:gravity="center"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone" />
+
+            <RadioGroup
+                android:id="@+id/radioGroupTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/radioTimeAuto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_custom_time_auto"
+                    android:textColor="?attr/mzText"
+                    android:textSize="15sp"
+                    android:padding="12dp"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/radioTimeManual"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_custom_time_manual"
+                    android:textColor="?attr/mzText"
+                    android:textSize="15sp"
+                    android:padding="12dp" />
+            </RadioGroup>
+
+            <LinearLayout
+                android:id="@+id/layoutManualTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/textManualTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="08:00 - 09:30"
+                    android:textSize="20sp"
+                    android:textColor="?attr/mzPrimary"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnPickTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="Zmień"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="?attr/mzPrimary"
+                    style="?android:attr/buttonStyleSmall" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Step 5: Summary -->
+        <LinearLayout
+            android:id="@+id/step5Summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="@drawable/bg_card_soft"
+            android:padding="16dp">
+
+            <!-- Subject -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_custom_summary_subject"
+                android:textSize="12sp"
+                android:textColor="?attr/mzMuted" />
+            <TextView
+                android:id="@+id/summarySubject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Matematyka dyskretna"
+                android:textSize="16sp"
+                android:textColor="?attr/mzText"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Type -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_custom_summary_type"
+                android:textSize="12sp"
+                android:textColor="?attr/mzMuted" />
+            <TextView
+                android:id="@+id/summaryType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Egzamin"
+                android:textSize="16sp"
+                android:textColor="?attr/mzText"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Date -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_custom_summary_date"
+                android:textSize="12sp"
+                android:textColor="?attr/mzMuted" />
+            <TextView
+                android:id="@+id/summaryDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="15.02.2026"
+                android:textSize="16sp"
+                android:textColor="?attr/mzText"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Time -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_custom_summary_time"
+                android:textSize="12sp"
+                android:textColor="?attr/mzMuted" />
+            <TextView
+                android:id="@+id/summaryTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="10:00 - 11:30"
+                android:textSize="16sp"
+                android:textColor="?attr/mzText"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Notes -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/inputLayoutNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="@string/plan_custom_notes_label"
+                app:boxBackgroundMode="outline"
+                app:boxStrokeColor="?attr/mzPrimary"
+                app:hintTextColor="?attr/mzMuted">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editNotes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:minLines="2"
+                    android:textColor="?attr/mzText"
+                    android:hint="@string/plan_custom_notes_hint" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Duplicate Warning -->
+            <TextView
+                android:id="@+id/textDuplicateWarning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:padding="12dp"
+                android:background="#33FFCC00"
+                android:textColor="#CC6600"
+                android:textSize="13sp"
+                android:visibility="gone"
+                android:drawablePadding="8dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Navigation Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="24dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_custom_btn_back"
+            android:textColor="?attr/mzText"
+            style="?android:attr/borderlessButtonStyle"
+            android:visibility="gone" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_custom_btn_cancel"
+            android:textColor="?attr/mzMuted"
+            style="?android:attr/borderlessButtonStyle" />
+
+        <Button
+            android:id="@+id/btnNext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_custom_btn_next"
+            android:textColor="@android:color/white"
+            android:backgroundTint="?attr/mzPrimary"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+</LinearLayout>

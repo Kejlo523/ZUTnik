@@ -408,8 +408,26 @@ public class PlanActivity extends MzutBaseActivity {
             baseDate = currentDate;
         }
 
+        setupFab();
         loadPlanForCurrentMode();
         runIntroAnimations();
+    }
+
+    private void setupFab() {
+        com.google.android.material.floatingactionbutton.FloatingActionButton fab = findViewById(R.id.fabAddEvent);
+        if (fab != null) {
+            fab.setOnClickListener(v -> {
+                AddCustomEventDialog dialog = new AddCustomEventDialog();
+                dialog.setListener(event -> {
+                    // Refresh plan to show the new custom event
+                    planCache.clear();
+                    if (pagerAdapter != null) {
+                        pagerAdapter.notifyDataSetChanged();
+                    }
+                });
+                dialog.show(getSupportFragmentManager(), "add_custom_event");
+            });
+        }
     }
 
     private void runIntroAnimations() {
@@ -1954,6 +1972,27 @@ public class PlanActivity extends MzutBaseActivity {
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(color);
         bg.setCornerRadius(dpToPx(6));
+
+        // Handle custom event overlay (exam/test on top of official event)
+        if (ev.hasCustomOverlay && ev.customOverlayLabel != null) {
+            // Add red/orange stroke for events with custom overlay
+            bg.setStroke(dpToPx(3), 0xFFCC3300); // Orange-red stroke
+
+            // Prepend the overlay label to text
+            sb.insert(0, ev.customOverlayLabel + "\n");
+            tv.setText(sb.toString());
+            tv.setTextColor(0xFFCC3300); // Dark orange text
+        }
+
+        // Handle standalone custom events (not matching any official event)
+        if (ev.isCustomEvent) {
+            // Use a distinct background for custom events
+            int customBg = 0xFFFFE4E4; // Light red background
+            bg.setColor(customBg);
+            bg.setStroke(dpToPx(2), 0xFFCC0000); // Red border
+            tv.setTextColor(0xFF880000); // Dark red text
+        }
+
         tv.setBackground(bg);
 
         FrameLayoutWithChildren.LayoutParams lp = new FrameLayoutWithChildren.LayoutParams(
@@ -1983,11 +2022,43 @@ public class PlanActivity extends MzutBaseActivity {
             msg.append("\n\n").append(ev.typeLabel);
         }
 
-        new AlertDialog.Builder(this)
+        // Show custom event info if present
+        if (ev.hasCustomOverlay && ev.customOverlayLabel != null) {
+            msg.append("\n\n").append("📌 ").append(ev.customOverlayLabel);
+        }
+
+        // Show notes/tooltip if present AND this is a custom event
+        if ((ev.hasCustomOverlay || ev.isCustomEvent) && ev.tooltip != null && !ev.tooltip.isEmpty()) {
+            msg.append("\n\n").append("📝 ").append(ev.tooltip);
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle(ev.title != null ? ev.title : getString(R.string.plan_event_default_title))
                 .setMessage(msg.toString())
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+                .setPositiveButton(android.R.string.ok, null);
+
+        // Add delete button if this event has a custom overlay or is a custom event
+        if ((ev.hasCustomOverlay || ev.isCustomEvent) && ev.customEventId != null) {
+            builder.setNegativeButton(R.string.plan_custom_remove_marker, (dialog, which) -> {
+                // Delete the custom event
+                try {
+                    long eventId = Long.parseLong(ev.customEventId);
+                    CustomPlanEventRepository repo = new CustomPlanEventRepository(this);
+                    repo.deleteEvent(eventId);
+                    Toast.makeText(this, R.string.plan_custom_removed_toast, Toast.LENGTH_SHORT).show();
+
+                    // Refresh the plan to update display
+                    planCache.clear();
+                    if (pagerAdapter != null) {
+                        pagerAdapter.notifyDataSetChanged();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        builder.show();
     }
 
     @ColorRes

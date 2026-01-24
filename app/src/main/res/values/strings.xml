@@ -400,4 +400,53 @@
     <string name="attendance_no_absences">Brak nieobecności</string>
     <string name="attendance_one_absence">1 nieobecność</string>
     <string name="attendance_absences_count">%1$d nieobecności</string>
+
+    <!-- Custom Plan Events (Egzaminy/Kolokwia) -->
+    <string name="plan_custom_events_title">Moje egzaminy i kolokwia</string>
+    <string name="plan_custom_add_event">Dodaj egzamin/kolokwium</string>
+    <string name="plan_custom_type_exam">Egzamin</string>
+    <string name="plan_custom_type_pass">Zaliczenie</string>
+    <string name="plan_custom_type_test">Kolokwium</string>
+    <string name="plan_custom_type_exam_short">EGZAMIN!</string>
+    <string name="plan_custom_type_pass_short">ZALICZENIE!</string>
+    <string name="plan_custom_type_test_short">KOLOKWIUM!</string>
+    
+    <string name="plan_custom_wizard_step">Krok %1$d z %2$d</string>
+    <string name="plan_custom_step_subject">Wybierz przedmiot</string>
+    <string name="plan_custom_step_type">Typ wydarzenia</string>
+    <string name="plan_custom_step_date">Wybierz datę</string>
+    <string name="plan_custom_step_time">Godzina</string>
+    <string name="plan_custom_step_summary">Podsumowanie</string>
+    
+    <string name="plan_custom_subject_hint">Wpisz lub wybierz przedmiot…</string>
+    <string name="plan_custom_subject_from_plan">Przedmioty z planu:</string>
+    <string name="plan_custom_no_subjects">Brak przedmiotów w planie. Wpisz nazwę ręcznie.</string>
+    
+    <string name="plan_custom_time_auto">Automatycznie (wg godziny zajęć)</string>
+    <string name="plan_custom_time_manual">Ustaw ręcznie</string>
+    <string name="plan_custom_time_no_classes">Brak zajęć z tego przedmiotu w wybranym dniu. Ustaw godzinę ręcznie.</string>
+    
+    <string name="plan_custom_notes_label">Notatki (opcjonalne)</string>
+    <string name="plan_custom_notes_hint"></string>
+    
+    <string name="plan_custom_summary_subject">Przedmiot:</string>
+    <string name="plan_custom_summary_type">Typ:</string>
+    <string name="plan_custom_summary_date">Data:</string>
+    <string name="plan_custom_summary_time">Godzina:</string>
+    
+    <string name="plan_custom_btn_next">Dalej</string>
+    <string name="plan_custom_btn_back">Wstecz</string>
+    <string name="plan_custom_btn_save">Zapisz</string>
+    <string name="plan_custom_btn_cancel">Anuluj</string>
+    
+    <string name="plan_custom_saved_toast">Zapisano wydarzenie!</string>
+    <string name="plan_custom_deleted_toast">Usunięto wydarzenie</string>
+    <string name="plan_custom_updated_toast">Zaktualizowano wydarzenie</string>
+    
+    <string name="plan_custom_duplicate_warning">W planie jest już wpisane: %1$s tego dnia</string>
+    <string name="plan_custom_list_empty">Brak zapisanych egzaminów/kolokwiów.\nDodaj nowe używając przycisku +</string>
+    <string name="plan_custom_list_title">Moje wydarzenia</string>
+    <string name="plan_custom_delete_confirm">Usunąć to wydarzenie?</string>
+    <string name="plan_custom_remove_marker">Usuń oznaczenie</string>
+    <string name="plan_custom_removed_toast">Usunięto oznaczenie</string>
 </resources>
