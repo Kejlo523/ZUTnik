@@ -127,6 +127,36 @@ public class TileGridLayout extends ViewGroup {
         requestLayout();
     }
 
+    /**
+     * Animate tiles entrance with staggered delay.
+     * Call this after layout is complete (e.g., via post or postDelayed).
+     * 
+     * @param staggerDelayMs Delay between each tile's animation start
+     */
+    public void animateTilesEntrance(int staggerDelayMs) {
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof TileView) {
+                // Initial state
+                child.setAlpha(0f);
+                child.setScaleX(0.8f);
+                child.setScaleY(0.8f);
+                child.setTranslationY(40f);
+
+                // Animate with stagger
+                child.animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .translationY(0f)
+                        .setStartDelay(i * staggerDelayMs)
+                        .setDuration(350)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                        .start();
+            }
+        }
+    }
+
     public List<Tile> getTiles() {
         return new ArrayList<>(tiles);
     }
@@ -641,44 +671,107 @@ public class TileGridLayout extends ViewGroup {
     }
 
     private void resolveCollisions(List<Tile> targetTiles, Tile fixedTile) {
-        // Flow Layout Algorithm / Bin Packing
-        // 1. Mark the 'fixedTile' (dragged tile) as occupying its desired space.
-        // 2. Sort all OTHER tiles by their current position (to maintain relative
-        // order).
-        // 3. Place other tiles into the first available slots that don't overlap with
-        // 'fixedTile' or already placed tiles.
+        // Collision Resolution - only move tiles that actually overlap
+        // This preserves intentional gaps in the layout
 
-        // Map of occupied cells: boolean[ROW][COL]
-        // Since rows can expand, we need dynamic or sufficiently large array.
-        // 20 rows should be enough for this app (scrolling).
+        if (fixedTile == null) {
+            // No fixed tile, just ensure no overlaps between tiles
+            resolveOverlaps(targetTiles);
+            return;
+        }
+
+        // Build grid with fixedTile position
+        boolean[][] grid = new boolean[50][COLUMN_COUNT];
+        markGrid(grid, fixedTile);
+
+        // Check each other tile for collision with fixedTile
+        for (Tile t : targetTiles) {
+            if (t == fixedTile || tilesMatch(t, fixedTile)) {
+                continue;
+            }
+
+            // Check if this tile overlaps with fixedTile
+            if (rectsOverlap(t, fixedTile)) {
+                // Find new position for this tile - try to stay close to original
+                Point newPos = findNearestAvailableSlot(grid, t.col, t.row, t.colSpan, t.rowSpan);
+                t.col = newPos.x;
+                t.row = newPos.y;
+            }
+
+            // Mark this tile's position as occupied
+            markGrid(grid, t);
+        }
+    }
+
+    /**
+     * Resolve overlaps between tiles without a fixed tile.
+     * Only moves tiles that actually collide with each other.
+     */
+    private void resolveOverlaps(List<Tile> targetTiles) {
         boolean[][] grid = new boolean[50][COLUMN_COUNT];
 
-        // 1. Place Fixed Tile
-        if (fixedTile != null) {
-            markGrid(grid, fixedTile);
-        }
-
-        // 2. Separate and Sort Others
-        List<Tile> others = new ArrayList<>();
-        for (Tile t : targetTiles) {
-            if (t != fixedTile && (fixedTile == null || !tilesMatch(t, fixedTile))) {
-                others.add(t);
-            }
-        }
-
-        Collections.sort(others, (o1, o2) -> {
+        // Sort by position to process top-left first
+        List<Tile> sorted = new ArrayList<>(targetTiles);
+        Collections.sort(sorted, (o1, o2) -> {
             if (o1.row != o2.row)
                 return Integer.compare(o1.row, o2.row);
             return Integer.compare(o1.col, o2.col);
         });
 
-        // 3. Reflow Others
-        for (Tile t : others) {
-            Point pos = findFirstAvailableSlot(grid, t.colSpan, t.rowSpan);
-            t.col = pos.x;
-            t.row = pos.y;
+        for (Tile t : sorted) {
+            // Check if current position is free
+            if (!isSlotFree(grid, t.col, t.row, t.colSpan, t.rowSpan)) {
+                // Find nearest available slot
+                Point newPos = findNearestAvailableSlot(grid, t.col, t.row, t.colSpan, t.rowSpan);
+                t.col = newPos.x;
+                t.row = newPos.y;
+            }
             markGrid(grid, t);
         }
+    }
+
+    /**
+     * Find the nearest available slot to the preferred position.
+     * Tries to stay close to original position rather than packing to top-left.
+     */
+    private Point findNearestAvailableSlot(boolean[][] grid, int prefCol, int prefRow, int colSpan, int rowSpan) {
+        // Try original position first
+        if (isSlotFree(grid, prefCol, prefRow, colSpan, rowSpan)) {
+            return new Point(prefCol, prefRow);
+        }
+
+        // Search in expanding rings around preferred position
+        for (int distance = 1; distance < 20; distance++) {
+            // Try same row first (horizontal displacement)
+            for (int dc = -distance; dc <= distance; dc++) {
+                int c = prefCol + dc;
+                if (c >= 0 && c <= COLUMN_COUNT - colSpan) {
+                    // Try at preferred row
+                    if (isSlotFree(grid, c, prefRow, colSpan, rowSpan)) {
+                        return new Point(c, prefRow);
+                    }
+                    // Try below preferred row
+                    for (int dr = 1; dr <= distance; dr++) {
+                        int r = prefRow + dr;
+                        if (r >= 0 && r < grid.length - rowSpan) {
+                            if (isSlotFree(grid, c, r, colSpan, rowSpan)) {
+                                return new Point(c, r);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: append to bottom
+        int maxRow = 0;
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < COLUMN_COUNT; c++) {
+                if (grid[r][c])
+                    maxRow = Math.max(maxRow, r + 1);
+            }
+        }
+        return new Point(0, maxRow);
     }
 
     private static class Point {
@@ -909,7 +1002,21 @@ public class TileGridLayout extends ViewGroup {
         if (activeTileView == null)
             return;
 
-        // Position was already updated during simulateLayout swaps
+        Tile activeTile = activeTileView.getTile();
+
+        // Calculate final grid position from preview rect (where user dropped)
+        if (!previewRect.isEmpty()) {
+            int col = Math.round((previewRect.left - getPaddingLeft()) / (float) (cellWidth + gap));
+            int row = Math.round((previewRect.top - getPaddingTop()) / (float) (cellHeight + gap));
+
+            // Clamp to valid range
+            col = Math.max(0, Math.min(COLUMN_COUNT - activeTile.colSpan, col));
+            row = Math.max(0, row);
+
+            activeTile.col = col;
+            activeTile.row = row;
+        }
+
         // Reset view translation (was used for drag visual)
         activeTileView.setTranslationX(0f);
         activeTileView.setTranslationY(0f);
@@ -924,7 +1031,8 @@ public class TileGridLayout extends ViewGroup {
             }
         }
 
-        // Just relayout - swap already handled positioning, no resolveCollisions
+        // Resolve collisions - only tiles that overlap will be moved
+        resolveCollisions();
         requestLayout();
         if (tilesChangedListener != null)
             tilesChangedListener.onTilesChanged(tiles);
