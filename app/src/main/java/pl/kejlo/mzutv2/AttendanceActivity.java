@@ -1,6 +1,5 @@
 package pl.kejlo.mzutv2;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.InputType;
@@ -26,6 +25,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
@@ -56,8 +56,10 @@ public class AttendanceActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_attendance);
+        ThemeManager.applySystemBars(this);
 
         // EdgeToEdge insets
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
@@ -103,6 +105,14 @@ public class AttendanceActivity extends AppCompatActivity {
 
         // Initial load
         loadData();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            ThemeManager.applySystemBars(this);
+        }
     }
 
     private void loadData() {
@@ -155,7 +165,7 @@ public class AttendanceActivity extends AppCompatActivity {
         input.setSelectAllOnFocus(true);
         input.setPadding(48, 32, 48, 32);
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.attendance_edit_hours_title)
                 .setMessage(getString(R.string.attendance_edit_hours_message, absence.subjectName))
                 .setView(input)

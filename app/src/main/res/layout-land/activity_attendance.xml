@@ -4,7 +4,7 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/mzBg"
+    android:background="@drawable/bg_landscape_canvas"
     android:fitsSystemWindows="false">
 
     <LinearLayout
@@ -17,7 +17,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/mzBg"
+            android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
@@ -35,16 +35,18 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.35"
+                android:layout_weight="0.32"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:paddingEnd="16dp">
+                android:padding="16dp"
+                android:background="@drawable/bg_landscape_panel"
+                android:layout_marginEnd="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_card_primary"
-                    android:padding="24dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:padding="20dp"
                     android:orientation="vertical"
                     android:gravity="center">
 
@@ -61,7 +63,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="0"
+                        android:text="@string/common_zero"
                         android:textColor="?attr/mzText"
                         android:textSize="48sp"
                         android:textStyle="bold" />
@@ -92,7 +94,9 @@
             <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.65">
+                android:layout_weight="0.68"
+                android:background="@drawable/bg_landscape_panel"
+                android:padding="12dp">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/listSubjects"

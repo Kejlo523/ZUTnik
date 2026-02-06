@@ -81,8 +81,17 @@ public abstract class MzutBaseActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        ThemeManager.applySystemBars(this);
         if (networkStatusHelper != null) {
             networkStatusHelper.observe(this, this::onNetworkStatusChanged);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            ThemeManager.applySystemBars(this);
         }
     }
 
@@ -125,7 +134,9 @@ public abstract class MzutBaseActivity extends AppCompatActivity {
 
         offlineIndicator.setVisibility(View.VISIBLE);
         offlineIndicator.setText(R.string.offline_mode_label);
-        offlineIndicator.setBackgroundColor(0xFFD32F2F); // Red
+        offlineIndicator.setBackgroundColor(
+                androidx.core.content.ContextCompat.getColor(this, R.color.offline_bar_bg));
+        offlineIndicator.setTextColor(android.graphics.Color.WHITE);
 
         offlineIndicator.animate()
                 .alpha(1f)
@@ -136,8 +147,10 @@ public abstract class MzutBaseActivity extends AppCompatActivity {
 
     private void showOnlineGreenAndHide() {
         // Turn green
-        offlineIndicator.setText("Online"); // Optional: could add resource string
-        offlineIndicator.setBackgroundColor(0xFF388E3C); // Green
+        offlineIndicator.setText(R.string.online_mode_label);
+        offlineIndicator.setBackgroundColor(
+                androidx.core.content.ContextCompat.getColor(this, R.color.online_bar_bg));
+        offlineIndicator.setTextColor(android.graphics.Color.WHITE);
 
         // Wait then hide
         handler.postDelayed(() -> {

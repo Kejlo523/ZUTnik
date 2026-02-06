@@ -4,8 +4,8 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app"
-    android:fitsSystemWindows="true"
+    android:background="@drawable/bg_landscape_canvas"
+    android:fitsSystemWindows="false"
     app:statusBarBackground="?attr/mzBg">
 
     <LinearLayout
@@ -34,10 +34,12 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.4"
+                android:layout_weight="0.35"
                 android:layout_marginEnd="16dp"
                 android:gravity="center_horizontal"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:background="@drawable/bg_landscape_panel"
+                android:padding="16dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -123,8 +125,10 @@
             <ScrollView
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.6"
-                android:scrollbars="vertical">
+                android:layout_weight="0.65"
+                android:scrollbars="vertical"
+                android:background="@drawable/bg_landscape_panel"
+                android:padding="12dp">
 
                 <LinearLayout
                     android:id="@+id/infoContent"
@@ -171,7 +175,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -194,7 +198,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -217,7 +221,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -240,7 +244,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -263,7 +267,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -286,7 +290,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -310,7 +314,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -333,7 +337,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1.3"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -354,7 +358,7 @@
                                     android:layout_marginEnd="4dp"/>
                                 <TextView
                                     android:id="@+id/tvInfoRok"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold"
@@ -371,7 +375,7 @@
                                     android:layout_marginEnd="4dp"/>
                                 <TextView
                                     android:id="@+id/tvInfoSemestr"
-                                    android:text="-"
+                                    android:text="@string/common_dash"
                                     android:textColor="?attr/mzText"
                                     android:textSize="13sp"
                                     android:textStyle="bold"

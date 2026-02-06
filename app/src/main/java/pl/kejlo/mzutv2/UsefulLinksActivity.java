@@ -63,7 +63,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_useful_links);
+        ThemeManager.applySystemBars(this);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -90,6 +92,20 @@ public class UsefulLinksActivity extends AppCompatActivity {
         listLinks.setAdapter(adapter);
 
         loadAndSortLinksForUser();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ThemeManager.applySystemBars(this);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            ThemeManager.applySystemBars(this);
+        }
     }
 
     // Main logic

@@ -70,6 +70,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
 
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
@@ -82,6 +83,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_login);
+        ThemeManager.applySystemBars(this);
 
         appIcon = findViewById(R.id.appIcon);
         loginCard = findViewById(R.id.loginCard);
@@ -143,6 +145,14 @@ public class LoginActivity extends AppCompatActivity {
 
         prepareViewsForAnimation();
         startKillerIntroAnimation();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            ThemeManager.applySystemBars(this);
+        }
     }
 
     @Override

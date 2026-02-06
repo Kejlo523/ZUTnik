@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.graphics.ColorUtils;
 
 public class ThemeManager {
 
@@ -37,6 +38,27 @@ public class ThemeManager {
         }
     }
 
+    public static void applySystemBars(Activity activity) {
+        if (activity == null || activity.getWindow() == null) {
+            return;
+        }
+        int bg = resolveColor(activity, R.attr.mzBg);
+        android.view.Window window = activity.getWindow();
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        window.setStatusBarColor(bg);
+        window.setNavigationBarColor(bg);
+
+        boolean light = androidx.core.graphics.ColorUtils.calculateLuminance(bg) > 0.5;
+        androidx.core.view.WindowInsetsControllerCompat controller =
+                androidx.core.view.WindowCompat.getInsetsController(window, window.getDecorView());
+        if (controller != null) {
+            controller.setAppearanceLightStatusBars(light);
+            controller.setAppearanceLightNavigationBars(light);
+        }
+    }
+
     public static String getTheme(Context context) {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .getString(KEY_THEME, THEME_DEFAULT);
@@ -50,17 +72,19 @@ public class ThemeManager {
     }
 
     public static int resolveEventColor(Context context, String typeClass) {
-        String theme = getTheme(context);
-        int color = 0;
+        int resId = getDefaultEventColorResId(typeClass);
+        int baseColor = androidx.core.content.ContextCompat.getColor(context, resId);
 
-        switch (theme) {
-            default:
-                // Standard Color Coding
-                int resId = getDefaultEventColorResId(typeClass);
-                color = androidx.core.content.ContextCompat.getColor(context, resId);
-                break;
+        String theme = getTheme(context);
+        if (THEME_DEEP_BLUE.equals(theme)) {
+            int tint = resolveColor(context, R.attr.mzPrimary);
+            return ColorUtils.blendARGB(baseColor, tint, 0.28f);
         }
-        return color;
+        if (THEME_LIME.equals(theme)) {
+            int tint = resolveColor(context, R.attr.mzLime);
+            return ColorUtils.blendARGB(baseColor, tint, 0.28f);
+        }
+        return baseColor;
     }
 
     private static int getDefaultEventColorResId(String typeClass) {

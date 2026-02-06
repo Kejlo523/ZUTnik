@@ -378,6 +378,7 @@
     <string name="home_open_error">Помилка відкриття: %1$s</string>
 
     <string name="offline_mode_label">Офлайн режим</string>
+    <string name="online_mode_label">Онлайн режим</string>
 
     <!-- Attendance / Відвідуваність -->
     <string name="attendance_title">Відвідуваність</string>

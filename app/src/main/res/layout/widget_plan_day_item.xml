@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Przedmiot"
+            android:text="@string/plan_widget_item_title_placeholder"
             android:textColor="?attr/mzText"
             android:textSize="13sp"
             android:textStyle="bold" />
@@ -43,7 +43,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="8dp"
-                android:text="08:00 - 09:30"
+                android:text="@string/plan_widget_item_time_placeholder"
                 android:textColor="?attr/mzText"
                 android:textSize="11sp" />
 
@@ -53,7 +53,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Sala 123"
+                android:text="@string/plan_widget_item_room_placeholder"
                 android:textColor="?attr/mzMuted"
                 android:textSize="11sp" />
         </LinearLayout>

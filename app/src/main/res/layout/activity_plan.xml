@@ -43,7 +43,7 @@
 
                     <TextView
                         android:id="@+id/tvHeaderLabel"
-                        android:text="-"
+                        android:text="@string/common_dash"
                         android:textSize="22sp"
                         android:textStyle="bold"
                         android:textColor="?attr/mzText"

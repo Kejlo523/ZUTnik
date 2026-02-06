@@ -12,12 +12,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Context;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.List;
@@ -47,12 +49,14 @@ public class HomeActivity extends MzutBaseActivity {
     // New Grid
     private TileGridLayout tileGrid;
     private HomeRepository homeRepository;
+    private boolean introScheduled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
 
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
@@ -66,6 +70,7 @@ public class HomeActivity extends MzutBaseActivity {
         }
 
         setContentView(R.layout.activity_home);
+        ThemeManager.applySystemBars(this);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -101,7 +106,8 @@ public class HomeActivity extends MzutBaseActivity {
         setupWelcomeText();
         setupClicks();
         setupGrid();
-        runIntroAnimations();
+        prepareIntroAnimations();
+        scheduleIntroAnimations();
 
         // RESET: Clean implementation of "Swipe to Open".
         // We use a helper to detect a distinct "Swipe Right" gesture.
@@ -189,7 +195,7 @@ public class HomeActivity extends MzutBaseActivity {
             cancelEditMode();
             return true;
         } else if (item.getItemId() == R.id.action_reset_defaults) {
-            new androidx.appcompat.app.AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.home_reset_dialog_title)
                     .setMessage(R.string.home_reset_dialog_message)
                     .setPositiveButton(R.string.home_reset_dialog_yes, (d, w) -> {
@@ -309,32 +315,63 @@ public class HomeActivity extends MzutBaseActivity {
 
     private void runIntroAnimations() {
         // Hero section - fade + slide up
-        homeHero.setAlpha(0f);
-        homeHero.setTranslationY(60f);
-        homeHero.animate()
+        if (homeHero != null) {
+            homeHero.animate()
                 .alpha(1f)
                 .translationY(0f)
                 .setDuration(500)
                 .setInterpolator(new DecelerateInterpolator(1.5f))
                 .start();
+        }
 
         // Tile grid - staggered entrance for each tile
         // We need to wait for layout to complete before animating tiles
-        tileGrid.setAlpha(1f); // Grid container is visible
-        tileGrid.post(() -> {
-            tileGrid.animateTilesEntrance(80); // 80ms delay between tiles
-        });
+        if (tileGrid != null) {
+            tileGrid.setAlpha(1f); // Grid container is visible
+            tileGrid.post(() -> tileGrid.animateTilesEntrance(80)); // 80ms delay between tiles
+        }
 
         // Footer section - subtle fade in
-        homeSection.setAlpha(0f);
-        homeSection.setTranslationY(40f);
-        homeSection.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setStartDelay(400)
-                .setDuration(400)
-                .setInterpolator(new DecelerateInterpolator())
-                .start();
+        if (homeSection != null) {
+            homeSection.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(400)
+                    .setDuration(400)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+        }
+    }
+
+    private void prepareIntroAnimations() {
+        if (homeHero != null) {
+            homeHero.setAlpha(0f);
+            homeHero.setTranslationY(60f);
+        }
+        if (homeSection != null) {
+            homeSection.setAlpha(0f);
+            homeSection.setTranslationY(40f);
+        }
+    }
+
+    private void scheduleIntroAnimations() {
+        if (introScheduled) {
+            return;
+        }
+        introScheduled = true;
+        View root = drawerContentRoot != null ? drawerContentRoot : homeHero;
+        if (root == null) {
+            runIntroAnimations();
+            return;
+        }
+        root.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                root.getViewTreeObserver().removeOnPreDrawListener(this);
+                root.post(HomeActivity.this::runIntroAnimations);
+                return true;
+            }
+        });
     }
 
     private int dpToPx(int dp) {

@@ -50,30 +50,15 @@ public class HomeRepository {
                 JSONObject obj = arr.getJSONObject(i);
                 Tile t = Tile.fromJson(obj);
 
-                // MIGRATION: Restore resource IDs for default tiles if missing
-                // Only if the current text matches one of the known defaults (to avoid
-                // overwriting custom user titles)
-                if (t.titleResId == 0 && !obj.has("titleResId")) {
-                    boolean matchesDefault = isDefaultTitleOrDesc((int) t.id, t.title, t.description);
-                    if (matchesDefault) {
-                        switch ((int) t.id) {
-                            case 1:
-                                t.titleResId = R.string.home_tile_plan_title;
-                                t.descResId = R.string.home_tile_plan_desc;
-                                break;
-                            case 2:
-                                t.titleResId = R.string.home_tile_grades_title;
-                                t.descResId = R.string.home_tile_grades_desc;
-                                break;
-                            case 3:
-                                t.titleResId = R.string.home_tile_info_title;
-                                t.descResId = R.string.home_tile_info_desc;
-                                break;
-                            case 4:
-                                t.titleResId = R.string.home_tile_news_title;
-                                t.descResId = R.string.home_tile_news_desc;
-                                break;
-                        }
+                // MIGRATION: Keep default tiles localized and guard against stale resource IDs
+                if (isDefaultTitleOrDesc((int) t.id, t.title, t.description)) {
+                    applyDefaultResIds(t);
+                } else {
+                    if (t.titleResId != 0 && !matchesResId(t.titleResId, t.title)) {
+                        t.titleResId = 0;
+                    }
+                    if (t.descResId != 0 && !matchesResId(t.descResId, t.description)) {
+                        t.descResId = 0;
                     }
                 }
                 list.add(t);
@@ -86,18 +71,42 @@ public class HomeRepository {
     }
 
     private boolean isDefaultTitleOrDesc(int id, String title, String desc) {
-        // Check against known English and Polish defaults
-        // This prevents overwriting user customizations during migration
+        if (id >= 1 && id <= 4) {
+            boolean emptyTitle = title == null || title.trim().isEmpty();
+            boolean emptyDesc = desc == null || desc.trim().isEmpty();
+            if (emptyTitle && emptyDesc) {
+                return true;
+            }
+        }
         switch (id) {
             case 1: // Plan
-                return isMatch(title, "Plan zajęć", "Timetable") || isMatch(desc, "Widok dnia", "Day, week");
+                return isMatch(title,
+                        context.getString(R.string.home_tile_plan_title),
+                        "Plan zajęć", "Plan zajec", "Timetable")
+                        || isMatch(desc,
+                                context.getString(R.string.home_tile_plan_desc),
+                                "Widok dnia", "Day, week");
             case 2: // Grades
-                return isMatch(title, "Oceny", "Grades") || isMatch(desc, "Średnia", "Average");
+                return isMatch(title,
+                        context.getString(R.string.home_tile_grades_title),
+                        "Oceny", "Grades")
+                        || isMatch(desc,
+                                context.getString(R.string.home_tile_grades_desc),
+                                "Średnia", "Srednia", "Average");
             case 3: // Info
-                return isMatch(title, "Informacje o studiach", "Study information")
-                        || isMatch(desc, "Kierunek", "Field of study");
+                return isMatch(title,
+                        context.getString(R.string.home_tile_info_title),
+                        "Informacje o studiach", "Study information")
+                        || isMatch(desc,
+                                context.getString(R.string.home_tile_info_desc),
+                                "Kierunek", "Field of study");
             case 4: // News
-                return isMatch(title, "Aktualności ZUT", "ZUT news") || isMatch(desc, "Komunikaty", "Announcements");
+                return isMatch(title,
+                        context.getString(R.string.home_tile_news_title),
+                        "Aktualności ZUT", "Aktualnosci ZUT", "ZUT news")
+                        || isMatch(desc,
+                                context.getString(R.string.home_tile_news_desc),
+                                "Komunikaty", "Announcements");
         }
         return false;
     }
@@ -110,6 +119,46 @@ public class HomeRepository {
                 return true;
         }
         return false;
+    }
+
+    private boolean matchesResId(int resId, String value) {
+        if (resId == 0 || value == null)
+            return false;
+        try {
+            String res = context.getString(resId);
+            return isMatch(value, res);
+        } catch (android.content.res.Resources.NotFoundException e) {
+            return false;
+        }
+    }
+
+    private void applyDefaultResIds(Tile t) {
+        switch ((int) t.id) {
+            case 1:
+                t.titleResId = R.string.home_tile_plan_title;
+                t.descResId = R.string.home_tile_plan_desc;
+                t.title = context.getString(R.string.home_tile_plan_title);
+                t.description = context.getString(R.string.home_tile_plan_desc);
+                break;
+            case 2:
+                t.titleResId = R.string.home_tile_grades_title;
+                t.descResId = R.string.home_tile_grades_desc;
+                t.title = context.getString(R.string.home_tile_grades_title);
+                t.description = context.getString(R.string.home_tile_grades_desc);
+                break;
+            case 3:
+                t.titleResId = R.string.home_tile_info_title;
+                t.descResId = R.string.home_tile_info_desc;
+                t.title = context.getString(R.string.home_tile_info_title);
+                t.description = context.getString(R.string.home_tile_info_desc);
+                break;
+            case 4:
+                t.titleResId = R.string.home_tile_news_title;
+                t.descResId = R.string.home_tile_news_desc;
+                t.title = context.getString(R.string.home_tile_news_title);
+                t.description = context.getString(R.string.home_tile_news_desc);
+                break;
+        }
     }
 
     public List<Tile> createDefaultTiles() {

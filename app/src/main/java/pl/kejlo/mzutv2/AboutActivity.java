@@ -31,7 +31,9 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_about);
+        ThemeManager.applySystemBars(this);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -52,6 +54,20 @@ public class AboutActivity extends AppCompatActivity {
                 navigationView,
                 toolbar,
                 NavDrawerHelper.Screen.ABOUT);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ThemeManager.applySystemBars(this);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            ThemeManager.applySystemBars(this);
+        }
     }
 
 }

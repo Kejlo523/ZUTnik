@@ -87,7 +87,9 @@ public class GradesActivity extends MzutBaseActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_grades);
+        ThemeManager.applySystemBars(this);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
         drawerLayout = findViewById(R.id.drawerLayout);

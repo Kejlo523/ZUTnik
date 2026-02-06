@@ -151,7 +151,7 @@
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_check"
-                app:tint="#FFFFFF" />
+                app:tint="?attr/colorOnPrimary" />
         </androidx.cardview.widget.CardView>
     </FrameLayout>
 

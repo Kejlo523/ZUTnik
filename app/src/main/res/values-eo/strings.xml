@@ -382,6 +382,7 @@
     <string name="theme_high_contrast">Wysoki kontrast</string>
     <string name="theme_lime">Limonkowy Sztorm</string>
     <string name="offline_mode_label">Bez wiatru (Offline)</string>
+    <string name="online_mode_label">Reta reĝimo</string>
 
     <!-- Attendance -->
     <string name="attendance_title">Obecnosci zalogi</string>

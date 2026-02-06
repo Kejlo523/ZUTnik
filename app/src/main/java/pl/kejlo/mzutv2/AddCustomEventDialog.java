@@ -3,6 +3,7 @@ package pl.kejlo.mzutv2;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import androidx.fragment.app.DialogFragment;
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -166,7 +168,28 @@ public class AddCustomEventDialog extends DialogFragment {
         super.onStart();
         Dialog dialog = getDialog();
         if (dialog != null && dialog.getWindow() != null) {
-            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            android.view.Window window = dialog.getWindow();
+            window.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+            android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+            window.getWindowManager().getDefaultDisplay().getMetrics(dm);
+            boolean isLandscape = dm.widthPixels > dm.heightPixels;
+            float widthRatio = isLandscape ? 0.62f : 0.86f;
+            int maxWidth = (int) (dm.density * (isLandscape ? 480f : 620f));
+            int targetWidth = Math.min((int) (dm.widthPixels * widthRatio), maxWidth);
+            int maxHeight = (int) (dm.heightPixels * 0.88f);
+            window.setGravity(android.view.Gravity.CENTER);
+
+            View content = getView();
+            if (content != null) {
+                content.post(() -> {
+                    int h = content.getHeight();
+                    int targetHeight = Math.min(h, maxHeight);
+                    window.setLayout(targetWidth, targetHeight);
+                });
+            } else {
+                window.setLayout(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+            }
         }
     }
 
@@ -462,7 +485,7 @@ public class AddCustomEventDialog extends DialogFragment {
         if (getContext() == null)
             return;
 
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext())
                 .setMessage(R.string.plan_custom_delete_confirm)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> deleteEvent())
                 .setNegativeButton(R.string.plan_quick_btn_cancel, null)
