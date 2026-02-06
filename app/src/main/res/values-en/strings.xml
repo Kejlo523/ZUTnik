@@ -393,4 +393,43 @@
     <string name="attendance_edit_hours_message">Enter total hours for subject:\n%1$s</string>
     <string name="attendance_hours_tap_to_set">Tap to set hours</string>
 
+    <!-- Custom Plan Events -->
+    <string name="plan_custom_add_event">Add event</string>
+    <string name="plan_custom_type_exam">Exam</string>
+    <string name="plan_custom_type_pass">Pass</string>
+    <string name="plan_custom_type_test">Test</string>
+    <string name="plan_custom_type_exam_short">EXAM!</string>
+    <string name="plan_custom_type_pass_short">PASS!</string>
+    <string name="plan_custom_type_test_short">TEST!</string>
+    <string name="plan_custom_saved_toast">Event saved!</string>
+    <string name="plan_custom_updated_toast">Event updated</string>
+    <string name="plan_custom_deleted_toast">Event deleted</string>
+    <string name="plan_custom_delete_confirm">Delete this event?</string>
+    <string name="plan_custom_remove_marker">Remove marker</string>
+    <string name="plan_custom_removed_toast">Marker removed</string>
+
+    <!-- Quick Add -->
+    <string name="plan_quick_dialog_title_add">Add event</string>
+    <string name="plan_quick_dialog_title_mark">Mark class</string>
+    <string name="plan_quick_subject_label">Subject</string>
+    <string name="plan_quick_subject_hint">Type or select a subject</string>
+    <string name="plan_quick_type_label">Type</string>
+    <string name="plan_quick_date_label">Date</string>
+    <string name="plan_quick_time_label">Time</string>
+    <string name="plan_quick_notes_label">Notes (optional)</string>
+    <string name="plan_quick_notes_hint">E.g. form, room, notes</string>
+    <string name="plan_quick_details_title">Details</string>
+    <string name="plan_quick_btn_save">Save</string>
+    <string name="plan_quick_btn_cancel">Cancel</string>
+    <string name="plan_quick_error_subject">Enter a subject name</string>
+    <string name="plan_quick_error_type">Select an event type</string>
+    <string name="plan_quick_time_range">%1$s - %2$s</string>
+
+    <string name="attendance_subject_placeholder">Subject</string>
+    <string name="attendance_subject_type_placeholder">Laboratory</string>
+    <string name="common_zero">0</string>
+
+    <string name="theme_deep_blue">Deep Blue</string>
+    <string name="theme_high_contrast">High Contrast</string>
+    <string name="theme_lime">Lime</string>
 </resources>

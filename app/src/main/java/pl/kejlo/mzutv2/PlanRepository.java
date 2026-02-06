@@ -1535,7 +1535,8 @@ public class PlanRepository {
     /**
      * Merges custom events (exams, tests) with official plan events for a given
      * day.
-     * - If a custom event matches an official event (same subject on same day), add
+     * - If a custom event matches an official event (same subject on same day, and
+     *   start time if provided), add
      * overlay label
      * - If no matching official event, create a standalone custom event in the grid
      */
@@ -1575,7 +1576,13 @@ public class PlanRepository {
                                 (event.title == null || !event.title.trim().endsWith("(W)"));
                     }
 
-                    if (typeMatches) {
+                    boolean timeMatches = true;
+                    if (customEvent.startTime != null) {
+                        int customStartMin = customEvent.startTime.getHour() * 60 + customEvent.startTime.getMinute();
+                        timeMatches = customStartMin == event.startMin;
+                    }
+
+                    if (typeMatches && timeMatches) {
                         // Found matching official event - add overlay
                         event.hasCustomOverlay = true;
                         event.customOverlayLabel = customEvent.getTypeShortLabel(appContext);

@@ -33,6 +33,13 @@ Więcej informacji o projekcie: https://mzut.endozero.pl
 - Układ bloków odzwierciedlający zachowanie planu z plan.zut.edu.pl (dzielone kolumny, nakładanie się zajęć).
 - Panel z detalami zajęć.
 - Filtr przedmiotów z zapisem ustawień w pamięci lokalnej.
+- Szybkie oznaczanie zajęć jako egzamin/zaliczenie/kolokwium.
+- Dodawanie własnych wydarzeń kliknięciem w puste pole (domyślnie 1,5h).
+
+### Obecności
+- Lista przedmiotów z planu z licznikiem nieobecności.
+- Szybkie +/- oraz ustawianie łącznej liczby godzin dla przedmiotu.
+- Podsumowanie łącznej liczby nieobecności.
 
 ### Oceny
 - Zestawienie ocen w podziale na semestry.

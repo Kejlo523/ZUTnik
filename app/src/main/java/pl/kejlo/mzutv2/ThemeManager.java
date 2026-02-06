@@ -13,6 +13,7 @@ public class ThemeManager {
 
     public static final String THEME_DEFAULT = "default";
     public static final String THEME_DEEP_BLUE = "deep_blue";
+    public static final String THEME_LIME = "lime";
     public static final String THEME_HIGH_CONTRAST = "high_contrast";
 
     public static void applyTheme(Activity activity) {
@@ -22,6 +23,9 @@ public class ThemeManager {
         switch (theme) {
             case THEME_DEEP_BLUE:
                 activity.setTheme(R.style.Theme_MZUTv2_DeepBlue);
+                break;
+            case THEME_LIME:
+                activity.setTheme(R.style.Theme_MZUTv2_Lime);
                 break;
             case THEME_HIGH_CONTRAST:
                 activity.setTheme(R.style.Theme_MZUTv2_HighContrast);

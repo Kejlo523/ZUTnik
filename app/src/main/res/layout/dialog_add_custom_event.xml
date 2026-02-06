@@ -4,426 +4,249 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="24dp"
+    android:padding="20dp"
     android:background="?attr/mzBgSurface">
 
-    <!-- Header with Step Indicator and Close Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="20dp">
+        android:layout_marginBottom="12dp">
 
-        <!-- Back arrow button (for previous step) -->
+        <TextView
+            android:id="@+id/textTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/plan_quick_dialog_title_add"
+            android:textColor="?attr/mzText"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
         <ImageButton
-            android:id="@+id/btnBackArrow"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_arrow_left"
+            android:id="@+id/btnClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_close"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/plan_custom_btn_back"
-            android:visibility="gone"
-            app:tint="?attr/mzText" />
+            android:contentDescription="@string/plan_quick_btn_cancel"
+            app:tint="?attr/mzMuted" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/detailsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_card_soft"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textDetailsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_quick_details_title"
+            android:textColor="?attr/mzText"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="?attr/mzMuted"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputSubjectLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/plan_quick_subject_label"
+        app:placeholderText="@string/plan_quick_subject_hint"
+        app:placeholderTextColor="?attr/mzMuted"
+        app:endIconMode="dropdown_menu"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="?attr/mzPrimary"
+        app:hintTextColor="?attr/mzMuted">
+
+        <AutoCompleteTextView
+            android:id="@+id/editSubject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:textColor="?attr/mzText" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/labelType"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/plan_quick_type_label"
+        android:textColor="?attr/mzText"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        app:singleSelection="true"
+        app:chipSpacingHorizontal="8dp"
+        app:chipSpacingVertical="6dp"
+        app:selectionRequired="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipExam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_custom_type_exam"
+            android:checkable="true"
+            android:textColor="?attr/mzPrimary"
+            app:checkedIconVisible="false"
+            app:chipStrokeWidth="1dp"
+            app:chipStrokeColor="?attr/mzPrimary"
+            app:chipBackgroundColor="@color/chip_bg_primary" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipPass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_custom_type_pass"
+            android:checkable="true"
+            android:textColor="?attr/mzPrimary"
+            app:checkedIconVisible="false"
+            app:chipStrokeWidth="1dp"
+            app:chipStrokeColor="?attr/mzPrimary"
+            app:chipBackgroundColor="@color/chip_bg_primary" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipTest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_custom_type_test"
+            android:checkable="true"
+            android:textColor="?attr/mzPrimary"
+            app:checkedIconVisible="false"
+            app:chipStrokeWidth="1dp"
+            app:chipStrokeColor="?attr/mzPrimary"
+            app:chipBackgroundColor="@color/chip_bg_primary" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/textStepIndicator"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Krok 1 z 5"
-                android:textSize="12sp"
+                android:text="@string/plan_quick_date_label"
                 android:textColor="?attr/mzMuted"
-                android:textAllCaps="true"
-                android:letterSpacing="0.1" />
+                android:textSize="11sp" />
 
             <TextView
-                android:id="@+id/textStepTitle"
+                android:id="@+id/textDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/plan_custom_step_subject"
-                android:textSize="20sp"
+                android:layout_marginTop="4dp"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp"
                 android:textColor="?attr/mzText"
-                android:textStyle="bold"
-                android:layout_marginTop="4dp" />
+                android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- Close button (X) -->
-        <ImageButton
-            android:id="@+id/btnClose"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_close"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/plan_custom_btn_cancel"
-            app:tint="?attr/mzMuted" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_quick_time_label"
+                android:textColor="?attr/mzMuted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/textTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp"
+                android:textColor="?attr/mzText"
+                android:textSize="14sp" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Step Content Container -->
-    <FrameLayout
-        android:id="@+id/stepContent"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputNotesLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="200dp">
+        android:layout_marginTop="12dp"
+        android:hint="@string/plan_quick_notes_label"
+        app:placeholderText="@string/plan_quick_notes_hint"
+        app:placeholderTextColor="?attr/mzMuted"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="?attr/mzPrimary"
+        app:hintTextColor="?attr/mzMuted">
 
-        <!-- Step 1: Subject Selection -->
-        <LinearLayout
-            android:id="@+id/step1Subject"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editNotes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="visible">
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:textColor="?attr/mzText" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/inputLayoutSubject"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/plan_custom_subject_hint"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeColor="?attr/mzPrimary"
-                app:hintTextColor="?attr/mzMuted">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editSubject"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:textColor="?attr/mzText" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <TextView
-                android:id="@+id/textSubjectsFromPlan"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/plan_custom_subject_from_plan"
-                android:textSize="12sp"
-                android:textColor="?attr/mzMuted"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerSubjects"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:maxHeight="200dp"
-                android:nestedScrollingEnabled="true" />
-
-            <TextView
-                android:id="@+id/textNoSubjects"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/plan_custom_no_subjects"
-                android:textColor="?attr/mzMuted"
-                android:textSize="13sp"
-                android:gravity="center"
-                android:padding="16dp"
-                android:visibility="gone" />
-        </LinearLayout>
-
-        <!-- Step 2: Event Type Selection -->
-        <LinearLayout
-            android:id="@+id/step2Type"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <RadioGroup
-                android:id="@+id/radioGroupType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <RadioButton
-                    android:id="@+id/radioExam"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/plan_custom_type_exam"
-                    android:textColor="?attr/mzText"
-                    android:textSize="16sp"
-                    android:padding="12dp"
-                    android:checked="true" />
-
-                <RadioButton
-                    android:id="@+id/radioPass"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/plan_custom_type_pass"
-                    android:textColor="?attr/mzText"
-                    android:textSize="16sp"
-                    android:padding="12dp" />
-
-                <RadioButton
-                    android:id="@+id/radioTest"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/plan_custom_type_test"
-                    android:textColor="?attr/mzText"
-                    android:textSize="16sp"
-                    android:padding="12dp" />
-            </RadioGroup>
-        </LinearLayout>
-
-        <!-- Step 3: Date Selection -->
-        <LinearLayout
-            android:id="@+id/step3Date"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/textSelectedDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="--.--.----"
-                android:textSize="24sp"
-                android:textColor="?attr/mzPrimary"
-                android:textStyle="bold"
-                android:layout_marginBottom="16dp" />
-
-            <Button
-                android:id="@+id/btnPickDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Wybierz datę"
-                android:textColor="@android:color/white"
-                android:backgroundTint="?attr/mzPrimary" />
-        </LinearLayout>
-
-        <!-- Step 4: Time Selection -->
-        <LinearLayout
-            android:id="@+id/step4Time"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/textTimeInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="13sp"
-                android:textColor="?attr/mzMuted"
-                android:gravity="center"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone" />
-
-            <RadioGroup
-                android:id="@+id/radioGroupTime"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <RadioButton
-                    android:id="@+id/radioTimeAuto"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/plan_custom_time_auto"
-                    android:textColor="?attr/mzText"
-                    android:textSize="15sp"
-                    android:padding="12dp"
-                    android:checked="true" />
-
-                <RadioButton
-                    android:id="@+id/radioTimeManual"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/plan_custom_time_manual"
-                    android:textColor="?attr/mzText"
-                    android:textSize="15sp"
-                    android:padding="12dp" />
-            </RadioGroup>
-
-            <LinearLayout
-                android:id="@+id/layoutManualTime"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="12dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/textManualTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="08:00 - 09:30"
-                    android:textSize="20sp"
-                    android:textColor="?attr/mzPrimary"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btnPickTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="Zmień"
-                    android:textColor="@android:color/white"
-                    android:backgroundTint="?attr/mzPrimary"
-                    style="?android:attr/buttonStyleSmall" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Step 5: Summary -->
-        <LinearLayout
-            android:id="@+id/step5Summary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:background="@drawable/bg_card_soft"
-            android:padding="16dp">
-
-            <!-- Subject -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/plan_custom_summary_subject"
-                android:textSize="12sp"
-                android:textColor="?attr/mzMuted" />
-            <TextView
-                android:id="@+id/summarySubject"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Matematyka dyskretna"
-                android:textSize="16sp"
-                android:textColor="?attr/mzText"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Type -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/plan_custom_summary_type"
-                android:textSize="12sp"
-                android:textColor="?attr/mzMuted" />
-            <TextView
-                android:id="@+id/summaryType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Egzamin"
-                android:textSize="16sp"
-                android:textColor="?attr/mzText"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Date -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/plan_custom_summary_date"
-                android:textSize="12sp"
-                android:textColor="?attr/mzMuted" />
-            <TextView
-                android:id="@+id/summaryDate"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="15.02.2026"
-                android:textSize="16sp"
-                android:textColor="?attr/mzText"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Time -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/plan_custom_summary_time"
-                android:textSize="12sp"
-                android:textColor="?attr/mzMuted" />
-            <TextView
-                android:id="@+id/summaryTime"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="10:00 - 11:30"
-                android:textSize="16sp"
-                android:textColor="?attr/mzText"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Notes -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/inputLayoutNotes"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="@string/plan_custom_notes_label"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeColor="?attr/mzPrimary"
-                app:hintTextColor="?attr/mzMuted">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editNotes"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:minLines="2"
-                    android:textColor="?attr/mzText"
-                    android:hint="@string/plan_custom_notes_hint" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Duplicate Warning -->
-            <TextView
-                android:id="@+id/textDuplicateWarning"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:padding="12dp"
-                android:background="#33FFCC00"
-                android:textColor="#CC6600"
-                android:textSize="13sp"
-                android:visibility="gone"
-                android:drawablePadding="8dp" />
-        </LinearLayout>
-    </FrameLayout>
-
-    <!-- Navigation Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal"
-        android:gravity="end"
-        android:layout_marginTop="24dp">
+        android:gravity="end">
 
         <Button
-            android:id="@+id/btnBack"
+            android:id="@+id/btnDelete"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/plan_custom_btn_back"
-            android:textColor="?attr/mzText"
+            android:text="@string/plan_custom_remove_marker"
+            android:textColor="?attr/mzMuted"
             style="?android:attr/borderlessButtonStyle"
             android:visibility="gone" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
 
         <Button
             android:id="@+id/btnCancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/plan_custom_btn_cancel"
+            android:text="@string/plan_quick_btn_cancel"
             android:textColor="?attr/mzMuted"
             style="?android:attr/borderlessButtonStyle" />
 
         <Button
-            android:id="@+id/btnNext"
+            android:id="@+id/btnSave"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/plan_custom_btn_next"
+            android:text="@string/plan_quick_btn_save"
             android:textColor="@android:color/white"
             android:backgroundTint="?attr/mzPrimary"
             android:layout_marginStart="8dp" />
     </LinearLayout>
+
 </LinearLayout>

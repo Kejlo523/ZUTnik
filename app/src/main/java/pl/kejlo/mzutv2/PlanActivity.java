@@ -397,7 +397,8 @@ public class PlanActivity extends MzutBaseActivity {
                 currentSearchQuery.category = c;
                 // Toast to inform user
                 // Use String instead of R.string if dynamic, but a generic toast is ok
-                Toast.makeText(this, "Wyszukiwanie: " + q, Toast.LENGTH_SHORT).show();
+                String toast = getString(R.string.plan_toast_search_prefix, q, c != null ? c : "");
+                Toast.makeText(this, toast.trim(), Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -417,14 +418,11 @@ public class PlanActivity extends MzutBaseActivity {
         com.google.android.material.floatingactionbutton.FloatingActionButton fab = findViewById(R.id.fabAddEvent);
         if (fab != null) {
             fab.setOnClickListener(v -> {
-                AddCustomEventDialog dialog = new AddCustomEventDialog();
-                dialog.setListener(event -> {
-                    // Refresh plan to show the new custom event
-                    planCache.clear();
-                    if (pagerAdapter != null) {
-                        pagerAdapter.notifyDataSetChanged();
-                    }
-                });
+                int startMin = getDefaultStartMin();
+                int[] range = buildDefaultRange(startMin);
+                LocalDate date = currentDate != null ? currentDate : LocalDate.now();
+                AddCustomEventDialog dialog = AddCustomEventDialog.newForSlot(date, range[0], range[1]);
+                dialog.setListener(event -> refreshAfterCustomEvent());
                 dialog.show(getSupportFragmentManager(), "add_custom_event");
             });
         }
@@ -1347,6 +1345,7 @@ public class PlanActivity extends MzutBaseActivity {
                         highlight ? R.attr.mzPlanGridBgSelected : R.attr.mzPlanGridBg));
 
                 addHourLines(dayBody);
+                attachEmptySlotAdd(dayBody, col.date);
 
                 List<PlanRepository.PlanEventUi> events = col.events != null ? col.events : Collections.emptyList();
 
@@ -1354,7 +1353,7 @@ public class PlanActivity extends MzutBaseActivity {
                 for (PlanRepository.PlanEventUi ev : events) {
                     if (shouldHideEvent(ev))
                         continue;
-                    View evView = createEventView(ev);
+                    View evView = createEventView(ev, col.date);
                     dayBody.addView(evView);
                     renderedEvents.add(new RenderedEvent(ev, evView));
                 }
@@ -1895,6 +1894,87 @@ public class PlanActivity extends MzutBaseActivity {
         }
     }
 
+    private void refreshAfterCustomEvent() {
+        planCache.clear();
+        if (pagerAdapter != null) {
+            pagerAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private int getDefaultStartMin() {
+        LocalTime now = LocalTime.now();
+        int minutes = now.getHour() * 60 + now.getMinute();
+        return clampAndRoundStart(minutes);
+    }
+
+    private int clampAndRoundStart(int minutes) {
+        int minStart = START_HOUR * 60;
+        int minEnd = END_HOUR * 60;
+        int rounded = roundToStep(minutes, 15);
+        if (rounded < minStart)
+            rounded = minStart;
+        if (rounded > minEnd)
+            rounded = minEnd;
+        return rounded;
+    }
+
+    private int roundToStep(int minutes, int step) {
+        return Math.round(minutes / (float) step) * step;
+    }
+
+    private int[] buildDefaultRange(int startMin) {
+        int minStart = START_HOUR * 60;
+        int minEnd = END_HOUR * 60;
+        int start = Math.max(minStart, Math.min(startMin, minEnd));
+        int end = start + 90;
+        if (end > minEnd) {
+            end = minEnd;
+            if (end - start < 30) {
+                start = Math.max(minStart, end - 90);
+            }
+        }
+        return new int[] { start, end };
+    }
+
+    private int getStartMinFromTouch(float yPx) {
+        int minutesFromStart = Math.round((yPx / dpToPx(HOUR_HEIGHT_DP)) * 60f);
+        int minutes = START_HOUR * 60 + minutesFromStart;
+        return clampAndRoundStart(minutes);
+    }
+
+    private void attachEmptySlotAdd(FrameLayoutWithChildren dayBody, LocalDate date) {
+        if (dayBody == null || date == null)
+            return;
+
+        dayBody.setClickable(true);
+        final int touchSlop = android.view.ViewConfiguration.get(this).getScaledTouchSlop();
+        final float[] down = new float[2];
+
+        dayBody.setOnTouchListener((v, event) -> {
+            if (event == null)
+                return false;
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    down[0] = event.getX();
+                    down[1] = event.getY();
+                    return false;
+                case MotionEvent.ACTION_UP:
+                    float dx = Math.abs(event.getX() - down[0]);
+                    float dy = Math.abs(event.getY() - down[1]);
+                    if (dx <= touchSlop && dy <= touchSlop) {
+                        int startMin = getStartMinFromTouch(event.getY());
+                        int[] range = buildDefaultRange(startMin);
+                        AddCustomEventDialog dialog = AddCustomEventDialog.newForSlot(date, range[0], range[1]);
+                        dialog.setListener(ev -> refreshAfterCustomEvent());
+                        dialog.show(getSupportFragmentManager(), "add_custom_event_slot");
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        });
+    }
+
     private void updateFixedWeekHeaders(List<PlanRepository.DayColumn> rawCols, LocalDate pageDate) {
         if (layoutWeekHeadersRow == null || layoutWeekHeadersFixed == null)
             return;
@@ -1944,7 +2024,7 @@ public class PlanActivity extends MzutBaseActivity {
         return hiddenSubjectKeys.contains(ev.subjectKey);
     }
 
-    private View createEventView(PlanRepository.PlanEventUi ev) {
+    private View createEventView(PlanRepository.PlanEventUi ev, LocalDate eventDate) {
         TextView tv = new TextView(this);
         tv.setTag(ev);
 
@@ -1954,10 +2034,10 @@ public class PlanActivity extends MzutBaseActivity {
         sb.append("\n");
         sb.append(time);
         if (ev.room != null && !ev.room.isEmpty()) {
-            sb.append(" · ").append(ev.room);
+            sb.append(" \u00B7 ").append(ev.room);
         }
         if (ev.group != null && !ev.group.isEmpty()) {
-            sb.append(" · ").append(ev.group);
+            sb.append(" \u00B7 ").append(ev.group);
         }
 
         tv.setText(sb.toString());
@@ -2000,65 +2080,15 @@ public class PlanActivity extends MzutBaseActivity {
                 FrameLayoutWithChildren.LayoutParams.WRAP_CONTENT);
         tv.setLayoutParams(lp);
 
-        tv.setOnClickListener(v -> showEventDetails(ev));
+        tv.setOnClickListener(v -> showEventDetails(ev, eventDate));
         return tv;
     }
 
-    private void showEventDetails(PlanRepository.PlanEventUi ev) {
-        String time = ev.startStr + " - " + ev.endStr;
-        StringBuilder msg = new StringBuilder();
-        msg.append(time);
-
-        if (ev.room != null && !ev.room.isEmpty()) {
-            msg.append("\n").append(getString(R.string.plan_event_room_prefix)).append(" ").append(ev.room);
-        }
-        if (ev.group != null && !ev.group.isEmpty()) {
-            msg.append("\n").append(getString(R.string.plan_event_group_prefix)).append(" ").append(ev.group);
-        }
-        if (ev.teacher != null && !ev.teacher.isEmpty()) {
-            msg.append("\n").append(getString(R.string.plan_event_teacher_prefix)).append(" ").append(ev.teacher);
-        }
-        if (ev.typeLabel != null && !ev.typeLabel.isEmpty()) {
-            msg.append("\n\n").append(ev.typeLabel);
-        }
-
-        // Show custom event info if present
-        if (ev.hasCustomOverlay && ev.customOverlayLabel != null) {
-            msg.append("\n\n").append("📌 ").append(ev.customOverlayLabel);
-        }
-
-        // Show notes/tooltip if present AND this is a custom event
-        if ((ev.hasCustomOverlay || ev.isCustomEvent) && ev.tooltip != null && !ev.tooltip.isEmpty()) {
-            msg.append("\n\n").append("📝 ").append(ev.tooltip);
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle(ev.title != null ? ev.title : getString(R.string.plan_event_default_title))
-                .setMessage(msg.toString())
-                .setPositiveButton(android.R.string.ok, null);
-
-        // Add delete button if this event has a custom overlay or is a custom event
-        if ((ev.hasCustomOverlay || ev.isCustomEvent) && ev.customEventId != null) {
-            builder.setNegativeButton(R.string.plan_custom_remove_marker, (dialog, which) -> {
-                // Delete the custom event
-                try {
-                    long eventId = Long.parseLong(ev.customEventId);
-                    CustomPlanEventRepository repo = new CustomPlanEventRepository(this);
-                    repo.deleteEvent(eventId);
-                    Toast.makeText(this, R.string.plan_custom_removed_toast, Toast.LENGTH_SHORT).show();
-
-                    // Refresh the plan to update display
-                    planCache.clear();
-                    if (pagerAdapter != null) {
-                        pagerAdapter.notifyDataSetChanged();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-
-        builder.show();
+    private void showEventDetails(PlanRepository.PlanEventUi ev, LocalDate eventDate) {
+        LocalDate targetDate = eventDate != null ? eventDate : currentDate;
+        AddCustomEventDialog dialog = AddCustomEventDialog.newForEvent(targetDate, ev);
+        dialog.setListener(event -> refreshAfterCustomEvent());
+        dialog.show(getSupportFragmentManager(), "mark_custom_event");
     }
 
     @ColorRes

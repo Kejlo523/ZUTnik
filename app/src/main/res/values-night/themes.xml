@@ -42,6 +42,7 @@
         <item name="mzPrimary">@color/mz_primary</item>
         <item name="mzPrimaryAlt">@color/mz_primary_alt</item>
         <item name="mzAccent">@color/mz_accent</item>
+        <item name="mzLime">@color/mz_lime</item>
         <item name="mzSuccess">@color/mz_success</item>
         <item name="mzDanger">@color/mz_danger</item>
         <item name="mzDangerSoft">@color/mz_danger_soft</item>
@@ -78,6 +79,7 @@
         <item name="mzBorderSoft">#334155</item>
         <item name="mzBorderStrong">#475569</item>
         <item name="mzPrimary">#60A5FA</item>
+        <item name="mzLime">@color/mz_lime</item>
         
         <item name="android:statusBarColor">#0F172A</item>
         <item name="android:windowLightStatusBar">false</item>
@@ -95,6 +97,43 @@
         <item name="planWeekDaySelectedBg">#334155</item>
     </style>
 
+
+
+    <!-- Lime Theme (Night) -->
+    <style name="Theme.MZUTv2.Lime" parent="Base.Theme.MZUTv2">
+        <item name="colorPrimary">#65A30D</item>
+        <item name="colorPrimaryVariant">#4D7C0F</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+
+        <item name="mzBg">#0F1A12</item>
+        <item name="mzBgSoft">#16261A</item>
+        <item name="mzCard">#16261A</item>
+        <item name="mzCardSoft">#203224</item>
+        <item name="mzBgSurface">#0F1A12</item>
+        <item name="mzText">#F1F5F9</item>
+        <item name="mzMuted">#94A3B8</item>
+        <item name="mzBorderSoft">#203224</item>
+        <item name="mzBorderStrong">#2F3F30</item>
+        <item name="mzPrimary">#65A30D</item>
+        <item name="mzPrimaryAlt">#4D7C0F</item>
+        <item name="mzAccent">#22C55E</item>
+        <item name="mzLime">@color/mz_lime</item>
+
+        <item name="android:statusBarColor">#0F1A12</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Plan Lime Overrides -->
+        <item name="mzPlanHourLine">#20FFFFFF</item>
+        <item name="mzPlanNowLine">#F87171</item>
+        <item name="mzPlanColumnText">#94A3B8</item>
+        <item name="mzPlanHeaderText">#F1F5F9</item>
+        <item name="mzPlanGridBg">@android:color/transparent</item>
+        <item name="mzPlanGridBgSelected">#2065A30D</item>
+        <item name="mzPlanEventTextColor">#F1F5F9</item>
+        <item name="planWeekHeaderSelectedBg">#1B2E1F</item>
+        <item name="planWeekDaySelectedBg">#243326</item>
+    </style>
     <!-- High Contrast Theme (Night) - Accessibility focused -->
     <style name="Theme.MZUTv2.HighContrast" parent="Base.Theme.MZUTv2">
         <item name="colorPrimary">#FFFFFF</item>
@@ -114,6 +153,7 @@
         <item name="mzPrimary">#00FFFF</item>
         <item name="mzPrimaryAlt">#00CCCC</item>
         <item name="mzAccent">#00FFFF</item>
+        <item name="mzLime">@color/mz_lime</item>
         <item name="mzSuccess">#00FF00</item>
         <item name="mzDanger">#FF0000</item>
         <item name="mzDangerSoft">#330000</item>

@@ -15,6 +15,7 @@
     <attr name="mzPrimary" format="color|reference" />
     <attr name="mzPrimaryAlt" format="color|reference" />
     <attr name="mzAccent" format="color|reference" />
+    <attr name="mzLime" format="color|reference" />
     <attr name="mzSuccess" format="color|reference" />
     <attr name="mzDanger" format="color|reference" />
     <attr name="mzDangerSoft" format="color|reference" />

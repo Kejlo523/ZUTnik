@@ -379,6 +379,7 @@
     <string name="settings_theme_label">Motyw aplikacji</string>
     <string name="theme_deep_blue">Deep Blue</string>
     <string name="theme_high_contrast">Wysoki kontrast</string>
+    <string name="theme_lime">Limonka</string>
     <string name="settings_widget_refresh_label">Częstotliwość odświeżania widgetu</string>
 
     <string name="offline_mode_label">Tryb offline</string>
@@ -400,16 +401,35 @@
     <string name="attendance_no_absences">Brak nieobecności</string>
     <string name="attendance_one_absence">1 nieobecność</string>
     <string name="attendance_absences_count">%1$d nieobecności</string>
+    <string name="attendance_subject_placeholder">Przedmiot</string>
+    <string name="attendance_subject_type_placeholder">Laboratorium</string>
+    <string name="common_zero">0</string>
 
     <!-- Custom Plan Events (Egzaminy/Kolokwia) -->
     <string name="plan_custom_events_title">Moje egzaminy i kolokwia</string>
-    <string name="plan_custom_add_event">Dodaj egzamin/kolokwium</string>
+    <string name="plan_custom_add_event">Dodaj wydarzenie</string>
     <string name="plan_custom_type_exam">Egzamin</string>
     <string name="plan_custom_type_pass">Zaliczenie</string>
     <string name="plan_custom_type_test">Kolokwium</string>
     <string name="plan_custom_type_exam_short">EGZAMIN!</string>
     <string name="plan_custom_type_pass_short">ZALICZENIE!</string>
     <string name="plan_custom_type_test_short">KOLOKWIUM!</string>
+
+    <string name="plan_quick_dialog_title_add">Dodaj wydarzenie</string>
+    <string name="plan_quick_dialog_title_mark">Oznacz zajęcia</string>
+    <string name="plan_quick_subject_label">Przedmiot</string>
+    <string name="plan_quick_subject_hint">Wpisz lub wybierz przedmiot</string>
+    <string name="plan_quick_type_label">Typ</string>
+    <string name="plan_quick_date_label">Data</string>
+    <string name="plan_quick_time_label">Godzina</string>
+    <string name="plan_quick_notes_label">Notatki (opcjonalnie)</string>
+    <string name="plan_quick_notes_hint">Np. forma, sala, uwagi</string>
+    <string name="plan_quick_details_title">Szczegóły</string>
+    <string name="plan_quick_btn_save">Zapisz</string>
+    <string name="plan_quick_btn_cancel">Anuluj</string>
+    <string name="plan_quick_error_subject">Podaj nazwę przedmiotu</string>
+    <string name="plan_quick_error_type">Wybierz typ wydarzenia</string>
+    <string name="plan_quick_time_range">%1$s - %2$s</string>
     
     <string name="plan_custom_wizard_step">Krok %1$d z %2$d</string>
     <string name="plan_custom_step_subject">Wybierz przedmiot</string>

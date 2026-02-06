@@ -121,6 +121,10 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
                 // Maybe tint it blue? For now keep glass.
                 break;
+            case ThemeManager.THEME_LIME:
+                // Lime theme uses the same glass background for now
+                views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
+                break;
             default:
                 views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
                 break;
