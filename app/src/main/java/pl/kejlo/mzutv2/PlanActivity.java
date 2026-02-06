@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.Typeface;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,7 +42,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.TextUtils;
 import androidx.core.graphics.Insets;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
@@ -1217,9 +1220,10 @@ public class PlanActivity extends MzutBaseActivity {
         for (String d : days) {
             TextView tv = new TextView(this);
             tv.setText(d);
-            tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzPlanHeaderText));
-            tv.setTextSize(11f);
+            tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzMuted));
+            tv.setTextSize(10.5f);
             tv.setGravity(Gravity.CENTER);
+            tv.setPadding(0, dpToPx(2), 0, dpToPx(4));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -1407,6 +1411,14 @@ public class PlanActivity extends MzutBaseActivity {
                 return;
             }
 
+            int cellBg = ThemeManager.resolveColor(context, R.attr.mzCardSoft);
+            int cellBorder = ThemeManager.resolveColor(context, R.attr.mzBorderSoft);
+            int primary = ThemeManager.resolveColor(context, R.attr.mzPrimary);
+            int eventBg = ColorUtils.blendARGB(cellBg, primary, 0.18f);
+            int eventBorder = ColorUtils.blendARGB(cellBorder, primary, 0.5f);
+            int dayText = ThemeManager.resolveColor(context, R.attr.mzText);
+            int hintText = ThemeManager.resolveColor(context, R.attr.mzMuted);
+
             for (List<PlanRepository.MonthCell> week : gridData) {
                 for (PlanRepository.MonthCell cell : week) {
                     if (cell == null) {
@@ -1422,7 +1434,7 @@ public class PlanActivity extends MzutBaseActivity {
 
                     LinearLayout cellRoot = new LinearLayout(context);
                     cellRoot.setOrientation(LinearLayout.VERTICAL);
-                    cellRoot.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+                    cellRoot.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
 
                     GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
                     lp.width = 0;
@@ -1431,24 +1443,29 @@ public class PlanActivity extends MzutBaseActivity {
                     lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
                     cellRoot.setLayoutParams(lp);
 
-                    if (cell.hasPlan) {
-                        cellRoot.setBackgroundColor(
-                                ContextCompat.getColor(context, R.color.plan_month_cell_with_events_bg));
-                    } else {
-                        cellRoot.setBackgroundColor(ContextCompat.getColor(context, R.color.plan_month_cell_bg));
-                    }
+                    int fill = cell.hasPlan ? eventBg : cellBg;
+                    int stroke = cell.hasPlan ? eventBorder : cellBorder;
+                    cellRoot.setBackground(buildRoundedBg(fill, stroke));
 
                     TextView tvNum = new TextView(context);
                     tvNum.setText(String.valueOf(cell.date.getDayOfMonth()));
-                    tvNum.setTextColor(ContextCompat.getColor(context, R.color.plan_month_day_number));
-                    tvNum.setTextSize(13f);
+                    tvNum.setTextColor(dayText);
+                    tvNum.setTextSize(14f);
+                    tvNum.setTypeface(Typeface.DEFAULT_BOLD);
                     cellRoot.addView(tvNum);
 
                     if (cell.hasPlan) {
                         TextView tvHint = new TextView(context);
                         tvHint.setText(R.string.plan_month_cell_has_events_hint);
                         tvHint.setTextSize(9f);
-                        tvHint.setTextColor(ContextCompat.getColor(context, R.color.plan_month_day_hint));
+                        tvHint.setTextColor(hintText);
+                        tvHint.setMaxLines(1);
+                        tvHint.setEllipsize(TextUtils.TruncateAt.END);
+                        LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT);
+                        hintLp.topMargin = dpToPx(2);
+                        tvHint.setLayoutParams(hintLp);
                         cellRoot.addView(tvHint);
 
                         cellRoot.setOnClickListener(v -> {
@@ -2014,13 +2031,13 @@ public class PlanActivity extends MzutBaseActivity {
             tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzPlanHeaderText));
             tv.setTextSize(12f);
             tv.setGravity(Gravity.CENTER);
-            tv.setPadding(0, dpToPx(4), 0, dpToPx(4));
+            tv.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
 
             boolean isToday = col.date != null && col.date.equals(today);
             boolean highlight = isToday;
 
             if (highlight) {
-                tv.setBackgroundColor(ThemeManager.resolveColor(this, R.attr.planWeekHeaderSelectedBg));
+                tv.setBackgroundResource(R.drawable.bg_week_header_selected);
             }
 
             layoutWeekHeadersRow.addView(tv);
@@ -2184,6 +2201,14 @@ public class PlanActivity extends MzutBaseActivity {
                 break;
         }
         return shortName + "\n" + date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM"));
+    }
+
+    private GradientDrawable buildRoundedBg(int fillColor, int strokeColor) {
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(fillColor);
+        bg.setCornerRadius(dpToPx(10));
+        bg.setStroke(dpToPx(1), strokeColor);
+        return bg;
     }
 
     private int dpToPx(float dp) {
