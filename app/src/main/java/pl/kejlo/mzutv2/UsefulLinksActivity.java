@@ -1,6 +1,5 @@
 package pl.kejlo.mzutv2;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -61,7 +60,6 @@ public class UsefulLinksActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
-        EdgeToEdge.enable(this);
         ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_useful_links);
         ThemeManager.applySystemBars(this);

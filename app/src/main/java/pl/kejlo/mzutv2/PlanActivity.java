@@ -41,7 +41,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.text.Editable;
 import android.text.TextWatcher;
-import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -266,7 +265,6 @@ public class PlanActivity extends MzutBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
-        EdgeToEdge.enable(this);
         ThemeManager.applySystemBars(this);
 
         MzutSession.initializeFromPreferences(this);
