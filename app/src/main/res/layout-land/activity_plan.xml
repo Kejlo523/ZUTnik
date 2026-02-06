@@ -5,8 +5,8 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app"
-    android:fitsSystemWindows="true"
+    android:background="@drawable/bg_landscape_canvas"
+    android:fitsSystemWindows="false"
     app:statusBarBackground="?attr/mzBg">
 
     <LinearLayout
@@ -27,28 +27,30 @@
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:baselineAligned="false">
+            android:baselineAligned="false"
+            android:padding="16dp">
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.25"
+                android:layout_weight="0.28"
                 android:orientation="vertical"
                 android:padding="16dp"
-                android:background="?attr/mzBg">
+                android:background="@drawable/bg_landscape_panel"
+                android:layout_marginEnd="16dp">
 
                 <TextView
                     android:id="@+id/tvHeaderLabel"
-                    android:text="-"
+                    android:text="@string/common_dash"
                     android:textSize="24sp"
                     android:textStyle="bold"
                     android:textColor="?attr/mzText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp" />
+                    android:layout_marginBottom="16dp" />
 
                 <TextView
-                    android:text="Widok"
+                    android:text="@string/plan_view_mode_label"
                     android:textColor="?attr/mzMuted"
                     android:textSize="12sp"
                     android:textStyle="bold"
@@ -58,21 +60,22 @@
 
                 <LinearLayout
                     android:id="@+id/layoutViewModesRow"
-                    android:orientation="vertical"
+                    android:orientation="horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card_soft"
-                    android:padding="4dp"
+                    android:padding="6dp"
                     android:layout_marginBottom="24dp">
 
                     <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnViewDay"
                         android:text="@string/plan_view_day"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginBottom="4dp"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
                         android:textAllCaps="false"
                         android:stateListAnimator="@null"
                         android:elevation="0dp"
@@ -83,11 +86,12 @@
                     <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnViewWeek"
                         android:text="@string/plan_view_week"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginBottom="4dp"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
                         android:textAllCaps="false"
                         android:stateListAnimator="@null"
                         android:elevation="0dp"
@@ -98,10 +102,11 @@
                     <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnViewMonth"
                         android:text="@string/plan_view_month"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
                         android:textAllCaps="false"
                         android:stateListAnimator="@null"
                         android:elevation="0dp"
@@ -111,7 +116,7 @@
                 </LinearLayout>
 
                 <TextView
-                    android:text="Akcje"
+                    android:text="@string/plan_actions_label"
                     android:textColor="?attr/mzMuted"
                     android:textSize="12sp"
                     android:textStyle="bold"
@@ -159,17 +164,15 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.75"
-                android:paddingEnd="16dp"
-                android:paddingBottom="16dp"
-                android:paddingTop="8dp">
+                android:layout_weight="0.72">
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    app:cardBackgroundColor="?attr/mzBg"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardBackgroundColor="?attr/mzBgSurface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true">
 
                     <LinearLayout
                         android:id="@+id/planContentRoot"

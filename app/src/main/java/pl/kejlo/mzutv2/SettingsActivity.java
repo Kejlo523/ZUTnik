@@ -40,7 +40,9 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_settings);
+        ThemeManager.applySystemBars(this);
 
         contentRoot = findViewById(R.id.contentRoot);
         // Toolbar setup, same pattern as other screens
@@ -150,7 +152,7 @@ public class SettingsActivity extends AppCompatActivity {
                 // Reschedule widget
                 PlanDayWidgetProvider.rescheduleRefresh(SettingsActivity.this);
 
-                Toast.makeText(SettingsActivity.this, "Zapisano ustawienia widgetu", Toast.LENGTH_SHORT).show();
+                Toast.makeText(SettingsActivity.this, R.string.settings_widget_refresh_saved, Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -191,7 +193,7 @@ public class SettingsActivity extends AppCompatActivity {
                 String current = ThemeManager.getTheme(SettingsActivity.this);
                 if (!val.equals(current)) {
                     ThemeManager.setTheme(SettingsActivity.this, val);
-                    Toast.makeText(SettingsActivity.this, "Zmieniono motyw", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SettingsActivity.this, R.string.settings_theme_changed, Toast.LENGTH_SHORT).show();
 
                     // Restart app with cleared back stack to apply theme everywhere
                     Intent i = new Intent(SettingsActivity.this, HomeActivity.class);
@@ -206,6 +208,20 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ThemeManager.applySystemBars(this);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            ThemeManager.applySystemBars(this);
+        }
     }
 
     @Override

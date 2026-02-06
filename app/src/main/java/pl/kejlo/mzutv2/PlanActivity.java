@@ -8,7 +8,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,6 +33,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
+import android.view.ContextThemeWrapper;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -47,6 +48,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
 import java.time.DayOfWeek;
@@ -263,6 +265,7 @@ public class PlanActivity extends MzutBaseActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
 
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
@@ -275,6 +278,7 @@ public class PlanActivity extends MzutBaseActivity {
         }
 
         setContentView(R.layout.activity_plan);
+        ThemeManager.applySystemBars(this);
 
         planRepository = new PlanRepository(getApplicationContext());
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -694,7 +698,9 @@ public class PlanActivity extends MzutBaseActivity {
     private void setupMenuButton() {
         if (btnMenu != null) {
             btnMenu.setOnClickListener(v -> {
-                PopupMenu popup = new PopupMenu(this, v);
+                PopupMenu popup = new PopupMenu(
+                        new ContextThemeWrapper(this, R.style.ThemeOverlay_MZUTv2_PopupMenu),
+                        v);
 
                 popup.getMenu().add(0, 1, 0, R.string.plan_button_today);
                 popup.getMenu().add(0, 3, 2, R.string.plan_button_filters);
@@ -1014,7 +1020,7 @@ public class PlanActivity extends MzutBaseActivity {
         saveLp.gravity = Gravity.END;
         layout.addView(btnSaveQuery, saveLp);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.plan_search_dialog_title)
                 .setView(layout)
                 .setPositiveButton(R.string.plan_search_button, (d, which) -> {
@@ -1071,7 +1077,7 @@ public class PlanActivity extends MzutBaseActivity {
         container.addView(inputLabel, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.plan_search_save_title)
                 .setView(container)
                 .setPositiveButton(R.string.plan_search_save_confirm, (d, w) -> {
@@ -1106,7 +1112,7 @@ public class PlanActivity extends MzutBaseActivity {
             items[i] = list.get(i).label + " (" + list.get(i).catLabel + ": " + list.get(i).query + ")";
         }
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.plan_search_saved_title)
                 .setItems(items, (d, which) -> {
                     PlanRepository.SavedSearch s = list.get(which);
@@ -1571,7 +1577,7 @@ public class PlanActivity extends MzutBaseActivity {
             checked[i] = hiddenSubjectKeys.contains(it.filterKey);
         }
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.plan_filters_dialog_title)
                 .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
                     checked[which] = isChecked;
@@ -2053,24 +2059,26 @@ public class PlanActivity extends MzutBaseActivity {
         bg.setColor(color);
         bg.setCornerRadius(dpToPx(6));
 
+        int danger = ThemeManager.resolveColor(this, R.attr.mzDanger);
+        int dangerSoft = ThemeManager.resolveColor(this, R.attr.mzDangerSoft);
+
         // Handle custom event overlay (exam/test on top of official event)
         if (ev.hasCustomOverlay && ev.customOverlayLabel != null) {
             // Add red/orange stroke for events with custom overlay
-            bg.setStroke(dpToPx(3), 0xFFCC3300); // Orange-red stroke
+            bg.setStroke(dpToPx(3), danger);
 
             // Prepend the overlay label to text
             sb.insert(0, ev.customOverlayLabel + "\n");
             tv.setText(sb.toString());
-            tv.setTextColor(0xFFCC3300); // Dark orange text
+            tv.setTextColor(danger);
         }
 
         // Handle standalone custom events (not matching any official event)
         if (ev.isCustomEvent) {
             // Use a distinct background for custom events
-            int customBg = 0xFFFFE4E4; // Light red background
-            bg.setColor(customBg);
-            bg.setStroke(dpToPx(2), 0xFFCC0000); // Red border
-            tv.setTextColor(0xFF880000); // Dark red text
+            bg.setColor(dangerSoft);
+            bg.setStroke(dpToPx(2), danger);
+            tv.setTextColor(danger);
         }
 
         tv.setBackground(bg);

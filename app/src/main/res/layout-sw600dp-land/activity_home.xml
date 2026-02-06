@@ -24,8 +24,8 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="@drawable/bg_toolbar"
                 android:elevation="0dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
                 android:titleTextColor="?attr/mzText" />
 
             <LinearLayout
@@ -33,20 +33,19 @@
                 android:layout_height="match_parent"
                 android:baselineAligned="false"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <ScrollView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.35"
-                    android:contentDescription="@string/home_side_panel_desc"
+                    android:layout_weight="0.38"
                     android:fillViewport="true"
+                    android:scrollbars="none"
                     android:layout_marginEnd="16dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
                         android:orientation="vertical"
                         android:padding="16dp"
                         android:background="@drawable/bg_landscape_panel">
@@ -58,52 +57,52 @@
                             android:background="@drawable/bg_card_soft"
                             android:gravity="center_horizontal"
                             android:orientation="vertical"
-                            android:paddingStart="16dp"
-                            android:paddingTop="12dp"
-                            android:paddingEnd="16dp"
-                            android:paddingBottom="12dp">
+                            android:paddingStart="22dp"
+                            android:paddingTop="18dp"
+                            android:paddingEnd="22dp"
+                            android:paddingBottom="18dp">
 
                             <TextView
                                 android:id="@+id/textHeroPill"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:background="@drawable/bg_card_soft"
-                                android:letterSpacing="0.05"
-                                android:paddingStart="8dp"
-                                android:paddingTop="3dp"
-                                android:paddingEnd="8dp"
-                                android:paddingBottom="3dp"
+                                android:letterSpacing="0.08"
+                                android:paddingStart="12dp"
+                                android:paddingTop="5dp"
+                                android:paddingEnd="12dp"
+                                android:paddingBottom="5dp"
                                 android:text="@string/app_name"
                                 android:textAllCaps="true"
                                 android:textColor="?attr/mzText"
-                                android:textSize="9sp"
+                                android:textSize="10sp"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/textWelcome"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
+                                android:layout_marginTop="12dp"
                                 android:gravity="center"
                                 android:text="@string/home_welcome_fallback"
                                 android:textColor="?attr/mzText"
-                                android:textSize="18sp"
+                                android:textSize="26sp"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/textWelcomeSub"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
+                                android:layout_marginTop="6dp"
                                 android:gravity="center"
                                 android:text="@string/home_welcome_subtitle"
                                 android:textColor="?attr/mzMuted"
-                                android:textSize="11sp" />
+                                android:textSize="13sp" />
                         </LinearLayout>
 
                         <Space
                             android:layout_width="match_parent"
-                            android:layout_height="24dp" />
+                            android:layout_height="20dp" />
 
                         <LinearLayout
                             android:id="@+id/homeSection"
@@ -111,7 +110,8 @@
                             android:layout_height="wrap_content"
                             android:background="@drawable/bg_card_soft"
                             android:gravity="center"
-                            android:padding="16dp">
+                            android:padding="18dp">
+
                             <TextView
                                 android:id="@+id/textFooterMeta"
                                 android:layout_width="match_parent"
@@ -119,23 +119,22 @@
                                 android:gravity="center"
                                 android:text="@string/home_footer_meta"
                                 android:textColor="?attr/mzMuted"
-                                android:textSize="11sp" />
+                                android:textSize="12sp" />
                         </LinearLayout>
-
                     </LinearLayout>
                 </ScrollView>
 
                 <ScrollView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.65"
+                    android:layout_weight="0.62"
                     android:clipToPadding="false"
-                    android:padding="16dp"
+                    android:fillViewport="true"
+                    android:scrollbars="vertical"
                     android:background="@drawable/bg_landscape_panel"
-                    android:scrollbars="vertical">
+                    android:padding="16dp">
 
                     <LinearLayout
-                        android:id="@+id/homeShortcuts"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
@@ -143,17 +142,30 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
+                            android:layout_marginBottom="12dp"
                             android:text="@string/home_shortcuts_title"
                             android:textColor="?attr/mzText"
-                            android:textSize="18sp"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
 
-                        <pl.kejlo.mzutv2.TileGridLayout
-                            android:id="@+id/tileGrid"
+                        <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp" />
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="2dp"
+                            app:cardBackgroundColor="?attr/mzBgSurface">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="16dp">
+
+                                <pl.kejlo.mzutv2.TileGridLayout
+                                    android:id="@+id/tileGrid"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
                     </LinearLayout>
                 </ScrollView>
             </LinearLayout>
@@ -162,32 +174,34 @@
         <!-- Indicator Overlay (Bottom Left) -->
         <androidx.cardview.widget.CardView
             android:id="@+id/indicatorOverlay"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:layout_gravity="bottom|start"
             android:layout_margin="24dp"
-            app:cardCornerRadius="24dp"
+            app:cardCornerRadius="26dp"
             app:cardElevation="6dp"
             app:cardBackgroundColor="?attr/mzPrimary"
             android:visibility="gone">
 
             <ImageView
                 android:id="@+id/indicatorIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_check"
                 app:tint="?attr/colorOnPrimary" />
         </androidx.cardview.widget.CardView>
     </FrameLayout>
 
+    <!-- Navigation Drawer -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="?attr/mzBg"
-        android:fitsSystemWindows="true">
+        android:fitsSystemWindows="true"
+        android:background="?attr/mzBg">
+
         <include layout="@layout/nav_header" />
     </com.google.android.material.navigation.NavigationView>
 

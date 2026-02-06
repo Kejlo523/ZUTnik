@@ -4,6 +4,7 @@ import android.animation.LayoutTransition;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
@@ -76,9 +77,15 @@ public class TileGridLayout extends ViewGroup {
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         setWillNotDraw(false); // To draw preview rect
 
-        previewPaint.setColor(0x402196F3); // Semi-transparent blue
+        int base = ThemeManager.resolveColor(context, R.attr.mzPrimary);
+        previewPaint.setColor(applyAlpha(base, 0.25f));
         previewPaint.setStyle(Paint.Style.FILL);
         previewPaint.setAntiAlias(true);
+    }
+
+    private static int applyAlpha(int color, float alpha) {
+        int a = Math.round(Color.alpha(color) * alpha);
+        return (color & 0x00FFFFFF) | (a << 24);
     }
 
     public void setOnTilesChangedListener(OnTilesChangedListener listener) {

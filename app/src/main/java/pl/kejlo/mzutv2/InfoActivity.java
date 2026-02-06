@@ -99,7 +99,9 @@ public class InfoActivity extends MzutBaseActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_info);
+        ThemeManager.applySystemBars(this);
 
         // Views
         drawerContentRoot = findViewById(R.id.drawerContentRoot);

@@ -10,9 +10,13 @@ import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
 public class NavDrawerHelper {
@@ -81,6 +85,9 @@ public class NavDrawerHelper {
             NavigationView navigationView,
             Toolbar toolbar,
             String currentScreen) {
+        // Force drawer status bar scrim to theme background (prevents default purple).
+        drawerLayout.setStatusBarBackgroundColor(ThemeManager.resolveColor(activity, R.attr.mzBg));
+
         // Hamburger icon
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 activity,
@@ -104,6 +111,7 @@ public class NavDrawerHelper {
         View navSettings = navigationView.findViewById(R.id.navSettings);
         TextView navAppVersion = navigationView.findViewById(R.id.navAppVersion);
         TextView navLogout = navigationView.findViewById(R.id.navLogout);
+        View navHeaderRoot = navigationView.findViewById(R.id.navHeaderRoot);
 
         if (navHeaderUser == null || navLogout == null) {
             // Something is wrong with the XML, better bail out
@@ -114,6 +122,19 @@ public class NavDrawerHelper {
             String versionName = BuildConfig.VERSION_NAME; // z Gradle (versionName = "1.0.2")
             navAppVersion.setText(
                     activity.getString(R.string.app_version, versionName));
+        }
+
+        if (navHeaderRoot != null) {
+            final int baseLeft = navHeaderRoot.getPaddingLeft();
+            final int baseTop = navHeaderRoot.getPaddingTop();
+            final int baseRight = navHeaderRoot.getPaddingRight();
+            final int baseBottom = navHeaderRoot.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(navHeaderRoot, (v, insets) -> {
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(baseLeft, baseTop, baseRight, baseBottom + bars.bottom);
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(navHeaderRoot);
         }
 
         // User name in header
@@ -400,7 +421,7 @@ public class NavDrawerHelper {
 
     private static void showLogoutConfirmation(AppCompatActivity activity,
             DrawerLayout drawerLayout) {
-        new android.app.AlertDialog.Builder(activity)
+        new MaterialAlertDialogBuilder(activity)
                 .setTitle(R.string.logout_confirm_title)
                 .setMessage(R.string.logout_confirm_message)
                 .setPositiveButton(R.string.logout_confirm_positive, (dialog, which) -> {

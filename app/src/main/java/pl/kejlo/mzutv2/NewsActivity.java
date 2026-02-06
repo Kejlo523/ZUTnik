@@ -73,7 +73,9 @@ public class NewsActivity extends MzutBaseActivity {
         repo = new NewsRepository(this);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_news);
+        ThemeManager.applySystemBars(this);
 
         openLatestOnLoad = getIntent().getBooleanExtra("EXTRA_OPEN_LATEST", false);
 

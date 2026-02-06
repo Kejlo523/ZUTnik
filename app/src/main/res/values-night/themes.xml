@@ -2,9 +2,11 @@
 
     <!-- Base Application Theme (Night) -->
     <style name="Base.Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimaryDark">?attr/mzBg</item>
         <!-- Status Bar -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">?attr/mzBg</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">?attr/mzBg</item>
         
         <!-- Navigation Bar -->
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -20,6 +22,11 @@
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_zut_logo</item>
         <item name="android:windowSplashScreenAnimationDuration">200</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+
+        <!-- Dialogs & Popups -->
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MZUTv2.AlertDialog</item>
+        <item name="popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
     </style>
 
     <!-- Default Theme (Night/Reference) uses colors.xml (Night resource resolution) -->
@@ -79,7 +86,12 @@
         <item name="mzBorderSoft">#334155</item>
         <item name="mzBorderStrong">#475569</item>
         <item name="mzPrimary">#60A5FA</item>
+        <item name="mzPrimaryAlt">#3B82F6</item>
+        <item name="mzAccent">#38BDF8</item>
         <item name="mzLime">@color/mz_lime</item>
+        <item name="mzSuccess">#22C55E</item>
+        <item name="mzDanger">#F87171</item>
+        <item name="mzDangerSoft">#3B1C1C</item>
         
         <item name="android:statusBarColor">#0F172A</item>
         <item name="android:windowLightStatusBar">false</item>
@@ -118,6 +130,9 @@
         <item name="mzPrimaryAlt">#4D7C0F</item>
         <item name="mzAccent">#22C55E</item>
         <item name="mzLime">@color/mz_lime</item>
+        <item name="mzSuccess">#22C55E</item>
+        <item name="mzDanger">#F87171</item>
+        <item name="mzDangerSoft">#3B1C1C</item>
 
         <item name="android:statusBarColor">#0F1A12</item>
         <item name="android:windowLightStatusBar">false</item>

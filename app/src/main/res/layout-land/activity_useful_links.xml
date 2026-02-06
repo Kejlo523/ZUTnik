@@ -4,8 +4,8 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app"
-    android:fitsSystemWindows="true"
+    android:background="@drawable/bg_landscape_canvas"
+    android:fitsSystemWindows="false"
     app:statusBarBackground="?attr/mzBg">
 
     <LinearLayout
@@ -29,25 +29,26 @@
             android:layout_height="match_parent"
             android:baselineAligned="false"
             android:orientation="horizontal"
-            android:padding="24dp">
+            android:padding="16dp">
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.4"
+                android:layout_weight="0.33"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:paddingEnd="24dp">
+                android:padding="16dp"
+                android:background="@drawable/bg_landscape_panel"
+                android:layout_marginEnd="16dp">
 
                 <LinearLayout
                     android:id="@+id/linksHeaderCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card_soft"
-                    android:elevation="4dp"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:id="@+id/textLinksTitle"
@@ -74,8 +75,10 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.6"
-                android:orientation="vertical">
+                android:layout_weight="0.67"
+                android:orientation="vertical"
+                android:background="@drawable/bg_landscape_panel"
+                android:padding="12dp">
 
                 <TextView
                     android:id="@+id/textLinksSectionTitle"

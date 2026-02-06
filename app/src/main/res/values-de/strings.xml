@@ -382,6 +382,7 @@
     <string name="theme_high_contrast">Hoher Kontrast</string>
     <string name="theme_lime">Limette</string>
     <string name="offline_mode_label">Offline-Modus</string>
+    <string name="online_mode_label">Online-Modus</string>
 
     <!-- Attendance -->
     <string name="attendance_title">Anwesenheit</string>

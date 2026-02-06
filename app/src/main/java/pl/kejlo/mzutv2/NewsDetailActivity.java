@@ -78,7 +78,9 @@ public class NewsDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         EdgeToEdge.enable(this);
+        ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_news_detail);
+        ThemeManager.applySystemBars(this);
 
         contentRoot = findViewById(R.id.contentRoot);
         toolbar = findViewById(R.id.toolbarDetail);
@@ -198,6 +200,20 @@ public class NewsDetailActivity extends AppCompatActivity {
             webView.setVisibility(WebView.GONE);
             tvFallback.setVisibility(TextView.VISIBLE);
             tvFallback.setText(R.string.news_detail_no_content);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ThemeManager.applySystemBars(this);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            ThemeManager.applySystemBars(this);
         }
     }
 

@@ -124,14 +124,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="HEX:"
+                android:text="@string/dialog_add_edit_tile_hex_label"
                 android:textColor="?attr/mzText"/>
 
             <EditText
                 android:id="@+id/inputColorHex"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="#RRGGBB"
+                android:hint="@string/dialog_add_edit_tile_hex_hint"
                 android:inputType="textCapCharacters"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/login_input_background"

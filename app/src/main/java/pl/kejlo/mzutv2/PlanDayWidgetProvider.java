@@ -28,10 +28,10 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     public static final String EXTRA_DATE_ISO = "pl.kejlo.mzutv2.PLAN_WIDGET_DATE_ISO";
 
     private static final DateTimeFormatter DATE_LABEL = DateTimeFormatter.ofPattern("d MMMM yyyy",
-            new Locale("pl", "PL"));
+            Locale.getDefault());
 
     private static final DateTimeFormatter DAY_OF_WEEK_LABEL = DateTimeFormatter.ofPattern("EEEE",
-            new Locale("pl", "PL"));
+            Locale.getDefault());
 
     private static final DateTimeFormatter TIME_LABEL = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -202,10 +202,12 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                             int h = diffMin / 60;
                             int m = diffMin % 60;
                             if (h > 0) {
-                                subtitleText = String.format(h > 0 && m == 0 ? "Za %d godz." : "Za %d godz. %d min", h,
-                                        m);
+                                String hours = h + context.getString(R.string.plan_widget_hours_suffix);
+                                String minutes = m > 0 ? " " + m + context.getString(R.string.plan_widget_minutes_suffix) : "";
+                                subtitleText = context.getString(R.string.plan_widget_subtitle_next_prefix) + hours + minutes;
                             } else {
-                                subtitleText = String.format("Za %d min", m);
+                                subtitleText = context.getString(R.string.plan_widget_subtitle_next_prefix)
+                                        + m + context.getString(R.string.plan_widget_minutes_suffix);
                             }
                         }
                     } else {

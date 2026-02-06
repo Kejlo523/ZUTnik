@@ -22,6 +22,9 @@
     <color name="mz_toolbar_grad_start">#FFFFFF</color>
     <color name="mz_toolbar_grad_end">#F8F9FC</color>
 
+    <color name="offline_bar_bg">#F25F2A</color>
+    <color name="online_bar_bg">#3FAF6C</color>
+
     <color name="plan_time_column_text">@color/mz_muted</color>
     <color name="plan_month_weekday_text">@color/mz_muted</color>
 

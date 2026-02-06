@@ -1,4 +1,5 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:foreground="?attr/selectableItemBackground">
@@ -35,23 +36,25 @@
                 android:id="@+id/textTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Title"
+                android:text=""
                 android:textColor="?attr/mzText"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:maxLines="2"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                tools:text="Title" />
 
             <TextView
                 android:id="@+id/textDesc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Description"
+                android:text=""
                 android:textColor="?attr/mzMuted"
                 android:textSize="12sp"
                 android:maxLines="3"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                tools:text="Description" />
         </LinearLayout>
         
         <!-- Edit Border Overlay (inside card) -->
@@ -73,11 +76,11 @@
         android:layout_margin="0dp"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
         android:background="@drawable/bg_circle_soft"
-        android:backgroundTint="#FF5252"
+        android:backgroundTint="?attr/mzDanger"
         android:elevation="4dp"
         android:padding="6dp"
         android:visibility="gone"
-        app:tint="#FFFFFF"
+        app:tint="@android:color/white"
         xmlns:app="http://schemas.android.com/apk/res-auto"/>
 
     <!-- Drag Handle (Top Left) -->
@@ -93,7 +96,7 @@
         android:elevation="4dp"
         android:padding="6dp"
         android:visibility="gone"
-        app:tint="#FFFFFF"
+        app:tint="?attr/colorOnPrimary"
         xmlns:app="http://schemas.android.com/apk/res-auto"/>
 
     <!-- Resize Handle Right (Bottom Right) -->
@@ -105,8 +108,8 @@
         android:src="@drawable/ic_resize_handle"
         android:padding="8dp"
         android:visibility="gone"
-        app:tint="#80FFFFFF"
-        android:background="#40000000"
+        app:tint="?attr/mzMuted"
+        android:background="@drawable/bg_resize_handle"
         android:backgroundTint="@null"
         xmlns:app="http://schemas.android.com/apk/res-auto"/>
 
@@ -120,8 +123,8 @@
         android:rotation="90"
         android:padding="8dp"
         android:visibility="gone"
-        app:tint="#80FFFFFF"
-        android:background="#40000000"
+        app:tint="?attr/mzMuted"
+        android:background="@drawable/bg_resize_handle"
         android:backgroundTint="@null"
         xmlns:app="http://schemas.android.com/apk/res-auto"/>
 

@@ -2,9 +2,11 @@
 
     <!-- Base Application Theme -->
     <style name="Base.Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimaryDark">?attr/mzBg</item>
         <!-- Status Bar -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">?attr/mzBg</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">?attr/mzBg</item>
 
         <!-- Navigation Bar -->
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -20,13 +22,18 @@
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_zut_logo</item>
         <item name="android:windowSplashScreenAnimationDuration">200</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+
+        <!-- Dialogs & Popups -->
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MZUTv2.AlertDialog</item>
+        <item name="popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
     </style>
 
     <!-- Default Theme (Light/Reference) uses colors.xml -->
     <style name="Theme.MZUTv2" parent="Base.Theme.MZUTv2">
         <item name="colorPrimary">@color/mz_primary</item>
         <item name="colorPrimaryVariant">@color/mz_primary_alt</item>
-        <item name="colorOnPrimary">@color/mz_text</item>
+        <item name="colorOnPrimary">@android:color/white</item>
 
         <item name="mzBg">@color/mz_bg</item>
         <item name="mzBgSoft">@color/mz_bg_soft</item>
@@ -77,7 +84,12 @@
         <item name="mzBorderSoft">#E2E8F0</item>
         <item name="mzBorderStrong">#94A3B8</item>
         <item name="mzPrimary">#1E3A8A</item>
+        <item name="mzPrimaryAlt">#1D4ED8</item>
+        <item name="mzAccent">#38BDF8</item>
         <item name="mzLime">@color/mz_lime</item>
+        <item name="mzSuccess">#16A34A</item>
+        <item name="mzDanger">#DC2626</item>
+        <item name="mzDangerSoft">#FEE2E2</item>
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#F0F8FF</item>
         
@@ -118,6 +130,9 @@
         <item name="mzPrimaryAlt">#4D7C0F</item>
         <item name="mzAccent">#22C55E</item>
         <item name="mzLime">@color/mz_lime</item>
+        <item name="mzSuccess">#16A34A</item>
+        <item name="mzDanger">#DC2626</item>
+        <item name="mzDangerSoft">#FEE2E2</item>
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#F4FFF6</item>
 
@@ -179,17 +194,54 @@
     </style>
 
     <!-- Dialog Theme for Custom Event Wizard -->
-    <style name="Theme.MZUTv2.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+    <style name="Theme.MZUTv2.Dialog" parent="Theme.MZUTv2">
         <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
-        <item name="android:windowMinWidthMajor">90%</item>
-        <item name="android:windowMinWidthMinor">90%</item>
-        <item name="colorPrimary">@color/mz_primary</item>
-        <item name="colorOnPrimary">@android:color/white</item>
-        <item name="mzBgSurface">@color/mz_bg_surface</item>
-        <item name="mzText">@color/mz_text</item>
-        <item name="mzMuted">@color/mz_muted</item>
-        <item name="mzPrimary">@color/mz_primary</item>
-        <item name="mzLime">@color/mz_lime</item>
+        <item name="android:windowMinWidthMajor">60%</item>
+        <item name="android:windowMinWidthMinor">60%</item>
+        <item name="android:windowIsFloating">true</item>
+    </style>
+
+    <!-- AlertDialog Theme Overlay -->
+    <style name="ThemeOverlay.MZUTv2.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
+        <item name="colorSurface">?attr/mzBgSurface</item>
+        <item name="colorOnSurface">?attr/mzText</item>
+        <item name="materialAlertDialogTitlePanelStyle">@style/Widget.MZUTv2.AlertDialog.Title.Panel</item>
+        <item name="materialAlertDialogTitleIconStyle">@style/MaterialAlertDialog.MaterialComponents.Title.Icon</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Body</item>
+    </style>
+
+    <style name="TextAppearance.MZUTv2.AlertDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">?attr/mzText</item>
+    </style>
+
+    <style name="TextAppearance.MZUTv2.AlertDialog.Body" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textColor">?attr/mzMuted</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="Widget.MZUTv2.AlertDialog.Title.Panel" parent="MaterialAlertDialog.MaterialComponents.Title.Panel">
+        <item name="android:paddingLeft">?attr/dialogPreferredPadding</item>
+        <item name="android:paddingRight">?attr/dialogPreferredPadding</item>
+        <item name="android:paddingTop">@dimen/abc_dialog_padding_top_material</item>
+    </style>
+
+    <!-- Popup Menu -->
+    <style name="ThemeOverlay.MZUTv2.PopupMenu" parent="ThemeOverlay.MaterialComponents">
+        <item name="popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+    </style>
+
+    <style name="Widget.MZUTv2.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:textColor">?attr/mzText</item>
+        <item name="android:itemTextAppearance">@style/TextAppearance.MZUTv2.PopupMenu</item>
+    </style>
+
+    <style name="TextAppearance.MZUTv2.PopupMenu" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textColor">?attr/mzText</item>
     </style>
 
 

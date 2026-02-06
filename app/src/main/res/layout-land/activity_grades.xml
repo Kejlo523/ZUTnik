@@ -4,8 +4,8 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app"
-    android:fitsSystemWindows="true"
+    android:background="@drawable/bg_landscape_canvas"
+    android:fitsSystemWindows="false"
     app:statusBarBackground="?attr/mzBg">
 
     <LinearLayout
@@ -34,16 +34,17 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.4"
+                android:layout_weight="0.35"
                 android:orientation="vertical"
-                android:paddingEnd="16dp">
+                android:padding="16dp"
+                android:background="@drawable/bg_landscape_panel"
+                android:layout_marginEnd="16dp">
 
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card_primary"
-                    android:elevation="2dp"
+                    android:background="@drawable/bg_card_soft"
                     android:padding="16dp">
 
                     <ImageView
@@ -122,7 +123,7 @@
                                 android:id="@+id/tvEctsValue"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="0"
+                                android:text="@string/common_zero"
                                 android:textColor="?attr/mzText"
                                 android:textSize="32sp"
                                 android:textStyle="bold" />
@@ -166,8 +167,9 @@
             <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.6"
-                android:paddingStart="8dp">
+                android:layout_weight="0.65"
+                android:background="@drawable/bg_landscape_panel"
+                android:padding="12dp">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/listGrades"

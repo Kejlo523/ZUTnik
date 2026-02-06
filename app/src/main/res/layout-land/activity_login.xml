@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/mzBg"
+    android:background="@drawable/bg_landscape_canvas"
     android:fillViewport="true"
     android:fitsSystemWindows="true"
     android:isScrollContainer="true"
@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="24dp"
+        android:padding="16dp"
         android:baselineAligned="false">
 
         <LinearLayout
@@ -24,13 +24,15 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingEnd="24dp"
+            android:padding="16dp"
+            android:background="@drawable/bg_landscape_panel"
+            android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp">
 
             <ImageView
                 android:id="@+id/appIcon"
-                android:layout_width="220dp"
-                android:layout_height="220dp"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
                 android:layout_marginBottom="16dp"
                 android:adjustViewBounds="true"
                 android:contentDescription="@string/app_name"
@@ -53,9 +55,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            app:cardBackgroundColor="?attr/mzBg"
+            app:cardBackgroundColor="?attr/mzBgSurface"
             app:cardCornerRadius="24dp"
-            app:cardElevation="8dp">
+            app:cardElevation="2dp"
+            app:cardUseCompatPadding="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
