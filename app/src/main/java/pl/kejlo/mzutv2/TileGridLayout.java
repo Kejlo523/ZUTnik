@@ -24,6 +24,7 @@ public class TileGridLayout extends ViewGroup {
     private int cellWidth;
     private int cellHeight;
     private int gap = 0;
+    private int maxCellSizePx = 0;
 
     private List<Tile> tiles = new ArrayList<>();
     private boolean isEditMode = false;
@@ -76,6 +77,8 @@ public class TileGridLayout extends ViewGroup {
         // No LayoutTransition - we handle animations manually during drag
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         setWillNotDraw(false); // To draw preview rect
+
+        maxCellSizePx = context.getResources().getDimensionPixelSize(R.dimen.tile_cell_max);
 
         int base = ThemeManager.resolveColor(context, R.attr.mzPrimary);
         previewPaint.setColor(applyAlpha(base, 0.25f));
@@ -483,11 +486,17 @@ public class TileGridLayout extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int availableWidth = width - getPaddingLeft() - getPaddingRight();
 
         if (COLUMN_COUNT > 0) {
-            cellWidth = (availableWidth - (COLUMN_COUNT - 1) * gap) / COLUMN_COUNT;
+            int desired = (availableWidth - (COLUMN_COUNT - 1) * gap) / COLUMN_COUNT;
+            if (maxCellSizePx > 0) {
+                cellWidth = Math.min(desired, maxCellSizePx);
+            } else {
+                cellWidth = desired;
+            }
         } else {
             cellWidth = 0;
         }
@@ -519,7 +528,11 @@ public class TileGridLayout extends ViewGroup {
             }
         }
 
-        setMeasuredDimension(width, resolveSize(totalHeight, heightMeasureSpec));
+        int contentWidth = getPaddingLeft() + getPaddingRight()
+                + COLUMN_COUNT * cellWidth + (COLUMN_COUNT - 1) * gap;
+        int measuredWidth = widthMode == MeasureSpec.EXACTLY ? width : Math.min(width, contentWidth);
+
+        setMeasuredDimension(measuredWidth, resolveSize(totalHeight, heightMeasureSpec));
     }
 
     @Override

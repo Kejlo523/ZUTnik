@@ -473,20 +473,25 @@ public class PlanRepository {
         String baseUrl = "https://plan.zut.edu.pl/schedule_student.php?";
         String commonParams = "&start=" + startStr + "&end=" + endStr;
 
-        switch (params.category) {
-            case "Wykładowca":
-                return baseUrl + "teacher=" + queryEncoded + commonParams;
-            case "Sala":
-                return baseUrl + "room=" + queryEncoded + commonParams;
-            case "Grupa":
-                return baseUrl + "group=" + queryEncoded + commonParams;
-            case "Przedmiot":
-                return baseUrl + "subject=" + queryEncoded + commonParams;
-            case "Numer albumu":
-                return baseUrl + "number=" + queryEncoded + commonParams;
-            default:
-                return baseUrl + "number=" + queryEncoded + commonParams;
+        String cat = params.category != null ? params.category.trim() : "";
+        String norm = cat.toLowerCase(java.util.Locale.ROOT);
+
+        if (norm.equals("teacher") || norm.contains("wyk")) {
+            return baseUrl + "teacher=" + queryEncoded + commonParams;
         }
+        if (norm.equals("room") || norm.contains("sal")) {
+            return baseUrl + "room=" + queryEncoded + commonParams;
+        }
+        if (norm.equals("group") || norm.contains("grup")) {
+            return baseUrl + "group=" + queryEncoded + commonParams;
+        }
+        if (norm.equals("subject") || norm.contains("przedm")) {
+            return baseUrl + "subject=" + queryEncoded + commonParams;
+        }
+        if (norm.equals("album") || norm.equals("number") || norm.contains("numer") || norm.contains("album")) {
+            return baseUrl + "number=" + queryEncoded + commonParams;
+        }
+        return baseUrl + "number=" + queryEncoded + commonParams;
     }
 
     /**

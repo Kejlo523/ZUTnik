@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -117,7 +116,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
         if (all.isEmpty()) {
             if (tvEmpty != null) {
                 tvEmpty.setVisibility(View.VISIBLE);
-                tvEmpty.setText("Brak zdefiniowanych linków.");
+                tvEmpty.setText(R.string.useful_links_empty);
             }
             return;
         }
@@ -265,8 +264,8 @@ public class UsefulLinksActivity extends AppCompatActivity {
         list.add(new LinkItem(
                 "global_office365",
                 "Poczta / Office 365",
-                "https://outlook.office.com/zut.edu.pl",
-                "Poczta studencka, Teams, OneDrive (Dysk).",
+                "https://o365.zut.edu.pl",
+                "Poczta studencka, Teams, OneDrive (Office 365).",
                 LinkScope.GLOBAL,
                 null,
                 null));
@@ -350,7 +349,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
         list.add(new LinkItem(
                 "global_samorzad",
                 "Samorząd Studencki",
-                "https://samorzad.zut.edu.pl",
+                "https://www.samorzad.zut.edu.pl",
                 "Wydarzenia, juwenalia, prawa studenta, koła naukowe.",
                 LinkScope.GLOBAL,
                 null,
@@ -367,7 +366,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
         list.add(new LinkItem(
                 "global_prk_portal",
-                "Katalog Przedmiotów (PRK)",
+                "Sylabusy i programy (PRK)",
                 "https://prk.zut.edu.pl",
                 "Wyszukiwarka sylabusów (kart przedmiotów) i programów studiów.",
                 LinkScope.GLOBAL,
@@ -380,7 +379,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
         list.add(new LinkItem(
                 "inf_wi_home",
                 "Wydział Informatyki (WI)",
-                "https://wi.zut.edu.pl",
+                "https://www.wi.zut.edu.pl",
                 "Strona główna wydziału, ogłoszenia dziekanatu.",
                 LinkScope.FACULTY,
                 "WI",
@@ -389,7 +388,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
         list.add(new LinkItem(
                 "inf_wi_students",
                 "WI – Strefa Studenta",
-                "https://wi.zut.edu.pl/dla-studenta",
+                "https://www.wi.zut.edu.pl/pl/dla-studenta",
                 "Plany studiów, dyplomowanie, druki do pobrania.",
                 LinkScope.FACULTY,
                 "WI",
@@ -399,7 +398,7 @@ public class UsefulLinksActivity extends AppCompatActivity {
         list.add(new LinkItem(
                 "eko_faculty_home",
                 "Wydział Ekonomiczny",
-                "https://www.wneiz.zut.edu.pl",
+                "https://ekonomia.zut.edu.pl",
                 "Aktualności wydziałowe i informacje dla studentów.",
                 LinkScope.FACULTY,
                 "WNEIZ",
@@ -407,9 +406,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
         list.add(new LinkItem(
                 "eko_plany",
-                "WNEiZ – Plany i programy",
-                "https://www.wneiz.zut.edu.pl/dla-studenta/organizacja-studiow",
-                "Szczegółowa organizacja roku i plany na WNEiZ.",
+                "Wydział Ekonomiczny – Strefa studenta",
+                "https://ekonomia.zut.edu.pl/strona-studentow",
+                "Organizacja roku, praktyki, plany i dokumenty dla studentów.",
                 LinkScope.FACULTY,
                 "WNEIZ",
                 null));
@@ -434,12 +433,22 @@ public class UsefulLinksActivity extends AppCompatActivity {
                 "WE",
                 null));
 
-        // Faculty of Civil Engineering and Architecture (WBiA)
+        // Faculty of Civil Engineering and Environmental Engineering (WBiIŚ)
         list.add(new LinkItem(
-                "wbia_faculty_home",
-                "Wydział Budownictwa i Architektury",
-                "https://wbia.zut.edu.pl",
-                "Strona wydziału WBiA.",
+                "wbiis_faculty_home",
+                "Wydział Budownictwa i Inżynierii Środowiska",
+                "https://wbiis.zut.edu.pl",
+                "Strona wydziału WBiIŚ.",
+                LinkScope.FACULTY,
+                "WBIA",
+                null));
+
+        // Faculty of Architecture (WA)
+        list.add(new LinkItem(
+                "wa_faculty_home",
+                "Wydział Architektury",
+                "https://wa.zut.edu.pl",
+                "Strona wydziału Architektury (WA).",
                 LinkScope.FACULTY,
                 "WBIA",
                 null));
@@ -516,7 +525,9 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
             h.itemView.setOnClickListener(v -> {
                 try {
-                    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(li.url));
+                    Intent i = new Intent(v.getContext(), WebLinkActivity.class);
+                    i.putExtra(WebLinkActivity.EXTRA_TITLE, li.title);
+                    i.putExtra(WebLinkActivity.EXTRA_URL, li.url);
                     v.getContext().startActivity(i);
                 } catch (Exception e) {
                     e.printStackTrace();

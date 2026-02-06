@@ -165,7 +165,7 @@ public class TileView extends FrameLayout {
             iconView.setColorFilter(tint);
         } else {
             // Default colors (Theme-dependent)
-            cardContent.setCardBackgroundColor(ThemeManager.resolveColor(getContext(), R.attr.mzBgSurface));
+            cardContent.setCardBackgroundColor(ThemeManager.resolveColor(getContext(), R.attr.mzCardSoft));
             textTitle.setTextColor(ThemeManager.resolveColor(getContext(), R.attr.mzText));
             textDesc.setTextColor(ThemeManager.resolveColor(getContext(), R.attr.mzMuted));
             iconView.setColorFilter(ThemeManager.resolveColor(getContext(), R.attr.mzPrimary));

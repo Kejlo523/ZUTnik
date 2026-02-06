@@ -3,7 +3,6 @@ package pl.kejlo.mzutv2;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,6 +49,8 @@ public class AddCustomEventDialog extends DialogFragment {
     private static final String ARG_ROOM = "arg_room";
     private static final String ARG_GROUP = "arg_group";
     private static final String ARG_TEACHER = "arg_teacher";
+    private static final String ARG_TYPE_LABEL = "arg_type_label";
+    private static final String ARG_TYPE_CLASS = "arg_type_class";
     private static final String ARG_IS_MARKER = "arg_is_marker";
 
     private static final DateTimeFormatter DATE_DISPLAY_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -66,7 +67,10 @@ public class AddCustomEventDialog extends DialogFragment {
     private TextView textDate;
     private TextView textTime;
     private LinearLayout detailsContainer;
+    private TextView textDetailsTitle;
     private TextView textDetails;
+    private LinearLayout typeRow;
+    private TextView textTypeChip;
     private TextInputEditText editNotes;
     private Button btnCancel;
     private Button btnSave;
@@ -85,6 +89,8 @@ public class AddCustomEventDialog extends DialogFragment {
     private String detailsRoom = "";
     private String detailsGroup = "";
     private String detailsTeacher = "";
+    private String detailsTypeLabel = "";
+    private String detailsTypeClass = "";
 
     public interface OnEventSavedListener {
         void onEventSaved(CustomPlanEvent event);
@@ -124,6 +130,8 @@ public class AddCustomEventDialog extends DialogFragment {
             args.putString(ARG_ROOM, ev.room);
             args.putString(ARG_GROUP, ev.group);
             args.putString(ARG_TEACHER, ev.teacher);
+            args.putString(ARG_TYPE_LABEL, ev.typeLabel);
+            args.putString(ARG_TYPE_CLASS, ev.typeClass);
             if (ev.customEventType != null) {
                 args.putString(ARG_EXISTING_TYPE, ev.customEventType);
             }
@@ -144,7 +152,7 @@ public class AddCustomEventDialog extends DialogFragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setStyle(DialogFragment.STYLE_NO_TITLE, R.style.Theme_MZUTv2_Dialog);
+        setStyle(DialogFragment.STYLE_NO_TITLE, 0);
     }
 
     @Nullable
@@ -169,7 +177,9 @@ public class AddCustomEventDialog extends DialogFragment {
         Dialog dialog = getDialog();
         if (dialog != null && dialog.getWindow() != null) {
             android.view.Window window = dialog.getWindow();
-            window.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            window.setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(
+                    requireContext(), R.drawable.bg_dialog_rounded_dark));
+            window.setWindowAnimations(R.style.Animation_MZUTv2_Dialog);
 
             android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
             window.getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -179,16 +189,16 @@ public class AddCustomEventDialog extends DialogFragment {
             int targetWidth = Math.min((int) (dm.widthPixels * widthRatio), maxWidth);
             int maxHeight = (int) (dm.heightPixels * 0.88f);
             window.setGravity(android.view.Gravity.CENTER);
+            window.setLayout(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
 
             View content = getView();
             if (content != null) {
                 content.post(() -> {
                     int h = content.getHeight();
-                    int targetHeight = Math.min(h, maxHeight);
-                    window.setLayout(targetWidth, targetHeight);
+                    if (h > maxHeight) {
+                        window.setLayout(targetWidth, maxHeight);
+                    }
                 });
-            } else {
-                window.setLayout(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
             }
         }
     }
@@ -205,7 +215,10 @@ public class AddCustomEventDialog extends DialogFragment {
         textDate = view.findViewById(R.id.textDate);
         textTime = view.findViewById(R.id.textTime);
         detailsContainer = view.findViewById(R.id.detailsContainer);
+        textDetailsTitle = view.findViewById(R.id.textDetailsTitle);
         textDetails = view.findViewById(R.id.textDetails);
+        typeRow = view.findViewById(R.id.typeRow);
+        textTypeChip = view.findViewById(R.id.textTypeChip);
         editNotes = view.findViewById(R.id.editNotes);
         btnCancel = view.findViewById(R.id.btnCancel);
         btnSave = view.findViewById(R.id.btnSave);
@@ -252,6 +265,8 @@ public class AddCustomEventDialog extends DialogFragment {
         detailsRoom = args.getString(ARG_ROOM, "");
         detailsGroup = args.getString(ARG_GROUP, "");
         detailsTeacher = args.getString(ARG_TEACHER, "");
+        detailsTypeLabel = args.getString(ARG_TYPE_LABEL, "");
+        detailsTypeClass = args.getString(ARG_TYPE_CLASS, "");
     }
 
     private void setupUi() {
@@ -322,11 +337,64 @@ public class AddCustomEventDialog extends DialogFragment {
             details.append(getString(R.string.plan_event_teacher_prefix)).append(detailsTeacher);
         }
 
-        if (details.length() > 0) {
-            detailsContainer.setVisibility(View.VISIBLE);
-            textDetails.setText(details.toString());
-        } else {
+        String typeLabel = resolveTypeLabel(detailsTypeLabel, detailsTypeClass);
+        boolean hasDetails = details.length() > 0;
+        boolean hasType = typeLabel != null && !typeLabel.trim().isEmpty();
+
+        if (!hasDetails && !hasType) {
             detailsContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        detailsContainer.setVisibility(View.VISIBLE);
+        if (textDetailsTitle != null) {
+            textDetailsTitle.setVisibility(hasDetails ? View.VISIBLE : View.GONE);
+        }
+        if (textDetails != null) {
+            textDetails.setVisibility(hasDetails ? View.VISIBLE : View.GONE);
+            if (hasDetails) {
+                textDetails.setText(details.toString());
+            }
+        }
+
+        if (typeRow != null) {
+            typeRow.setVisibility(hasType ? View.VISIBLE : View.GONE);
+        }
+        if (hasType && textTypeChip != null) {
+            textTypeChip.setText(typeLabel.trim());
+        }
+    }
+
+    private String resolveTypeLabel(String label, String typeClass) {
+        if (label != null && !label.trim().isEmpty()) {
+            return label;
+        }
+        if (typeClass == null) {
+            return "";
+        }
+        switch (typeClass) {
+            case "week-event-type-lecture":
+                return getString(R.string.plan_type_lecture);
+            case "week-event-type-lab":
+                return getString(R.string.plan_type_lab);
+            case "week-event-type-auditory":
+                return getString(R.string.plan_type_auditory);
+            case "week-event-type-exam":
+            case "week-event-type-exam-remote":
+                return getString(R.string.plan_type_exam);
+            case "week-event-type-cancelled":
+                return getString(R.string.plan_type_cancelled);
+            case "week-event-type-rector":
+                return getString(R.string.plan_type_rector);
+            case "week-event-type-remote":
+                return getString(R.string.plan_type_remote);
+            case "week-event-type-pass":
+            case "week-event-type-pass-retake":
+            case "week-event-type-pass-remote":
+            case "week-event-type-pass-remote-retake":
+                return getString(R.string.plan_type_pass);
+            default:
+                return "";
         }
     }
 

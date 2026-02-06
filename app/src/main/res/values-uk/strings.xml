@@ -157,6 +157,7 @@
     <string name="plan_toast_refreshed">Розклад оновлено</string>
     <string name="plan_toast_search_prefix">Пошук: %1$s %2$s</string>
     <string name="plan_search_dialog_title">Пошук у розкладі</string>
+    <string name="plan_search_category_label">Категорія</string>
     <string name="plan_search_hint_input">Введіть фразу для пошуку…</string>
     <string name="plan_search_button">Пошук</string>
 
@@ -345,6 +346,10 @@
     <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
     <string name="dialog_add_edit_tile_label_saved_search">Виберіть збережений пошук</string>
     <string name="dialog_add_edit_tile_label_color">Колір плитки</string>
+    <string name="dialog_add_edit_tile_color_default">За замовчуванням (тема)</string>
+    <string name="dialog_add_edit_tile_color_hue">Відтінок</string>
+    <string name="dialog_add_edit_tile_color_sat">Насиченість</string>
+    <string name="dialog_add_edit_tile_color_val">Яскравість</string>
     <string name="dialog_add_edit_tile_btn_save">Зберегти</string>
     <string name="dialog_add_edit_tile_btn_cancel">Скасувати</string>
     <string name="dialog_add_edit_tile_toast_no_saved_searches">Немає збережених пошуків!</string>
@@ -379,6 +384,11 @@
 
     <string name="offline_mode_label">Офлайн режим</string>
     <string name="online_mode_label">Онлайн режим</string>
+    <string name="grades_grouping_toggle">Групувати оцінки</string>
+    <string name="grades_final_grade_label">Підсумкова оцінка</string>
+    <string name="grades_final_grade_missing">Немає підсумкової оцінки</string>
+    <string name="grades_group_items_count">Інші: %d</string>
+    <string name="plan_type_label">Тип занять</string>
 
     <!-- Attendance / Відвідуваність -->
     <string name="attendance_title">Відвідуваність</string>

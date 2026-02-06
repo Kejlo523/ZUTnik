@@ -160,6 +160,7 @@
     <string name="plan_toast_refreshed">Timetable refreshed</string>
     <string name="plan_toast_search_prefix">Searching: %1$s %2$s</string>
     <string name="plan_search_dialog_title">Search in timetable</string>
+    <string name="plan_search_category_label">Category</string>
     <string name="plan_search_hint_input">Enter search phrase…</string>
     <string name="plan_search_button">Search</string>
 
@@ -337,6 +338,10 @@
     <string name="useful_links_empty">
         No defined links.\nAdd something in settings or check default suggestions.
     </string>
+    <string name="web_link_title">Website</string>
+    <string name="web_link_open_external">Open in browser</string>
+    <string name="web_link_no_url">No URL to open</string>
+    <string name="web_link_open_external_error">Could not open the browser</string>
 
     <string name="logout_confirm_title">Log out?</string>
     <string name="logout_confirm_message">Are you sure you want to log out?</string>
@@ -357,6 +362,10 @@
     <string name="dialog_add_edit_tile_label_color">Tile Color</string>
     <string name="dialog_add_edit_tile_hex_label">HEX:</string>
     <string name="dialog_add_edit_tile_hex_hint">#RRGGBB</string>
+    <string name="dialog_add_edit_tile_color_default">Default (theme)</string>
+    <string name="dialog_add_edit_tile_color_hue">Hue</string>
+    <string name="dialog_add_edit_tile_color_sat">Saturation</string>
+    <string name="dialog_add_edit_tile_color_val">Brightness</string>
     <string name="dialog_add_edit_tile_btn_save">Save</string>
     <string name="dialog_add_edit_tile_btn_cancel">Cancel</string>
     <string name="dialog_add_edit_tile_toast_no_saved_searches">No saved searches!</string>
@@ -391,6 +400,11 @@
 
     <string name="offline_mode_label">Offline mode</string>
     <string name="online_mode_label">Online mode</string>
+    <string name="grades_grouping_toggle">Group grades</string>
+    <string name="grades_final_grade_label">Final grade</string>
+    <string name="grades_final_grade_missing">No final grade</string>
+    <string name="grades_group_items_count">Remaining: %d</string>
+    <string name="plan_type_label">Class type</string>
 
     <!-- Attendance -->
     <string name="attendance_title">Attendance</string>

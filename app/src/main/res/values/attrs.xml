@@ -6,6 +6,7 @@
     <attr name="mzCard" format="color|reference" />
     <attr name="mzCardSoft" format="color|reference" />
     <attr name="mzBgSurface" format="color|reference" />
+    <attr name="mzInputBg" format="color|reference" />
 
     <attr name="mzText" format="color|reference" />
     <attr name="mzMuted" format="color|reference" />

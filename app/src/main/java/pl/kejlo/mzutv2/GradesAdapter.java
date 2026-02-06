@@ -46,6 +46,9 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         if (history != null && !history.isEmpty()) {
             android.content.Context ctx = h.itemView.getContext();
             android.content.res.Resources res = ctx.getResources();
+            int danger = ThemeManager.resolveColor(ctx, R.attr.mzDanger);
+            int success = ThemeManager.resolveColor(ctx, R.attr.mzSuccess);
+            int text = ThemeManager.resolveColor(ctx, R.attr.mzText);
 
             for (String rawGrade : history) {
                 if (rawGrade == null || rawGrade.trim().isEmpty())
@@ -91,13 +94,13 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
 
                 if (isFail) {
                     pill.setBackgroundResource(R.drawable.bg_grade_fail);
-                    pill.setTextColor(0xFFDC2626); // red
+                    pill.setTextColor(danger);
                 } else if (isPass) {
                     pill.setBackgroundResource(R.drawable.bg_grade_pass);
-                    pill.setTextColor(0xFF22C55E); // green
+                    pill.setTextColor(success);
                 } else {
                     pill.setBackgroundResource(R.drawable.bg_card_primary); // default/neutral
-                    pill.setTextColor(0xFFFFFFFF);
+                    pill.setTextColor(text);
                 }
 
                 h.gradesContainer.addView(pill);

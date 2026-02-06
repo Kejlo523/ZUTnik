@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -31,8 +33,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class GradesActivity extends MzutBaseActivity {
 
@@ -44,6 +50,8 @@ public class GradesActivity extends MzutBaseActivity {
     // Grades cache – valid for 7 days
     private static final long GRADES_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L; // 7 days
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
+    private static final String PREFS_SETTINGS = "mzut_settings";
+    private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -63,8 +71,10 @@ public class GradesActivity extends MzutBaseActivity {
     // Refresh button (icon)
     private View btnGradesRefresh;
 
-    private GradesAdapter gradesAdapter;
-    private final List<Grade> currentGrades = new ArrayList<>();
+    private GradesAdapter flatAdapter;
+    private GroupedGradesAdapter groupedAdapter;
+    private boolean groupingEnabled = true;
+    private final List<Grade> currentGradesRaw = new ArrayList<>();
 
     private final List<Study> studies = new ArrayList<>();
     private final List<Semester> semesters = new ArrayList<>();
@@ -129,8 +139,11 @@ public class GradesActivity extends MzutBaseActivity {
 
         // RecyclerView
         listGrades.setLayoutManager(new LinearLayoutManager(this));
-        gradesAdapter = new GradesAdapter(currentGrades);
-        listGrades.setAdapter(gradesAdapter);
+        groupingEnabled = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                .getBoolean(KEY_GRADES_GROUPING, true);
+        flatAdapter = new GradesAdapter(currentGradesRaw);
+        groupedAdapter = new GroupedGradesAdapter();
+        listGrades.setAdapter(groupingEnabled ? groupedAdapter : flatAdapter);
 
         // Semesters spinner has a fixed configuration
         setupSemestersSpinner();
@@ -157,6 +170,36 @@ public class GradesActivity extends MzutBaseActivity {
 
         // Initial load (studies + semesters + grades)
         runInitialLoad();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.grades_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.action_toggle_grouping);
+        if (item != null) {
+            item.setChecked(groupingEnabled);
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_toggle_grouping) {
+            groupingEnabled = !groupingEnabled;
+            getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(KEY_GRADES_GROUPING, groupingEnabled)
+                    .apply();
+            applyGradesView();
+            invalidateOptionsMenu();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     // Initial load
@@ -435,10 +478,9 @@ public class GradesActivity extends MzutBaseActivity {
                     semestersAdapter.clear();
                     semestersAdapter.notifyDataSetChanged();
 
-                    currentGrades.clear();
-                    gradesAdapter.notifyDataSetChanged();
+                    currentGradesRaw.clear();
+                    applyGradesView();
                     updateSummaryCards();
-                    showEmptyState(true);
                     return;
                 }
 
@@ -498,97 +540,110 @@ public class GradesActivity extends MzutBaseActivity {
      *                     false -> regular semester switching / initial load – uses
      *                     7-day cache
      */
-    // Grade grouping
-    private List<Grade> groupGrades(List<Grade> source) {
+    // Grade grouping for expandable subject view
+    private List<GroupedGradesAdapter.GradeGroup> buildGradeGroups(List<Grade> source) {
         if (source == null || source.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // Map: SubjectName -> Grade (accumulated)
-        // Since "subjectName" includes form (e.g. "Math (Lecture)"), distinct forms
-        // will be separate entries.
-        java.util.Map<String, Grade> map = new java.util.LinkedHashMap<>();
+        Map<String, GroupedGradesAdapter.GradeGroup> map = new LinkedHashMap<>();
 
         for (Grade g : source) {
-            String key = g.subjectName; // e.g. "Programowanie (Laboratorium)"
-            if (key == null)
-                key = "";
+            String subject = extractBaseSubject(g.subjectName);
+            if (subject == null || subject.trim().isEmpty()) {
+                continue;
+            }
 
-            if (map.containsKey(key)) {
-                // Merge
-                Grade existing = map.get(key);
+            GroupedGradesAdapter.GradeGroup group = map.get(subject);
+            if (group == null) {
+                group = new GroupedGradesAdapter.GradeGroup(subject);
+                map.put(subject, group);
+            }
 
-                // 1. Add to history
-                if (g.grade != null && !g.grade.trim().isEmpty()) {
-                    existing.gradeHistory.add(g.grade);
-                    // Update display grade to be a combination or just the latest?
-                    // UI will mostly use gradeHistory now, but let's keep grade updated as "latest"
-                    // or concatenated just in case
-                    existing.grade = existing.grade + " / " + g.grade;
+            if (isFinalGrade(g)) {
+                if (group.finalGrade == null) {
+                    group.finalGrade = g;
+                } else {
+                    group.others.add(g);
                 }
-
-                // 2. Update date (take the latest/current one)
-                if (g.date != null && !g.date.isEmpty()) {
-                    existing.date = g.date;
-                }
-
             } else {
-                // New entry
-                Grade copy = new Grade();
-                copy.subjectName = g.subjectName;
-                copy.grade = g.grade;
-                copy.weight = g.weight;
-                copy.type = g.type;
-                copy.teacher = g.teacher;
-                copy.date = g.date;
-
-                // Initialize history
-                if (g.grade != null && !g.grade.trim().isEmpty()) {
-                    copy.gradeHistory.add(g.grade);
-                }
-
-                map.put(key, copy);
+                group.others.add(g);
             }
         }
 
-        // Sort history for each grade (Ascending: 2.0 -> 3.0)
-        for (Grade g : map.values()) {
-            if (g.gradeHistory != null && g.gradeHistory.size() > 1) {
-                java.util.Collections.sort(g.gradeHistory, (o1, o2) -> {
-                    double v1 = parseGradeValue(o1);
-                    double v2 = parseGradeValue(o2);
-                    return Double.compare(v1, v2);
-                });
+        List<GroupedGradesAdapter.GradeGroup> result = new ArrayList<>();
+        for (GroupedGradesAdapter.GradeGroup g : map.values()) {
+            boolean hasOthers = g.others != null && !g.others.isEmpty();
+            boolean hasFinal = g.finalGrade != null;
 
-                // Also update the display string to match the order?
-                // Currently 'grade' field is concatenated during loop. Let's rebuild it from
-                // sorted history for consistency.
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < g.gradeHistory.size(); i++) {
-                    if (i > 0)
-                        sb.append(" / ");
-                    sb.append(g.gradeHistory.get(i));
-                }
-                g.grade = sb.toString();
+            // If only final grade exists and nothing else -> hide this subject
+            if (!hasOthers && hasFinal) {
+                continue;
+            }
+
+            if (!hasFinal && hasOthers) {
+                g.finalMissing = true;
+            }
+
+            if (hasOthers) {
+                result.add(g);
             }
         }
 
-        return new ArrayList<>(map.values());
+        return result;
     }
 
-    private double parseGradeValue(String s) {
-        if (s == null)
-            return 0.0;
-        String p = s.trim().toLowerCase().replace(",", ".");
-        if ("nk".equals(p) || "2".equals(p) || "2.0".equals(p) || "nzal".equals(p))
-            return 2.0;
-        if ("zal".equals(p) || "z".equals(p))
-            return 3.0; // Treat Pass as > Fail
-        try {
-            return Double.parseDouble(p);
-        } catch (NumberFormatException e) {
-            return 0.0;
+    private void applyGradesView() {
+        if (groupingEnabled) {
+            List<GroupedGradesAdapter.GradeGroup> groups = buildGradeGroups(currentGradesRaw);
+            groupedAdapter.setGroups(groups);
+            if (listGrades.getAdapter() != groupedAdapter) {
+                listGrades.setAdapter(groupedAdapter);
+            }
+            showEmptyState(groups.isEmpty());
+        } else {
+            if (listGrades.getAdapter() != flatAdapter) {
+                listGrades.setAdapter(flatAdapter);
+            }
+            flatAdapter.notifyDataSetChanged();
+            showEmptyState(currentGradesRaw.isEmpty());
         }
+    }
+
+    private boolean isFinalGrade(Grade g) {
+        if (g == null) {
+            return false;
+        }
+        String type = normalizeKey(g.type);
+        if (type.contains("ocena koncowa") || type.equals("koncowa")) {
+            return true;
+        }
+        if (type.isEmpty()) {
+            String subject = normalizeKey(g.subjectName);
+            return subject.contains("ocena koncowa");
+        }
+        return type.contains("koncowa");
+    }
+
+    private String extractBaseSubject(String label) {
+        if (label == null) {
+            return "";
+        }
+        String name = label.trim();
+        int parenIdx = name.lastIndexOf(" (");
+        if (parenIdx > 0 && name.endsWith(")")) {
+            name = name.substring(0, parenIdx);
+        }
+        return name.trim();
+    }
+
+    private static String normalizeKey(String value) {
+        if (value == null) {
+            return "";
+        }
+        String lower = value.trim().toLowerCase(Locale.ROOT);
+        String normalized = Normalizer.normalize(lower, Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void reloadGrades(Semester semester, boolean forceNetwork) {
@@ -601,11 +656,9 @@ public class GradesActivity extends MzutBaseActivity {
         if (!forceNetwork) {
             List<Grade> cached = loadGradesFromCache(semester, false);
             if (cached != null && !cached.isEmpty()) {
-                currentGrades.clear();
-                // Grouping from fresh cache
-                currentGrades.addAll(groupGrades(cached));
-                gradesAdapter.notifyDataSetChanged();
-                showEmptyState(false);
+                currentGradesRaw.clear();
+                currentGradesRaw.addAll(cached);
+                applyGradesView();
                 updateSummaryCards();
                 // Fresh cache -> skip network request
                 return;
@@ -642,11 +695,9 @@ public class GradesActivity extends MzutBaseActivity {
                     // On error, try using cache even if it is expired
                     List<Grade> cached = loadGradesFromCache(semester, true);
                     if (cached != null && !cached.isEmpty()) {
-                        currentGrades.clear();
-                        // Grouping from cache fallback
-                        currentGrades.addAll(groupGrades(cached));
-                        gradesAdapter.notifyDataSetChanged();
-                        showEmptyState(false);
+                        currentGradesRaw.clear();
+                        currentGradesRaw.addAll(cached);
+                        applyGradesView();
                         updateSummaryCards();
 
                         int msgId = forceNetwork
@@ -675,19 +726,13 @@ public class GradesActivity extends MzutBaseActivity {
                     showEmptyState(true);
                     return;
                 }
-
-                currentGrades.clear();
+                currentGradesRaw.clear();
                 if (finalGrades != null) {
-                    // Grouping from network load
-                    currentGrades.addAll(groupGrades(finalGrades));
-                    // Save to cache – only on successful load (RAW data)
+                    currentGradesRaw.addAll(finalGrades);
+                    // Save to cache ??? only on successful load (RAW data)
                     saveGradesToCache(semester, finalGrades);
                 }
-                gradesAdapter.notifyDataSetChanged();
-
-                boolean isEmpty = currentGrades.isEmpty();
-                showEmptyState(isEmpty);
-
+                applyGradesView();
                 updateSummaryCards();
             });
         });
@@ -698,8 +743,13 @@ public class GradesActivity extends MzutBaseActivity {
         double sumWeighted = 0.0;
         double sumWeights = 0.0;
         double sumEcts = 0.0;
+        boolean usedFinal = false;
 
-        for (Grade g : currentGrades) {
+        for (Grade g : currentGradesRaw) {
+            if (!isFinalGrade(g)) {
+                continue;
+            }
+            usedFinal = true;
             // ECTS points are stored in the weight field (double)
             double ects = g.weight;
             if (ects < 0) {
@@ -734,6 +784,44 @@ public class GradesActivity extends MzutBaseActivity {
             } else {
                 sumWeighted += value * ects;
                 sumWeights += ects;
+            }
+        }
+
+        if (!usedFinal) {
+            sumWeighted = 0.0;
+            sumWeights = 0.0;
+            sumEcts = 0.0;
+            for (Grade g : currentGradesRaw) {
+                double ects = g.weight;
+                if (ects < 0) {
+                    ects = 0;
+                }
+                sumEcts += ects;
+
+                String raw = g.grade;
+                if (raw == null) {
+                    continue;
+                }
+                raw = raw.trim();
+                if (raw.isEmpty()) {
+                    continue;
+                }
+
+                String normalized = raw.replace(",", ".");
+                double value;
+                try {
+                    value = Double.parseDouble(normalized);
+                } catch (NumberFormatException nfe) {
+                    continue;
+                }
+
+                if (ects <= 0.0) {
+                    sumWeighted += value;
+                    sumWeights += 1.0;
+                } else {
+                    sumWeighted += value * ects;
+                    sumWeights += ects;
+                }
             }
         }
 
