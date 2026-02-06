@@ -40,12 +40,14 @@
     <string-array name="settings_theme_entries">
         <item>Domyślny</item>
         <item>@string/theme_deep_blue</item>
+        <item>@string/theme_lime</item>
         <item>@string/theme_high_contrast</item>
     </string-array>
 
     <string-array name="settings_theme_values">
         <item>default</item>
         <item>deep_blue</item>
+        <item>lime</item>
         <item>high_contrast</item>
     </string-array>
 </resources>

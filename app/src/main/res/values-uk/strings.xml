@@ -393,4 +393,43 @@
     <string name="attendance_edit_hours_message">Введіть загальну кількість годин для предмету:\n%1$s</string>
     <string name="attendance_hours_tap_to_set">Натисніть, щоб встановити години</string>
 
+    <!-- Custom Plan Events -->
+    <string name="plan_custom_add_event">Додати подію</string>
+    <string name="plan_custom_type_exam">Іспит</string>
+    <string name="plan_custom_type_pass">Залік</string>
+    <string name="plan_custom_type_test">Колоквіум</string>
+    <string name="plan_custom_type_exam_short">ІСПИТ!</string>
+    <string name="plan_custom_type_pass_short">ЗАЛІК!</string>
+    <string name="plan_custom_type_test_short">КОЛОКВІУМ!</string>
+    <string name="plan_custom_saved_toast">Подію збережено!</string>
+    <string name="plan_custom_updated_toast">Подію оновлено</string>
+    <string name="plan_custom_deleted_toast">Подію видалено</string>
+    <string name="plan_custom_delete_confirm">Видалити цю подію?</string>
+    <string name="plan_custom_remove_marker">Прибрати позначку</string>
+    <string name="plan_custom_removed_toast">Позначку видалено</string>
+
+    <!-- Quick Add -->
+    <string name="plan_quick_dialog_title_add">Додати подію</string>
+    <string name="plan_quick_dialog_title_mark">Позначити заняття</string>
+    <string name="plan_quick_subject_label">Предмет</string>
+    <string name="plan_quick_subject_hint">Введіть або виберіть предмет</string>
+    <string name="plan_quick_type_label">Тип</string>
+    <string name="plan_quick_date_label">Дата</string>
+    <string name="plan_quick_time_label">Час</string>
+    <string name="plan_quick_notes_label">Нотатки (необов’язково)</string>
+    <string name="plan_quick_notes_hint">Напр. форма, аудиторія, примітки</string>
+    <string name="plan_quick_details_title">Деталі</string>
+    <string name="plan_quick_btn_save">Зберегти</string>
+    <string name="plan_quick_btn_cancel">Скасувати</string>
+    <string name="plan_quick_error_subject">Вкажіть назву предмета</string>
+    <string name="plan_quick_error_type">Оберіть тип події</string>
+    <string name="plan_quick_time_range">%1$s - %2$s</string>
+
+    <string name="attendance_subject_placeholder">Предмет</string>
+    <string name="attendance_subject_type_placeholder">Лабораторія</string>
+    <string name="common_zero">0</string>
+
+    <string name="theme_deep_blue">Глибока синь</string>
+    <string name="theme_high_contrast">Високий контраст</string>
+    <string name="theme_lime">Лайм</string>
 </resources>

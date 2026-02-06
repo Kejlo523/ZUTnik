@@ -70,7 +70,7 @@
                     android:id="@+id/tvAbsenceTotal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0"
+                    android:text="@string/common_zero"
                     android:textColor="?attr/mzText"
                     android:textSize="36sp"
                     android:textStyle="bold" />

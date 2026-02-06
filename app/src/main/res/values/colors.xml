@@ -14,6 +14,7 @@
     <color name="mz_primary">#3B82F6</color>
     <color name="mz_primary_alt">#8B5CF6</color>
     <color name="mz_accent">#10B981</color>
+    <color name="mz_lime">#A3E635</color>
     <color name="mz_success">#349662</color>
     <color name="mz_danger">#F43F5E</color>
     <color name="mz_danger_soft">#FFE4E6</color>

@@ -25,7 +25,7 @@
                 android:id="@+id/tvSubjectName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Przedmiot"
+                android:text="@string/attendance_subject_placeholder"
                 android:textColor="?attr/mzText"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -37,7 +37,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Laboratorium"
+                android:text="@string/attendance_subject_type_placeholder"
                 android:textColor="?attr/mzMuted"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -69,7 +69,7 @@
                 android:layout_width="40dp"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="0"
+                android:text="@string/common_zero"
                 android:textColor="?attr/mzText"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -111,7 +111,7 @@
             android:id="@+id/tvHours"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ustaw godziny"
+            android:text="@string/attendance_hours_tap_to_set"
             android:textColor="?attr/mzMuted"
             android:textSize="12sp" />
     </LinearLayout>

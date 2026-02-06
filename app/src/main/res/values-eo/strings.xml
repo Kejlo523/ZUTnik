@@ -177,9 +177,9 @@
     <string name="plan_search_cat_room">Kajuta</string>
     <string name="plan_search_cat_subject">Robota</string>
     <string name="plan_search_cat_group">Załoga</string>
-    <string name="plan_search_no_suggestions">Sen sugestoj</string>
-    <string name="plan_search_album_no_autocomplete">Tajpu albumnumeron kaj premu Serĉi</string>
-    <string name="plan_search_type_to_search">Ektajpu por vidi sugestojn…</string>
+    <string name="plan_search_no_suggestions">Brak podpowiedzi</string>
+    <string name="plan_search_album_no_autocomplete">Wpisz numer albumu i kliknij Szukaj</string>
+    <string name="plan_search_type_to_search">Zacznij pisac, by zobaczyc podpowiedzi...</string>
 
     <string name="plan_type_lecture">Wykład (Spanie)</string>
     <string name="plan_type_lab">Laboratorium (Wybuchy)</string>
@@ -379,5 +379,61 @@
 
     <string name="settings_theme_label">Malowanie Okrętu</string>
     <string name="theme_deep_blue">Głębia Oceanu</string>
+    <string name="theme_high_contrast">Wysoki kontrast</string>
+    <string name="theme_lime">Limonkowy Sztorm</string>
     <string name="offline_mode_label">Bez wiatru (Offline)</string>
+
+    <!-- Attendance -->
+    <string name="attendance_title">Obecnosci zalogi</string>
+    <string name="attendance_summary_label">Frekwencja</string>
+    <string name="attendance_subtitle">Calkowita frekwencja</string>
+    <string name="attendance_summary_detail">Godzin: %1$d | Nieobecnosci: %2$d</string>
+    <string name="attendance_hours_format">Godzin: %1$d</string>
+    <string name="attendance_empty_state">Brak roboty w planie.\nOdswiez plan rejsu, zeby zaladowac przedmioty.</string>
+    <string name="attendance_refreshing">Odswiezam liste przedmiotow...</string>
+    <string name="attendance_increase">Dodaj nieobecnosc</string>
+    <string name="attendance_decrease">Odejmij nieobecnosc</string>
+    <string name="attendance_edit_hours_title">Ustaw godziny</string>
+    <string name="attendance_edit_hours_message">Wpisz laczna liczbe godzin dla przedmiotu:\n%1$s</string>
+    <string name="attendance_hours_tap_to_set">Kliknij, by ustawic godziny</string>
+    <string name="attendance_summary_title">Nieobecnosci lacznie</string>
+    <string name="attendance_no_absences">Brak nieobecnosci</string>
+    <string name="attendance_one_absence">1 nieobecnosc</string>
+    <string name="attendance_absences_count">%1$d nieobecnosci</string>
+    <string name="attendance_subject_placeholder">Przedmiot</string>
+    <string name="attendance_subject_type_placeholder">Laboratorium</string>
+
+    <!-- Custom Plan Events -->
+    <string name="plan_custom_add_event">Dodaj wydarzenie</string>
+    <string name="plan_custom_type_exam">Egzamin</string>
+    <string name="plan_custom_type_pass">Zaliczenie</string>
+    <string name="plan_custom_type_test">Kolokwium</string>
+    <string name="plan_custom_type_exam_short">EGZAMIN!</string>
+    <string name="plan_custom_type_pass_short">ZALICZENIE!</string>
+    <string name="plan_custom_type_test_short">KOLOKWIUM!</string>
+    <string name="plan_custom_saved_toast">Wydarzenie zapisane!</string>
+    <string name="plan_custom_updated_toast">Wydarzenie zaktualizowane</string>
+    <string name="plan_custom_deleted_toast">Wydarzenie usuniete</string>
+    <string name="plan_custom_delete_confirm">Usunac to wydarzenie?</string>
+    <string name="plan_custom_remove_marker">Usun oznaczenie</string>
+    <string name="plan_custom_removed_toast">Oznaczenie usuniete</string>
+
+    <!-- Quick Add -->
+    <string name="plan_quick_dialog_title_add">Dodaj wydarzenie</string>
+    <string name="plan_quick_dialog_title_mark">Oznacz zajecia</string>
+    <string name="plan_quick_subject_label">Przedmiot</string>
+    <string name="plan_quick_subject_hint">Wpisz lub wybierz przedmiot</string>
+    <string name="plan_quick_type_label">Typ</string>
+    <string name="plan_quick_date_label">Data</string>
+    <string name="plan_quick_time_label">Godzina</string>
+    <string name="plan_quick_notes_label">Notatki (opcjonalnie)</string>
+    <string name="plan_quick_notes_hint">Np. forma, sala, notatki</string>
+    <string name="plan_quick_details_title">Szczegoly</string>
+    <string name="plan_quick_btn_save">Zapisz</string>
+    <string name="plan_quick_btn_cancel">Anuluj</string>
+    <string name="plan_quick_error_subject">Wpisz nazwe przedmiotu</string>
+    <string name="plan_quick_error_type">Wybierz typ wydarzenia</string>
+    <string name="plan_quick_time_range">%1$s - %2$s</string>
+
+    <string name="common_zero">0</string>
 </resources>

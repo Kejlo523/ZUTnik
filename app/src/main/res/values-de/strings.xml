@@ -379,5 +379,61 @@
 
     <string name="settings_theme_label">App-Design</string>
     <string name="theme_deep_blue">Tiefblau</string>
+    <string name="theme_high_contrast">Hoher Kontrast</string>
+    <string name="theme_lime">Limette</string>
     <string name="offline_mode_label">Offline-Modus</string>
+
+    <!-- Attendance -->
+    <string name="attendance_title">Anwesenheit</string>
+    <string name="attendance_summary_label">Anwesenheit</string>
+    <string name="attendance_subtitle">Gesamtanwesenheit</string>
+    <string name="attendance_summary_detail">Stunden: %1$d | Fehlzeiten: %2$d</string>
+    <string name="attendance_hours_format">Stunden: %1$d</string>
+    <string name="attendance_empty_state">Keine Fächer im Stundenplan.\nPlan aktualisieren, um Fächer zu laden.</string>
+    <string name="attendance_refreshing">Fächerliste wird aktualisiert…</string>
+    <string name="attendance_increase">Fehlzeiten erhöhen</string>
+    <string name="attendance_decrease">Fehlzeiten verringern</string>
+    <string name="attendance_edit_hours_title">Stunden bearbeiten</string>
+    <string name="attendance_edit_hours_message">Gesamtstunden für das Fach eingeben:\n%1$s</string>
+    <string name="attendance_hours_tap_to_set">Tippen, um Stunden festzulegen</string>
+    <string name="attendance_summary_title">Fehlzeiten gesamt</string>
+    <string name="attendance_no_absences">Keine Fehlzeiten</string>
+    <string name="attendance_one_absence">1 Fehlzeit</string>
+    <string name="attendance_absences_count">%1$d Fehlzeiten</string>
+    <string name="attendance_subject_placeholder">Fach</string>
+    <string name="attendance_subject_type_placeholder">Labor</string>
+
+    <!-- Custom Plan Events -->
+    <string name="plan_custom_add_event">Ereignis hinzufügen</string>
+    <string name="plan_custom_type_exam">Prüfung</string>
+    <string name="plan_custom_type_pass">Leistungsnachweis</string>
+    <string name="plan_custom_type_test">Kolloquium</string>
+    <string name="plan_custom_type_exam_short">PRÜFUNG!</string>
+    <string name="plan_custom_type_pass_short">LEISTUNGSNACHWEIS!</string>
+    <string name="plan_custom_type_test_short">KOLLOQUIUM!</string>
+    <string name="plan_custom_saved_toast">Ereignis gespeichert!</string>
+    <string name="plan_custom_updated_toast">Ereignis aktualisiert</string>
+    <string name="plan_custom_deleted_toast">Ereignis gelöscht</string>
+    <string name="plan_custom_delete_confirm">Dieses Ereignis löschen?</string>
+    <string name="plan_custom_remove_marker">Markierung entfernen</string>
+    <string name="plan_custom_removed_toast">Markierung entfernt</string>
+
+    <!-- Quick Add -->
+    <string name="plan_quick_dialog_title_add">Ereignis hinzufügen</string>
+    <string name="plan_quick_dialog_title_mark">Veranstaltung markieren</string>
+    <string name="plan_quick_subject_label">Fach</string>
+    <string name="plan_quick_subject_hint">Fach eingeben oder auswählen</string>
+    <string name="plan_quick_type_label">Typ</string>
+    <string name="plan_quick_date_label">Datum</string>
+    <string name="plan_quick_time_label">Uhrzeit</string>
+    <string name="plan_quick_notes_label">Notizen (optional)</string>
+    <string name="plan_quick_notes_hint">z. B. Form, Raum, Hinweise</string>
+    <string name="plan_quick_details_title">Details</string>
+    <string name="plan_quick_btn_save">Speichern</string>
+    <string name="plan_quick_btn_cancel">Abbrechen</string>
+    <string name="plan_quick_error_subject">Fachnamen eingeben</string>
+    <string name="plan_quick_error_type">Ereignistyp auswählen</string>
+    <string name="plan_quick_time_range">%1$s - %2$s</string>
+
+    <string name="common_zero">0</string>
 </resources>
