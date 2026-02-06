@@ -42,6 +42,8 @@
 
         <activity android:name=".UsefulLinksActivity" />
 
+        <activity android:name=".WebLinkActivity" />
+
         <activity android:name=".SettingsActivity" />
 
         <activity android:name=".AboutActivity" />

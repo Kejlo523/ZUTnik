@@ -119,26 +119,71 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="10dp">
+
+            <View
+                android:id="@+id/colorPreview"
+                android:layout_width="36dp"
+                android:layout_height="36dp" />
 
             <TextView
+                android:id="@+id/btnColorDefault"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/dialog_add_edit_tile_hex_label"
-                android:textColor="?attr/mzText"/>
-
-            <EditText
-                android:id="@+id/inputColorHex"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/dialog_add_edit_tile_hex_hint"
-                android:inputType="textCapCharacters"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/login_input_background"
-                android:padding="10dp"
-                android:textColor="?attr/mzText"
-                android:textSize="14sp"/>
+                android:layout_marginStart="10dp"
+                android:text="@string/dialog_add_edit_tile_color_default"
+                android:textColor="?attr/mzPrimary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
         </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/dialog_add_edit_tile_color_hue"
+            android:textColor="?attr/mzMuted"
+            android:textSize="12sp" />
+
+        <SeekBar
+            android:id="@+id/seekHue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="360"
+            android:progressTint="?attr/mzPrimary"
+            android:thumbTint="?attr/mzPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/dialog_add_edit_tile_color_sat"
+            android:textColor="?attr/mzMuted"
+            android:textSize="12sp" />
+
+        <SeekBar
+            android:id="@+id/seekSat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progressTint="?attr/mzPrimary"
+            android:thumbTint="?attr/mzPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/dialog_add_edit_tile_color_val"
+            android:textColor="?attr/mzMuted"
+            android:textSize="12sp" />
+
+        <SeekBar
+            android:id="@+id/seekVal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progressTint="?attr/mzPrimary"
+            android:thumbTint="?attr/mzPrimary" />
 
     </LinearLayout>
 </ScrollView>

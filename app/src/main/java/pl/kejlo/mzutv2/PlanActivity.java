@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -38,7 +37,6 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.text.Editable;
@@ -50,6 +48,9 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -58,6 +59,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -771,19 +773,16 @@ public class PlanActivity extends MzutBaseActivity {
     // Saved searches
 
     private void showSearchDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(dpToPx(24), dpToPx(16), dpToPx(24), dpToPx(8));
+        View layout = getLayoutInflater().inflate(R.layout.dialog_plan_search, null);
 
-        // Header row: Spinner + Clipboard Button
-        LinearLayout headerRow = new LinearLayout(this);
-        headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(Gravity.CENTER_VERTICAL);
-        layout.addView(headerRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextInputLayout inputCategoryLayout = layout.findViewById(R.id.inputCategoryLayout);
+        MaterialAutoCompleteTextView categoryView = layout.findViewById(R.id.editCategory);
+        TextInputEditText input = layout.findViewById(R.id.editQuery);
+        ProgressBar loadingIndicator = layout.findViewById(R.id.loadingIndicator);
+        RecyclerView suggestionsRecycler = layout.findViewById(R.id.suggestionsRecycler);
+        ImageButton btnClipboard = layout.findViewById(R.id.btnSavedSearches);
+        Button btnSaveQuery = layout.findViewById(R.id.btnSaveQuery);
 
-        final Spinner spinner = new Spinner(this);
         String[] displayCategories = {
                 getString(R.string.plan_search_cat_album),
                 getString(R.string.plan_search_cat_teacher),
@@ -791,76 +790,76 @@ public class PlanActivity extends MzutBaseActivity {
                 getString(R.string.plan_search_cat_subject),
                 getString(R.string.plan_search_cat_group)
         };
-        final String[] apiCategories = {
-                "Numer albumu",
-                "Wykładowca",
-                "Sala",
-                "Przedmiot",
-                "Grupa"
+        final String[] categoryKeys = {
+                "album",
+                "teacher",
+                "room",
+                "subject",
+                "group"
         };
 
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-                displayCategories);
-        spinner.setAdapter(spinnerAdapter);
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<String>(this, R.layout.item_dropdown_category,
+                displayCategories) {
+            @Override
+            public android.widget.Filter getFilter() {
+                return new android.widget.Filter() {
+                    @Override
+                    protected android.widget.Filter.FilterResults performFiltering(CharSequence constraint) {
+                        android.widget.Filter.FilterResults results = new android.widget.Filter.FilterResults();
+                        results.values = Arrays.asList(displayCategories);
+                        results.count = displayCategories.length;
+                        return results;
+                    }
 
-        LinearLayout.LayoutParams spinnerLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        headerRow.addView(spinner, spinnerLp);
+                    @Override
+                    protected void publishResults(CharSequence constraint, android.widget.Filter.FilterResults results) {
+                        notifyDataSetChanged();
+                    }
+                };
+            }
+        };
+        categoryView.setAdapter(categoryAdapter);
+        categoryView.setThreshold(0);
+        categoryView.setText(displayCategories[0], false);
+        categoryView.setInputType(android.text.InputType.TYPE_NULL);
+        categoryView.setCursorVisible(false);
+        categoryView.setFocusable(true);
+        categoryView.setFocusableInTouchMode(true);
 
-        // Clipboard (List) Button
-        ImageButton btnClipboard = new ImageButton(this);
-        btnClipboard.setImageResource(android.R.drawable.ic_menu_my_calendar);
-        btnClipboard.setBackgroundColor(0); // transparent
-        btnClipboard.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
-        headerRow.addView(btnClipboard);
+        final int[] selectedCategory = { 0 };
+        categoryView.setDropDownBackgroundDrawable(
+                androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_list));
+        categoryView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                categoryView.showDropDown();
+            }
+        });
+        categoryView.setOnTouchListener((v, event) -> {
+            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                categoryView.showDropDown();
+            }
+            return false;
+        });
+        if (inputCategoryLayout != null) {
+            inputCategoryLayout.setEndIconOnClickListener(v -> categoryView.showDropDown());
+        }
 
-        // Input row: EditText + Loading indicator
-        LinearLayout inputRow = new LinearLayout(this);
-        inputRow.setOrientation(LinearLayout.HORIZONTAL);
-        inputRow.setGravity(Gravity.CENTER_VERTICAL);
+        if (loadingIndicator != null) {
+            loadingIndicator.setIndeterminateTintList(
+                    android.content.res.ColorStateList.valueOf(ThemeManager.resolveColor(this, R.attr.mzPrimary)));
+        }
 
-        final EditText input = new EditText(this);
-        input.setHint(R.string.plan_search_hint_input);
-        input.setSingleLine(true);
-        LinearLayout.LayoutParams inputLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        inputRow.addView(input, inputLp);
-
-        final ProgressBar loadingIndicator = new ProgressBar(this, null, android.R.attr.progressBarStyleSmall);
-        loadingIndicator.setVisibility(View.GONE);
-        LinearLayout.LayoutParams loadingLp = new LinearLayout.LayoutParams(dpToPx(24), dpToPx(24));
-        loadingLp.setMarginStart(dpToPx(8));
-        inputRow.addView(loadingIndicator, loadingLp);
-
-        layout.addView(inputRow);
-
-        // RecyclerView for suggestions - always visible, max 2.5 items height
-        final RecyclerView suggestionsRecycler = new RecyclerView(this);
         suggestionsRecycler.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
 
-        // Calculate height for 2.5 items (each item ~48dp)
         int itemHeight = dpToPx(48);
         int maxHeight = (int) (itemHeight * 2.5f);
-
-        LinearLayout.LayoutParams recyclerLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, maxHeight);
-        recyclerLp.setMargins(0, dpToPx(8), 0, dpToPx(8));
+        ViewGroup.LayoutParams recyclerLp = suggestionsRecycler.getLayoutParams();
+        recyclerLp.height = maxHeight;
         suggestionsRecycler.setLayoutParams(recyclerLp);
-
-        // Use theme-aware background with rounded corners
-        GradientDrawable bgDrawable = new GradientDrawable();
-        bgDrawable.setColor(ThemeManager.resolveColor(this, android.R.attr.colorBackground));
-        bgDrawable.setCornerRadius(dpToPx(8));
-        bgDrawable.setStroke(dpToPx(1), ThemeManager.resolveColor(this, android.R.attr.textColorHint));
-        suggestionsRecycler.setBackground(bgDrawable);
-        suggestionsRecycler.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
         suggestionsRecycler.setNestedScrollingEnabled(true);
-        suggestionsRecycler.setClipToPadding(false);
 
-        layout.addView(suggestionsRecycler);
-
-        // Suggestions data
         final List<String> suggestionsList = new ArrayList<>();
 
-        // Simple RecyclerView Adapter
         final RecyclerView.Adapter<RecyclerView.ViewHolder> suggestionsAdapter = new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             @NonNull
             @Override
@@ -876,7 +875,6 @@ public class PlanActivity extends MzutBaseActivity {
                 String suggestion = suggestionsList.get(position);
                 textView.setText(suggestion);
 
-                // Check if it's a placeholder/hint message (not a real suggestion)
                 boolean isPlaceholder = suggestion.equals(getString(R.string.plan_search_no_suggestions))
                         || suggestion.equals(getString(R.string.plan_search_album_no_autocomplete))
                         || suggestion.equals(getString(R.string.plan_search_type_to_search));
@@ -888,12 +886,7 @@ public class PlanActivity extends MzutBaseActivity {
                     }
                 });
 
-                // Gray out placeholder
-                if (isPlaceholder) {
-                    textView.setAlpha(0.5f);
-                } else {
-                    textView.setAlpha(1.0f);
-                }
+                textView.setAlpha(isPlaceholder ? 0.55f : 1.0f);
             }
 
             @Override
@@ -904,32 +897,37 @@ public class PlanActivity extends MzutBaseActivity {
 
         suggestionsRecycler.setAdapter(suggestionsAdapter);
 
-        // Initialize with hint based on default category (album = 0)
-        suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
-        suggestionsAdapter.notifyDataSetChanged();
-
-        // Update hint when category changes
-        spinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                suggestionsList.clear();
-                if (position == 0) {
-                    suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
-                } else {
-                    String currentText = input.getText().toString().trim();
-                    if (currentText.isEmpty()) {
-                        suggestionsList.add(getString(R.string.plan_search_type_to_search));
-                    }
+        Runnable refreshPlaceholder = () -> {
+            int pos = selectedCategory[0];
+            suggestionsList.clear();
+            if (pos == 0) {
+                suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
+            } else {
+                String currentText = input.getText() != null ? input.getText().toString().trim() : "";
+                if (currentText.isEmpty()) {
+                    suggestionsList.add(getString(R.string.plan_search_type_to_search));
                 }
-                suggestionsAdapter.notifyDataSetChanged();
             }
+            suggestionsAdapter.notifyDataSetChanged();
+        };
 
-            @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+        categoryView.setOnItemClickListener((parent, view, position, id) -> {
+            selectedCategory[0] = position;
+            refreshPlaceholder.run();
+        });
+        categoryView.setOnClickListener(v -> categoryView.showDropDown());
+        if (inputCategoryLayout != null) {
+            inputCategoryLayout.setEndIconOnClickListener(v -> categoryView.showDropDown());
+        }
+        categoryView.setOnTouchListener((v, event) -> {
+            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                categoryView.showDropDown();
             }
+            return false;
         });
 
-        // Debounce handler for fetching suggestions
+        refreshPlaceholder.run();
+
         final Handler debounceHandler = new Handler(Looper.getMainLooper());
         final Runnable[] fetchRunnable = { null };
         final boolean[] isDialogDismissed = { false };
@@ -950,9 +948,8 @@ public class PlanActivity extends MzutBaseActivity {
                 }
 
                 String query = s.toString().trim();
-                int pos = spinner.getSelectedItemPosition();
+                int pos = selectedCategory[0];
 
-                // Skip album (pos == 0) - no autocomplete API for album numbers
                 if (pos == 0) {
                     loadingIndicator.setVisibility(View.GONE);
                     suggestionsList.clear();
@@ -969,13 +966,12 @@ public class PlanActivity extends MzutBaseActivity {
                     return;
                 }
 
-                String kind = getKindFromCategory(apiCategories[pos]);
+                String kind = categoryKeys[pos];
                 if (kind.isEmpty()) {
                     loadingIndicator.setVisibility(View.GONE);
                     return;
                 }
 
-                // Show loading indicator
                 loadingIndicator.setVisibility(View.VISIBLE);
 
                 fetchRunnable[0] = () -> {
@@ -998,44 +994,38 @@ public class PlanActivity extends MzutBaseActivity {
                                 suggestionsAdapter.notifyDataSetChanged();
                             });
                         } catch (Exception e) {
-                            handler.post(() -> {
-                                loadingIndicator.setVisibility(View.GONE);
-                            });
+                            handler.post(() -> loadingIndicator.setVisibility(View.GONE));
                             e.printStackTrace();
                         }
                     });
                 };
-                debounceHandler.postDelayed(fetchRunnable[0], 300); // 300ms debounce
+                debounceHandler.postDelayed(fetchRunnable[0], 300);
             }
         });
 
-        // Save Search Button
-        Button btnSaveQuery = new Button(this);
-        btnSaveQuery.setText(R.string.plan_search_save_label);
-        btnSaveQuery.setTextSize(12f);
-
-        LinearLayout.LayoutParams saveLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                dpToPx(36));
-        saveLp.gravity = Gravity.END;
-        layout.addView(btnSaveQuery, saveLp);
-
-        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_MZUTv2_AlertDialog_Dark)
                 .setTitle(R.string.plan_search_dialog_title)
                 .setView(layout)
                 .setPositiveButton(R.string.plan_search_button, (d, which) -> {
-                    int pos = spinner.getSelectedItemPosition();
-                    String categoryKey = (pos >= 0 && pos < apiCategories.length) ? apiCategories[pos]
-                            : apiCategories[0];
+                    int pos = selectedCategory[0];
+                    String categoryKey = (pos >= 0 && pos < categoryKeys.length) ? categoryKeys[pos]
+                            : categoryKeys[0];
                     String categoryLabel = (pos >= 0 && pos < displayCategories.length) ? displayCategories[pos]
                             : displayCategories[0];
-                    String query = input.getText().toString().trim();
+                    String query = input.getText() != null ? input.getText().toString().trim() : "";
                     if (!query.isEmpty()) {
                         performSearch(categoryKey, categoryLabel, query);
                     }
                 })
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .create();
+
+        dialog.setOnShowListener(d -> {
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(
+                        androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded_dark));
+            }
+        });
 
         dialog.setOnDismissListener(d -> {
             isDialogDismissed[0] = true;
@@ -1050,13 +1040,13 @@ public class PlanActivity extends MzutBaseActivity {
         });
 
         btnSaveQuery.setOnClickListener(v -> {
-            String q = input.getText().toString().trim();
+            String q = input.getText() != null ? input.getText().toString().trim() : "";
             if (q.isEmpty()) {
                 Toast.makeText(this, R.string.plan_search_empty_query, Toast.LENGTH_SHORT).show();
                 return;
             }
-            int pos = spinner.getSelectedItemPosition();
-            String catKey = (pos >= 0 && pos < apiCategories.length) ? apiCategories[pos] : apiCategories[0];
+            int pos = selectedCategory[0];
+            String catKey = (pos >= 0 && pos < categoryKeys.length) ? categoryKeys[pos] : categoryKeys[0];
             String catLabel = (pos >= 0 && pos < displayCategories.length) ? displayCategories[pos]
                     : displayCategories[0];
 
@@ -1065,6 +1055,25 @@ public class PlanActivity extends MzutBaseActivity {
         });
 
         dialog.show();
+    }
+
+    private int resolveCategoryIndex(CharSequence text, String[] displayCategories) {
+        if (displayCategories == null || displayCategories.length == 0) {
+            return 0;
+        }
+        if (text == null) {
+            return 0;
+        }
+        String value = text.toString().trim();
+        if (value.isEmpty()) {
+            return 0;
+        }
+        for (int i = 0; i < displayCategories.length; i++) {
+            if (displayCategories[i] != null && displayCategories[i].equalsIgnoreCase(value)) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     private void showSaveQueryDialog(String catKey, String catLabel, String query) {
@@ -1139,23 +1148,21 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     /**
-     * Maps API category names to schedule.php "kind" parameter.
+     * Maps legacy category labels to schedule.php "kind" parameter.
      */
     private String getKindFromCategory(String apiCategory) {
         if (apiCategory == null)
             return "";
-        switch (apiCategory) {
-            case "Wykładowca":
-                return "teacher";
-            case "Sala":
-                return "room";
-            case "Przedmiot":
-                return "subject";
-            case "Grupa":
-                return "group";
-            default:
-                return "";
-        }
+        String normalized = apiCategory.trim().toLowerCase(java.util.Locale.ROOT);
+        if (normalized.contains("wyk") || normalized.equals("teacher"))
+            return "teacher";
+        if (normalized.contains("sal") || normalized.equals("room"))
+            return "room";
+        if (normalized.contains("przedm") || normalized.equals("subject"))
+            return "subject";
+        if (normalized.contains("grup") || normalized.equals("group"))
+            return "group";
+        return "";
     }
 
     private void startRefreshAnimation() {

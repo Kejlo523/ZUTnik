@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_open_external"
+        android:icon="@drawable/ic_open_in_new"
+        android:title="@string/web_link_open_external"
+        app:iconTint="?attr/mzText"
+        app:showAsAction="ifRoom" />
+
+</menu>

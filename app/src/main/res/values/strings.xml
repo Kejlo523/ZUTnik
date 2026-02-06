@@ -161,6 +161,7 @@
     <string name="plan_toast_refreshed">Plan odświeżony</string>
     <string name="plan_toast_search_prefix">Wyszukiwanie: %1$s %2$s</string>
     <string name="plan_search_dialog_title">Wyszukaj w planie</string>
+    <string name="plan_search_category_label">Kategoria</string>
     <string name="plan_search_hint_input">Wpisz szukaną frazę…</string>
     <string name="plan_search_button">Szukaj</string>
     <string name="plan_search_saved_title">Zapisane wyszukiwania</string>
@@ -234,6 +235,11 @@
     <string name="grades_table_header_subject">Przedmiot</string>
     <string name="grades_table_header_type">Rodzaj</string>
     <string name="grades_table_header_grade">Ocena</string>
+    <string name="grades_grouping_toggle">Grupuj oceny</string>
+    <string name="grades_final_grade_label">Ocena końcowa</string>
+    <string name="grades_final_grade_missing">Brak oceny końcowej</string>
+    <string name="grades_group_items_count">Pozostałe: %d</string>
+    <string name="plan_type_label">Typ zajęć</string>
     <string name="grades_table_header_date">Data</string>
 
     <string name="grades_empty_state">Brak ocen dla wybranego semestru.</string>
@@ -337,6 +343,10 @@
     <string name="useful_links_empty">
         Brak zdefiniowanych linków.\nDodaj coś w ustawieniach lub sprawdź domyślne propozycje.
     </string>
+    <string name="web_link_title">Strona</string>
+    <string name="web_link_open_external">Otwórz w przeglądarce</string>
+    <string name="web_link_no_url">Brak adresu do otwarcia</string>
+    <string name="web_link_open_external_error">Nie udało się otworzyć przeglądarki</string>
 
     <string name="logout_confirm_title">Wylogować się?</string>
     <string name="logout_confirm_message">Czy na pewno chcesz się wylogować?</string>
@@ -357,6 +367,10 @@
     <string name="dialog_add_edit_tile_label_color">Kolor Kafelka</string>
     <string name="dialog_add_edit_tile_hex_label">HEX:</string>
     <string name="dialog_add_edit_tile_hex_hint">#RRGGBB</string>
+    <string name="dialog_add_edit_tile_color_default">Domyślny (motyw)</string>
+    <string name="dialog_add_edit_tile_color_hue">Odcień</string>
+    <string name="dialog_add_edit_tile_color_sat">Nasycenie</string>
+    <string name="dialog_add_edit_tile_color_val">Jasność</string>
     <string name="dialog_add_edit_tile_btn_save">Zapisz</string>
     <string name="dialog_add_edit_tile_btn_cancel">Anuluj</string>
     <string name="dialog_add_edit_tile_toast_no_saved_searches">Brak zapisanych wyszukiwań!</string>

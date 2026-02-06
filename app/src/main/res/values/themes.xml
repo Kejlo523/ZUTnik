@@ -40,6 +40,7 @@
         <item name="mzCard">@color/mz_card</item>
         <item name="mzCardSoft">@color/mz_card_soft</item>
         <item name="mzBgSurface">@color/mz_bg_surface</item>
+        <item name="mzInputBg">@color/mz_card_soft</item>
         <item name="mzText">@color/mz_text</item>
         <item name="mzMuted">@color/mz_muted</item>
         <item name="mzBorderSoft">@color/mz_border_soft</item>
@@ -79,6 +80,7 @@
         <item name="mzCard">#FFFFFF</item>
         <item name="mzCardSoft">#F1F5F9</item>
         <item name="mzBgSurface">#FFFFFF</item>
+        <item name="mzInputBg">#DBEAFE</item>
         <item name="mzText">#1E293B</item> <!-- Slate 800 -->
         <item name="mzMuted">#64748B</item> <!-- Slate 500 -->
         <item name="mzBorderSoft">#E2E8F0</item>
@@ -122,6 +124,7 @@
         <item name="mzCard">#FFFFFF</item>
         <item name="mzCardSoft">#F0FDF4</item>
         <item name="mzBgSurface">#FFFFFF</item>
+        <item name="mzInputBg">#DCFCE7</item>
         <item name="mzText">#1E293B</item>
         <item name="mzMuted">#64748B</item>
         <item name="mzBorderSoft">#DCFCE7</item>
@@ -163,6 +166,7 @@
         <item name="mzCard">#FFFFFF</item>
         <item name="mzCardSoft">#EEEEEE</item>
         <item name="mzBgSurface">#FFFFFF</item>
+        <item name="mzInputBg">#DDDDDD</item>
         <item name="mzText">#000000</item>
         <item name="mzMuted">#333333</item>
         <item name="mzBorderSoft">#000000</item>
@@ -195,21 +199,41 @@
 
     <!-- Dialog Theme for Custom Event Wizard -->
     <style name="Theme.MZUTv2.Dialog" parent="Theme.MZUTv2">
-        <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
+        <item name="android:windowBackground">@drawable/bg_dialog_rounded_dark</item>
         <item name="android:windowMinWidthMajor">60%</item>
         <item name="android:windowMinWidthMinor">60%</item>
         <item name="android:windowIsFloating">true</item>
+        <item name="android:windowAnimationStyle">@style/Animation.MZUTv2.Dialog</item>
     </style>
 
     <!-- AlertDialog Theme Overlay -->
     <style name="ThemeOverlay.MZUTv2.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
-        <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
-        <item name="colorSurface">?attr/mzBgSurface</item>
+        <item name="android:windowBackground">@drawable/bg_dialog_rounded_dark</item>
+        <item name="colorSurface">?attr/mzBgSoft</item>
         <item name="colorOnSurface">?attr/mzText</item>
         <item name="materialAlertDialogTitlePanelStyle">@style/Widget.MZUTv2.AlertDialog.Title.Panel</item>
         <item name="materialAlertDialogTitleIconStyle">@style/MaterialAlertDialog.MaterialComponents.Title.Icon</item>
         <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Title</item>
         <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Body</item>
+        <item name="android:windowAnimationStyle">@style/Animation.MZUTv2.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.MZUTv2.AlertDialog.Dark" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:windowBackground">@drawable/bg_dialog_rounded_dark</item>
+        <item name="colorSurface">?attr/mzBgSoft</item>
+        <item name="colorOnSurface">?attr/mzText</item>
+        <item name="materialAlertDialogTitlePanelStyle">@style/Widget.MZUTv2.AlertDialog.Title.Panel</item>
+        <item name="materialAlertDialogTitleIconStyle">@style/MaterialAlertDialog.MaterialComponents.Title.Icon</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Body</item>
+        <item name="android:windowAnimationStyle">@style/Animation.MZUTv2.Dialog</item>
+    </style>
+
+    <style name="Animation.MZUTv2" parent="@android:style/Animation" />
+
+    <style name="Animation.MZUTv2.Dialog" parent="Animation.MZUTv2">
+        <item name="android:windowEnterAnimation">@anim/dialog_enter</item>
+        <item name="android:windowExitAnimation">@anim/dialog_exit</item>
     </style>
 
     <style name="TextAppearance.MZUTv2.AlertDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">

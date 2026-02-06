@@ -159,6 +159,7 @@
     <string name="plan_toast_refreshed">Plan aktualisiert</string>
     <string name="plan_toast_search_prefix">Suche: %1$s %2$s</string>
     <string name="plan_search_dialog_title">Im Plan suchen</string>
+    <string name="plan_search_category_label">Kategorie</string>
     <string name="plan_search_hint_input">Suchbegriff eingeben…</string>
     <string name="plan_search_button">Suchen</string>
     <string name="plan_search_saved_title">Gespeicherte Suchen</string>
@@ -345,6 +346,10 @@
     <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
     <string name="dialog_add_edit_tile_label_saved_search">Gespeicherte Suche wählen</string>
     <string name="dialog_add_edit_tile_label_color">Kachelfarbe</string>
+    <string name="dialog_add_edit_tile_color_default">Standard (Theme)</string>
+    <string name="dialog_add_edit_tile_color_hue">Farbton</string>
+    <string name="dialog_add_edit_tile_color_sat">Sättigung</string>
+    <string name="dialog_add_edit_tile_color_val">Helligkeit</string>
     <string name="dialog_add_edit_tile_btn_save">Speichern</string>
     <string name="dialog_add_edit_tile_btn_cancel">Abbrechen</string>
     <string name="dialog_add_edit_tile_toast_no_saved_searches">Keine gespeicherten Suchen!</string>
@@ -383,6 +388,11 @@
     <string name="theme_lime">Limette</string>
     <string name="offline_mode_label">Offline-Modus</string>
     <string name="online_mode_label">Online-Modus</string>
+    <string name="grades_grouping_toggle">Noten gruppieren</string>
+    <string name="grades_final_grade_label">Endnote</string>
+    <string name="grades_final_grade_missing">Keine Endnote</string>
+    <string name="grades_group_items_count">Übrige: %d</string>
+    <string name="plan_type_label">Veranstaltungstyp</string>
 
     <!-- Attendance -->
     <string name="attendance_title">Anwesenheit</string>

@@ -7,7 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -57,7 +59,19 @@ public class AddEditTileDialog extends DialogFragment {
 
         // Color UI
         android.widget.LinearLayout containerColors = view.findViewById(R.id.containerColors);
-        EditText inputColorHex = view.findViewById(R.id.inputColorHex);
+        View colorPreview = view.findViewById(R.id.colorPreview);
+        TextView btnColorDefault = view.findViewById(R.id.btnColorDefault);
+        SeekBar seekHue = view.findViewById(R.id.seekHue);
+        SeekBar seekSat = view.findViewById(R.id.seekSat);
+        SeekBar seekVal = view.findViewById(R.id.seekVal);
+
+        float[] hsv = new float[] { 0f, 0f, 1f };
+        int themeDefaultColor = ThemeManager.resolveColor(requireContext(), R.attr.mzCardSoft);
+        android.graphics.drawable.GradientDrawable previewDrawable = new android.graphics.drawable.GradientDrawable();
+        previewDrawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        previewDrawable.setStroke(dpToPx(1), ThemeManager.resolveColor(requireContext(), R.attr.mzBorderSoft));
+        previewDrawable.setColor(themeDefaultColor);
+        colorPreview.setBackground(previewDrawable);
 
         // Setup Colors
         int[] palette = {
@@ -91,39 +105,48 @@ public class AddEditTileDialog extends DialogFragment {
 
             cView.setOnClickListener(v -> {
                 selectedColor = color;
-                if (color == 0) {
-                    inputColorHex.setText("");
-                } else {
-                    inputColorHex.setText(String.format("#%06X", (0xFFFFFF & color)));
-                }
+                int applied = color == 0 ? themeDefaultColor : color;
+                android.graphics.Color.colorToHSV(applied, hsv);
+                seekHue.setProgress(Math.round(hsv[0]));
+                seekSat.setProgress(Math.round(hsv[1] * 100f));
+                seekVal.setProgress(Math.round(hsv[2] * 100f));
+                previewDrawable.setColor(applied);
             });
             containerColors.addView(cView);
         }
 
-        // Manual Hex Input Listener
-        inputColorHex.addTextChangedListener(new android.text.TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(android.text.Editable s) {
-                String hex = s.toString().trim();
-                if (hex.isEmpty()) {
-                    selectedColor = 0;
-                    return;
-                }
-                try {
-                    selectedColor = android.graphics.Color.parseColor(hex);
-                } catch (IllegalArgumentException e) {
-                    // Invalid color, ignore
-                }
-            }
+        btnColorDefault.setOnClickListener(v -> {
+            selectedColor = 0;
+            android.graphics.Color.colorToHSV(themeDefaultColor, hsv);
+            seekHue.setProgress(Math.round(hsv[0]));
+            seekSat.setProgress(Math.round(hsv[1] * 100f));
+            seekVal.setProgress(Math.round(hsv[2] * 100f));
+            previewDrawable.setColor(themeDefaultColor);
         });
+
+        SeekBar.OnSeekBarChangeListener hsvListener = new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (!fromUser)
+                    return;
+                hsv[0] = seekHue.getProgress();
+                hsv[1] = seekSat.getProgress() / 100f;
+                hsv[2] = seekVal.getProgress() / 100f;
+                selectedColor = android.graphics.Color.HSVToColor(hsv);
+                previewDrawable.setColor(selectedColor);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        };
+        seekHue.setOnSeekBarChangeListener(hsvListener);
+        seekSat.setOnSeekBarChangeListener(hsvListener);
+        seekVal.setOnSeekBarChangeListener(hsvListener);
 
         // Populate Spinner
         List<String> actionLabels = new ArrayList<>();
@@ -211,9 +234,12 @@ public class AddEditTileDialog extends DialogFragment {
 
             // Color pre-fill
             selectedColor = tileToEdit.color;
-            if (selectedColor != 0) {
-                inputColorHex.setText(String.format("#%06X", (0xFFFFFF & selectedColor)));
-            }
+            int applied = selectedColor == 0 ? themeDefaultColor : selectedColor;
+            android.graphics.Color.colorToHSV(applied, hsv);
+            seekHue.setProgress(Math.round(hsv[0]));
+            seekSat.setProgress(Math.round(hsv[1] * 100f));
+            seekVal.setProgress(Math.round(hsv[2] * 100f));
+            previewDrawable.setColor(applied);
 
             String currentType = tileToEdit.actionType;
             if (Tile.ACTION_ACTIVITY.equals(currentType) && tileToEdit.actionData != null) {
@@ -250,6 +276,11 @@ public class AddEditTileDialog extends DialogFragment {
             }
         } else {
             builder.setTitle(R.string.dialog_add_edit_tile_title_new);
+            android.graphics.Color.colorToHSV(themeDefaultColor, hsv);
+            seekHue.setProgress(Math.round(hsv[0]));
+            seekSat.setProgress(Math.round(hsv[1] * 100f));
+            seekVal.setProgress(Math.round(hsv[2] * 100f));
+            previewDrawable.setColor(themeDefaultColor);
         }
 
         builder.setView(view)
