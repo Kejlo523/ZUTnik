@@ -1,6 +1,5 @@
 package pl.kejlo.mzutv2;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -77,7 +76,6 @@ public class NewsDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
-        EdgeToEdge.enable(this);
         ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_news_detail);
         ThemeManager.applySystemBars(this);

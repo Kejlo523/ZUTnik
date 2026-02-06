@@ -1,6 +1,5 @@
 package pl.kejlo.mzutv2;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.animation.ObjectAnimator;
@@ -69,7 +68,6 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
-        EdgeToEdge.enable(this);
         ThemeManager.applySystemBars(this);
 
         MzutSession.initializeFromPreferences(this);

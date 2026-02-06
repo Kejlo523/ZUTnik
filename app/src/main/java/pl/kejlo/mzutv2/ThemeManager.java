@@ -4,8 +4,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 public class ThemeManager {
 
@@ -44,15 +45,11 @@ public class ThemeManager {
         }
         int bg = resolveColor(activity, R.attr.mzBg);
         android.view.Window window = activity.getWindow();
-        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        window.setStatusBarColor(bg);
-        window.setNavigationBarColor(bg);
+        WindowCompat.setDecorFitsSystemWindows(window, false);
 
-        boolean light = androidx.core.graphics.ColorUtils.calculateLuminance(bg) > 0.5;
-        androidx.core.view.WindowInsetsControllerCompat controller =
-                androidx.core.view.WindowCompat.getInsetsController(window, window.getDecorView());
+        boolean light = ColorUtils.calculateLuminance(bg) > 0.5;
+        WindowInsetsControllerCompat controller =
+                WindowCompat.getInsetsController(window, window.getDecorView());
         if (controller != null) {
             controller.setAppearanceLightStatusBars(light);
             controller.setAppearanceLightNavigationBars(light);
