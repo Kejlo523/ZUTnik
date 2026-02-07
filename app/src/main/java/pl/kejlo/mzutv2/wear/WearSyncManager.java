@@ -47,35 +47,7 @@ public class WearSyncManager {
     // Compatibility stubs (no-ops for removed functionality)
     // ============================================================
 
-    /** @deprecated Polling removed - this is now a no-op */
-    public static void setForceFastPolling(boolean fast) {
-        // No-op: polling removed
-    }
 
-    /** @deprecated Polling removed - returns default interval */
-    public static long getPollIntervalMs() {
-        return DEFAULT_POLL_INTERVAL_MS;
-    }
-
-    /** @deprecated Polling removed - this is now a no-op */
-    public static void pollRequestDataItemAsync(Context context) {
-        // No-op: polling removed
-    }
-
-    /** @deprecated Handshake removed - returns null */
-    public static PendingRequest getPendingRequest(Context context) {
-        return null; // No handshake needed
-    }
-
-    /** @deprecated Handshake removed - this syncs immediately instead */
-    public static void sendSyncApprove(Context context, String nodeId) {
-        syncNowAsync(context);
-    }
-
-    /** @deprecated Handshake removed - this is now a no-op */
-    public static void sendSyncDecline(Context context, String nodeId) {
-        // No-op: no handshake
-    }
 
     /** Schedule wear auto-sync (simplified - just syncs periodically) */
     public static void scheduleWearAutoSync(Context context) {
@@ -93,15 +65,6 @@ public class WearSyncManager {
 
     public static long getAutoSyncIntervalMinutes() {
         return DEFAULT_AUTO_SYNC_INTERVAL_MIN;
-    }
-
-    public static final class PendingRequest {
-        public final String nodeId;
-        public final String nodeName;
-        public PendingRequest(String nodeId, String nodeName) {
-            this.nodeId = nodeId;
-            this.nodeName = nodeName;
-        }
     }
 
     // ============================================================

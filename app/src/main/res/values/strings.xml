@@ -50,6 +50,7 @@
     <string name="wear_sync_status_no_data">Brak danych do wysłania</string>
     <string name="wear_sync_status_error">Błąd wysyłki danych</string>
     <string name="wear_sync_status_watch_received">100% Zegarek odebrał dane!</string>
+    <string name="wear_main_status_syncing">Synchronizuję z zegarkiem…</string>
 
     <string name="login_card_title">Zaloguj się do mZUT</string>
     <string name="login_hint">Login</string>
