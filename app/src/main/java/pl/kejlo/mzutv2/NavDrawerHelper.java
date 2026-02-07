@@ -1,23 +1,39 @@
 package pl.kejlo.mzutv2;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.text.format.DateUtils;
 
 import android.view.View;
+import android.view.LayoutInflater;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ProgressBar;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.Wearable;
+
+import java.util.List;
 
 public class NavDrawerHelper {
 
@@ -109,6 +125,7 @@ public class NavDrawerHelper {
         TextView navLinkUseful = navigationView.findViewById(R.id.navLinkUsefull);
         TextView navLinkAbout = navigationView.findViewById(R.id.navLinkAbout);
         View navSettings = navigationView.findViewById(R.id.navSettings);
+        View navWatch = navigationView.findViewById(R.id.navWatch);
         TextView navAppVersion = navigationView.findViewById(R.id.navAppVersion);
         TextView navLogout = navigationView.findViewById(R.id.navLogout);
         View navHeaderRoot = navigationView.findViewById(R.id.navHeaderRoot);
@@ -185,6 +202,9 @@ public class NavDrawerHelper {
                 activity.startActivity(intent);
                 drawerLayout.closeDrawers();
                 return;
+            } else if (id == R.id.navWatch) {
+                handleWatchClick(activity, drawerLayout);
+                return;
             } else if (id == R.id.navLogout) {
                 showLogoutConfirmation(activity, drawerLayout);
                 return;
@@ -226,6 +246,9 @@ public class NavDrawerHelper {
         navLinkUseful.setOnClickListener(listener);
         navLinkAbout.setOnClickListener(listener);
         navSettings.setOnClickListener(listener);
+        if (navWatch != null) {
+            navWatch.setOnClickListener(listener);
+        }
         navLogout.setOnClickListener(listener);
 
         // Ensure drawer is unlocked
@@ -433,5 +456,139 @@ public class NavDrawerHelper {
                     dialog.dismiss();
                 })
                 .show();
+    }
+
+    private static void handleWatchClick(AppCompatActivity activity, DrawerLayout drawerLayout) {
+        pl.kejlo.mzutv2.wear.WearSyncManager.getWatchStatusWithPingAsync(activity, status -> {
+            if (status == null || (!status.connected && !status.paired)) {
+                new MaterialAlertDialogBuilder(activity)
+                        .setTitle(R.string.nav_watch_not_found_title)
+                        .setMessage(R.string.nav_watch_not_found_msg)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                return;
+            }
+            String name = (status.name != null && !status.name.isEmpty())
+                    ? status.name
+                    : activity.getString(R.string.nav_watch_label);
+            View content = LayoutInflater.from(activity)
+                    .inflate(R.layout.dialog_watch_status, null, false);
+            TextView titleView = content.findViewById(R.id.watchStatusTitle);
+            TextView subtitleView = content.findViewById(R.id.watchStatusSubtitle);
+            TextView nameView = content.findViewById(R.id.watchStatusName);
+            TextView batteryView = content.findViewById(R.id.watchStatusBattery);
+            TextView btValue = content.findViewById(R.id.watchInfoBluetoothValue);
+            TextView lastSyncValue = content.findViewById(R.id.watchInfoLastSyncValue);
+            TextView autoSyncValue = content.findViewById(R.id.watchInfoAutoSyncValue);
+            TextView tileValue = content.findViewById(R.id.watchInfoTileValue);
+            CircularProgressIndicator ring = content.findViewById(R.id.watchBatteryRing);
+            TextView ringPercent = content.findViewById(R.id.watchBatteryPercent);
+            ImageView batteryIcon = content.findViewById(R.id.watchBatteryIcon);
+
+            String statusLine;
+            if (status.connected) {
+                statusLine = activity.getString(status.responsive
+                        ? R.string.nav_watch_status_connected
+                        : R.string.nav_watch_status_connected_unresponsive);
+            } else {
+                statusLine = activity.getString(R.string.nav_watch_status_paired);
+            }
+            titleView.setText(status.connected
+                    ? R.string.nav_watch_found_title
+                    : R.string.nav_watch_paired_title);
+            subtitleView.setText(statusLine);
+            nameView.setText(activity.getString(R.string.nav_watch_status_name, name));
+
+            int battery = status.battery;
+            if (battery >= 0 && battery <= 100) {
+                batteryView.setText(activity.getString(
+                        R.string.nav_watch_status_battery, battery));
+                ringPercent.setText(battery + "%");
+                ring.setProgress(battery);
+            } else {
+                batteryView.setText(R.string.nav_watch_info_last_sync_none);
+                ringPercent.setText("--%");
+                ring.setProgress(0);
+            }
+
+            int colorDanger = MaterialColors.getColor(content, R.attr.mzDanger, 0xFFE53935);
+            int colorAccent = MaterialColors.getColor(content, R.attr.mzAccent, 0xFF4F8DFF);
+            int colorLime = MaterialColors.getColor(content, R.attr.mzLime, 0xFF9CCC65);
+            int colorSuccess = MaterialColors.getColor(content, R.attr.mzSuccess, 0xFF43A047);
+            int colorMuted = MaterialColors.getColor(content, R.attr.mzMuted, 0xFFB0B7C3);
+            int ringColor;
+            if (battery < 0) {
+                ringColor = colorMuted;
+            } else if (battery <= 15) {
+                ringColor = colorDanger;
+            } else if (battery <= 35) {
+                ringColor = ColorUtils.blendARGB(colorDanger, colorAccent, 0.5f);
+            } else if (battery <= 70) {
+                ringColor = colorLime;
+            } else {
+                ringColor = colorSuccess;
+            }
+            int trackColor = MaterialColors.getColor(content, R.attr.mzBorderSoft, 0x33222222);
+            ring.setIndicatorColor(ringColor);
+            ring.setTrackColor(trackColor);
+            batteryIcon.setColorFilter(ringColor);
+            batteryIcon.setImageResource(battery >= 0 && battery <= 15
+                    ? R.drawable.ic_battery_alert
+                    : R.drawable.ic_battery_outline);
+
+            btValue.setText(isBluetoothEnabled(activity)
+                    ? R.string.nav_watch_status_bt_on
+                    : R.string.nav_watch_status_bt_off);
+
+            long lastSync = pl.kejlo.mzutv2.wear.WearSyncManager.getLastSyncTimestamp(activity);
+            if (lastSync > 0) {
+                CharSequence rel = DateUtils.getRelativeTimeSpanString(
+                        lastSync,
+                        System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS);
+                lastSyncValue.setText(rel);
+            } else {
+                lastSyncValue.setText(R.string.nav_watch_info_last_sync_none);
+            }
+
+            long intervalMin = pl.kejlo.mzutv2.wear.WearSyncManager.getAutoSyncIntervalMinutes();
+            boolean auto = pl.kejlo.mzutv2.wear.WearSyncManager.isAutoSyncEnabled(activity);
+            String intervalLabel = intervalMin % 60 == 0
+                    ? activity.getString(R.string.nav_watch_status_interval_h, intervalMin / 60)
+                    : activity.getString(R.string.nav_watch_status_interval_m, intervalMin);
+            String autoLabel = activity.getString(auto
+                    ? R.string.nav_watch_status_auto_on
+                    : R.string.nav_watch_status_auto_off);
+            autoSyncValue.setText(autoLabel + " (" + intervalLabel + ")");
+
+            long tileSeen = status.tileSeenTimestamp;
+            long now = System.currentTimeMillis();
+            if (tileSeen > 0 && now - tileSeen <= 7L * 24 * 60 * 60 * 1000L) {
+                CharSequence relTile = DateUtils.getRelativeTimeSpanString(
+                        tileSeen,
+                        now,
+                        DateUtils.MINUTE_IN_MILLIS);
+                tileValue.setText(activity.getString(
+                        R.string.nav_watch_info_tile_active, relTile));
+            } else {
+                tileValue.setText(R.string.nav_watch_info_tile_missing);
+            }
+
+            new MaterialAlertDialogBuilder(activity)
+                    .setView(content)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+            drawerLayout.closeDrawers();
+        });
+    }
+
+    private static boolean isBluetoothEnabled(Context context) {
+        try {
+            android.bluetooth.BluetoothAdapter adapter =
+                    android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            return adapter != null && adapter.isEnabled();
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 }

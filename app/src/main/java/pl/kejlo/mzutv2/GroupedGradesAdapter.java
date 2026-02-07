@@ -175,6 +175,13 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             styleGradePill(ctx, h.finalPill, raw, false);
         }
 
+        double ects = resolveGroupEcts(g);
+        if (ects > 0.0) {
+            String base = h.finalLabel.getText() != null ? h.finalLabel.getText().toString() : "";
+            String ectsLine = String.format(java.util.Locale.getDefault(), "%.1f ECTS", ects);
+            h.finalLabel.setText(base + "\n" + ectsLine);
+        }
+
         bindPreview(ctx, h.previewRow, g);
 
         View clickTarget = h.root != null ? h.root : h.itemView;
@@ -393,6 +400,23 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             sb.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1));
         }
         return sb.toString();
+    }
+
+    private double resolveGroupEcts(GradeGroup group) {
+        if (group == null) {
+            return 0.0;
+        }
+        if (group.finalGrade != null && group.finalGrade.weight > 0) {
+            return group.finalGrade.weight;
+        }
+        if (group.others != null) {
+            for (Grade g : group.others) {
+                if (g != null && g.weight > 0) {
+                    return g.weight;
+                }
+            }
+        }
+        return 0.0;
     }
 
     static class GroupViewHolder extends RecyclerView.ViewHolder {

@@ -41,6 +41,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation(libs.appcompat)
     implementation(libs.material)
+    implementation(libs.play.services.wearable)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
