@@ -23,6 +23,14 @@
     <string name="nav_watch_status_bluetooth">Bluetooth: %1$s</string>
     <string name="nav_watch_status_bt_on">Włączony</string>
     <string name="nav_watch_status_bt_off">Wyłączony</string>
+    <string name="nav_watch_info_label_bluetooth">Bluetooth</string>
+    <string name="nav_watch_info_label_last_sync">Ostatnia synchronizacja</string>
+    <string name="nav_watch_info_label_auto_sync">Auto synchronizacja</string>
+    <string name="nav_watch_info_label_tile">Kafelek</string>
+    <string name="nav_watch_info_label_battery">Bateria</string>
+    <string name="nav_watch_info_last_sync_none">Brak danych</string>
+    <string name="nav_watch_info_tile_active">Aktywny (%1$s)</string>
+    <string name="nav_watch_info_tile_missing">Brak (dodaj w Galaxy Wearable)</string>
     <string name="nav_watch_status_paired">Status: sparowany (brak połączenia)</string>
     <string name="nav_watch_status_last_sync">Ostatnia synchronizacja: %1$s</string>
     <string name="nav_watch_status_auto_sync">Auto synchronizacja: %1$s (%2$s)</string>

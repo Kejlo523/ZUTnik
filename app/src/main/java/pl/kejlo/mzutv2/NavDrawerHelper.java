@@ -10,6 +10,7 @@ import android.text.format.DateUtils;
 
 import android.view.View;
 import android.view.LayoutInflater;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ProgressBar;
@@ -18,14 +19,17 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.Wearable;
 
@@ -467,52 +471,96 @@ public class NavDrawerHelper {
             String name = (status.name != null && !status.name.isEmpty())
                     ? status.name
                     : activity.getString(R.string.nav_watch_label);
-            StringBuilder msg = new StringBuilder();
+            View content = LayoutInflater.from(activity)
+                    .inflate(R.layout.dialog_watch_status, null, false);
+            TextView titleView = content.findViewById(R.id.watchStatusTitle);
+            TextView subtitleView = content.findViewById(R.id.watchStatusSubtitle);
+            TextView nameView = content.findViewById(R.id.watchStatusName);
+            TextView batteryView = content.findViewById(R.id.watchStatusBattery);
+            TextView btValue = content.findViewById(R.id.watchInfoBluetoothValue);
+            TextView lastSyncValue = content.findViewById(R.id.watchInfoLastSyncValue);
+            TextView autoSyncValue = content.findViewById(R.id.watchInfoAutoSyncValue);
+            TextView tileValue = content.findViewById(R.id.watchInfoTileValue);
+            CircularProgressIndicator ring = content.findViewById(R.id.watchBatteryRing);
+            TextView ringPercent = content.findViewById(R.id.watchBatteryPercent);
+            ImageView batteryIcon = content.findViewById(R.id.watchBatteryIcon);
+
+            String statusLine;
             if (status.connected) {
-                if (!status.responsive) {
-                    msg.append(activity.getString(R.string.nav_watch_status_connected_unresponsive));
-                } else {
-                    msg.append(activity.getString(R.string.nav_watch_status_connected));
-                }
+                statusLine = activity.getString(status.responsive
+                        ? R.string.nav_watch_status_connected
+                        : R.string.nav_watch_status_connected_unresponsive);
             } else {
-                msg.append(activity.getString(R.string.nav_watch_status_paired));
+                statusLine = activity.getString(R.string.nav_watch_status_paired);
             }
-            msg.append("\n");
-            msg.append(activity.getString(R.string.nav_watch_status_name, name));
-            msg.append("\n");
-            msg.append(activity.getString(R.string.nav_watch_status_bluetooth,
-                    isBluetoothEnabled(activity)
-                            ? activity.getString(R.string.nav_watch_status_bt_on)
-                            : activity.getString(R.string.nav_watch_status_bt_off)));
-            if (status.battery >= 0 && status.battery <= 100) {
-                msg.append("\n");
-                msg.append(activity.getString(R.string.nav_watch_status_battery, status.battery));
+            titleView.setText(status.connected
+                    ? R.string.nav_watch_found_title
+                    : R.string.nav_watch_paired_title);
+            subtitleView.setText(statusLine);
+            nameView.setText(activity.getString(R.string.nav_watch_status_name, name));
+
+            int battery = status.battery;
+            if (battery >= 0 && battery <= 100) {
+                batteryView.setText(activity.getString(
+                        R.string.nav_watch_status_battery, battery));
+                ringPercent.setText(battery + "%");
+                ring.setProgress(battery);
+            } else {
+                batteryView.setText(R.string.nav_watch_info_last_sync_none);
+                ringPercent.setText("--%");
+                ring.setProgress(0);
             }
+
+            int colorDanger = MaterialColors.getColor(content, R.attr.mzDanger, 0xFFE53935);
+            int colorAccent = MaterialColors.getColor(content, R.attr.mzAccent, 0xFF4F8DFF);
+            int colorLime = MaterialColors.getColor(content, R.attr.mzLime, 0xFF9CCC65);
+            int colorSuccess = MaterialColors.getColor(content, R.attr.mzSuccess, 0xFF43A047);
+            int colorMuted = MaterialColors.getColor(content, R.attr.mzMuted, 0xFFB0B7C3);
+            int ringColor;
+            if (battery < 0) {
+                ringColor = colorMuted;
+            } else if (battery <= 15) {
+                ringColor = colorDanger;
+            } else if (battery <= 35) {
+                ringColor = ColorUtils.blendARGB(colorDanger, colorAccent, 0.5f);
+            } else if (battery <= 70) {
+                ringColor = colorLime;
+            } else {
+                ringColor = colorSuccess;
+            }
+            int trackColor = MaterialColors.getColor(content, R.attr.mzBorderSoft, 0x33222222);
+            ring.setIndicatorColor(ringColor);
+            ring.setTrackColor(trackColor);
+            batteryIcon.setColorFilter(ringColor);
+            batteryIcon.setImageResource(battery >= 0 && battery <= 15
+                    ? R.drawable.ic_battery_alert
+                    : R.drawable.ic_battery_outline);
+
+            btValue.setText(isBluetoothEnabled(activity)
+                    ? R.string.nav_watch_status_bt_on
+                    : R.string.nav_watch_status_bt_off);
+
             long lastSync = pl.kejlo.mzutv2.wear.WearSyncManager.getLastSyncTimestamp(activity);
             if (lastSync > 0) {
                 CharSequence rel = DateUtils.getRelativeTimeSpanString(
                         lastSync,
                         System.currentTimeMillis(),
                         DateUtils.MINUTE_IN_MILLIS);
-                msg.append("\n");
-                msg.append(activity.getString(R.string.nav_watch_status_last_sync, rel));
+                lastSyncValue.setText(rel);
+            } else {
+                lastSyncValue.setText(R.string.nav_watch_info_last_sync_none);
             }
+
             long intervalMin = pl.kejlo.mzutv2.wear.WearSyncManager.getAutoSyncIntervalMinutes();
             boolean auto = pl.kejlo.mzutv2.wear.WearSyncManager.isAutoSyncEnabled(activity);
-            String intervalLabel;
-            if (intervalMin % 60 == 0) {
-                intervalLabel = activity.getString(
-                        R.string.nav_watch_status_interval_h, intervalMin / 60);
-            } else {
-                intervalLabel = activity.getString(
-                        R.string.nav_watch_status_interval_m, intervalMin);
-            }
-            msg.append("\n");
-            msg.append(activity.getString(
-                    R.string.nav_watch_status_auto_sync,
-                    auto ? activity.getString(R.string.nav_watch_status_auto_on)
-                            : activity.getString(R.string.nav_watch_status_auto_off),
-                    intervalLabel));
+            String intervalLabel = intervalMin % 60 == 0
+                    ? activity.getString(R.string.nav_watch_status_interval_h, intervalMin / 60)
+                    : activity.getString(R.string.nav_watch_status_interval_m, intervalMin);
+            String autoLabel = activity.getString(auto
+                    ? R.string.nav_watch_status_auto_on
+                    : R.string.nav_watch_status_auto_off);
+            autoSyncValue.setText(autoLabel + " (" + intervalLabel + ")");
+
             long tileSeen = status.tileSeenTimestamp;
             long now = System.currentTimeMillis();
             if (tileSeen > 0 && now - tileSeen <= 7L * 24 * 60 * 60 * 1000L) {
@@ -520,17 +568,14 @@ public class NavDrawerHelper {
                         tileSeen,
                         now,
                         DateUtils.MINUTE_IN_MILLIS);
-                msg.append("\n");
-                msg.append(activity.getString(R.string.nav_watch_status_tile_seen, relTile));
+                tileValue.setText(activity.getString(
+                        R.string.nav_watch_info_tile_active, relTile));
             } else {
-                msg.append("\n");
-                msg.append(activity.getString(R.string.nav_watch_status_tile_missing));
+                tileValue.setText(R.string.nav_watch_info_tile_missing);
             }
+
             new MaterialAlertDialogBuilder(activity)
-                    .setTitle(status.connected
-                            ? R.string.nav_watch_found_title
-                            : R.string.nav_watch_paired_title)
-                    .setMessage(msg.toString())
+                    .setView(content)
                     .setPositiveButton(android.R.string.ok, null)
                     .show();
             drawerLayout.closeDrawers();
