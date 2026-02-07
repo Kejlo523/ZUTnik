@@ -55,19 +55,29 @@ public class WearMessageListenerService extends WearableListenerService {
             return;
         }
 
-        // Pong - watch is alive
+        // Pong - watch is alive + battery
         if (WearSyncConstants.PATH_PONG.equals(path)) {
             long ts = 0L;
+            int battery = -1;
             try {
+                // Try to parse as DataMap (new format)
                 DataMap map = DataMap.fromByteArray(messageEvent.getData());
                 ts = map.getLong(WearSyncConstants.KEY_TIMESTAMP, 0L);
+                battery = map.getInt(WearSyncConstants.KEY_BATTERY, -1);
             } catch (Exception ignored) {
+                // Fallback for empty payload or old format
             }
+            
             if (ts <= 0L) {
                 ts = System.currentTimeMillis();
             }
+            
             WearSyncManager.setLastPongTs(this, ts);
-            Log.d(TAG, "onMessageReceived: pong ts=" + ts);
+            if (battery >= 0) {
+                 WearSyncManager.setLastPongBattery(this, battery);
+            }
+            
+            Log.d(TAG, "onMessageReceived: pong ts=" + ts + " batt=" + battery);
             return;
         }
 

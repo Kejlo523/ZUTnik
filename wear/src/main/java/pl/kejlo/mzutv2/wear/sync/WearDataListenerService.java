@@ -115,14 +115,23 @@ public class WearDataListenerService extends WearableListenerService {
             return;
         }
 
-        // Ping - respond with pong
+        // Ping - respond with pong + battery level
         if (WearSyncConstants.PATH_PING.equals(path)) {
             try {
+                // Get battery level
+                android.os.BatteryManager bm =
+                        (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
+                int battery = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY);
+
+                DataMap pongMap = new DataMap();
+                pongMap.putInt(WearSyncConstants.KEY_BATTERY, battery);
+                byte[] pongData = pongMap.toByteArray();
+
                 Wearable.getMessageClient(this)
                         .sendMessage(messageEvent.getSourceNodeId(),
                                 WearSyncConstants.PATH_PONG,
-                                messageEvent.getData() != null ? messageEvent.getData() : new byte[0])
-                        .addOnSuccessListener(r -> Log.d(TAG, "onMessageReceived: pong sent"))
+                                pongData)
+                        .addOnSuccessListener(r -> Log.d(TAG, "onMessageReceived: pong sent with battery=" + battery))
                         .addOnFailureListener(e -> Log.e(TAG, "onMessageReceived: pong failed", e));
             } catch (Exception e) {
                 Log.e(TAG, "onMessageReceived: pong failed", e);

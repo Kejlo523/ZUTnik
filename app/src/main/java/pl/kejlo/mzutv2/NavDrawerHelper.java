@@ -455,31 +455,61 @@ public class NavDrawerHelper {
     }
 
     private static void handleWatchClick(AppCompatActivity activity, DrawerLayout drawerLayout) {
+        // 1. Inflate and show dialog IMMEDIATELY
+        View content = LayoutInflater.from(activity)
+                .inflate(R.layout.dialog_watch_status, null, false);
+        
+        // Find views
+        View loadingView = content.findViewById(R.id.watchStatusLoading);
+        View contentView = content.findViewById(R.id.watchStatusContent);
+        View installContainer = content.findViewById(R.id.watchInstallContainer);
+        View installButton = content.findViewById(R.id.watchInstallButton);
+
+        TextView titleView = content.findViewById(R.id.watchStatusTitle);
+        TextView subtitleView = content.findViewById(R.id.watchStatusSubtitle);
+        TextView nameView = content.findViewById(R.id.watchStatusName);
+        TextView batteryView = content.findViewById(R.id.watchStatusBattery);
+        TextView btValue = content.findViewById(R.id.watchInfoBluetoothValue);
+        TextView lastSyncValue = content.findViewById(R.id.watchInfoLastSyncValue);
+        TextView autoSyncValue = content.findViewById(R.id.watchInfoAutoSyncValue);
+        TextView tileValue = content.findViewById(R.id.watchInfoTileValue);
+        CircularProgressIndicator ring = content.findViewById(R.id.watchBatteryRing);
+        TextView ringPercent = content.findViewById(R.id.watchBatteryPercent);
+        ImageView batteryIcon = content.findViewById(R.id.watchBatteryIcon);
+
+        // Show dialog now
+        AlertDialog dialog = new MaterialAlertDialogBuilder(activity)
+                .setView(content)
+                .setPositiveButton(android.R.string.ok, null)
+                .create();
+        dialog.show();
+        drawerLayout.closeDrawers();
+
+        // 2. Fetch data (ASYNC)
         pl.kejlo.mzutv2.wear.WearSyncManager.getWatchStatusWithPingAsync(activity, status -> {
-            if (status == null || (!status.connected && !status.paired)) {
-                new MaterialAlertDialogBuilder(activity)
-                        .setTitle(R.string.nav_watch_not_found_title)
-                        .setMessage(R.string.nav_watch_not_found_msg)
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show();
+            if (activity.isDestroyed() || activity.isFinishing() || !dialog.isShowing()) {
                 return;
             }
+
+            // Hide loading, show content
+            loadingView.setVisibility(View.GONE);
+            contentView.setVisibility(View.VISIBLE);
+
+            // First check if completely disconnected
+            if (status == null || (!status.connected && !status.paired)) {
+                 // Update UI to show not found state (reuse existing views or show simple message)
+                 // For simplicity, we stick to the dialog structure but update text
+                 titleView.setText(R.string.nav_watch_not_found_title);
+                 subtitleView.setText(R.string.nav_watch_not_found_msg);
+                 nameView.setText("-");
+                 batteryView.setText("");
+                 return;
+            }
+
+            // Populate status strings with existing logic
             String name = (status.name != null && !status.name.isEmpty())
                     ? status.name
                     : activity.getString(R.string.nav_watch_label);
-            View content = LayoutInflater.from(activity)
-                    .inflate(R.layout.dialog_watch_status, null, false);
-            TextView titleView = content.findViewById(R.id.watchStatusTitle);
-            TextView subtitleView = content.findViewById(R.id.watchStatusSubtitle);
-            TextView nameView = content.findViewById(R.id.watchStatusName);
-            TextView batteryView = content.findViewById(R.id.watchStatusBattery);
-            TextView btValue = content.findViewById(R.id.watchInfoBluetoothValue);
-            TextView lastSyncValue = content.findViewById(R.id.watchInfoLastSyncValue);
-            TextView autoSyncValue = content.findViewById(R.id.watchInfoAutoSyncValue);
-            TextView tileValue = content.findViewById(R.id.watchInfoTileValue);
-            CircularProgressIndicator ring = content.findViewById(R.id.watchBatteryRing);
-            TextView ringPercent = content.findViewById(R.id.watchBatteryPercent);
-            ImageView batteryIcon = content.findViewById(R.id.watchBatteryIcon);
 
             String statusLine;
             if (status.connected) {
@@ -507,6 +537,7 @@ public class NavDrawerHelper {
                 ring.setProgress(0);
             }
 
+            // Colors logic
             int colorDanger = MaterialColors.getColor(content, R.attr.mzDanger, 0xFFE53935);
             int colorAccent = MaterialColors.getColor(content, R.attr.mzAccent, 0xFF4F8DFF);
             int colorLime = MaterialColors.getColor(content, R.attr.mzLime, 0xFF9CCC65);
@@ -571,12 +602,19 @@ public class NavDrawerHelper {
                 tileValue.setText(R.string.nav_watch_info_tile_missing);
             }
 
-            new MaterialAlertDialogBuilder(activity)
-                    .setView(content)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show();
-
-            drawerLayout.closeDrawers();
+            // Now check if app is missing to decide button
+            pl.kejlo.mzutv2.wear.WearSyncManager.checkIfWatchMissingApp(activity, missingNodeId -> {
+                if (missingNodeId != null) {
+                    // App is missing! Show "Install" button
+                    installContainer.setVisibility(View.VISIBLE);
+                    installButton.setOnClickListener(v -> {
+                        pl.kejlo.mzutv2.wear.WearSyncManager.openPlayStoreOnWatch(activity, missingNodeId);
+                        Toast.makeText(activity, R.string.wear_install_sent_toast, Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    installContainer.setVisibility(View.GONE);
+                }
+            });
         });
     }
 
