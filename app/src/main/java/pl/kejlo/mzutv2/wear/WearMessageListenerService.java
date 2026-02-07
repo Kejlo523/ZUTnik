@@ -1,12 +1,10 @@
 package pl.kejlo.mzutv2.wear;
 
 import android.util.Log;
-import android.content.Intent;
 
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.google.android.gms.wearable.DataMap;
-import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataMapItem;
@@ -30,52 +28,16 @@ public class WearMessageListenerService extends WearableListenerService {
         String path = messageEvent.getPath();
         int size = messageEvent.getData() != null ? messageEvent.getData().length : 0;
         Log.d(TAG, "onMessageReceived: path=" + path + " bytes=" + size);
-        if (WearSyncConstants.PATH_REQUEST_SYNC.equals(messageEvent.getPath())) {
-            Log.d(TAG, "onMessageReceived: request_sync");
-            String nodeId = messageEvent.getSourceNodeId();
-            Wearable.getNodeClient(this).getConnectedNodes()
-                    .addOnSuccessListener(nodes -> {
-                        String name = "";
-                        if (nodes != null) {
-                            for (com.google.android.gms.wearable.Node n : nodes) {
-                                if (n != null && n.getId().equals(nodeId)) {
-                                    name = n.getDisplayName();
-                                    break;
-                                }
-                            }
-                        }
-                        WearSyncManager.setPendingRequest(this, nodeId, name);
-                        Intent i = new Intent(WearSyncConstants.ACTION_WEAR_SYNC_REQUEST);
-                        i.setPackage(getPackageName());
-                        i.putExtra(WearSyncConstants.KEY_NODE_ID, nodeId != null ? nodeId : "");
-                        i.putExtra(WearSyncConstants.KEY_NODE_NAME, name);
-                        sendBroadcast(i);
-                    })
-                    .addOnFailureListener(e -> {
-                        WearSyncManager.setPendingRequest(this, nodeId, "");
-                        Intent i = new Intent(WearSyncConstants.ACTION_WEAR_SYNC_REQUEST);
-                        i.setPackage(getPackageName());
-                        i.putExtra(WearSyncConstants.KEY_NODE_ID, nodeId != null ? nodeId : "");
-                        sendBroadcast(i);
-                    });
+
+        // Auto-sync on request - no handshake needed
+        if (WearSyncConstants.PATH_REQUEST_SYNC.equals(path)) {
+            Log.d(TAG, "onMessageReceived: request_sync -> auto-sync");
+            WearSyncManager.syncNowAsync(this);
             return;
         }
-        if (WearSyncConstants.PATH_REQUEST_CANCEL.equals(messageEvent.getPath())) {
-            Log.d(TAG, "onMessageReceived: request_cancel");
-            WearSyncManager.clearPendingRequest(this);
-            Intent cancel = new Intent(WearSyncConstants.ACTION_WEAR_SYNC_CANCEL);
-            cancel.setPackage(getPackageName());
-            sendBroadcast(cancel);
-            return;
-        }
-        if (WearSyncConstants.PATH_SYNC_READY.equals(messageEvent.getPath())) {
-            String nodeId = messageEvent.getSourceNodeId();
-            Log.d(TAG, "onMessageReceived: sync_ready nodeId=" + nodeId);
-            WearSyncManager.clearPendingRequest(this);
-            WearSyncManager.syncNowAsyncForNode(this, nodeId);
-            return;
-        }
-        if (WearSyncConstants.PATH_SYNC_ACK.equals(messageEvent.getPath())) {
+
+        // Ack from watch - sync completed successfully
+        if (WearSyncConstants.PATH_SYNC_ACK.equals(path)) {
             int progress = 100;
             String status = getString(pl.kejlo.mzutv2.R.string.wear_sync_status_watch_received);
             try {
@@ -92,7 +54,9 @@ public class WearMessageListenerService extends WearableListenerService {
             WearSyncManager.sendProgress(this, progress, status);
             return;
         }
-        if (WearSyncConstants.PATH_PONG.equals(messageEvent.getPath())) {
+
+        // Pong - watch is alive
+        if (WearSyncConstants.PATH_PONG.equals(path)) {
             long ts = 0L;
             try {
                 DataMap map = DataMap.fromByteArray(messageEvent.getData());
@@ -106,6 +70,7 @@ public class WearMessageListenerService extends WearableListenerService {
             Log.d(TAG, "onMessageReceived: pong ts=" + ts);
             return;
         }
+
         Log.w(TAG, "onMessageReceived: unknown path=" + path);
     }
 
@@ -120,32 +85,11 @@ public class WearMessageListenerService extends WearableListenerService {
                 continue;
             }
             String path = event.getDataItem().getUri().getPath();
-            if (!WearSyncConstants.PATH_REQUEST_SYNC.equals(path)) {
-                if (WearSyncConstants.PATH_REQUEST_CANCEL.equals(path)) {
-                    Log.d(TAG, "onDataChanged: request_cancel (data)");
-                    WearSyncManager.clearPendingRequest(this);
-                    Intent cancel = new Intent(WearSyncConstants.ACTION_WEAR_SYNC_CANCEL);
-                    cancel.setPackage(getPackageName());
-                    sendBroadcast(cancel);
-                }
-                continue;
+            // Auto-sync on data request as well (fallback)
+            if (WearSyncConstants.PATH_REQUEST_SYNC.equals(path)) {
+                Log.d(TAG, "onDataChanged: request_sync -> auto-sync");
+                WearSyncManager.syncNowAsync(this);
             }
-            Log.d(TAG, "onDataChanged: request_sync (data)");
-            String nodeId = "";
-            String nodeName = "";
-            try {
-                DataMapItem item = DataMapItem.fromDataItem(event.getDataItem());
-                if (item != null) {
-                    item.getDataMap().getLong(WearSyncConstants.KEY_TIMESTAMP, 0L);
-                }
-            } catch (Exception ignored) {
-            }
-            WearSyncManager.setPendingRequest(this, nodeId, nodeName);
-            Intent i = new Intent(WearSyncConstants.ACTION_WEAR_SYNC_REQUEST);
-            i.setPackage(getPackageName());
-            i.putExtra(WearSyncConstants.KEY_NODE_ID, nodeId);
-            i.putExtra(WearSyncConstants.KEY_NODE_NAME, nodeName);
-            sendBroadcast(i);
         }
     }
 

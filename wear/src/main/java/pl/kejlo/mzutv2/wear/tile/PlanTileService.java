@@ -18,39 +18,52 @@ import androidx.wear.tiles.TileService;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.time.ZonedDateTime;
-import java.util.List;
 
 import pl.kejlo.mzutv2.wear.model.WearPlanSnapshot;
 import pl.kejlo.mzutv2.wear.sync.WearSnapshotStore;
 import pl.kejlo.mzutv2.wear.R;
 import pl.kejlo.mzutv2.wear.util.WearScheduleUtils;
 
+/**
+ * Modern tile service for MZUT schedule.
+ * Features:
+ * - Rounded corners on cards
+ * - Gradient accent bar
+ * - Clean typography
+ * - Compact event rows
+ */
 public class PlanTileService extends TileService {
 
     private static final String TAG = "MZUTWearSync/WEAR";
-    private static final String RESOURCES_VERSION = "1";
+    private static final String RESOURCES_VERSION = "2";
     private static final String PREFS_TILE = "wear_tile";
     private static final String KEY_TILE_SEEN_TS = "tile_seen_ts";
     private static final long TILE_SEEN_THROTTLE_MS = 30 * 60 * 1000L;
-    private static final int COLOR_BG = 0xFF0B1020;
-    private static final int COLOR_CARD = 0xFF111827;
-    private static final int COLOR_CARD_ALT = 0xFF0F172A;
+
+    // Modern dark theme
+    private static final int COLOR_BG = 0xFF0A0E1A;
+    private static final int COLOR_CARD = 0xFF161B2E;
+    private static final int COLOR_CARD_HIGHLIGHT = 0xFF1E2642;
     private static final int COLOR_TEXT = 0xFFFFFFFF;
-    private static final int COLOR_MUTED = 0xFFB0B7C3;
-    private static final int COLOR_SUBTLE = 0xFF8F96A3;
-    private static final int COLOR_ACCENT_DEFAULT = 0xFF4F8DFF;
-    private static final int COLOR_ACCENT_TEXT = 0xFF8EB4FF;
+    private static final int COLOR_MUTED = 0xFFB8C0D0;
+    private static final int COLOR_SUBTLE = 0xFF6B7280;
+    private static final int COLOR_ACCENT = 0xFF6366F1;
+    private static final int COLOR_ACCENT_LIGHT = 0xFF818CF8;
+    private static final int COLOR_SUCCESS = 0xFF10B981;
+
     private int themeBg = COLOR_BG;
     private int themeCard = COLOR_CARD;
-    private int themeCardAlt = COLOR_CARD_ALT;
+    private int themeCardHighlight = COLOR_CARD_HIGHLIGHT;
     private int themeText = COLOR_TEXT;
     private int themeMuted = COLOR_MUTED;
     private int themeSubtle = COLOR_SUBTLE;
-    private int themeAccentText = COLOR_ACCENT_TEXT;
+    private int themeAccent = COLOR_ACCENT;
+    private int themeAccentLight = COLOR_ACCENT_LIGHT;
 
     @NonNull
     @Override
-    public ListenableFuture<TileBuilders.Tile> onTileRequest(@NonNull RequestBuilders.TileRequest requestParams) {
+    public ListenableFuture<TileBuilders.Tile> onTileRequest(
+            @NonNull RequestBuilders.TileRequest requestParams) {
         ResolvableFuture<TileBuilders.Tile> future = ResolvableFuture.create();
         try {
             markTileSeen();
@@ -58,15 +71,15 @@ public class PlanTileService extends TileService {
             if (snap == null) {
                 snap = new WearPlanSnapshot();
             }
-            int count = snap.events != null ? snap.events.size() : 0;
-            Log.d(TAG, "onTileRequest: events=" + count + " loginRequired=" + snap.loginRequired);
+            applyTheme(snap);
+
             LayoutElementBuilders.Layout layout = new LayoutElementBuilders.Layout.Builder()
                     .setRoot(buildLayout(snap))
                     .build();
 
             TileBuilders.Tile tile = new TileBuilders.Tile.Builder()
                     .setResourcesVersion(RESOURCES_VERSION)
-                    .setFreshnessIntervalMillis(60 * 60 * 1000L)
+                    .setFreshnessIntervalMillis(30 * 60 * 1000L)
                     .setTimeline(new TimelineBuilders.Timeline.Builder()
                             .addTimelineEntry(new TimelineBuilders.TimelineEntry.Builder()
                                     .setLayout(layout)
@@ -77,19 +90,7 @@ public class PlanTileService extends TileService {
             future.set(tile);
         } catch (Exception e) {
             Log.e(TAG, "onTileRequest: failed", e);
-            LayoutElementBuilders.Layout layout = new LayoutElementBuilders.Layout.Builder()
-                    .setRoot(text(getString(R.string.tile_no_data), 12, COLOR_TEXT))
-                    .build();
-            TileBuilders.Tile tile = new TileBuilders.Tile.Builder()
-                    .setResourcesVersion(RESOURCES_VERSION)
-                    .setFreshnessIntervalMillis(60 * 60 * 1000L)
-                    .setTimeline(new TimelineBuilders.Timeline.Builder()
-                            .addTimelineEntry(new TimelineBuilders.TimelineEntry.Builder()
-                                    .setLayout(layout)
-                                    .build())
-                            .build())
-                    .build();
-            future.set(tile);
+            future.set(buildErrorTile());
         }
         return future;
     }
@@ -99,25 +100,40 @@ public class PlanTileService extends TileService {
     public ListenableFuture<ResourceBuilders.Resources> onResourcesRequest(
             @NonNull RequestBuilders.ResourcesRequest requestParams) {
         ResolvableFuture<ResourceBuilders.Resources> future = ResolvableFuture.create();
-        ResourceBuilders.Resources res = new ResourceBuilders.Resources.Builder()
+        future.set(new ResourceBuilders.Resources.Builder()
                 .setVersion(RESOURCES_VERSION)
-                .build();
-        future.set(res);
+                .build());
         return future;
     }
 
-    private LayoutElementBuilders.LayoutElement buildLayout(WearPlanSnapshot snap) {
-        themeBg = snap != null && snap.colorBg != 0 ? snap.colorBg : COLOR_BG;
-        themeCard = snap != null && snap.colorCard != 0 ? snap.colorCard : COLOR_CARD;
-        themeCardAlt = snap != null && snap.colorCardAlt != 0 ? snap.colorCardAlt : COLOR_CARD_ALT;
-        themeText = snap != null && snap.colorText != 0 ? snap.colorText : COLOR_TEXT;
-        themeMuted = snap != null && snap.colorMuted != 0 ? snap.colorMuted : COLOR_MUTED;
-        themeSubtle = snap != null && snap.colorSubtle != 0 ? snap.colorSubtle : COLOR_SUBTLE;
-        themeAccentText = snap != null && snap.colorAccentText != 0
-                ? snap.colorAccentText
-                : COLOR_ACCENT_TEXT;
-        int accentText = themeAccentText;
+    private void applyTheme(WearPlanSnapshot snap) {
+        if (snap == null) return;
+        if (snap.colorBg != 0) themeBg = snap.colorBg;
+        if (snap.colorCard != 0) themeCard = snap.colorCard;
+        if (snap.colorCardAlt != 0) themeCardHighlight = snap.colorCardAlt;
+        if (snap.colorText != 0) themeText = snap.colorText;
+        if (snap.colorMuted != 0) themeMuted = snap.colorMuted;
+        if (snap.colorSubtle != 0) themeSubtle = snap.colorSubtle;
+        if (snap.colorAccent != 0) themeAccent = snap.colorAccent;
+        if (snap.colorAccentText != 0) themeAccentLight = snap.colorAccentText;
+    }
 
+    private TileBuilders.Tile buildErrorTile() {
+        LayoutElementBuilders.Layout layout = new LayoutElementBuilders.Layout.Builder()
+                .setRoot(text(getString(R.string.tile_no_data), 12, COLOR_TEXT))
+                .build();
+        return new TileBuilders.Tile.Builder()
+                .setResourcesVersion(RESOURCES_VERSION)
+                .setFreshnessIntervalMillis(60 * 60 * 1000L)
+                .setTimeline(new TimelineBuilders.Timeline.Builder()
+                        .addTimelineEntry(new TimelineBuilders.TimelineEntry.Builder()
+                                .setLayout(layout)
+                                .build())
+                        .build())
+                .build();
+    }
+
+    private LayoutElementBuilders.LayoutElement buildLayout(WearPlanSnapshot snap) {
         ModifiersBuilders.Modifiers rootMods = new ModifiersBuilders.Modifiers.Builder()
                 .setClickable(new ModifiersBuilders.Clickable.Builder()
                         .setOnClick(new ActionBuilders.LaunchAction.Builder()
@@ -128,7 +144,10 @@ public class PlanTileService extends TileService {
                                 .build())
                         .build())
                 .setPadding(new ModifiersBuilders.Padding.Builder()
-                        .setAll(DimensionBuilders.dp(14))
+                        .setStart(DimensionBuilders.dp(12))
+                        .setEnd(DimensionBuilders.dp(12))
+                        .setTop(DimensionBuilders.dp(10))
+                        .setBottom(DimensionBuilders.dp(8))
                         .build())
                 .setBackground(new ModifiersBuilders.Background.Builder()
                         .setColor(ColorBuilders.argb(themeBg))
@@ -138,165 +157,216 @@ public class PlanTileService extends TileService {
         LayoutElementBuilders.Column.Builder root = new LayoutElementBuilders.Column.Builder()
                 .setModifiers(rootMods)
                 .setWidth(DimensionBuilders.expand())
-                .setHeight(DimensionBuilders.expand());
+                .setHeight(DimensionBuilders.expand())
+                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_START);
 
-        root.addContent(text(getString(R.string.tile_title), 14, accentText));
+        // Header with app name
+        root.addContent(buildHeader());
 
-        String date = snap != null ? snap.dateLabel : "";
-        if (date == null || date.isEmpty()) {
-            date = snap != null ? snap.subtitle : "";
-        }
-        if (date != null && !date.isEmpty()) {
-            root.addContent(text(date, 10, themeMuted));
-        }
-        String subtitle = snap != null ? snap.subtitle : "";
-        if (subtitle != null && !subtitle.isEmpty() && !subtitle.equals(date)) {
-            root.addContent(text(subtitle, 10, themeSubtle));
-        }
-
+        // Login required state
         if (snap == null || snap.loginRequired) {
-            root.addContent(new LayoutElementBuilders.Spacer.Builder()
-                    .setHeight(DimensionBuilders.dp(6))
-                    .build());
-            root.addContent(text(getString(R.string.tile_login_required), 11, themeMuted));
-            root.addContent(text(getString(R.string.tile_wait_sync), 10, themeSubtle));
+            root.addContent(spacer(8));
+            root.addContent(buildInfoCard(
+                    getString(R.string.tile_login_required),
+                    getString(R.string.tile_wait_sync),
+                    themeSubtle));
             return root.build();
         }
 
+        // Find next event
         WearScheduleUtils.NextEventInfo next =
                 WearScheduleUtils.findNextEvent(snap, ZonedDateTime.now());
+
         if (next == null || next.event == null) {
-            root.addContent(new LayoutElementBuilders.Spacer.Builder()
-                    .setHeight(DimensionBuilders.dp(6))
-                    .build());
-            root.addContent(text(getString(R.string.tile_no_events), 11, themeSubtle));
+            root.addContent(spacer(8));
+            root.addContent(buildInfoCard(
+                    getString(R.string.tile_no_events),
+                    snap.dateLabel != null ? snap.dateLabel : "",
+                    COLOR_SUCCESS));
             return root.build();
         }
 
-        int accent = next.event.color != 0 ? next.event.color : COLOR_ACCENT_DEFAULT;
-        root.addContent(new LayoutElementBuilders.Spacer.Builder()
-                .setHeight(DimensionBuilders.dp(6))
-                .build());
-        root.addContent(buildNextCard(next, accent));
+        // Next event card - prominent
+        root.addContent(spacer(6));
+        root.addContent(buildNextEventCard(next));
 
-        if (snap.events != null && !snap.events.isEmpty()) {
+        // Secondary events (compact list)
+        if (snap.events != null && snap.events.size() > 1) {
             int added = 0;
-            root.addContent(new LayoutElementBuilders.Spacer.Builder()
-                    .setHeight(DimensionBuilders.dp(6))
-                    .build());
+            root.addContent(spacer(6));
             for (WearPlanSnapshot.Event ev : snap.events) {
-                if (added >= 1) {
-                    break;
-                }
-                if (isSameEvent(ev, next.event)) {
-                    continue;
-                }
-                root.addContent(eventRowCompact(ev));
+                if (added >= 2) break;
+                if (isSameEvent(ev, next.event)) continue;
+                root.addContent(buildCompactEventRow(ev));
+                root.addContent(spacer(3));
                 added++;
             }
-        }
-
-        if (snap.refreshedLabel != null && !snap.refreshedLabel.isEmpty()) {
-            root.addContent(new LayoutElementBuilders.Spacer.Builder()
-                    .setHeight(DimensionBuilders.dp(4))
-                    .build());
-            root.addContent(text(snap.refreshedLabel, 9, themeSubtle));
         }
 
         return root.build();
     }
 
-    private LayoutElementBuilders.LayoutElement buildNextCard(
-            WearScheduleUtils.NextEventInfo next, int accent) {
+    private LayoutElementBuilders.LayoutElement buildHeader() {
+        return new LayoutElementBuilders.Row.Builder()
+                .setWidth(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.wrap())
+                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                .addContent(new LayoutElementBuilders.Column.Builder()
+                        .setWidth(DimensionBuilders.expand())
+                        .addContent(text("📚 MZUT", 13, themeAccentLight))
+                        .build())
+                .build();
+    }
+
+    private LayoutElementBuilders.LayoutElement buildNextEventCard(
+            WearScheduleUtils.NextEventInfo next) {
         WearPlanSnapshot.Event ev = next.event;
-        String title = WearScheduleUtils.ellipsize(ev.title, 22);
+        int accent = ev.color != 0 ? ev.color : themeAccent;
+
+        String title = WearScheduleUtils.ellipsize(ev.title, 20);
         String timeRange = next.timeRange != null ? next.timeRange : "";
         String eta = WearScheduleUtils.formatEta(this, ZonedDateTime.now(), next.start);
 
+        // Card with accent left border
         ModifiersBuilders.Modifiers cardMods = new ModifiersBuilders.Modifiers.Builder()
                 .setBackground(new ModifiersBuilders.Background.Builder()
                         .setColor(ColorBuilders.argb(themeCard))
+                        .setCorner(new ModifiersBuilders.Corner.Builder()
+                                .setRadius(DimensionBuilders.dp(12))
+                                .build())
                         .build())
                 .setPadding(new ModifiersBuilders.Padding.Builder()
-                        .setAll(DimensionBuilders.dp(10))
+                        .setStart(DimensionBuilders.dp(10))
+                        .setEnd(DimensionBuilders.dp(10))
+                        .setTop(DimensionBuilders.dp(10))
+                        .setBottom(DimensionBuilders.dp(10))
                         .build())
                 .build();
 
-        LayoutElementBuilders.Column.Builder left = new LayoutElementBuilders.Column.Builder()
+        // Accent bar
+        LayoutElementBuilders.Box accentBar = new LayoutElementBuilders.Box.Builder()
+                .setWidth(DimensionBuilders.dp(4))
+                .setHeight(DimensionBuilders.dp(40))
+                .setModifiers(new ModifiersBuilders.Modifiers.Builder()
+                        .setBackground(new ModifiersBuilders.Background.Builder()
+                                .setColor(ColorBuilders.argb(accent))
+                                .setCorner(new ModifiersBuilders.Corner.Builder()
+                                        .setRadius(DimensionBuilders.dp(2))
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+
+        // Content column
+        LayoutElementBuilders.Column.Builder content = new LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.wrap());
-        left.addContent(text(getString(R.string.tile_next_label), 10, accent));
-        left.addContent(text(title, 13, themeText));
-        if (timeRange != null && !timeRange.isEmpty()) {
-            left.addContent(text(timeRange, 10, themeMuted));
+
+        content.addContent(text("NASTĘPNE", 9, accent));
+        content.addContent(spacer(2));
+        content.addContent(text(title, 14, themeText));
+        if (!timeRange.isEmpty()) {
+            content.addContent(text(timeRange, 11, themeMuted));
         }
         if (ev.room != null && !ev.room.isEmpty()) {
-            left.addContent(text(ev.room, 10, themeSubtle));
+            content.addContent(text(ev.room, 10, themeSubtle));
         }
 
-        LayoutElementBuilders.Column.Builder right = new LayoutElementBuilders.Column.Builder()
-                .setWidth(DimensionBuilders.wrap())
-                .setHeight(DimensionBuilders.wrap());
+        // ETA badge
+        LayoutElementBuilders.LayoutElement etaBadge = null;
         if (eta != null && !eta.isEmpty()) {
-            right.addContent(text(eta, 14, themeText));
+            etaBadge = new LayoutElementBuilders.Box.Builder()
+                    .setWidth(DimensionBuilders.wrap())
+                    .setHeight(DimensionBuilders.wrap())
+                    .setModifiers(new ModifiersBuilders.Modifiers.Builder()
+                            .setBackground(new ModifiersBuilders.Background.Builder()
+                                    .setColor(ColorBuilders.argb(themeCardHighlight))
+                                    .setCorner(new ModifiersBuilders.Corner.Builder()
+                                            .setRadius(DimensionBuilders.dp(6))
+                                            .build())
+                                    .build())
+                            .setPadding(new ModifiersBuilders.Padding.Builder()
+                                    .setStart(DimensionBuilders.dp(6))
+                                    .setEnd(DimensionBuilders.dp(6))
+                                    .setTop(DimensionBuilders.dp(4))
+                                    .setBottom(DimensionBuilders.dp(4))
+                                    .build())
+                            .build())
+                    .addContent(text(eta, 12, themeText))
+                    .build();
         }
 
+        // Main row: accent bar + content + eta
         LayoutElementBuilders.Row.Builder row = new LayoutElementBuilders.Row.Builder()
                 .setWidth(DimensionBuilders.expand())
-                .setHeight(DimensionBuilders.wrap());
-        row.addContent(left.build());
-        row.addContent(new LayoutElementBuilders.Spacer.Builder()
-                .setWidth(DimensionBuilders.dp(8))
-                .build());
-        row.addContent(right.build());
+                .setHeight(DimensionBuilders.wrap())
+                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER);
 
-        LayoutElementBuilders.Box.Builder card = new LayoutElementBuilders.Box.Builder()
+        row.addContent(accentBar);
+        row.addContent(spacerH(8));
+        row.addContent(content.build());
+        if (etaBadge != null) {
+            row.addContent(spacerH(6));
+            row.addContent(etaBadge);
+        }
+
+        return new LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.wrap())
                 .setModifiers(cardMods)
-                .addContent(row.build());
-
-        return card.build();
+                .addContent(row.build())
+                .build();
     }
 
-    private LayoutElementBuilders.LayoutElement eventRowCompact(WearPlanSnapshot.Event ev) {
-        LayoutElementBuilders.Row.Builder row = new LayoutElementBuilders.Row.Builder()
-                .setWidth(DimensionBuilders.expand())
-                .setHeight(DimensionBuilders.wrap());
+    private LayoutElementBuilders.LayoutElement buildCompactEventRow(WearPlanSnapshot.Event ev) {
+        int dotColor = ev.color != 0 ? ev.color : themeAccent;
 
-        int dotColor = ev.color != 0 ? ev.color : COLOR_ACCENT_DEFAULT;
+        ModifiersBuilders.Modifiers rowMods = new ModifiersBuilders.Modifiers.Builder()
+                .setBackground(new ModifiersBuilders.Background.Builder()
+                        .setColor(ColorBuilders.argb(themeCardHighlight))
+                        .setCorner(new ModifiersBuilders.Corner.Builder()
+                                .setRadius(DimensionBuilders.dp(8))
+                                .build())
+                        .build())
+                .setPadding(new ModifiersBuilders.Padding.Builder()
+                        .setStart(DimensionBuilders.dp(8))
+                        .setEnd(DimensionBuilders.dp(8))
+                        .setTop(DimensionBuilders.dp(6))
+                        .setBottom(DimensionBuilders.dp(6))
+                        .build())
+                .build();
+
+        // Dot indicator
         LayoutElementBuilders.Box dot = new LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.dp(6))
                 .setHeight(DimensionBuilders.dp(6))
                 .setModifiers(new ModifiersBuilders.Modifiers.Builder()
                         .setBackground(new ModifiersBuilders.Background.Builder()
                                 .setColor(ColorBuilders.argb(dotColor))
+                                .setCorner(new ModifiersBuilders.Corner.Builder()
+                                        .setRadius(DimensionBuilders.dp(3))
+                                        .build())
                                 .build())
                         .build())
                 .build();
 
-        row.addContent(dot);
-        row.addContent(new LayoutElementBuilders.Spacer.Builder()
-                .setWidth(DimensionBuilders.dp(6))
-                .build());
-
+        // Text content
         LayoutElementBuilders.Column.Builder col = new LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.wrap());
-        col.addContent(text(WearScheduleUtils.ellipsize(ev.title, 20), 11, themeText));
+        col.addContent(text(WearScheduleUtils.ellipsize(ev.title, 18), 11, themeText));
         if (ev.time != null && !ev.time.isEmpty()) {
             col.addContent(text(ev.time, 9, themeMuted));
         }
-        row.addContent(col.build());
 
-        ModifiersBuilders.Modifiers rowMods = new ModifiersBuilders.Modifiers.Builder()
-                .setBackground(new ModifiersBuilders.Background.Builder()
-                        .setColor(ColorBuilders.argb(themeCardAlt))
-                        .build())
-                .setPadding(new ModifiersBuilders.Padding.Builder()
-                        .setAll(DimensionBuilders.dp(6))
-                        .build())
-                .build();
+        LayoutElementBuilders.Row.Builder row = new LayoutElementBuilders.Row.Builder()
+                .setWidth(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.wrap())
+                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER);
+
+        row.addContent(dot);
+        row.addContent(spacerH(8));
+        row.addContent(col.build());
 
         return new LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.expand())
@@ -306,33 +376,70 @@ public class PlanTileService extends TileService {
                 .build();
     }
 
-    private boolean isSameEvent(WearPlanSnapshot.Event a, WearPlanSnapshot.Event b) {
-        if (a == null || b == null) {
-            return false;
-        }
-        return safeEq(a.title, b.title)
-                && safeEq(a.time, b.time)
-                && safeEq(a.room, b.room);
-    }
+    private LayoutElementBuilders.LayoutElement buildInfoCard(String title, String subtitle, int accentColor) {
+        ModifiersBuilders.Modifiers cardMods = new ModifiersBuilders.Modifiers.Builder()
+                .setBackground(new ModifiersBuilders.Background.Builder()
+                        .setColor(ColorBuilders.argb(themeCard))
+                        .setCorner(new ModifiersBuilders.Corner.Builder()
+                                .setRadius(DimensionBuilders.dp(12))
+                                .build())
+                        .build())
+                .setPadding(new ModifiersBuilders.Padding.Builder()
+                        .setAll(DimensionBuilders.dp(12))
+                        .build())
+                .build();
 
-    private boolean safeEq(String a, String b) {
-        if (a == null) {
-            return b == null || b.isEmpty();
+        LayoutElementBuilders.Column.Builder col = new LayoutElementBuilders.Column.Builder()
+                .setWidth(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.wrap())
+                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER);
+
+        col.addContent(text(title, 13, themeText));
+        if (subtitle != null && !subtitle.isEmpty()) {
+            col.addContent(spacer(4));
+            col.addContent(text(subtitle, 10, themeSubtle));
         }
-        return a.equals(b != null ? b : "");
+
+        return new LayoutElementBuilders.Box.Builder()
+                .setWidth(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.wrap())
+                .setModifiers(cardMods)
+                .addContent(col.build())
+                .build();
     }
 
     private LayoutElementBuilders.Text text(String content, int sizeSp, int color) {
-        if (content == null) {
-            content = "";
-        }
-        LayoutElementBuilders.FontStyle.Builder fs = new LayoutElementBuilders.FontStyle.Builder()
-                .setSize(DimensionBuilders.sp(sizeSp))
-                .setColor(ColorBuilders.argb(color));
+        if (content == null) content = "";
         return new LayoutElementBuilders.Text.Builder()
                 .setText(content)
-                .setFontStyle(fs.build())
+                .setFontStyle(new LayoutElementBuilders.FontStyle.Builder()
+                        .setSize(DimensionBuilders.sp(sizeSp))
+                        .setColor(ColorBuilders.argb(color))
+                        .build())
+                .setMaxLines(2)
                 .build();
+    }
+
+    private LayoutElementBuilders.Spacer spacer(int heightDp) {
+        return new LayoutElementBuilders.Spacer.Builder()
+                .setHeight(DimensionBuilders.dp(heightDp))
+                .build();
+    }
+
+    private LayoutElementBuilders.Spacer spacerH(int widthDp) {
+        return new LayoutElementBuilders.Spacer.Builder()
+                .setWidth(DimensionBuilders.dp(widthDp))
+                .build();
+    }
+
+    private boolean isSameEvent(WearPlanSnapshot.Event a, WearPlanSnapshot.Event b) {
+        if (a == null || b == null) return false;
+        return safeEq(a.title, b.title) && safeEq(a.time, b.time) && safeEq(a.room, b.room);
+    }
+
+    private boolean safeEq(String a, String b) {
+        if (a == null) return b == null || b.isEmpty();
+        return a.equals(b != null ? b : "");
     }
 
     private void markTileSeen() {
@@ -341,10 +448,9 @@ public class PlanTileService extends TileService {
             android.content.SharedPreferences prefs =
                     getSharedPreferences(PREFS_TILE, MODE_PRIVATE);
             long last = prefs.getLong(KEY_TILE_SEEN_TS, 0L);
-            if (now - last < TILE_SEEN_THROTTLE_MS) {
-                return;
-            }
+            if (now - last < TILE_SEEN_THROTTLE_MS) return;
             prefs.edit().putLong(KEY_TILE_SEEN_TS, now).apply();
+
             com.google.android.gms.wearable.PutDataMapRequest req =
                     com.google.android.gms.wearable.PutDataMapRequest.create(
                             pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_TILE_SEEN);

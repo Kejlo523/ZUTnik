@@ -21,6 +21,7 @@
     <string name="wear_main_sync_failed">Nie udało się wysłać synchronizacji</string>
     <string name="wear_main_no_phone">Brak połączenia z telefonem</string>
     <string name="wear_main_status_waiting">Oczekiwanie na dane...</string>
+    <string name="wear_main_status_syncing">Synchronizuję...</string>
     <string name="wear_main_status_idle">Kliknij synchronizuj, aby pobrać dane</string>
     <string name="wear_main_status_phone_found">Wykryto telefon. Pobieram dane...</string>
     <string name="wear_main_status_received">Dane zaktualizowane</string>
