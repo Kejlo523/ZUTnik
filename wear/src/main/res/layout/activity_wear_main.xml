@@ -83,7 +83,7 @@
                     android:layout_marginStart="8dp"
                     android:textColor="#B0B7C3"
                     android:textSize="10sp"
-                    android:text="0%"
+                    android:text="@string/common_percent_zero"
                     android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>

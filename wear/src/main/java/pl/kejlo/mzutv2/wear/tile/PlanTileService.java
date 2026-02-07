@@ -211,7 +211,7 @@ public class PlanTileService extends TileService {
         WearPlanSnapshot.Event ev = next.event;
         String title = WearScheduleUtils.ellipsize(ev.title, 22);
         String timeRange = next.timeRange != null ? next.timeRange : "";
-        String eta = WearScheduleUtils.formatEta(ZonedDateTime.now(), next.start);
+        String eta = WearScheduleUtils.formatEta(this, ZonedDateTime.now(), next.start);
 
         ModifiersBuilders.Modifiers cardMods = new ModifiersBuilders.Modifiers.Builder()
                 .setBackground(new ModifiersBuilders.Background.Builder()

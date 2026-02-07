@@ -82,39 +82,41 @@ public final class WearScheduleUtils {
         return best;
     }
 
-    public static String formatEta(ZonedDateTime now, ZonedDateTime start) {
-        if (now == null || start == null) {
+    public static String formatEta(android.content.Context context,
+            ZonedDateTime now, ZonedDateTime start) {
+        if (context == null || now == null || start == null) {
             return "";
         }
         long minutes = Duration.between(now, start).toMinutes();
         if (minutes <= 0) {
-            return "teraz";
+            return context.getString(pl.kejlo.mzutv2.wear.R.string.wear_eta_now);
         }
         long h = minutes / 60;
         long m = minutes % 60;
         if (h <= 0) {
-            return "za " + m + "m";
+            return context.getString(pl.kejlo.mzutv2.wear.R.string.wear_eta_minutes, m);
         }
         if (m == 0) {
-            return "za " + h + "h";
+            return context.getString(pl.kejlo.mzutv2.wear.R.string.wear_eta_hours, h);
         }
-        return "za " + h + "h " + m + "m";
+        return context.getString(pl.kejlo.mzutv2.wear.R.string.wear_eta_hours_minutes, h, m);
     }
 
-    public static String formatEtaShort(ZonedDateTime now, ZonedDateTime start) {
-        if (now == null || start == null) {
+    public static String formatEtaShort(android.content.Context context,
+            ZonedDateTime now, ZonedDateTime start) {
+        if (context == null || now == null || start == null) {
             return "";
         }
         long minutes = Duration.between(now, start).toMinutes();
         if (minutes <= 0) {
-            return "teraz";
+            return context.getString(pl.kejlo.mzutv2.wear.R.string.wear_eta_now);
         }
         long h = minutes / 60;
         long m = minutes % 60;
         if (h <= 0) {
-            return "za " + m + "m";
+            return context.getString(pl.kejlo.mzutv2.wear.R.string.wear_eta_minutes, m);
         }
-        return "za " + h + "h";
+        return context.getString(pl.kejlo.mzutv2.wear.R.string.wear_eta_hours, h);
     }
 
     public static String ellipsize(String text, int max) {

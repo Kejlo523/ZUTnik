@@ -3,9 +3,6 @@ package pl.kejlo.mzutv2;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.BroadcastReceiver;
-import android.content.IntentFilter;
-import android.os.Build;
 import android.text.format.DateUtils;
 
 import android.view.View;
@@ -13,7 +10,6 @@ import android.view.LayoutInflater;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -503,11 +499,11 @@ public class NavDrawerHelper {
             if (battery >= 0 && battery <= 100) {
                 batteryView.setText(activity.getString(
                         R.string.nav_watch_status_battery, battery));
-                ringPercent.setText(battery + "%");
+                ringPercent.setText(activity.getString(R.string.common_percent_format, battery));
                 ring.setProgress(battery);
             } else {
                 batteryView.setText(R.string.nav_watch_info_last_sync_none);
-                ringPercent.setText("--%");
+                ringPercent.setText(R.string.common_percent_placeholder);
                 ring.setProgress(0);
             }
 
@@ -559,7 +555,8 @@ public class NavDrawerHelper {
             String autoLabel = activity.getString(auto
                     ? R.string.nav_watch_status_auto_on
                     : R.string.nav_watch_status_auto_off);
-            autoSyncValue.setText(autoLabel + " (" + intervalLabel + ")");
+            autoSyncValue.setText(activity.getString(
+                    R.string.nav_watch_info_auto_sync_value, autoLabel, intervalLabel));
 
             long tileSeen = status.tileSeenTimestamp;
             long now = System.currentTimeMillis();
@@ -578,6 +575,7 @@ public class NavDrawerHelper {
                     .setView(content)
                     .setPositiveButton(android.R.string.ok, null)
                     .show();
+
             drawerLayout.closeDrawers();
         });
     }

@@ -83,7 +83,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="--%"
+                        android:text="@string/common_percent_placeholder"
                         android:textSize="11sp"
                         android:textColor="?attr/mzText" />
                 </LinearLayout>
@@ -218,4 +218,5 @@
                 android:textColor="?attr/mzText" />
         </LinearLayout>
     </LinearLayout>
+
 </LinearLayout>
