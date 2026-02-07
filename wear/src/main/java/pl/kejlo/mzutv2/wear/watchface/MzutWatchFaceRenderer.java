@@ -229,7 +229,7 @@ public class MzutWatchFaceRenderer extends Renderer.CanvasRenderer {
         }
 
         String title = WearScheduleUtils.ellipsize(next.event.title, 20);
-        String eta = WearScheduleUtils.formatEta(time, next.start);
+        String eta = WearScheduleUtils.formatEta(context, time, next.start);
         String timeRange = next.timeRange != null ? next.timeRange : "";
 
         if (ambient) {

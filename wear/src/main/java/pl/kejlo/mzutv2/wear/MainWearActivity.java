@@ -186,7 +186,9 @@ public class MainWearActivity extends Activity {
             if (bm != null) {
                 level = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
             }
-            String deviceName = Build.MODEL != null ? Build.MODEL : "Wear";
+            String deviceName = Build.MODEL != null
+                    ? Build.MODEL
+                    : getString(R.string.wear_device_default_name);
             PutDataMapRequest req = PutDataMapRequest.create(
                     pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_WATCH_STATUS);
             DataMap map = req.getDataMap();
@@ -484,7 +486,7 @@ public class MainWearActivity extends Activity {
             progress.setProgress(v);
         }
         if (progressText != null) {
-            progressText.setText(v + "%");
+            progressText.setText(getString(R.string.common_percent_format, v));
         }
     }
 

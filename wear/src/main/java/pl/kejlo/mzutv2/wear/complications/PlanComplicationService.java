@@ -55,8 +55,8 @@ public class PlanComplicationService extends ComplicationDataSourceService {
         String title = (ev.title != null && !ev.title.isEmpty()) ? ev.title : "";
         String time = (ev.time != null && !ev.time.isEmpty()) ? ev.time : "";
         String room = (ev.room != null && !ev.room.isEmpty()) ? ev.room : "";
-        String eta = WearScheduleUtils.formatEta(ZonedDateTime.now(), next.start);
-        String etaShort = WearScheduleUtils.formatEtaShort(ZonedDateTime.now(), next.start);
+        String eta = WearScheduleUtils.formatEta(this, ZonedDateTime.now(), next.start);
+        String etaShort = WearScheduleUtils.formatEtaShort(this, ZonedDateTime.now(), next.start);
 
         if (request.getComplicationType() == ComplicationType.LONG_TEXT) {
             StringBuilder sb = new StringBuilder();
@@ -91,11 +91,14 @@ public class PlanComplicationService extends ComplicationDataSourceService {
     @Override
     public ComplicationData getPreviewData(@NonNull ComplicationType type) {
         MonochromaticImage icon = buildIcon();
-        PlainComplicationText text = new PlainComplicationText.Builder("za 2h").build();
-        PlainComplicationText title = new PlainComplicationText.Builder("Nastepne").build();
+        PlainComplicationText text = new PlainComplicationText.Builder(
+                getString(R.string.complication_preview_eta_short)).build();
+        PlainComplicationText title = new PlainComplicationText.Builder(
+                getString(R.string.complication_preview_title)).build();
         if (type == ComplicationType.LONG_TEXT) {
             return new LongTextComplicationData.Builder(
-                    new PlainComplicationText.Builder("Wyklad\nza 2h 10m \u00B7 08:00-09:30").build(),
+                    new PlainComplicationText.Builder(
+                            getString(R.string.complication_preview_long)).build(),
                     title)
                     .setMonochromaticImage(icon)
                     .build();

@@ -852,6 +852,7 @@ public class WearSyncManager {
         context.sendBroadcast(i);
     }
 
+
     private static void sendProgressToWatch(Context context, int progress, String status) {
         DataMap map = new DataMap();
         map.putInt(WearSyncConstants.KEY_PROGRESS, progress);

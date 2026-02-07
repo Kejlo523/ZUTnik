@@ -240,7 +240,7 @@ public abstract class MzutBaseActivity extends AppCompatActivity {
                     progressBar.setProgress(v);
                 }
                 if (progressText != null) {
-                    progressText.setText(v + "%");
+                    progressText.setText(getString(R.string.common_percent_format, v));
                 }
                 if (progressStatus != null && status != null && !status.isEmpty()) {
                     progressStatus.setText(status);

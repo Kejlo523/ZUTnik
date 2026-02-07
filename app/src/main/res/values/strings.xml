@@ -49,7 +49,7 @@
     <string name="wear_sync_status_waiting_watch">Wysłano, czekam na zegarek…</string>
     <string name="wear_sync_status_no_data">Brak danych do wysłania</string>
     <string name="wear_sync_status_error">Błąd wysyłki danych</string>
-    <string name="wear_sync_status_watch_received">100% Zegarek odebral dane!</string>
+    <string name="wear_sync_status_watch_received">100% Zegarek odebrał dane!</string>
 
     <string name="login_card_title">Zaloguj się do mZUT</string>
     <string name="login_hint">Login</string>
@@ -472,7 +472,13 @@
     <string name="common_zero">0</string>
     <string name="common_dash">-</string>
     <string name="common_ok">OK</string>
-    <string name="wear_sync_success_msg">100% Zegarek odebral dane!</string>
+    <string name="common_percent_zero">0%</string>
+    <string name="common_percent_placeholder">--%</string>
+    <string name="common_percent_format">%1$d%%</string>
+    <string name="grades_placeholder_value">4.5</string>
+    <string name="grades_ects_format">%1$.1f ECTS</string>
+    <string name="nav_watch_info_auto_sync_value">%1$s (%2$s)</string>
+    <string name="wear_sync_success_msg">100% Zegarek odebrał dane!</string>
 
     <!-- Custom Plan Events (Egzaminy/Kolokwia) -->
     <string name="plan_custom_events_title">Moje egzaminy i kolokwia</string>
@@ -539,11 +545,12 @@
     <string name="plan_custom_remove_marker">Usuń oznaczenie</string>
     <string name="plan_custom_removed_toast">Usunięto oznaczenie</string>
     <string name="wear_sync_request_title">Synchronizacja zegarka</string>
-    <string name="wear_sync_request_msg">Zegarek %1$s prosi o synchronizacje danych. Zsynchronizowac teraz?</string>
+    <string name="wear_sync_request_msg">Zegarek %1$s prosi o synchronizację danych. Zsynchronizować teraz?</string>
     <string name="wear_sync_request_positive">Synchronizuj</string>
     <string name="wear_sync_request_negative">Anuluj</string>
     <string name="nav_watch_status_name">Zegarek: %1$s</string>
     <string name="nav_watch_status_battery">Bateria: %1$d%%</string>
+
 </resources>
 
 

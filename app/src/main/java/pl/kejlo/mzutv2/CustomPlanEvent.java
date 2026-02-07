@@ -49,16 +49,7 @@ public class CustomPlanEvent {
      */
     public String getTypeLabel(android.content.Context context) {
         if (context == null) {
-            switch (eventType) {
-                case TYPE_EXAM:
-                    return "Egzamin";
-                case TYPE_PASS:
-                    return "Zaliczenie";
-                case TYPE_TEST:
-                    return "Kolokwium";
-                default:
-                    return eventType;
-            }
+            return eventType != null ? eventType : "";
         }
         switch (eventType) {
             case TYPE_EXAM:
@@ -77,16 +68,7 @@ public class CustomPlanEvent {
      */
     public String getTypeShortLabel(android.content.Context context) {
         if (context == null) {
-            switch (eventType) {
-                case TYPE_EXAM:
-                    return "EGZAMIN!";
-                case TYPE_PASS:
-                    return "ZALICZENIE!";
-                case TYPE_TEST:
-                    return "KOLOKWIUM!";
-                default:
-                    return eventType.toUpperCase();
-            }
+            return eventType != null ? eventType.toUpperCase() : "";
         }
         switch (eventType) {
             case TYPE_EXAM:

@@ -166,8 +166,9 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
 
         if (g.finalMissing || g.finalGrade == null) {
             h.finalLabel.setText(R.string.grades_final_grade_missing);
-            h.finalPill.setText("-");
-            styleGradePill(ctx, h.finalPill, "-", true);
+            String dash = ctx.getString(R.string.common_dash);
+            h.finalPill.setText(dash);
+            styleGradePill(ctx, h.finalPill, dash, true);
         } else {
             h.finalLabel.setText(R.string.grades_final_grade_label);
             String raw = g.finalGrade.grade != null ? g.finalGrade.grade : "";
@@ -178,7 +179,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         double ects = resolveGroupEcts(g);
         if (ects > 0.0) {
             String base = h.finalLabel.getText() != null ? h.finalLabel.getText().toString() : "";
-            String ectsLine = String.format(java.util.Locale.getDefault(), "%.1f ECTS", ects);
+            String ectsLine = ctx.getString(R.string.grades_ects_format, ects);
             h.finalLabel.setText(base + "\n" + ectsLine);
         }
 
