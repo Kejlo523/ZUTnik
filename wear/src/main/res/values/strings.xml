@@ -3,6 +3,7 @@
     <string name="app_name_wear">mZUT v2</string>
     <string name="tile_title">Plan zajęć</string>
     <string name="tile_no_data">Brak danych</string>
+    <string name="tile_description">Pokazuje najbliższe zajęcia z planu</string>
     <string name="tile_no_events">Brak zajęć</string>
     <string name="tile_login_required">Zaloguj się w aplikacji na telefonie</string>
     <string name="tile_wait_sync">Po zalogowaniu poczekaj na synchronizację</string>
