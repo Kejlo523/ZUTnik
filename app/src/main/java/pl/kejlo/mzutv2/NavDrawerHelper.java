@@ -620,8 +620,8 @@ public class NavDrawerHelper {
 
     private static boolean isBluetoothEnabled(Context context) {
         try {
-            android.bluetooth.BluetoothAdapter adapter =
-                    android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            android.bluetooth.BluetoothManager manager = (android.bluetooth.BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+            android.bluetooth.BluetoothAdapter adapter = manager != null ? manager.getAdapter() : null;
             return adapter != null && adapter.isEnabled();
         } catch (Exception ignored) {
             return false;
