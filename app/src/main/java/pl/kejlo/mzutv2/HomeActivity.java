@@ -494,6 +494,14 @@ public class HomeActivity extends MzutBaseActivity {
         }
     }
 
+    // Helper for API < 17 compatibility if needed, though minSdk is 26 so not strictly needed but good practice
+    private boolean generated_isDestroyed() {
+        if (android.os.Build.VERSION.SDK_INT >= 17) {
+            return isDestroyed();
+        }
+        return false;
+    }
+
     @Override
     protected void onPause() {
         super.onPause();

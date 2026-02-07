@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.CapabilityClient;
 import com.google.android.gms.wearable.CapabilityInfo;
@@ -33,6 +35,7 @@ public class WearSyncManager {
     private static final String TAG = "MZUTWearSync/PHONE";
     private static final String PREFS_WEAR = "wear_sync_prefs";
     private static final String KEY_LAST_PONG_TS = "last_pong_ts";
+    private static final String KEY_LAST_PONG_BATTERY = "last_pong_battery";
     private static final String KEY_LAST_SYNC_TS = "wear_last_sync_ts";
     private static final String KEY_AUTO_SYNC = "wear_auto_sync_enabled";
     private static final String KEY_AUTO_SYNC_INTERVAL = "wear_auto_sync_interval";
@@ -151,6 +154,20 @@ public class WearSyncManager {
         prefs.edit().putLong(KEY_LAST_PONG_TS, ts).apply();
     }
 
+    public static void setLastPongBattery(Context context, int battery) {
+        if (context == null) {
+            return;
+        }
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_WEAR, Context.MODE_PRIVATE);
+        prefs.edit().putInt(KEY_LAST_PONG_BATTERY, battery).apply();
+    }
+    
+    public static int getLastPongBattery(Context context) {
+         if (context == null) return -1;
+         return context.getSharedPreferences(PREFS_WEAR, Context.MODE_PRIVATE)
+                 .getInt(KEY_LAST_PONG_BATTERY, -1);
+    }
+
     // ============================================================
     // Watch Status
     // ============================================================
@@ -173,13 +190,28 @@ public class WearSyncManager {
         executor.execute(() -> {
             WatchStatus status = fetchWatchStatus(context);
             boolean pingOk = false;
+            int distinctBattery = -1;
+            
             if (status != null && status.connected) {
+                // Reset battery in prefs to detect update? OR just read after ping
+                // We trust pingWatchOnce waits for the pong which updates the prefs
                 pingOk = pingWatchOnce(context, status.nodeId);
             }
-            if (status != null && status.connected && !pingOk) {
-                status = new WatchStatus(true, false, status.name, status.battery,
-                        status.timestamp, status.nodeId, status.paired, status.tileSeenTimestamp);
+            
+            if (status != null && status.connected) {
+                 if (pingOk) {
+                     // Ping succeeded -> Get fresh battery from Pong
+                     distinctBattery = getLastPongBattery(context);
+                     // Update status with fresh battery and timestamp
+                     status = new WatchStatus(true, true, status.name, distinctBattery,
+                             System.currentTimeMillis(), status.nodeId, status.paired, status.tileSeenTimestamp);
+                 } else {
+                     // Ping failed
+                     status = new WatchStatus(true, false, status.name, status.battery,
+                             status.timestamp, status.nodeId, status.paired, status.tileSeenTimestamp);
+                 }
             }
+            
             final WatchStatus resultStatus = status;
             android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
             handler.post(() -> callback.onStatus(resultStatus));
@@ -529,6 +561,83 @@ public class WearSyncManager {
                                 "sendSnapshotMessage: fail node=" + n.getDisplayName(), e));
             }
             sendProgress(context, 85, context.getString(R.string.wear_sync_status_waiting_watch));
+        });
+    }
+    // ============================================================
+    // Watch App Installation Logic
+    // ============================================================
+
+    public interface MissingAppCallback {
+        void onMissingApp(String nodeId);
+    }
+
+    public static void checkIfWatchMissingApp(Context context, MissingAppCallback callback) {
+        if (context == null || callback == null) {
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                // 1. Get all connected nodes
+                List<Node> connectedNodes = Tasks.await(
+                        Wearable.getNodeClient(context).getConnectedNodes());
+
+                android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+
+                if (connectedNodes == null || connectedNodes.isEmpty()) {
+                    handler.post(() -> callback.onMissingApp(null));
+                    return;
+                }
+
+                // 2. Iterate and PING each node
+                for (Node node : connectedNodes) {
+                    boolean pong = pingWatchOnce(context, node.getId());
+                    if (!pong) {
+                        // Ping failed -> App likely missing (or not running/responsive)
+                        String nodeId = node.getId();
+                        handler.post(() -> callback.onMissingApp(nodeId));
+                        return; // Report first missing
+                    }
+                }
+                
+                // If here, all connected nodes responded to PING
+                handler.post(() -> callback.onMissingApp(null));
+
+            } catch (Exception e) {
+                Log.e(TAG, "checkIfWatchMissingApp: failed", e);
+                // On error, assume no missing app to avoid blocking UI
+                android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                handler.post(() -> callback.onMissingApp(null));
+            }
+        });
+    }
+
+    public static void openPlayStoreOnWatch(Context context, String nodeId) {
+        if (context == null || nodeId == null) return;
+        
+        executor.execute(() -> {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW)
+                        .addCategory(Intent.CATEGORY_BROWSABLE)
+                        .setData(android.net.Uri.parse("market://details?id=pl.kejlo.mzutv2"));
+
+                androidx.wear.remote.interactions.RemoteActivityHelper helper =
+                        new androidx.wear.remote.interactions.RemoteActivityHelper(context, executor);
+
+                ListenableFuture<Void> result = helper.startRemoteActivity(intent, nodeId);
+                
+                // Add listener just to log result
+                result.addListener(() -> {
+                    try {
+                        result.get();
+                        Log.d(TAG, "openPlayStoreOnWatch: success for " + nodeId);
+                    } catch (Exception e) {
+                        Log.e(TAG, "openPlayStoreOnWatch: failed", e);
+                    }
+                }, executor);
+                
+            } catch (Exception e) {
+                 Log.e(TAG, "openPlayStoreOnWatch: fatal error", e);
+            }
         });
     }
 }

@@ -10,213 +10,264 @@
     android:paddingTop="16dp"
     android:paddingBottom="16dp">
 
-    <View
-        android:layout_width="44dp"
-        android:layout_height="4dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/pill_accent" />
-
-    <TextView
-        android:id="@+id/watchStatusTitle"
+    <!-- Loading State -->
+    <LinearLayout
+        android:id="@+id/watchStatusLoading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/nav_watch_label"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        android:textColor="?attr/mzText" />
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="visible">
 
-    <TextView
-        android:id="@+id/watchStatusSubtitle"
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/nav_watch_searching"
+            android:textColor="?attr/mzMuted"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- Main Content (Hidden initially) -->
+    <LinearLayout
+        android:id="@+id/watchStatusContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="@string/nav_watch_status_connected"
-        android:textSize="12sp"
-        android:textColor="?attr/mzMuted" />
+        android:orientation="vertical"
+        android:visibility="gone">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/watchBatteryCard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        app:cardBackgroundColor="?attr/mzBgSurface"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="0dp">
+        <View
+            android:layout_width="44dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/pill_accent" />
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/watchStatusTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="12dp">
+            android:text="@string/nav_watch_label"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="?attr/mzText" />
 
-            <FrameLayout
-                android:layout_width="64dp"
-                android:layout_height="64dp">
+        <TextView
+            android:id="@+id/watchStatusSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/nav_watch_status_connected"
+            android:textSize="12sp"
+            android:textColor="?attr/mzMuted" />
 
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/watchBatteryRing"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:indeterminate="false"
-                    app:indicatorInset="0dp"
-                    app:indicatorSize="64dp"
-                    app:trackThickness="6dp" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:id="@+id/watchBatteryIcon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_battery_outline"
-                        android:contentDescription="@string/nav_watch_info_label_battery" />
-
-                    <TextView
-                        android:id="@+id/watchBatteryPercent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/common_percent_placeholder"
-                        android:textSize="11sp"
-                        android:textColor="?attr/mzText" />
-                </LinearLayout>
-            </FrameLayout>
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/watchBatteryCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/mzBgSurface"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="14dp"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp">
+
+                <FrameLayout
+                    android:layout_width="64dp"
+                    android:layout_height="64dp">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/watchBatteryRing"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:indeterminate="false"
+                        app:indicatorInset="0dp"
+                        app:indicatorSize="64dp"
+                        app:trackThickness="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/watchBatteryIcon"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_battery_outline"
+                            android:contentDescription="@string/nav_watch_info_label_battery" />
+
+                        <TextView
+                            android:id="@+id/watchBatteryPercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/common_percent_placeholder"
+                            android:textSize="11sp"
+                            android:textColor="?attr/mzText" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="14dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/watchStatusName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/nav_watch_label"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/mzText" />
+
+                    <TextView
+                        android:id="@+id/watchStatusBattery"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/nav_watch_status_battery"
+                        android:textSize="12sp"
+                        android:textColor="?attr/mzMuted" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
 
                 <TextView
-                    android:id="@+id/watchStatusName"
-                    android:layout_width="match_parent"
+                    android:id="@+id/watchInfoBluetoothLabel"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/nav_watch_label"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="?attr/mzText" />
-
-                <TextView
-                    android:id="@+id/watchStatusBattery"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/nav_watch_status_battery"
-                    android:textSize="12sp"
+                    android:layout_weight="1"
+                    android:text="@string/nav_watch_info_label_bluetooth"
+                    android:textSize="11sp"
                     android:textColor="?attr/mzMuted" />
+
+                <TextView
+                    android:id="@+id/watchInfoBluetoothValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/nav_watch_status_bt_on"
+                    android:textSize="11sp"
+                    android:textColor="?attr/mzText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/watchInfoLastSyncLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/nav_watch_info_label_last_sync"
+                    android:textSize="11sp"
+                    android:textColor="?attr/mzMuted" />
+
+                <TextView
+                    android:id="@+id/watchInfoLastSyncValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/nav_watch_info_last_sync_none"
+                    android:textSize="11sp"
+                    android:textColor="?attr/mzText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/watchInfoAutoSyncLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/nav_watch_info_label_auto_sync"
+                    android:textSize="11sp"
+                    android:textColor="?attr/mzMuted" />
+
+                <TextView
+                    android:id="@+id/watchInfoAutoSyncValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/nav_watch_status_auto_off"
+                    android:textSize="11sp"
+                    android:textColor="?attr/mzText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/watchInfoTileLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/nav_watch_info_label_tile"
+                    android:textSize="11sp"
+                    android:textColor="?attr/mzMuted" />
+
+                <TextView
+                    android:id="@+id/watchInfoTileValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/nav_watch_info_tile_missing"
+                    android:textSize="11sp"
+                    android:textColor="?attr/mzText" />
             </LinearLayout>
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:orientation="vertical">
-
-        <LinearLayout
+        <!-- Install Button Container -->
+        <FrameLayout
+            android:id="@+id/watchInstallContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical">
+            android:layout_marginTop="16dp"
+            android:visibility="gone">
 
-            <TextView
-                android:id="@+id/watchInfoBluetoothLabel"
-                android:layout_width="0dp"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/watchInstallButton"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/nav_watch_info_label_bluetooth"
-                android:textSize="11sp"
-                android:textColor="?attr/mzMuted" />
+                android:text="@string/wear_install_dialog_open_store"
+                style="@style/Widget.MaterialComponents.Button"
+                app:icon="@drawable/ic_phone_android" />
+        </FrameLayout>
 
-            <TextView
-                android:id="@+id/watchInfoBluetoothValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/nav_watch_status_bt_on"
-                android:textSize="11sp"
-                android:textColor="?attr/mzText" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/watchInfoLastSyncLabel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/nav_watch_info_label_last_sync"
-                android:textSize="11sp"
-                android:textColor="?attr/mzMuted" />
-
-            <TextView
-                android:id="@+id/watchInfoLastSyncValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/nav_watch_info_last_sync_none"
-                android:textSize="11sp"
-                android:textColor="?attr/mzText" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/watchInfoAutoSyncLabel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/nav_watch_info_label_auto_sync"
-                android:textSize="11sp"
-                android:textColor="?attr/mzMuted" />
-
-            <TextView
-                android:id="@+id/watchInfoAutoSyncValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/nav_watch_status_auto_off"
-                android:textSize="11sp"
-                android:textColor="?attr/mzText" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/watchInfoTileLabel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/nav_watch_info_label_tile"
-                android:textSize="11sp"
-                android:textColor="?attr/mzMuted" />
-
-            <TextView
-                android:id="@+id/watchInfoTileValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/nav_watch_info_tile_missing"
-                android:textSize="11sp"
-                android:textColor="?attr/mzText" />
-        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

@@ -30,7 +30,7 @@
     <string name="nav_watch_info_label_battery">Bateria</string>
     <string name="nav_watch_info_last_sync_none">Brak danych</string>
     <string name="nav_watch_info_tile_active">Aktywny (%1$s)</string>
-    <string name="nav_watch_info_tile_missing">Brak (dodaj w Galaxy Wearable)</string>
+    <string name="nav_watch_info_tile_missing">Brak (dodaj w aplikacji zegarka)</string>
     <string name="nav_watch_status_paired">Status: sparowany (brak połączenia)</string>
     <string name="nav_watch_status_last_sync">Ostatnia synchronizacja: %1$s</string>
     <string name="nav_watch_status_auto_sync">Auto synchronizacja: %1$s (%2$s)</string>
@@ -39,7 +39,7 @@
     <string name="nav_watch_status_interval_h">co %1$d h</string>
     <string name="nav_watch_status_interval_m">co %1$d min</string>
     <string name="nav_watch_status_tile_seen">Kafelek: aktywny (%1$s)</string>
-    <string name="nav_watch_status_tile_missing">Kafelek: nie wykryto (dodaj w Galaxy Wearable)</string>
+    <string name="nav_watch_status_tile_missing">Kafelek: nie wykryto (dodaj w aplikacji zegarka)</string>
     <string name="nav_watch_found_title">Zegarek połączony</string>
     <string name="nav_watch_found_msg">Wykryto: %1$s\nWysyłam synchronizację danych.</string>
     <string name="nav_watch_error_title">Błąd połączenia</string>
@@ -551,6 +551,12 @@
     <string name="wear_sync_request_negative">Anuluj</string>
     <string name="nav_watch_status_name">Zegarek: %1$s</string>
     <string name="nav_watch_status_battery">Bateria: %1$d%%</string>
+
+    <string name="wear_install_dialog_title">Zainstaluj aplikację na zegarku</string>
+    <string name="wear_install_dialog_message">Wykryto podłączony zegarek, ale brakuje na nim aplikacji mZUT. Czy chcesz zainstalować ją teraz ze Sklepu Play na zegarku?</string>
+    <string name="wear_install_dialog_open_store">Zainstaluj</string>
+    <string name="wear_install_dialog_dont_ask">Nie pytaj ponownie</string>
+    <string name="wear_install_sent_toast">Wysłano żądanie otwarcia sklepu na zegarku.</string>
 
 </resources>
 
