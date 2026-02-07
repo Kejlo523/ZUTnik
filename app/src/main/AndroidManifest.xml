@@ -48,6 +48,20 @@
 
         <activity android:name=".AboutActivity" />
 
+        <receiver
+            android:name=".wear.WearSyncReceiver"
+            android:exported="false" />
+
+        <service
+            android:name=".wear.WearMessageListenerService"
+            android:exported="true"
+            android:enabled="true"
+            android:permission="com.google.android.gms.permission.BIND_LISTENER">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+            </intent-filter>
+        </service>
+
 
         <receiver
             android:name=".PlanDayWidgetProvider"

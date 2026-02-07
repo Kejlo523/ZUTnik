@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     public static final String ACTION_REFRESH = "pl.kejlo.mzutv2.PLAN_WIDGET_REFRESH";
@@ -95,7 +96,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                     updateOneWidget(context, mgr, appWidgetId);
                     mgr.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
                 }
-                result.finish();
+        result.finish();
             });
         }
     }
@@ -355,6 +356,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + intervalMs,
                 intervalMs, pi);
+
     }
 
     public static void rescheduleRefresh(Context context) {

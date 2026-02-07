@@ -1,12 +1,20 @@
 package pl.kejlo.mzutv2;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.text.format.DateUtils;
 
 import android.view.View;
+import android.view.LayoutInflater;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ProgressBar;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -18,6 +26,10 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.Wearable;
+
+import java.util.List;
 
 public class NavDrawerHelper {
 
@@ -109,6 +121,7 @@ public class NavDrawerHelper {
         TextView navLinkUseful = navigationView.findViewById(R.id.navLinkUsefull);
         TextView navLinkAbout = navigationView.findViewById(R.id.navLinkAbout);
         View navSettings = navigationView.findViewById(R.id.navSettings);
+        View navWatch = navigationView.findViewById(R.id.navWatch);
         TextView navAppVersion = navigationView.findViewById(R.id.navAppVersion);
         TextView navLogout = navigationView.findViewById(R.id.navLogout);
         View navHeaderRoot = navigationView.findViewById(R.id.navHeaderRoot);
@@ -185,6 +198,9 @@ public class NavDrawerHelper {
                 activity.startActivity(intent);
                 drawerLayout.closeDrawers();
                 return;
+            } else if (id == R.id.navWatch) {
+                handleWatchClick(activity, drawerLayout);
+                return;
             } else if (id == R.id.navLogout) {
                 showLogoutConfirmation(activity, drawerLayout);
                 return;
@@ -226,6 +242,9 @@ public class NavDrawerHelper {
         navLinkUseful.setOnClickListener(listener);
         navLinkAbout.setOnClickListener(listener);
         navSettings.setOnClickListener(listener);
+        if (navWatch != null) {
+            navWatch.setOnClickListener(listener);
+        }
         navLogout.setOnClickListener(listener);
 
         // Ensure drawer is unlocked
@@ -433,5 +452,98 @@ public class NavDrawerHelper {
                     dialog.dismiss();
                 })
                 .show();
+    }
+
+    private static void handleWatchClick(AppCompatActivity activity, DrawerLayout drawerLayout) {
+        pl.kejlo.mzutv2.wear.WearSyncManager.getWatchStatusWithPingAsync(activity, status -> {
+            if (status == null || (!status.connected && !status.paired)) {
+                new MaterialAlertDialogBuilder(activity)
+                        .setTitle(R.string.nav_watch_not_found_title)
+                        .setMessage(R.string.nav_watch_not_found_msg)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                return;
+            }
+            String name = (status.name != null && !status.name.isEmpty())
+                    ? status.name
+                    : activity.getString(R.string.nav_watch_label);
+            StringBuilder msg = new StringBuilder();
+            if (status.connected) {
+                if (!status.responsive) {
+                    msg.append(activity.getString(R.string.nav_watch_status_connected_unresponsive));
+                } else {
+                    msg.append(activity.getString(R.string.nav_watch_status_connected));
+                }
+            } else {
+                msg.append(activity.getString(R.string.nav_watch_status_paired));
+            }
+            msg.append("\n");
+            msg.append(activity.getString(R.string.nav_watch_status_name, name));
+            msg.append("\n");
+            msg.append(activity.getString(R.string.nav_watch_status_bluetooth,
+                    isBluetoothEnabled(activity)
+                            ? activity.getString(R.string.nav_watch_status_bt_on)
+                            : activity.getString(R.string.nav_watch_status_bt_off)));
+            if (status.battery >= 0 && status.battery <= 100) {
+                msg.append("\n");
+                msg.append(activity.getString(R.string.nav_watch_status_battery, status.battery));
+            }
+            long lastSync = pl.kejlo.mzutv2.wear.WearSyncManager.getLastSyncTimestamp(activity);
+            if (lastSync > 0) {
+                CharSequence rel = DateUtils.getRelativeTimeSpanString(
+                        lastSync,
+                        System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS);
+                msg.append("\n");
+                msg.append(activity.getString(R.string.nav_watch_status_last_sync, rel));
+            }
+            long intervalMin = pl.kejlo.mzutv2.wear.WearSyncManager.getAutoSyncIntervalMinutes();
+            boolean auto = pl.kejlo.mzutv2.wear.WearSyncManager.isAutoSyncEnabled(activity);
+            String intervalLabel;
+            if (intervalMin % 60 == 0) {
+                intervalLabel = activity.getString(
+                        R.string.nav_watch_status_interval_h, intervalMin / 60);
+            } else {
+                intervalLabel = activity.getString(
+                        R.string.nav_watch_status_interval_m, intervalMin);
+            }
+            msg.append("\n");
+            msg.append(activity.getString(
+                    R.string.nav_watch_status_auto_sync,
+                    auto ? activity.getString(R.string.nav_watch_status_auto_on)
+                            : activity.getString(R.string.nav_watch_status_auto_off),
+                    intervalLabel));
+            long tileSeen = status.tileSeenTimestamp;
+            long now = System.currentTimeMillis();
+            if (tileSeen > 0 && now - tileSeen <= 7L * 24 * 60 * 60 * 1000L) {
+                CharSequence relTile = DateUtils.getRelativeTimeSpanString(
+                        tileSeen,
+                        now,
+                        DateUtils.MINUTE_IN_MILLIS);
+                msg.append("\n");
+                msg.append(activity.getString(R.string.nav_watch_status_tile_seen, relTile));
+            } else {
+                msg.append("\n");
+                msg.append(activity.getString(R.string.nav_watch_status_tile_missing));
+            }
+            new MaterialAlertDialogBuilder(activity)
+                    .setTitle(status.connected
+                            ? R.string.nav_watch_found_title
+                            : R.string.nav_watch_paired_title)
+                    .setMessage(msg.toString())
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+            drawerLayout.closeDrawers();
+        });
+    }
+
+    private static boolean isBluetoothEnabled(Context context) {
+        try {
+            android.bluetooth.BluetoothAdapter adapter =
+                    android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            return adapter != null && adapter.isEnabled();
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 }

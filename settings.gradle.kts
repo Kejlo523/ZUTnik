@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "mZUTv2"
 include(":app")
+include(":wear")

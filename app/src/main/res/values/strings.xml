@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="battery_opt_dialog_title">Wymagane uprawnienia</string>
     <string name="battery_opt_dialog_message">Aplikacja potrzebuje działać w tle, aby widgety działały poprawnie. Proszę wyłączyć optymalizację baterii dla tej aplikacji.</string>
     <string name="battery_opt_button_settings">Ustawienia</string>
@@ -10,8 +10,38 @@
     <string name="nav_header_default_username">Student</string>
     <string name="logout_success_message">Wylogowano</string>
     <string name="nav_settings_label">Ustawienia</string>
+    <string name="nav_watch_label">Zegarek</string>
     <string name="nav_useful_links">Przydatne strony</string>
     <string name="nav_logout_label">Wyloguj się</string>
+    <string name="nav_watch_searching">Szukam zegarka…</string>
+    <string name="nav_watch_not_found_title">Nie znaleziono zegarka</string>
+    <string name="nav_watch_not_found_msg">Sprawdź, czy zegarek jest sparowany i połączony z telefonem.</string>
+    <string name="nav_watch_paired_title">Zegarek sparowany</string>
+    <string name="nav_watch_paired_msg">Sparowany: %1$s\nPołącz, aby wyświetlić dane.</string>
+    <string name="nav_watch_status_connected">Status: połączony</string>
+    <string name="nav_watch_status_connected_unresponsive">Status: połączony (brak odpowiedzi)</string>
+    <string name="nav_watch_status_bluetooth">Bluetooth: %1$s</string>
+    <string name="nav_watch_status_bt_on">Włączony</string>
+    <string name="nav_watch_status_bt_off">Wyłączony</string>
+    <string name="nav_watch_status_paired">Status: sparowany (brak połączenia)</string>
+    <string name="nav_watch_status_last_sync">Ostatnia synchronizacja: %1$s</string>
+    <string name="nav_watch_status_auto_sync">Auto synchronizacja: %1$s (%2$s)</string>
+    <string name="nav_watch_status_auto_on">włączona</string>
+    <string name="nav_watch_status_auto_off">wyłączona</string>
+    <string name="nav_watch_status_interval_h">co %1$d h</string>
+    <string name="nav_watch_status_interval_m">co %1$d min</string>
+    <string name="nav_watch_status_tile_seen">Kafelek: aktywny (%1$s)</string>
+    <string name="nav_watch_status_tile_missing">Kafelek: nie wykryto (dodaj w Galaxy Wearable)</string>
+    <string name="nav_watch_found_title">Zegarek połączony</string>
+    <string name="nav_watch_found_msg">Wykryto: %1$s\nWysyłam synchronizację danych.</string>
+    <string name="nav_watch_error_title">Błąd połączenia</string>
+    <string name="nav_watch_error_msg">Nie udało się sprawdzić połączenia z zegarkiem.</string>
+    <string name="wear_sync_status_prepare">Przygotowuję dane…</string>
+    <string name="wear_sync_status_sending">Wysyłam dane do zegarka…</string>
+    <string name="wear_sync_status_waiting_watch">Wysłano, czekam na zegarek…</string>
+    <string name="wear_sync_status_no_data">Brak danych do wysłania</string>
+    <string name="wear_sync_status_error">Błąd wysyłki danych</string>
+    <string name="wear_sync_status_watch_received">100% Zegarek odebral dane!</string>
 
     <string name="login_card_title">Zaloguj się do mZUT</string>
     <string name="login_hint">Login</string>
@@ -433,6 +463,8 @@
     <string name="attendance_subject_type_placeholder">Laboratorium</string>
     <string name="common_zero">0</string>
     <string name="common_dash">-</string>
+    <string name="common_ok">OK</string>
+    <string name="wear_sync_success_msg">100% Zegarek odebral dane!</string>
 
     <!-- Custom Plan Events (Egzaminy/Kolokwia) -->
     <string name="plan_custom_events_title">Moje egzaminy i kolokwia</string>
@@ -498,4 +530,14 @@
     <string name="plan_custom_delete_confirm">Usunąć to wydarzenie?</string>
     <string name="plan_custom_remove_marker">Usuń oznaczenie</string>
     <string name="plan_custom_removed_toast">Usunięto oznaczenie</string>
+    <string name="wear_sync_request_title">Synchronizacja zegarka</string>
+    <string name="wear_sync_request_msg">Zegarek %1$s prosi o synchronizacje danych. Zsynchronizowac teraz?</string>
+    <string name="wear_sync_request_positive">Synchronizuj</string>
+    <string name="wear_sync_request_negative">Anuluj</string>
+    <string name="nav_watch_status_name">Zegarek: %1$s</string>
+    <string name="nav_watch_status_battery">Bateria: %1$d%%</string>
 </resources>
+
+
+
+

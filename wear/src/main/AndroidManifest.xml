@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.type.watch" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:allowBackup="false"
+        android:label="@string/app_name_wear"
+        android:icon="@drawable/ic_watch_app"
+        android:theme="@style/Theme.MZUTv2.Wear">
+
+        <activity
+            android:name="pl.kejlo.mzutv2.wear.MainWearActivity"
+            android:exported="true"
+            android:label="@string/app_name_wear">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="pl.kejlo.mzutv2.wear.tile.PlanTileService"
+            android:exported="true"
+            android:label="@string/tile_title"
+            android:icon="@drawable/ic_watch_app"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="pl.kejlo.mzutv2.wear.sync.WearDataListenerService"
+            android:exported="true"
+            android:enabled="true"
+            android:permission="com.google.android.gms.permission.BIND_LISTENER">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="pl.kejlo.mzutv2.wear.complications.PlanComplicationService"
+            android:exported="true"
+            android:label="@string/complication_label"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.watchface.complications.datasource.ACTION_COMPLICATION_DATA_SOURCE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT,LONG_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+        </service>
+
+        <service
+            android:name="pl.kejlo.mzutv2.wear.watchface.MzutWatchFaceService"
+            android:exported="true"
+            android:label="@string/watch_face_label"
+            android:permission="android.permission.BIND_WATCH_FACE">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+                <category android:name="com.google.android.wearable.watchface.category.WATCH_FACE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/mzut_watchface" />
+        </service>
+
+        <meta-data
+            android:name="com.google.android.gms.wearable.CAPABILITY"
+            android:resource="@xml/wearable_app_desc" />
+
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
+    </application>
+</manifest>
