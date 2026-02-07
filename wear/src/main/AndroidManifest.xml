@@ -7,12 +7,15 @@
     <application
         android:allowBackup="false"
         android:label="@string/app_name_wear"
-        android:icon="@drawable/ic_watch_app"
+        android:icon="@mipmap/ic_zut_logo_round"
+        android:roundIcon="@mipmap/ic_zut_logo_round"
         android:theme="@style/Theme.MZUTv2.Wear">
 
         <activity
             android:name="pl.kejlo.mzutv2.wear.MainWearActivity"
             android:exported="true"
+            android:icon="@mipmap/ic_zut_logo_round"
+            android:roundIcon="@mipmap/ic_zut_logo_round"
             android:label="@string/app_name_wear">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,20 +27,34 @@
             android:name="pl.kejlo.mzutv2.wear.tile.PlanTileService"
             android:exported="true"
             android:label="@string/tile_title"
-            android:icon="@drawable/ic_watch_app"
+            android:icon="@mipmap/ic_launcher"
+            android:description="@string/tile_description"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
                 <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
             </intent-filter>
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/tile_preview" />
         </service>
 
         <service
             android:name="pl.kejlo.mzutv2.wear.sync.WearDataListenerService"
             android:exported="true"
-            android:enabled="true"
-            android:permission="com.google.android.gms.permission.BIND_LISTENER">
+            android:enabled="true">
             <intent-filter>
-                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:pathPrefix="/mzut/" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:pathPrefix="/mzut/" />
             </intent-filter>
         </service>
 
@@ -57,19 +74,7 @@
                 android:value="0" />
         </service>
 
-        <service
-            android:name="pl.kejlo.mzutv2.wear.watchface.MzutWatchFaceService"
-            android:exported="true"
-            android:label="@string/watch_face_label"
-            android:permission="android.permission.BIND_WATCH_FACE">
-            <intent-filter>
-                <action android:name="android.service.wallpaper.WallpaperService" />
-                <category android:name="com.google.android.wearable.watchface.category.WATCH_FACE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.service.wallpaper"
-                android:resource="@xml/mzut_watchface" />
-        </service>
+
 
         <meta-data
             android:name="com.google.android.gms.wearable.CAPABILITY"

@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Typeface;
-import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,9 +15,9 @@ import android.util.Log;
 import android.view.InputDevice;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -37,13 +36,16 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Main WearOS activity for MZUT.
+ * Simplified - no polling, just manual sync button.
+ */
 public class MainWearActivity extends Activity {
 
     private static final String TAG = "MZUTWearSync/WEAR";
-    private static final long FAST_POLL_INTERVAL_MS = 1500L;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     private Button btnSync;
-    private ImageButton btnCancel;
     private LinearLayout statusCard;
     private TextView status;
     private ProgressBar progress;
@@ -54,6 +56,8 @@ public class MainWearActivity extends Activity {
     private TextView titleView;
     private TextView descView;
     private TextView weekLabel;
+
+    // Theme colors
     private int themeBg = 0xFF0B1020;
     private int themeCard = 0xFF111827;
     private int themeCardAlt = 0xFF141C2A;
@@ -61,30 +65,17 @@ public class MainWearActivity extends Activity {
     private int themeMuted = 0xFFB0B7C3;
     private int themeSubtle = 0xFF8F96A3;
     private int themeAccent = 0xFF4F8DFF;
-    private String lastStatus = "";
-    private final Handler pollHandler = new Handler(Looper.getMainLooper());
-    private final ExecutorService pollExecutor = Executors.newSingleThreadExecutor();
+
     private final Handler statusHandler = new Handler(Looper.getMainLooper());
-    private boolean forceFastPolling = false;
-    private final Runnable pollRunnable = new Runnable() {
-        @Override
-        public void run() {
-            pollExecutor.execute(() ->
-                    pl.kejlo.mzutv2.wear.sync.WearSyncPoller.pollOnce(getApplicationContext()));
-            pollHandler.postDelayed(this, getPollIntervalMs());
-        }
+    private final Runnable statusRunnable = () -> {
+        publishWatchStatus();
+        statusHandler.postDelayed(this.statusRunnable, 5 * 60 * 1000);
     };
-    private final Runnable statusRunnable = new Runnable() {
-        @Override
-        public void run() {
-            publishWatchStatus();
-            statusHandler.postDelayed(this, 5 * 60 * 1000);
-        }
-    };
+
     private final BroadcastReceiver snapshotReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            updateStatusFromSnapshot();
+            updateUI();
         }
     };
 
@@ -96,7 +87,6 @@ public class MainWearActivity extends Activity {
         titleView = findViewById(R.id.wearTitle);
         descView = findViewById(R.id.wearDesc);
         btnSync = findViewById(R.id.btnWearSync);
-        btnCancel = findViewById(R.id.btnWearCancel);
         statusCard = findViewById(R.id.wearStatusCard);
         status = findViewById(R.id.wearStatus);
         progress = findViewById(R.id.wearProgress);
@@ -105,6 +95,12 @@ public class MainWearActivity extends Activity {
         weekContainer = findViewById(R.id.weekContainer);
         rootScroll = findViewById(R.id.wearRootScroll);
         contentRoot = findViewById(R.id.wearContentRoot);
+
+        // Hide cancel button if it exists (not needed anymore)
+        View btnCancel = findViewById(R.id.btnWearCancel);
+        if (btnCancel != null) {
+            btnCancel.setVisibility(View.GONE);
+        }
 
         if (titleView != null) {
             titleView.setText(R.string.wear_main_title);
@@ -116,19 +112,14 @@ public class MainWearActivity extends Activity {
         if (btnSync != null) {
             btnSync.setOnClickListener(v -> requestSync());
         }
-        if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> cancelRequest());
-        }
+
         applyRoundInsets();
         setupRotaryScrolling();
-        updateStatusFromSnapshot();
-        // Manual sync only.
+        updateUI();
     }
 
     private void applyRoundInsets() {
-        if (contentRoot == null) {
-            return;
-        }
+        if (contentRoot == null) return;
         boolean isRound = getResources().getConfiguration().isScreenRound();
         if (isRound) {
             int pad = (int) (getResources().getDisplayMetrics().density * 12);
@@ -137,9 +128,7 @@ public class MainWearActivity extends Activity {
     }
 
     private void setupRotaryScrolling() {
-        if (rootScroll == null) {
-            return;
-        }
+        if (rootScroll == null) return;
         rootScroll.setFocusableInTouchMode(true);
         rootScroll.requestFocus();
         final float scrollFactor = ViewConfiguration.get(this).getScaledVerticalScrollFactor();
@@ -166,7 +155,6 @@ public class MainWearActivity extends Activity {
         } else {
             registerReceiver(snapshotReceiver, filter);
         }
-        pollHandler.post(pollRunnable);
         statusHandler.post(statusRunnable);
     }
 
@@ -175,7 +163,6 @@ public class MainWearActivity extends Activity {
         super.onStop();
         Log.d(TAG, "onStop");
         unregisterReceiver(snapshotReceiver);
-        pollHandler.removeCallbacks(pollRunnable);
         statusHandler.removeCallbacks(statusRunnable);
     }
 
@@ -196,8 +183,7 @@ public class MainWearActivity extends Activity {
             map.putString(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_DEVICE_NAME, deviceName);
             map.putLong(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_TIMESTAMP,
                     System.currentTimeMillis());
-            Wearable.getDataClient(this)
-                    .putDataItem(req.asPutDataRequest());
+            Wearable.getDataClient(this).putDataItem(req.asPutDataRequest());
         } catch (Exception e) {
             Log.e(TAG, "publishWatchStatus: failed", e);
         }
@@ -207,38 +193,42 @@ public class MainWearActivity extends Activity {
         executor.execute(() -> {
             try {
                 Log.d(TAG, "requestSync: start");
-                setForceFastPolling(true);
-                reschedulePollerNow();
+
                 List<Node> nodes = Tasks.await(
                         Wearable.getNodeClient(this).getConnectedNodes());
                 if (nodes == null || nodes.isEmpty()) {
                     Log.w(TAG, "requestSync: no phone nodes");
-                    runOnUiThread(this::setIdleState);
-                    runOnUiThread(() ->
-                            Toast.makeText(this, R.string.wear_main_no_phone, Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> {
+                        setIdleState();
+                        Toast.makeText(this, R.string.wear_main_no_phone, Toast.LENGTH_SHORT).show();
+                    });
                     return;
                 }
-                Log.d(TAG, "requestSync: nodes=" + nodes);
+
                 runOnUiThread(() -> {
-                    setStatusText(getString(R.string.wear_main_status_waiting_approval));
-                    setProgressValue(15);
+                    setStatusText(getString(R.string.wear_main_status_syncing));
+                    setProgressValue(20);
                     setStatusCardVisible(true);
-                    setCancelVisible(true);
                     setProgressVisible(true);
                     setSyncEnabled(false);
                 });
+
+                // Send sync request to phone
                 for (Node n : nodes) {
                     Wearable.getMessageClient(this)
-                            .sendMessage(n.getId(), pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_REQUEST_SYNC, new byte[0])
+                            .sendMessage(n.getId(),
+                                    pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_REQUEST_SYNC,
+                                    new byte[0])
                             .addOnSuccessListener(r -> Log.d(TAG, "requestSync: sent to " + n.getDisplayName()))
-                            .addOnFailureListener(e -> Log.e(TAG, "requestSync: send failed " + n.getDisplayName(), e));
+                            .addOnFailureListener(e -> Log.e(TAG, "requestSync: failed " + n.getDisplayName(), e));
                 }
-                // Fallback: send a DataItem request (more reliable on some devices)
+
+                // Also send DataItem request as fallback
                 try {
                     PutDataMapRequest req = PutDataMapRequest.create(
                             pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_REQUEST_SYNC);
-                    DataMap map = req.getDataMap();
-                    map.putLong(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_TIMESTAMP,
+                    req.getDataMap().putLong(
+                            pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_TIMESTAMP,
                             System.currentTimeMillis());
                     Tasks.await(Wearable.getDataClient(this)
                             .putDataItem(req.asPutDataRequest().setUrgent()));
@@ -246,108 +236,53 @@ public class MainWearActivity extends Activity {
                 } catch (Exception e) {
                     Log.e(TAG, "requestSync: DataItem failed", e);
                 }
+
                 runOnUiThread(() ->
                         Toast.makeText(this, R.string.wear_main_sync_sent, Toast.LENGTH_SHORT).show());
+
             } catch (Exception e) {
                 Log.e(TAG, "requestSync: failed", e);
-                runOnUiThread(this::setIdleState);
-                runOnUiThread(() ->
-                        Toast.makeText(this, R.string.wear_main_sync_failed, Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> {
+                    setIdleState();
+                    Toast.makeText(this, R.string.wear_main_sync_failed, Toast.LENGTH_SHORT).show();
+                });
             }
         });
     }
 
-    private void cancelRequest() {
-        executor.execute(() -> {
-            try {
-                Uri uri = Uri.parse("wear://*" +
-                        pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_REQUEST_SYNC);
-                Wearable.getDataClient(this).deleteDataItems(uri);
-            } catch (Exception e) {
-                Log.e(TAG, "cancelRequest: delete request failed", e);
-            }
-            try {
-                List<Node> nodes = Tasks.await(
-                        Wearable.getNodeClient(this).getConnectedNodes());
-                if (nodes != null) {
-                    for (Node n : nodes) {
-                        Wearable.getMessageClient(this)
-                                .sendMessage(n.getId(),
-                                        pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_REQUEST_CANCEL,
-                                        new byte[0]);
-                    }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "cancelRequest: notify failed", e);
-            }
-            try {
-                PutDataMapRequest req = PutDataMapRequest.create(
-                        pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_REQUEST_CANCEL);
-                req.getDataMap().putLong(
-                        pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_TIMESTAMP,
-                        System.currentTimeMillis());
-                Wearable.getDataClient(this)
-                        .putDataItem(req.asPutDataRequest().setUrgent());
-            } catch (Exception e) {
-                Log.e(TAG, "cancelRequest: data item failed", e);
-            }
-            pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.setProgress(
-                    this, 0, "");
-            runOnUiThread(this::setIdleState);
-        });
-    }
-
-    private void updateStatusFromSnapshot() {
+    private void updateUI() {
         pl.kejlo.mzutv2.wear.model.WearPlanSnapshot snap =
                 pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.load(this);
-        Log.d(TAG, "updateStatusFromSnapshot: snap=" + (snap != null));
+        Log.d(TAG, "updateUI: snap=" + (snap != null));
+
         applyThemeFromSnapshot(snap);
+
         if (snap != null && snap.loginRequired) {
             setStatusText(getString(R.string.wear_main_status_login_required));
             setProgressValue(0);
             setStatusCardVisible(true);
-            setCancelVisible(false);
             setProgressVisible(false);
             setSyncEnabled(true);
             renderWeekList(snap);
             return;
         }
+
         String statusText = pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.getStatus(this);
         int progressValue = pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.getProgress(this);
         long lastSync = pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.getLastSyncMs(this);
-        boolean hasStatus = statusText != null && !statusText.isEmpty();
-        boolean waitingApproval = hasStatus
-                && statusText.equals(getString(R.string.wear_main_status_waiting_approval));
-        boolean approved = hasStatus
-                && statusText.equals(getString(R.string.wear_main_status_approved));
-        boolean busy = waitingApproval || approved || (progressValue > 0 && progressValue < 100);
-        setForceFastPolling(busy);
-        if (busy) {
-            reschedulePollerNow();
-        }
 
-        if (hasStatus) {
+        boolean busy = progressValue > 0 && progressValue < 100;
+
+        if (statusText != null && !statusText.isEmpty()) {
             setStatusText(statusText);
-            if (!statusText.equals(lastStatus)) {
-                lastStatus = statusText;
-                if (statusText.equals(getString(R.string.wear_main_status_approved))) {
-                    Toast.makeText(this, R.string.wear_main_status_approved, Toast.LENGTH_SHORT).show();
-                }
-            }
         } else if (lastSync > 0) {
             setStatusText(getString(R.string.wear_main_status_received));
         } else {
             setStatusText(getString(R.string.wear_main_status_idle));
         }
 
-        if (lastSync > 0 || hasStatus || progressValue > 0) {
-            setStatusCardVisible(true);
-        } else {
-            setStatusCardVisible(false);
-        }
-
+        setStatusCardVisible(lastSync > 0 || (statusText != null && !statusText.isEmpty()) || progressValue > 0);
         setProgressValue(progressValue);
-        setCancelVisible(waitingApproval);
         setProgressVisible(busy);
         setSyncEnabled(!busy);
         renderWeekList(snap);
@@ -357,47 +292,22 @@ public class MainWearActivity extends Activity {
         setStatusText(getString(R.string.wear_main_status_idle));
         setProgressValue(0);
         setProgressVisible(false);
-        setCancelVisible(false);
         setSyncEnabled(true);
         setStatusCardVisible(false);
-        setForceFastPolling(false);
-        reschedulePollerNow();
-    }
-
-    private long getPollIntervalMs() {
-        if (forceFastPolling) {
-            return FAST_POLL_INTERVAL_MS;
-        }
-        return 10_000L;
-    }
-
-    private void setForceFastPolling(boolean enabled) {
-        forceFastPolling = enabled;
-    }
-
-    private void reschedulePollerNow() {
-        pollHandler.removeCallbacks(pollRunnable);
-        pollHandler.post(pollRunnable);
     }
 
     private void setStatusCardVisible(boolean visible) {
         if (statusCard != null) {
-            statusCard.setVisibility(visible ? android.view.View.VISIBLE : android.view.View.GONE);
-        }
-    }
-
-    private void setCancelVisible(boolean visible) {
-        if (btnCancel != null) {
-            btnCancel.setVisibility(visible ? android.view.View.VISIBLE : android.view.View.GONE);
+            statusCard.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
     }
 
     private void setProgressVisible(boolean visible) {
         if (progress != null) {
-            progress.setVisibility(visible ? android.view.View.VISIBLE : android.view.View.GONE);
+            progress.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
         if (progressText != null) {
-            progressText.setVisibility(visible ? android.view.View.VISIBLE : android.view.View.GONE);
+            progressText.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -414,74 +324,8 @@ public class MainWearActivity extends Activity {
         }
     }
 
-    private void applyThemeFromSnapshot(pl.kejlo.mzutv2.wear.model.WearPlanSnapshot snap) {
-        if (snap == null) {
-            return;
-        }
-        if (snap.colorBg != 0) {
-            themeBg = snap.colorBg;
-        }
-        if (snap.colorCard != 0) {
-            themeCard = snap.colorCard;
-        }
-        if (snap.colorCardAlt != 0) {
-            themeCardAlt = snap.colorCardAlt;
-        }
-        if (snap.colorText != 0) {
-            themeText = snap.colorText;
-        }
-        if (snap.colorMuted != 0) {
-            themeMuted = snap.colorMuted;
-        }
-        if (snap.colorSubtle != 0) {
-            themeSubtle = snap.colorSubtle;
-        }
-        if (snap.colorAccent != 0) {
-            themeAccent = snap.colorAccent;
-        }
-
-        if (contentRoot != null) {
-            contentRoot.setBackgroundColor(themeBg);
-        }
-        if (weekLabel != null) {
-            weekLabel.setTextColor(themeSubtle);
-        }
-        if (titleView != null) {
-            titleView.setTextColor(themeText);
-        }
-        if (descView != null) {
-            descView.setTextColor(themeMuted);
-        }
-        if (status != null) {
-            status.setTextColor(themeText);
-        }
-        if (progressText != null) {
-            progressText.setTextColor(themeMuted);
-        }
-        if (statusCard != null) {
-            statusCard.setBackground(makeRounded(themeCard, 12, ColorUtils.setAlphaComponent(themeText, 30), 1));
-        }
-        if (progress != null) {
-            progress.setProgressTintList(android.content.res.ColorStateList.valueOf(themeAccent));
-            progress.setProgressBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(ColorUtils.setAlphaComponent(themeMuted, 40)));
-        }
-        if (btnSync != null) {
-            btnSync.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(themeAccent));
-        }
-        if (btnCancel != null) {
-            btnCancel.setColorFilter(themeMuted);
-        }
-    }
-
     private void setProgressValue(int value) {
-        int v = value;
-        if (v < 0) {
-            v = 0;
-        } else if (v > 100) {
-            v = 100;
-        }
+        int v = Math.max(0, Math.min(100, value));
         if (progress != null) {
             progress.setProgress(v);
         }
@@ -490,19 +334,50 @@ public class MainWearActivity extends Activity {
         }
     }
 
-    private void renderWeekList(pl.kejlo.mzutv2.wear.model.WearPlanSnapshot snap) {
-        if (weekContainer == null) {
-            return;
+    private void applyThemeFromSnapshot(pl.kejlo.mzutv2.wear.model.WearPlanSnapshot snap) {
+        if (snap == null) return;
+
+        if (snap.colorBg != 0) themeBg = snap.colorBg;
+        if (snap.colorCard != 0) themeCard = snap.colorCard;
+        if (snap.colorCardAlt != 0) themeCardAlt = snap.colorCardAlt;
+        if (snap.colorText != 0) themeText = snap.colorText;
+        if (snap.colorMuted != 0) themeMuted = snap.colorMuted;
+        if (snap.colorSubtle != 0) themeSubtle = snap.colorSubtle;
+        if (snap.colorAccent != 0) themeAccent = snap.colorAccent;
+
+        if (contentRoot != null) contentRoot.setBackgroundColor(themeBg);
+        if (weekLabel != null) weekLabel.setTextColor(themeSubtle);
+        if (titleView != null) titleView.setTextColor(themeText);
+        if (descView != null) descView.setTextColor(themeMuted);
+        if (status != null) status.setTextColor(themeText);
+        if (progressText != null) progressText.setTextColor(themeMuted);
+        if (statusCard != null) {
+            statusCard.setBackground(makeRounded(themeCard, 12,
+                    ColorUtils.setAlphaComponent(themeText, 30), 1));
         }
+        if (progress != null) {
+            progress.setProgressTintList(android.content.res.ColorStateList.valueOf(themeAccent));
+            progress.setProgressBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(
+                            ColorUtils.setAlphaComponent(themeMuted, 40)));
+        }
+        if (btnSync != null) {
+            btnSync.setBackgroundTintList(android.content.res.ColorStateList.valueOf(themeAccent));
+        }
+    }
+
+    private void renderWeekList(pl.kejlo.mzutv2.wear.model.WearPlanSnapshot snap) {
+        if (weekContainer == null) return;
         weekContainer.removeAllViews();
+
         if (snap == null || snap.loginRequired) {
             TextView tv = new TextView(this);
             tv.setText(getString(R.string.wear_main_status_login_required));
             tv.setTextSize(12f);
-                tv.setTextColor(themeMuted);
-                weekContainer.addView(tv);
-                return;
-            }
+            tv.setTextColor(themeMuted);
+            weekContainer.addView(tv);
+            return;
+        }
 
         if (snap.weekDays == null || snap.weekDays.isEmpty()) {
             TextView tv = new TextView(this);
@@ -516,7 +391,8 @@ public class MainWearActivity extends Activity {
         for (pl.kejlo.mzutv2.wear.model.WearPlanSnapshot.WeekDay day : snap.weekDays) {
             LinearLayout dayCard = new LinearLayout(this);
             dayCard.setOrientation(LinearLayout.VERTICAL);
-            dayCard.setBackground(makeRounded(themeCard, 12, ColorUtils.setAlphaComponent(themeText, 30), 1));
+            dayCard.setBackground(makeRounded(themeCard, 12,
+                    ColorUtils.setAlphaComponent(themeText, 30), 1));
             dayCard.setPadding(10, 8, 10, 8);
             LinearLayout.LayoutParams dayLp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,

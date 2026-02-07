@@ -101,6 +101,7 @@ public class HomeActivity extends MzutBaseActivity {
 
         tileGrid = findViewById(R.id.tileGrid);
 
+        setupSyncIndicator();
         setupWelcomeText();
         setupClicks();
         setupGrid();
@@ -153,10 +154,7 @@ public class HomeActivity extends MzutBaseActivity {
         return super.dispatchTouchEvent(ev);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
+
 
     private void setupGrid() {
         homeRepository = new HomeRepository(this);
@@ -456,5 +454,97 @@ public class HomeActivity extends MzutBaseActivity {
             }
         });
         dialog.show(getSupportFragmentManager(), "add_edit_tile");
+    }
+
+    // =============================================================================================
+    // WearOS Sync Indicator Logic
+    // =============================================================================================
+
+    private androidx.cardview.widget.CardView syncIndicator;
+    private android.widget.ProgressBar syncProgress;
+    private android.widget.ImageView syncDoneIcon;
+    private TextView syncText;
+    private final android.content.BroadcastReceiver syncReceiver = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (pl.kejlo.mzutv2.wear.WearSyncConstants.ACTION_WEAR_SYNC_PROGRESS.equals(intent.getAction())) {
+                int progress = intent.getIntExtra(pl.kejlo.mzutv2.wear.WearSyncConstants.KEY_PROGRESS, 0);
+                String status = intent.getStringExtra(pl.kejlo.mzutv2.wear.WearSyncConstants.KEY_STATUS);
+                updateSyncIndicator(progress, status);
+            }
+        }
+    };
+
+    private void setupSyncIndicator() {
+        syncIndicator = findViewById(R.id.syncIndicator);
+        syncProgress = findViewById(R.id.syncProgress);
+        syncDoneIcon = findViewById(R.id.syncDoneIcon);
+        syncText = findViewById(R.id.syncText);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Register for global broadcast from WearSyncManager
+        android.content.IntentFilter filter = new android.content.IntentFilter(pl.kejlo.mzutv2.wear.WearSyncConstants.ACTION_WEAR_SYNC_PROGRESS);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(syncReceiver, filter, 0x4);
+        } else {
+            registerReceiver(syncReceiver, filter);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(syncReceiver);
+        } catch (Exception e) {
+            // Ignore (already unregistered or not registered)
+        }
+    }
+
+    private void updateSyncIndicator(int progress, String status) {
+        if (syncIndicator == null) return;
+
+        if (progress > 0 && progress < 100) {
+            if (syncIndicator.getVisibility() != View.VISIBLE) {
+                syncIndicator.setVisibility(View.VISIBLE);
+                syncIndicator.setAlpha(0f);
+                syncIndicator.setTranslationY(100f);
+                syncIndicator.animate().alpha(1f).translationY(0f).setDuration(300).start();
+            }
+            syncProgress.setVisibility(View.VISIBLE);
+            syncDoneIcon.setVisibility(View.GONE);
+            syncText.setText(status != null ? status : getString(R.string.wear_main_status_syncing));
+        } else if (progress >= 100) {
+            // Success
+            syncProgress.setVisibility(View.GONE);
+            syncDoneIcon.setVisibility(View.VISIBLE);
+            syncText.setText(R.string.wear_sync_status_watch_received);
+
+            // Hide after delay
+            syncIndicator.postDelayed(() -> {
+                if (syncIndicator != null) {
+                    syncIndicator.animate()
+                            .alpha(0f)
+                            .translationY(100f)
+                            .setDuration(300)
+                            .withEndAction(() -> syncIndicator.setVisibility(View.GONE))
+                            .start();
+                }
+            }, 3000);
+        } else if (progress == 0 && status != null) {
+            // Error starts with 0
+            // Just hide it or show error? Let's hide for now to avoid annoyance, or show briefly.
+            // If status contains "Error"
+             if (syncIndicator.getVisibility() == View.VISIBLE) {
+                 syncIndicator.postDelayed(() -> {
+                     if (syncIndicator != null) {
+                        syncIndicator.animate().alpha(0f).withEndAction(() -> syncIndicator.setVisibility(View.GONE)).start();
+                     }
+                 }, 2000);
+             }
+        }
     }
 }
