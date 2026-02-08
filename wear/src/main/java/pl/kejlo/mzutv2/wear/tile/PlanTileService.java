@@ -102,6 +102,11 @@ public class PlanTileService extends TileService {
         ResolvableFuture<ResourceBuilders.Resources> future = ResolvableFuture.create();
         future.set(new ResourceBuilders.Resources.Builder()
                 .setVersion(RESOURCES_VERSION)
+                .addIdToImageMapping("logo_image", new ResourceBuilders.ImageResource.Builder()
+                        .setAndroidResourceByResId(new ResourceBuilders.AndroidImageResourceByResId.Builder()
+                                .setResourceId(R.mipmap.ic_zut_logo_round)
+                                .build())
+                        .build())
                 .build());
         return future;
     }
@@ -144,10 +149,10 @@ public class PlanTileService extends TileService {
                                 .build())
                         .build())
                 .setPadding(new ModifiersBuilders.Padding.Builder()
-                        .setStart(DimensionBuilders.dp(12))
-                        .setEnd(DimensionBuilders.dp(12))
-                        .setTop(DimensionBuilders.dp(10))
-                        .setBottom(DimensionBuilders.dp(8))
+                        .setStart(DimensionBuilders.dp(18))
+                        .setEnd(DimensionBuilders.dp(18))
+                        .setTop(DimensionBuilders.dp(16))
+                        .setBottom(DimensionBuilders.dp(12))
                         .build())
                 .setBackground(new ModifiersBuilders.Background.Builder()
                         .setColor(ColorBuilders.argb(themeBg))
@@ -187,17 +192,18 @@ public class PlanTileService extends TileService {
         }
 
         // Next event card - prominent
-        root.addContent(spacer(6));
+        root.addContent(spacer(3)); // Reduced from 12 to 3 to pull layout up and show bottom item
         root.addContent(buildNextEventCard(next));
 
         // Secondary events (compact list)
         if (snap.events != null && snap.events.size() > 1) {
             int added = 0;
-            root.addContent(spacer(6));
+            root.addContent(spacer(3)); // Reduced from 6 to 3
             for (WearPlanSnapshot.Event ev : snap.events) {
                 if (added >= 2) break;
                 if (isSameEvent(ev, next.event)) continue;
-                root.addContent(buildCompactEventRow(ev));
+                boolean isBottom = (added == 1); // Second compact row is bottom
+                root.addContent(buildCompactEventRow(ev, isBottom));
                 root.addContent(spacer(3));
                 added++;
             }
@@ -207,13 +213,21 @@ public class PlanTileService extends TileService {
     }
 
     private LayoutElementBuilders.LayoutElement buildHeader() {
-        return new LayoutElementBuilders.Row.Builder()
+        // Center the Logo + Text to avoid cutoff on round screens
+        return new LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.wrap())
-                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-                .addContent(new LayoutElementBuilders.Column.Builder()
-                        .setWidth(DimensionBuilders.expand())
-                        .addContent(text("📚 MZUT", 13, themeAccentLight))
+                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                .addContent(new LayoutElementBuilders.Row.Builder()
+                        .setWidth(DimensionBuilders.wrap()) // Wrap content to center it
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                        .addContent(new LayoutElementBuilders.Image.Builder()
+                                .setResourceId("logo_image")
+                                .setWidth(DimensionBuilders.dp(20))
+                                .setHeight(DimensionBuilders.dp(20))
+                                .build())
+                        .addContent(spacer(6))
+                        .addContent(text("MZUT", 14, themeAccentLight)) // Slightly larger?
                         .build())
                 .build();
     }
@@ -223,7 +237,10 @@ public class PlanTileService extends TileService {
         WearPlanSnapshot.Event ev = next.event;
         int accent = ev.color != 0 ? ev.color : themeAccent;
 
-        String title = WearScheduleUtils.ellipsize(ev.title, 20);
+        // Strip group BEFORE ellipsizing
+        String cleanTitle = ev.title.replaceAll("\\s*\\(.*?\\)$", "");
+        String title = WearScheduleUtils.ellipsize(cleanTitle, 20);
+        
         String timeRange = next.timeRange != null ? next.timeRange : "";
         String eta = WearScheduleUtils.formatEta(this, ZonedDateTime.now(), next.start);
 
@@ -260,22 +277,25 @@ public class PlanTileService extends TileService {
         // Content column
         LayoutElementBuilders.Column.Builder content = new LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
-                .setHeight(DimensionBuilders.wrap());
+                .setHeight(DimensionBuilders.wrap())
+                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_START); // Align to START (Left)
 
-        content.addContent(text("NASTĘPNE", 9, accent));
-        content.addContent(spacer(2));
-        content.addContent(text(title, 14, themeText));
-        if (!timeRange.isEmpty()) {
-            content.addContent(text(timeRange, 11, themeMuted));
-        }
-        if (ev.room != null && !ev.room.isEmpty()) {
-            content.addContent(text(ev.room, 10, themeSubtle));
-        }
+        // Header Row: "NASTĘPNE" + Spacer + ETA Badge
+        LayoutElementBuilders.Row.Builder headerRow = new LayoutElementBuilders.Row.Builder()
+                .setWidth(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.wrap())
+                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER);
+        
+        headerRow.addContent(text("NASTĘPNE", 9, accent));
+        
+        headerRow.addContent(new LayoutElementBuilders.Box.Builder()
+                .setWidth(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.dp(0))
+                .build());
 
-        // ETA badge
-        LayoutElementBuilders.LayoutElement etaBadge = null;
+        // ETA Badge logic
         if (eta != null && !eta.isEmpty()) {
-            etaBadge = new LayoutElementBuilders.Box.Builder()
+             LayoutElementBuilders.LayoutElement etaBadge = new LayoutElementBuilders.Box.Builder()
                     .setWidth(DimensionBuilders.wrap())
                     .setHeight(DimensionBuilders.wrap())
                     .setModifiers(new ModifiersBuilders.Modifiers.Builder()
@@ -288,15 +308,32 @@ public class PlanTileService extends TileService {
                             .setPadding(new ModifiersBuilders.Padding.Builder()
                                     .setStart(DimensionBuilders.dp(6))
                                     .setEnd(DimensionBuilders.dp(6))
-                                    .setTop(DimensionBuilders.dp(4))
-                                    .setBottom(DimensionBuilders.dp(4))
+                                    .setTop(DimensionBuilders.dp(2))
+                                    .setBottom(DimensionBuilders.dp(2))
                                     .build())
                             .build())
-                    .addContent(text(eta, 12, themeText))
+                    .addContent(text(eta, 11, themeText))
                     .build();
+            headerRow.addContent(etaBadge);
+        }
+        
+        content.addContent(headerRow.build());
+        content.addContent(spacer(4)); 
+        
+        // Title
+        content.addContent(text(title, 14, themeText)); 
+        
+        // Time Range (User: "godzina ma byc pod nazwa") -> Below Title
+        if (!timeRange.isEmpty()) {
+            content.addContent(text(timeRange, 11, themeMuted)); 
+        }
+        
+        // Room
+        if (ev.room != null && !ev.room.isEmpty()) {
+            content.addContent(text(ev.room, 10, themeSubtle));
         }
 
-        // Main row: accent bar + content + eta
+        // Main row: accent bar + content
         LayoutElementBuilders.Row.Builder row = new LayoutElementBuilders.Row.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.wrap())
@@ -305,10 +342,6 @@ public class PlanTileService extends TileService {
         row.addContent(accentBar);
         row.addContent(spacerH(8));
         row.addContent(content.build());
-        if (etaBadge != null) {
-            row.addContent(spacerH(6));
-            row.addContent(etaBadge);
-        }
 
         return new LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.expand())
@@ -318,12 +351,12 @@ public class PlanTileService extends TileService {
                 .build();
     }
 
-    private LayoutElementBuilders.LayoutElement buildCompactEventRow(WearPlanSnapshot.Event ev) {
+    private LayoutElementBuilders.LayoutElement buildCompactEventRow(WearPlanSnapshot.Event ev, boolean isBottom) {
         int dotColor = ev.color != 0 ? ev.color : themeAccent;
 
         ModifiersBuilders.Modifiers rowMods = new ModifiersBuilders.Modifiers.Builder()
                 .setBackground(new ModifiersBuilders.Background.Builder()
-                        .setColor(ColorBuilders.argb(themeCardHighlight))
+                        .setColor(ColorBuilders.argb(themeCard)) // Use themeCard if highlight not defined? Assuming themeCard is safe.
                         .setCorner(new ModifiersBuilders.Corner.Builder()
                                 .setRadius(DimensionBuilders.dp(8))
                                 .build())
@@ -335,7 +368,33 @@ public class PlanTileService extends TileService {
                         .setBottom(DimensionBuilders.dp(6))
                         .build())
                 .build();
-
+                
+        // Squeeze bottom row more
+        int sidePadding = isBottom ? 36 : 16; 
+        
+        return new LayoutElementBuilders.Box.Builder()
+                .setWidth(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.wrap())
+                .setModifiers(new ModifiersBuilders.Modifiers.Builder()
+                        .setPadding(new ModifiersBuilders.Padding.Builder()
+                                .setStart(DimensionBuilders.dp(sidePadding)) 
+                                .setEnd(DimensionBuilders.dp(sidePadding))
+                                .build())
+                        .build())
+                .addContent(
+                    new LayoutElementBuilders.Box.Builder() // Inner box checks background/padding
+                        .setWidth(DimensionBuilders.expand())
+                        .setHeight(DimensionBuilders.wrap())
+                        .setModifiers(rowMods)
+                        .setModifiers(rowMods)
+                        .addContent(buildCompactRowContent(ev, dotColor, isBottom))
+                        .build()
+                )
+                .build();
+    }
+    
+    // Helper to avoid duplication since I'm wrapping logic
+    private LayoutElementBuilders.Row buildCompactRowContent(WearPlanSnapshot.Event ev, int dotColor, boolean isBottom) {
         // Dot indicator
         LayoutElementBuilders.Box dot = new LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.dp(6))
@@ -354,9 +413,19 @@ public class PlanTileService extends TileService {
         LayoutElementBuilders.Column.Builder col = new LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.wrap());
-        col.addContent(text(WearScheduleUtils.ellipsize(ev.title, 18), 11, themeText));
+                
+        // Strip group for compact row too
+        String cleanTitle = ev.title.replaceAll("\\s*\\(.*?\\)$", "");
+        
+        // Smaller text for bottom item to avoid cutoff
+        int charLimit = isBottom ? 14 : 18; 
+        int titleSize = isBottom ? 9 : 11;
+        int timeSize = isBottom ? 8 : 9; // Smaller time for bottom
+        
+        col.addContent(text(WearScheduleUtils.ellipsize(cleanTitle, charLimit), titleSize, themeText));
+        
         if (ev.time != null && !ev.time.isEmpty()) {
-            col.addContent(text(ev.time, 9, themeMuted));
+            col.addContent(text(ev.time, timeSize, themeMuted));
         }
 
         LayoutElementBuilders.Row.Builder row = new LayoutElementBuilders.Row.Builder()
@@ -367,13 +436,7 @@ public class PlanTileService extends TileService {
         row.addContent(dot);
         row.addContent(spacerH(8));
         row.addContent(col.build());
-
-        return new LayoutElementBuilders.Box.Builder()
-                .setWidth(DimensionBuilders.expand())
-                .setHeight(DimensionBuilders.wrap())
-                .setModifiers(rowMods)
-                .addContent(row.build())
-                .build();
+        return row.build();
     }
 
     private LayoutElementBuilders.LayoutElement buildInfoCard(String title, String subtitle, int accentColor) {

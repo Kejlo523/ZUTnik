@@ -1,144 +1,144 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/wear_bg">
 
-    <ScrollView
-        android:id="@+id/wearRootScroll"
+    <!-- Day indicator dots at very top -->
+    <LinearLayout
+        android:id="@+id/dayIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center" />
+
+    <!-- Page container (day content OR sync content) -->
+    <FrameLayout
+        android:id="@+id/pageContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:overScrollMode="never">
+        android:layout_marginTop="18dp">
 
+        <!-- Day page content -->
         <LinearLayout
-            android:id="@+id/wearContentRoot"
+            android:id="@+id/dayPageContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
+            android:gravity="center_horizontal"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="24dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/wearWeekLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="#9AA0A6"
-            android:textSize="11sp"
-            android:text="@string/wear_main_week_label" />
-
-        <LinearLayout
-            android:id="@+id/weekContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:orientation="vertical" />
-
-        <LinearLayout
-            android:id="@+id/wearStatusCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical"
-            android:background="@drawable/wear_card"
-            android:padding="10dp"
-                android:visibility="gone">
-
+            <!-- Day header -->
             <TextView
-                android:id="@+id/wearStatus"
+                android:id="@+id/dayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#E6EDF7"
+                android:layout_gravity="center"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+            <!-- Events list -->
+            <androidx.wear.widget.WearableRecyclerView
+                android:id="@+id/eventsList"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="4dp"
+                android:scrollbars="none" />
+
+        </LinearLayout>
+
+        <!-- Sync page content -->
+        <LinearLayout
+            android:id="@+id/syncPageContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/syncTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textColor="@android:color/white"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 android:gravity="center"
-                android:text="@string/wear_main_status_waiting" />
+                android:text="@string/wear_main_title" />
+
+            <TextView
+                android:id="@+id/syncDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_gravity="center"
+                android:textColor="#888888"
+                android:textSize="9sp"
+                android:gravity="center"
+                android:text="@string/wear_main_desc" />
 
             <LinearLayout
+                android:id="@+id/syncStatusCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/wear_card"
+                android:padding="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/syncStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#E6EDF7"
+                    android:textSize="9sp"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
 
                 <ProgressBar
-                    android:id="@+id/wearProgress"
+                    android:id="@+id/syncProgress"
                     style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="0dp"
-                    android:layout_height="6dp"
-                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="3dp"
+                    android:layout_marginTop="4dp"
                     android:indeterminate="false"
                     android:max="100"
-                    android:progress="0"
                     android:progressTint="#7FA7FF"
                     android:progressBackgroundTint="#24304A"
                     android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/wearProgressText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textColor="#B0B7C3"
-                    android:textSize="10sp"
-                    android:text="@string/common_percent_zero"
-                    android:visibility="gone" />
             </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
 
             <Button
-                android:id="@+id/btnWearSync"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:id="@+id/btnSync"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:layout_marginTop="10dp"
+                android:layout_gravity="center"
                 android:text="@string/wear_main_sync"
                 android:textColor="@android:color/white"
-                android:background="@drawable/wear_button"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp" />
-
-            <ImageButton
-                android:id="@+id/btnWearCancel"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginStart="8dp"
-                android:background="@android:color/transparent"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:tint="#B0B7C3"
-                android:contentDescription="@string/wear_main_status_declined"
-                android:visibility="gone" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/wearTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:text="@string/wear_main_title" />
-
-        <TextView
-            android:id="@+id/wearDesc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="#B0B7C3"
-            android:textSize="12sp"
-            android:gravity="center"
-            android:text="@string/wear_main_desc" />
+                android:textSize="11sp"
+                android:textAllCaps="false"
+                android:background="@drawable/wear_button" />
 
         </LinearLayout>
-    </ScrollView>
+
+    </FrameLayout>
+
 </FrameLayout>

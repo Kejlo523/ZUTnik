@@ -45,4 +45,9 @@
     <string name="wear_eta_minutes">za %1$dm</string>
     <string name="wear_eta_hours">za %1$dh</string>
     <string name="wear_eta_hours_minutes">za %1$dh %2$dm</string>
+
+    <string name="wear_prev_day">Poprzedni dzień</string>
+    <string name="wear_next_day">Następny dzień</string>
+    <string name="wear_back_to_schedule">← Powrót do planu</string>
+    <string name="wear_swipe_hint">↑ przewiń w górę aby wrócić</string>
 </resources>
