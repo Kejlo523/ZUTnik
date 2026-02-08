@@ -10,7 +10,7 @@ android {
         applicationId = "pl.kejlo.mzutv2"
         minSdk = 26
         targetSdk = 35
-        versionCode = 141
+        versionCode = 142
         versionName = "1.52"
     }
 
@@ -34,4 +34,5 @@ dependencies {
     implementation(libs.wear.watchface.complications.data.source)
     implementation(libs.play.services.wearable)
     implementation(libs.concurrent.futures)
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
