@@ -46,11 +46,11 @@ public class SettingsActivity extends AppCompatActivity {
         // Toolbar setup, same pattern as other screens
         Toolbar toolbar = findViewById(R.id.toolbar);
 
-        ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
+        // ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
+        //    Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+        //    v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+        //    return WindowInsetsCompat.CONSUMED;
+        // });
 
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {

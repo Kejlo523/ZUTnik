@@ -32,37 +32,14 @@
             android:paddingTop="24dp"
             android:paddingEnd="24dp">
 
-            <LinearLayout
-                android:id="@+id/linksHeaderCard"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                android:background="@drawable/bg_card_soft"
-                android:elevation="4dp"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:padding="24dp">
-
-                <TextView
-                    android:id="@+id/textLinksTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/useful_links_header_title"
-                    android:textColor="?attr/mzText"
-                    android:textSize="26sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/textLinksSub"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center"
-                    android:text="@string/useful_links_header_sub"
-                    android:textColor="?attr/mzMuted"
-                    android:textSize="14sp" />
-            </LinearLayout>
+                android:text="@string/useful_links_header_desc"
+                android:textColor="?attr/mzMuted"
+                android:textSize="15sp"
+                android:lineSpacingExtra="4dp"/>
 
             <TextView
                 android:id="@+id/textLinksSectionTitle"

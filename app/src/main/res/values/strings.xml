@@ -314,7 +314,7 @@
     </string>
     <string name="plan_widget_date_tomorrow_suffix">(jutro)</string>
     <string name="plan_widget_refreshed_prefix">Odświeżono: </string>
-    <string name="plan_widget_label_today">Dziś</string>
+    <string name="plan_widget_label_today">Dzisiaj</string>
     <string name="plan_widget_refreshed_placeholder">Odświeżono: --:--</string>
     <string name="plan_widget_item_title_placeholder">Przedmiot</string>
     <string name="plan_widget_item_time_placeholder">08:00 - 09:30</string>
@@ -325,6 +325,9 @@
     <string name="about_subtitle">
         Nieoficjalna aplikacja mobilna dla studentów ZUT, z planem zajęć, ocenami, informacjami o studiach i widżetem dziennym — bez reklam i śledzenia.
     </string>
+    <string name="about_rate_cta">Oceń nas (%1$s ★)</string>
+    <string name="about_rate_title">Oceń aplikację</string>
+    <string name="about_rate_desc">Twoja opinia pomaga nam rozwijać mZUT!</string>
 
     <string name="about_section_project_title">Projekt i autor</string>
     <string name="about_author_line">Autorem aplikacji jest Jędrzej Nowak.</string>
@@ -337,9 +340,11 @@
 
     <string name="about_section_contact_title">Kontakt i linki</string>
     <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
-    <string name="about_contact_website">Strona: endozero.pl</string>
-    <string name="about_contact_app_website">Strona aplikacji: mzut.endozero.pl</string>
-    <string name="about_contact_github">GitHub: https://github.com/Kejlo523/mzut-v2</string>
+    <string name="about_contact_website">Strona autora: endozero.pl</string>
+    <string name="about_contact_app_website">Strona projektu: mzut.endozero.pl</string>
+    <string name="about_contact_github">GitHub: Kod źródłowy</string>
+    <string name="about_privacy_policy_url">Polityka prywatności</string>
+    <string name="about_review_error">Nie udało się otworzyć okna oceniania.</string>
 
     <string name="about_section_privacy_title">Prywatność i dane</string>
     <string name="about_privacy_text_1">
@@ -372,6 +377,8 @@
     </string>
 
     <string name="settings_widget_refresh_saved">Zapisano ustawienia widgetu</string>
+    <string name="settings_theme_label">Motyw aplikacji</string>
+    <string name="settings_widget_refresh_label">Częstotliwość odświeżania widgetu</string>
     <string name="settings_theme_changed">Zmieniono motyw</string>
 
     <string name="useful_links_header_title">Twoje najważniejsze adresy w jednym miejscu</string>
@@ -442,11 +449,11 @@
     <string name="home_open_url_error">Nieprawidłowy URL</string>
     <string name="home_open_error">Błąd otwierania: %1$s</string>
 
-    <string name="settings_theme_label">Motyw aplikacji</string>
+
     <string name="theme_deep_blue">Deep Blue</string>
     <string name="theme_high_contrast">Wysoki kontrast</string>
     <string name="theme_lime">Limonka</string>
-    <string name="settings_widget_refresh_label">Częstotliwość odświeżania widgetu</string>
+
 
     <string name="offline_mode_label">Tryb offline</string>
     <string name="online_mode_label">Tryb online</string>
@@ -557,6 +564,30 @@
     <string name="wear_install_dialog_open_store">Zainstaluj</string>
     <string name="wear_install_dialog_dont_ask">Nie pytaj ponownie</string>
     <string name="wear_install_sent_toast">Wysłano żądanie otwarcia sklepu na zegarku.</string>
+
+    <!-- Session dates -->
+    <string name="session_start_label">Początek sesji</string>
+    <string name="session_end_label">Koniec sesji</string>
+    <string name="session_winter">zimowej</string>
+    <string name="session_summer">letniej</string>
+    <string name="session_retake">poprawkowej</string>
+
+    <!-- Extracted Strings -->
+    <string name="useful_links_header_desc">Zbiór najpotrzebniejszych serwisów i stron uczelnianych.</string>
+    <string name="useful_links_badge_recommended">Polecane</string>
+    <string name="about_version_prefix">v</string>
+    <string name="about_section_support_project">Wsparcie i Projekt</string>
+    <string name="about_footer_made_with">Made with ❤️ by Kejlo</string>
+
+    <string name="about_github_title">Kod źródłowy</string>
+    <string name="about_github_desc">Sprawdź projekt na GitHubie</string>
+    <string name="about_section_info_contact">Informacje i Kontakt</string>
+    <string name="error_no_email_app">Brak aplikacji pocztowej</string>
+    <string name="about_stats_format_full">Ocena: %1$s ★  •  Pobrań: %2$s</string>
+    <string name="about_stats_format_rating_only">Ocena: %1$s ★</string>
+    <string name="about_link_title_project">Strona projektu</string>
+    <string name="about_link_title_author">Strona autora</string>
+    <string name="about_link_title_privacy">Polityka prywatności</string>
 
 </resources>
 
