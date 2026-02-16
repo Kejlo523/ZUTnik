@@ -613,6 +613,7 @@
     <string name="settings_notifications_plan_moved">Przeniesienie zajec</string>
     <string name="settings_notifications_plan_cancelled">Odwolanie zajec</string>
     <string name="settings_notifications_plan_added">Nowe zajecia</string>
+    <string name="settings_notifications_plan_removed">Usuniete zajecia</string>
     <string name="settings_notifications_saved">Zapisano ustawienia powiadomien</string>
     <string name="settings_notifications_permission_denied">Bez zgody na powiadomienia funkcja zostala wylaczona</string>
     <string name="settings_notifications_permission_required">Aby wlaczyc, nadaj uprawnienie do powiadomien</string>
@@ -636,6 +637,9 @@
     <string name="notif_plan_line_moved">%1$s: %2$s %3$s -&gt; %4$s %5$s</string>
     <string name="notif_plan_line_cancelled">%1$s: odwolane (%2$s %3$s)</string>
     <string name="notif_plan_line_added">%1$s: nowe (%2$s %3$s)</string>
+    <string name="notif_plan_line_removed">%1$s: usuniete (%2$s %3$s)</string>
+    <string name="notif_plan_refreshed_title">Plan zajec odswiezony</string>
+    <string name="notif_plan_refreshed_text">Wykryto duzo zmian. Pojawil sie nowy/odswiezony plan zajec.</string>
 
     <!-- Okresy kalendarza -->
     <string name="calendar_period_start_label">Poczatek</string>

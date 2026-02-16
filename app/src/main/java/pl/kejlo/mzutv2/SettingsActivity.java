@@ -32,6 +32,7 @@ public class SettingsActivity extends AppCompatActivity {
     private SwitchMaterial switchNotifPlanMoved;
     private SwitchMaterial switchNotifPlanCancelled;
     private SwitchMaterial switchNotifPlanAdded;
+    private SwitchMaterial switchNotifPlanRemoved;
     private LinearLayout layoutPlanNotifCategories;
 
     private boolean internalNotifUiChange = false;
@@ -220,12 +221,23 @@ public class SettingsActivity extends AppCompatActivity {
         switchNotifPlanMoved = findViewById(R.id.switchNotifPlanMoved);
         switchNotifPlanCancelled = findViewById(R.id.switchNotifPlanCancelled);
         switchNotifPlanAdded = findViewById(R.id.switchNotifPlanAdded);
+        switchNotifPlanRemoved = findViewById(R.id.switchNotifPlanRemoved);
         layoutPlanNotifCategories = findViewById(R.id.layoutPlanNotifCategories);
 
         if (switchNotifMaster == null || switchNotifGrades == null || switchNotifPlan == null
-                || switchNotifPlanMoved == null || switchNotifPlanCancelled == null || switchNotifPlanAdded == null) {
+                || switchNotifPlanMoved == null || switchNotifPlanCancelled == null
+                || switchNotifPlanAdded == null || switchNotifPlanRemoved == null) {
             return;
         }
+
+        applyThemeAwareSwitchColors(
+                switchNotifMaster,
+                switchNotifGrades,
+                switchNotifPlan,
+                switchNotifPlanMoved,
+                switchNotifPlanCancelled,
+                switchNotifPlanAdded,
+                switchNotifPlanRemoved);
 
         bindNotificationSwitchesFromPrefs();
 
@@ -318,6 +330,18 @@ public class SettingsActivity extends AppCompatActivity {
             NotificationSyncManager.syncWorkerSchedule(this);
             Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
         });
+
+        switchNotifPlanRemoved.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PLAN_REMOVED_ENABLED, isChecked)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void bindNotificationSwitchesFromPrefs() {
@@ -342,6 +366,9 @@ public class SettingsActivity extends AppCompatActivity {
         switchNotifPlanAdded.setChecked(prefs.getBoolean(
                 SettingsPrefs.KEY_NOTIFICATIONS_PLAN_ADDED_ENABLED,
                 SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_ADDED_ENABLED));
+        switchNotifPlanRemoved.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_PLAN_REMOVED_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_REMOVED_ENABLED));
         internalNotifUiChange = false;
 
         updateNotificationSwitchEnabledState();
@@ -361,6 +388,7 @@ public class SettingsActivity extends AppCompatActivity {
         switchNotifPlanMoved.setEnabled(planEnabled);
         switchNotifPlanCancelled.setEnabled(planEnabled);
         switchNotifPlanAdded.setEnabled(planEnabled);
+        switchNotifPlanRemoved.setEnabled(planEnabled);
 
         if (!hasPermission && switchNotifMaster.isChecked()) {
             internalNotifUiChange = true;
@@ -370,6 +398,17 @@ public class SettingsActivity extends AppCompatActivity {
 
         if (layoutPlanNotifCategories != null) {
             layoutPlanNotifCategories.setAlpha(planEnabled ? 1f : 0.45f);
+        }
+    }
+
+    private void applyThemeAwareSwitchColors(SwitchMaterial... switches) {
+        if (switches == null) {
+            return;
+        }
+        for (SwitchMaterial sw : switches) {
+            if (sw != null) {
+                sw.setUseMaterialThemeColors(true);
+            }
         }
     }
 

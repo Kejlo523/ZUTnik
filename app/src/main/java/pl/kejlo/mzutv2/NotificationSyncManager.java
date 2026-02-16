@@ -93,10 +93,20 @@ public final class NotificationSyncManager {
                 SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_ADDED_ENABLED);
     }
 
+    public static boolean isPlanRemovedEnabled(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        return prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_PLAN_REMOVED_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_REMOVED_ENABLED);
+    }
+
     public static boolean isAnyPlanCategoryEnabled(Context context) {
         return isPlanMovedEnabled(context)
                 || isPlanCancelledEnabled(context)
-                || isPlanAddedEnabled(context);
+                || isPlanAddedEnabled(context)
+                || isPlanRemovedEnabled(context);
     }
 
     public static boolean isAnyFeatureEnabled(Context context) {
