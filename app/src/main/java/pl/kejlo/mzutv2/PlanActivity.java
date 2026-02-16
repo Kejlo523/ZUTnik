@@ -168,6 +168,8 @@ public class PlanActivity extends MzutBaseActivity {
     private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newCachedThreadPool();
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
+    private volatile List<PlanRepository.SessionPeriod> sessionDates = new ArrayList<>();
+
     private static class PlanKey {
         final String viewModeId;
         final LocalDate date;
@@ -417,6 +419,21 @@ public class PlanActivity extends MzutBaseActivity {
         }
 
         setupFab();
+
+        // Load session dates in background
+        executor.execute(() -> {
+            List<PlanRepository.SessionPeriod> sessions = planRepository.fetchSessionDates();
+            if (sessions != null && !sessions.isEmpty()) {
+                sessionDates = sessions;
+                // Refresh displayed pages so session markers appear
+                handler.post(() -> {
+                    if (pagerAdapter != null) {
+                        pagerAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        });
+
         loadPlanForCurrentMode();
         runIntroAnimations();
     }
@@ -824,23 +841,14 @@ public class PlanActivity extends MzutBaseActivity {
         categoryView.setText(displayCategories[0], false);
         categoryView.setInputType(android.text.InputType.TYPE_NULL);
         categoryView.setCursorVisible(false);
-        categoryView.setFocusable(true);
-        categoryView.setFocusableInTouchMode(true);
+        categoryView.setFocusable(false);
+        categoryView.setFocusableInTouchMode(false);
+        categoryView.setClickable(true);
 
         final int[] selectedCategory = { 0 };
         categoryView.setDropDownBackgroundDrawable(
                 androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_list));
-        categoryView.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                categoryView.showDropDown();
-            }
-        });
-        categoryView.setOnTouchListener((v, event) -> {
-            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
-                categoryView.showDropDown();
-            }
-            return false;
-        });
+        categoryView.setOnClickListener(v -> categoryView.showDropDown());
         if (inputCategoryLayout != null) {
             inputCategoryLayout.setEndIconOnClickListener(v -> categoryView.showDropDown());
         }
@@ -1021,12 +1029,11 @@ public class PlanActivity extends MzutBaseActivity {
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .create();
 
-        dialog.setOnShowListener(d -> {
-            if (dialog.getWindow() != null) {
-                dialog.getWindow().setBackgroundDrawable(
-                        androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded_dark));
-            }
-        });
+        // Set background BEFORE show() to avoid visual flash
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded_dark));
+        }
 
         dialog.setOnDismissListener(d -> {
             isDialogDismissed[0] = true;
@@ -1300,6 +1307,8 @@ public class PlanActivity extends MzutBaseActivity {
 
             LinearLayout columnsContainer = new LinearLayout(context);
             columnsContainer.setOrientation(LinearLayout.HORIZONTAL);
+            columnsContainer.setClipChildren(false);
+            columnsContainer.setClipToPadding(false);
             holder.container.addView(columnsContainer, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
@@ -1311,21 +1320,7 @@ public class PlanActivity extends MzutBaseActivity {
                     : Collections.emptyList();
             List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
 
-            boolean hasAnyEvents = false;
-            for (PlanRepository.DayColumn col : cols) {
-                if (col.events != null && !col.events.isEmpty()) {
-                    for (PlanRepository.PlanEventUi ev : col.events) {
-                        if (!shouldHideEvent(ev)) {
-                            hasAnyEvents = true;
-                            break;
-                        }
-                    }
-                }
-                if (hasAnyEvents)
-                    break;
-            }
-
-            if (cols.isEmpty() || !hasAnyEvents) {
+            if (cols.isEmpty()) {
                 TextView empty = new TextView(context);
                 empty.setText(R.string.plan_no_classes_in_range);
                 empty.setGravity(Gravity.CENTER);
@@ -1336,6 +1331,10 @@ public class PlanActivity extends MzutBaseActivity {
             }
 
             LocalDate today = LocalDate.now();
+
+            // Build day columns first, track them with their dates
+            List<View> dayColumnViews = new ArrayList<>();
+            List<LocalDate> dayColumnDates = new ArrayList<>();
 
             for (PlanRepository.DayColumn col : cols) {
 
@@ -1386,7 +1385,33 @@ public class PlanActivity extends MzutBaseActivity {
                 });
 
                 dayColumn.addView(dayBody);
-                columnsContainer.addView(dayColumn);
+                dayColumnViews.add(dayColumn);
+                dayColumnDates.add(col.date);
+            }
+
+            // Add columns to container, inserting session separators between them
+            for (int i = 0; i < dayColumnViews.size(); i++) {
+                // Before first column: leading check (e.g. Sunday session)
+                if (i == 0) {
+                    LocalDate firstDate = dayColumnDates.get(0);
+                    LocalDate dayBefore = firstDate.minusDays(1);
+                    addSessionMarkerLines(columnsContainer, dayBefore, firstDate, columnHeight);
+                }
+
+                // Between adjacent columns: end markers then start markers
+                if (i > 0) {
+                    LocalDate prevDate = dayColumnDates.get(i - 1);
+                    LocalDate curDate = dayColumnDates.get(i);
+                    addSessionMarkerLines(columnsContainer, prevDate, curDate, columnHeight);
+                }
+                columnsContainer.addView(dayColumnViews.get(i));
+            }
+
+            // After last column: trailing check (e.g. Saturday session, or session starting on last day)
+            if (!dayColumnDates.isEmpty()) {
+                LocalDate lastDate = dayColumnDates.get(dayColumnDates.size() - 1);
+                LocalDate dayAfter = lastDate.plusDays(1);
+                addSessionMarkerLines(columnsContainer, lastDate, dayAfter, columnHeight);
             }
         }
 
@@ -1992,15 +2017,185 @@ public class PlanActivity extends MzutBaseActivity {
                     if (dx <= touchSlop && dy <= touchSlop) {
                         int startMin = getStartMinFromTouch(event.getY());
                         int[] range = buildDefaultRange(startMin);
+
+                        // Show highlight at clicked slot
+                        View highlight = addSlotHighlight(dayBody, range[0], range[1]);
+
                         AddCustomEventDialog dialog = AddCustomEventDialog.newForSlot(date, range[0], range[1]);
                         dialog.setListener(ev -> refreshAfterCustomEvent());
                         dialog.show(getSupportFragmentManager(), "add_custom_event_slot");
+
+                        // Remove highlight on dialog dismiss
+                        if (dialog.getDialog() != null) {
+                            dialog.getDialog().setOnDismissListener(d -> removeSlotHighlight(dayBody));
+                        } else {
+                            // Dialog not yet created; use lifecycle
+                            getSupportFragmentManager().registerFragmentLifecycleCallbacks(
+                                    new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                                        @Override
+                                        public void onFragmentViewDestroyed(@NonNull androidx.fragment.app.FragmentManager fm,
+                                                @NonNull androidx.fragment.app.Fragment f) {
+                                            if (f == dialog) {
+                                                removeSlotHighlight(dayBody);
+                                                fm.unregisterFragmentLifecycleCallbacks(this);
+                                            }
+                                        }
+                                    }, false);
+                        }
                     }
                     return false;
                 default:
                     return false;
             }
         });
+    }
+
+    private View addSlotHighlight(FrameLayoutWithChildren dayBody, int startMin, int endMin) {
+        removeSlotHighlight(dayBody); // Remove any existing
+
+        int calStart = START_HOUR * 60;
+        float topPx = ((startMin - calStart) / 60f) * dpToPx(HOUR_HEIGHT_DP);
+        float heightPx = ((endMin - startMin) / 60f) * dpToPx(HOUR_HEIGHT_DP);
+
+        View highlight = new View(this);
+        highlight.setTag("SLOT_HIGHLIGHT");
+
+        int primary = ThemeManager.resolveColor(this, R.attr.mzPrimary);
+        int fillColor = androidx.core.graphics.ColorUtils.setAlphaComponent(primary, 50);
+        int strokeColor = androidx.core.graphics.ColorUtils.setAlphaComponent(primary, 140);
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(fillColor);
+        bg.setCornerRadius(dpToPx(6));
+        bg.setStroke(dpToPx(2), strokeColor, dpToPx(4), dpToPx(3));
+        highlight.setBackground(bg);
+
+        FrameLayoutWithChildren.LayoutParams lp = new FrameLayoutWithChildren.LayoutParams(
+                FrameLayoutWithChildren.LayoutParams.MATCH_PARENT,
+                (int) heightPx);
+        lp.topMargin = (int) topPx;
+        highlight.setLayoutParams(lp);
+
+        // Fade in
+        highlight.setAlpha(0f);
+        highlight.animate().alpha(1f).setDuration(200).start();
+
+        dayBody.addView(highlight);
+        highlight.bringToFront();
+        return highlight;
+    }
+
+    private void removeSlotHighlight(FrameLayoutWithChildren dayBody) {
+        if (dayBody == null) return;
+        for (int i = dayBody.getChildCount() - 1; i >= 0; i--) {
+            View child = dayBody.getChildAt(i);
+            if ("SLOT_HIGHLIGHT".equals(child.getTag())) {
+                child.animate().alpha(0f).setDuration(150).withEndAction(() -> dayBody.removeView(child)).start();
+            }
+        }
+    }
+
+    /**
+     * Adds separate session marker lines (END then START) for the gap between prevDate and curDate.
+     */
+    private void addSessionMarkerLines(LinearLayout container, LocalDate prevDate, LocalDate curDate, int columnHeight) {
+        if (sessionDates == null || sessionDates.isEmpty()) return;
+
+        // First: END markers (sessions ending on prevDate)
+        for (PlanRepository.SessionPeriod session : sessionDates) {
+            if (prevDate.equals(session.endDate)) {
+                String label = getString(R.string.session_end_label) + " " + getSessionDisplayName(session.name);
+                int color = ThemeManager.resolveColor(this, R.attr.mzDanger);
+                if (color == 0) color = 0xFFF44336;
+                View sep = buildMarkerLine(label, color, columnHeight);
+                container.addView(sep);
+            }
+        }
+
+        // Then: START markers (sessions starting on curDate)
+        for (PlanRepository.SessionPeriod session : sessionDates) {
+            if (curDate.equals(session.startDate)) {
+                String label = getString(R.string.session_start_label) + " " + getSessionDisplayName(session.name);
+                int color = ThemeManager.resolveColor(this, R.attr.mzSuccess);
+                if (color == 0) color = 0xFF4CAF50;
+                View sep = buildMarkerLine(label, color, columnHeight);
+                container.addView(sep);
+            }
+        }
+    }
+
+    /**
+     * Builds a single marker line: thin 2dp vertical line + rotated label badge.
+     * Badge uses EXPLICIT pixel dimensions (measured text) to avoid AT_MOST clipping.
+     */
+    private View buildMarkerLine(String label, int color, int columnHeight) {
+        // Measure text to compute explicit badge dimensions
+        float textSizePx = android.util.TypedValue.applyDimension(
+                android.util.TypedValue.COMPLEX_UNIT_SP, 9f,
+                getResources().getDisplayMetrics());
+        android.graphics.Paint paint = new android.graphics.Paint();
+        paint.setTextSize(textSizePx);
+        android.graphics.Paint.FontMetrics fm = paint.getFontMetrics();
+
+        int padH = dpToPx(12); // horizontal padding (left + right)
+        int padV = dpToPx(6);  // vertical padding (top + bottom)
+        int badgeTextWidth = (int) Math.ceil(paint.measureText(label)) + padH;
+        int badgeTextHeight = (int) Math.ceil(fm.descent - fm.ascent) + padV;
+
+        // Separator width = badge visual width after -90° rotation = badgeTextHeight
+        int separatorWidth = Math.max(badgeTextHeight, dpToPx(20));
+
+        // Build separator
+        FrameLayout separator = new FrameLayout(this);
+        LinearLayout.LayoutParams sepLp = new LinearLayout.LayoutParams(
+                separatorWidth, columnHeight);
+        separator.setLayoutParams(sepLp);
+
+        // Thin 2dp vertical line from top to bottom
+        View line = new View(this);
+        line.setBackgroundColor(color);
+        FrameLayout.LayoutParams lineLp = new FrameLayout.LayoutParams(
+                dpToPx(2), FrameLayout.LayoutParams.MATCH_PARENT);
+        lineLp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        line.setLayoutParams(lineLp);
+        line.setAlpha(0.85f);
+        separator.addView(line);
+
+        // Badge: EXPLICIT pixel size so FrameLayout's AT_MOST won't constrain it.
+        // Pre-rotation: width = badgeTextWidth, height = separatorWidth
+        // After -90° rotation: visual width = separatorWidth, visual height = badgeTextWidth
+        TextView badge = new TextView(this);
+        badge.setText(label);
+        badge.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 9f);
+        badge.setTextColor(0xFFFFFFFF);
+        badge.setSingleLine(true);
+        badge.setGravity(Gravity.CENTER);
+        badge.setPadding(padH / 2, padV / 2, padH / 2, padV / 2);
+        badge.setRotation(-90f);
+
+        GradientDrawable badgeBg = new GradientDrawable();
+        badgeBg.setColor(color);
+        badgeBg.setCornerRadius(dpToPx(4));
+        badge.setBackground(badgeBg);
+
+        // Explicit size: pre-rotation width = text width, height = separator width
+        FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
+                badgeTextWidth, separatorWidth);
+        badgeLp.gravity = android.view.Gravity.CENTER;
+        badge.setLayoutParams(badgeLp);
+        separator.addView(badge);
+
+        return separator;
+    }
+
+    private String getSessionDisplayName(String parsedName) {
+        if (parsedName == null) return "";
+        switch (parsedName) {
+            case "zimowa": return getString(R.string.session_winter);
+            case "letnia": return getString(R.string.session_summer);
+            case "poprawkowa": return getString(R.string.session_retake);
+            default: return parsedName;
+        }
     }
 
     private void updateFixedWeekHeaders(List<PlanRepository.DayColumn> rawCols, LocalDate pageDate) {

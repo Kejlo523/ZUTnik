@@ -1650,4 +1650,183 @@ public class PlanRepository {
 
         return result;
     }
+
+    // --- Session Dates ---
+
+    public static class SessionPeriod {
+        public String name;       // e.g. "zimowa", "letnia", "poprawkowa"
+        public LocalDate startDate;
+        public LocalDate endDate;
+
+        public SessionPeriod(String name, LocalDate startDate, LocalDate endDate) {
+            this.name = name;
+            this.startDate = startDate;
+            this.endDate = endDate;
+        }
+    }
+
+    private static final String KEY_SESSION_CACHE_JSON = "session_dates_cache_json_v2";
+    private static final String KEY_SESSION_CACHE_TS = "session_dates_cache_ts";
+    private static final long SESSION_CACHE_TTL_MS = 24L * 60L * 60L * 1000L;
+
+    private static List<SessionPeriod> sCachedSessions;
+    private static long sCachedSessionsTs;
+
+    public List<SessionPeriod> fetchSessionDates() {
+        long now = System.currentTimeMillis();
+
+        // In-memory cache
+        if (sCachedSessions != null && (now - sCachedSessionsTs) < SESSION_CACHE_TTL_MS) {
+            return sCachedSessions;
+        }
+
+        // Disk cache
+        if (appContext != null) {
+            SharedPreferences sp = appContext.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
+            long ts = sp.getLong(KEY_SESSION_CACHE_TS, 0);
+            if ((now - ts) < SESSION_CACHE_TTL_MS) {
+                String json = sp.getString(KEY_SESSION_CACHE_JSON, null);
+                if (json != null) {
+                    List<SessionPeriod> cached = parseSessionJson(json);
+                    if (cached != null && !cached.isEmpty()) {
+                        sCachedSessions = cached;
+                        sCachedSessionsTs = now;
+                        return cached;
+                    }
+                }
+            }
+        }
+
+        // Fetch from web
+        List<SessionPeriod> sessions = scrapeSessionDates();
+        if (sessions != null && !sessions.isEmpty()) {
+            sCachedSessions = sessions;
+            sCachedSessionsTs = now;
+            if (appContext != null) {
+                SharedPreferences sp = appContext.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
+                sp.edit()
+                        .putString(KEY_SESSION_CACHE_JSON, sessionToJson(sessions))
+                        .putLong(KEY_SESSION_CACHE_TS, now)
+                        .apply();
+            }
+        }
+        return sessions != null ? sessions : new ArrayList<>();
+    }
+
+    private List<SessionPeriod> scrapeSessionDates() {
+        // Try multiple academic year URLs (current and next)
+        int year = java.time.Year.now().getValue();
+        String[] urls = {
+                "https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + year + (year + 1) + ".html",
+                "https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + (year - 1) + year + ".html"
+        };
+
+        for (String url : urls) {
+            try {
+                Request request = new Request.Builder()
+                        .url(url)
+                        .header("User-Agent", "mZUTv2-Android-Plan/1.0")
+                        .build();
+
+                try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+                    if (!response.isSuccessful()) continue;
+                    String html = response.body() != null ? response.body().string() : "";
+                    if (html.isEmpty()) continue;
+
+                    List<SessionPeriod> sessions = parseSessionHtml(html);
+                    if (sessions != null && !sessions.isEmpty()) {
+                        return sessions;
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Session scrape error (" + url + "): " + e.getMessage());
+            }
+        }
+        return new ArrayList<>();
+    }
+
+    private List<SessionPeriod> parseSessionHtml(String html) {
+        List<SessionPeriod> sessions = new ArrayList<>();
+        DateTimeFormatter ddMMyyyy = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+        // Patterns for session dates in HTML: "sesja zimowa - DD.MM.YYYY r. – DD.MM.YYYY r."
+        String[][] sessionDefs = {
+                {"zimowa", "sesja zimowa"},
+                {"letnia", "sesja letnia"},
+                {"poprawkowa", "sesja poprawkowa"}
+        };
+
+        // Normalize: strip tags, entities, unicode, and collapse whitespace
+        String normalized = html
+                .replaceAll("<[^>]+>", " ")          // strip HTML tags
+                .replace("&ndash;", "–")
+                .replace("&mdash;", "—")
+                .replace("&nbsp;", " ")
+                .replace("\u00A0", " ")
+                .replaceAll("\\s+", " ");             // collapse all whitespace to single space
+
+        String normalizedLower = normalized.toLowerCase(java.util.Locale.ROOT);
+
+        for (String[] def : sessionDefs) {
+            String name = def[0];
+            String needle = def[1].toLowerCase(java.util.Locale.ROOT);
+            int idx = normalizedLower.indexOf(needle);
+            if (idx < 0) continue;
+
+            // Extract region around the match
+            int regionEnd = Math.min(idx + 200, normalized.length());
+            String region = normalized.substring(idx, regionEnd);
+
+            // Find date patterns: DD.MM.YYYY
+            java.util.regex.Pattern datePat = java.util.regex.Pattern.compile("(\\d{2}\\.\\d{2}\\.\\d{4})");
+            java.util.regex.Matcher m = datePat.matcher(region);
+
+            List<LocalDate> dates = new ArrayList<>();
+            while (m.find() && dates.size() < 2) {
+                try {
+                    dates.add(LocalDate.parse(m.group(1), ddMMyyyy));
+                } catch (Exception ignored) {
+                }
+            }
+
+            if (dates.size() == 2) {
+                sessions.add(new SessionPeriod(name, dates.get(0), dates.get(1)));
+            }
+        }
+
+        Log.d(TAG, "Parsed " + sessions.size() + " session periods from HTML");
+        return sessions;
+    }
+
+    private String sessionToJson(List<SessionPeriod> sessions) {
+        try {
+            JSONArray arr = new JSONArray();
+            for (SessionPeriod sp : sessions) {
+                JSONObject obj = new JSONObject();
+                obj.put("name", sp.name);
+                obj.put("start", sp.startDate.toString());
+                obj.put("end", sp.endDate.toString());
+                arr.put(obj);
+            }
+            return arr.toString();
+        } catch (Exception e) {
+            return "[]";
+        }
+    }
+
+    private List<SessionPeriod> parseSessionJson(String json) {
+        List<SessionPeriod> result = new ArrayList<>();
+        try {
+            JSONArray arr = new JSONArray(json);
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                String name = obj.getString("name");
+                LocalDate start = LocalDate.parse(obj.getString("start"));
+                LocalDate end = LocalDate.parse(obj.getString("end"));
+                result.add(new SessionPeriod(name, start, end));
+            }
+        } catch (Exception ignored) {
+        }
+        return result;
+    }
 }

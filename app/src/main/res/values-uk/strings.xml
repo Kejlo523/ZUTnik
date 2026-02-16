@@ -46,6 +46,7 @@
     <string name="home_tip_news">Новини: повідомлення з RSS ZUT (студенти).</string>
 
     <string name="home_shortcuts_title">Швидкі ярлики</string>
+    <string name="home_side_panel_desc">Бічна панель</string>
 
     <string name="home_action_plan_label">📅 Розклад занять</string>
     <string name="home_action_grades_label">⭐ Оцінки</string>
@@ -148,6 +149,8 @@
     <string name="plan_view_day">День</string>
     <string name="plan_view_week">Тиждень</string>
     <string name="plan_view_month">Місяць</string>
+    <string name="plan_view_mode_label">Вигляд</string>
+    <string name="plan_actions_label">Дії</string>
 
     <string name="plan_button_today">Сьогодні</string>
     <string name="plan_button_refresh">Оновити</string>
@@ -268,12 +271,18 @@
     </string>
     <string name="plan_widget_date_tomorrow_suffix">(завтра)</string>
     <string name="plan_widget_refreshed_prefix">Оновлено: </string>
+    <string name="plan_widget_label_today">Сьогодні</string>
+    <string name="plan_widget_refreshed_placeholder">Оновлено: --:--</string>
+    <string name="plan_widget_item_title_placeholder">Предмет</string>
+    <string name="plan_widget_item_time_placeholder">08:00 - 09:30</string>
+    <string name="plan_widget_item_room_placeholder">Аудиторія 123</string>
 
     <string name="about_title">Про застосунок</string>
 
     <string name="about_subtitle">
         Неофіційний мобільний застосунок для студентів ZUT з розкладом занять, оцінками, інформацією про навчання та денним віджетом — без реклами й стеження.
     </string>
+    <string name="about_rate_cta">Оцініть нас (%1$s ★)</string>
 
     <string name="about_section_project_title">Проєкт і автор</string>
     <string name="about_author_line">Автором застосунку є Jędrzej Nowak.</string>
@@ -297,6 +306,8 @@
     <string name="about_privacy_text_2">
         Дані для входу використовуються лише для автентифікації в системах університету та зберігаються локально на пристрої. Жодні дані не надсилаються на сервери автора застосунку.
     </string>
+    <string name="about_privacy_policy_url">https://mzut.endozero.pl/privacy-policy</string>
+    <string name="about_review_error">Не вдалося відкрити вікно оцінювання.</string>
 
     <string name="about_footer_disclaimer">
         mZUT v2 є неофіційним проєктом і не є застосунком, випущеним Західнопоморським технологічним університетом.
@@ -306,6 +317,10 @@
     <string name="settings_subtitle">
         Виберіть мову інтерфейсу. Зміна може вимагати повторного запуску застосунку.
     </string>
+    <string name="settings_widget_refresh_saved">Налаштування віджета збережено</string>
+    <string name="settings_theme_label">Тема додатка</string>
+    <string name="settings_widget_refresh_label">Частота оновлення віджета</string>
+    <string name="settings_theme_changed">Тему змінено</string>
 
     <string name="settings_language_label">Мова застосунку</string>
     <string name="settings_language_polish">Польська</string>
@@ -328,6 +343,10 @@
     <string name="useful_links_empty">
         Немає визначених посилань.\nДодайте щось у налаштуваннях або перевірте стандартні пропозиції.
     </string>
+    <string name="web_link_title">Сайт</string>
+    <string name="web_link_open_external">Відкрити в браузері</string>
+    <string name="web_link_no_url">Немає адреси для відкриття</string>
+    <string name="web_link_open_external_error">Не вдалося відкрити браузер</string>
 
     <string name="logout_confirm_title">Вийти з облікового запису?</string>
     <string name="logout_confirm_message">Ви справді хочете вийти з облікового запису?</string>
@@ -354,6 +373,8 @@
     <string name="dialog_add_edit_tile_btn_cancel">Скасувати</string>
     <string name="dialog_add_edit_tile_toast_no_saved_searches">Немає збережених пошуків!</string>
     <string name="dialog_add_edit_tile_spinner_empty">(Немає збережених пошуків)</string>
+    <string name="dialog_add_edit_tile_hex_label">HEX:</string>
+    <string name="dialog_add_edit_tile_hex_hint">#RRGGBB</string>
 
     <string name="tile_action_plan">Розклад занять</string>
     <string name="tile_action_grades">Оцінки</string>
@@ -403,6 +424,10 @@
     <string name="attendance_edit_hours_title">Редагувати години</string>
     <string name="attendance_edit_hours_message">Введіть загальну кількість годин для предмету:\n%1$s</string>
     <string name="attendance_hours_tap_to_set">Натисніть, щоб встановити години</string>
+    <string name="attendance_summary_title">Загальна кількість пропусків</string>
+    <string name="attendance_no_absences">Немає пропусків</string>
+    <string name="attendance_one_absence">1 пропуск</string>
+    <string name="attendance_absences_count">%1$d пропусків</string>
 
     <!-- Custom Plan Events -->
     <string name="plan_custom_add_event">Додати подію</string>
@@ -485,4 +510,73 @@
     <string name="nav_watch_status_interval_m">кожні %1$d хв</string>
     <string name="nav_watch_status_tile_seen">Плитка: активна (%1$s)</string>
     <string name="nav_watch_status_tile_missing">Плитка: не виявлено (додайте в Galaxy Wearable)</string>
+
+    <!-- Missing session strings -->
+    <string name="session_start_label">Початок сесії</string>
+    <string name="session_end_label">Кінець сесії</string>
+    <string name="session_winter">зимової</string>
+    <string name="session_summer">літньої</string>
+    <string name="session_retake">перескладання</string>
+
+    <!-- Extracted Strings -->
+    <string name="useful_links_header_desc">Збірка найважливіших сервісів та сторінок університету.</string>
+    <string name="useful_links_badge_recommended">Рекомендовано</string>
+    <string name="about_version_prefix">v</string>
+    <string name="about_section_support_project">Підтримка та Проект</string>
+    <string name="about_footer_made_with">Зроблено з ❤️ Kejlo</string>
+    <string name="about_rate_title">Оцініть додаток</string>
+    <string name="about_rate_desc">Залиште 5 зірок у Google Play</string>
+    <string name="about_github_title">Вихідний код</string>
+    <string name="about_github_desc">Перевірте проект на GitHub</string>
+    <string name="about_section_info_contact">Інформація та Контакт</string>
+    <string name="error_no_email_app">Не знайдено поштової програми</string>
+    <string name="about_stats_format_full">Оцінка: %1$s ★  •  Завантажень: %2$s</string>
+    <string name="about_stats_format_rating_only">Оцінка: %1$s ★</string>
+    <string name="about_link_title_project">Сайт проекту</string>
+    <string name="about_link_title_author">Сайт автора</string>
+    <string name="about_link_title_privacy">Політика конфіденційності</string>
+    <!-- Missing Strings -->
+    <string name="nav_watch_searching">Шукаю годинник…</string>
+    <string name="wear_sync_status_prepare">Підготовка даних…</string>
+    <string name="wear_sync_status_sending">Надсилання на годинник…</string>
+    <string name="wear_sync_status_waiting_watch">Очікування відповіді годинника…</string>
+    <string name="wear_sync_status_no_data">Немає даних для синхронізації.</string>
+    <string name="wear_sync_status_error">Помилка синхронізації.</string>
+    <string name="wear_sync_status_watch_received">Годинник отримав дані!</string>
+    <string name="wear_main_status_syncing">Синхронізація…</string>
+    <string name="common_ok">ОК</string>
+    <string name="plan_custom_events_title">Мої іспити та колоквіуми</string>
+    <string name="plan_custom_wizard_step">Крок %1$d з %2$d</string>
+    <string name="plan_custom_step_subject">Виберіть предмет</string>
+    <string name="plan_custom_step_type">Тип події</string>
+    <string name="plan_custom_step_date">Виберіть дату</string>
+    <string name="plan_custom_step_time">Час і тривалість</string>
+    <string name="plan_custom_step_summary">Підсумок</string>
+    <string name="plan_custom_subject_hint">Пошук предмета…</string>
+    <string name="plan_custom_subject_from_plan">З розкладу</string>
+    <string name="plan_custom_no_subjects">Предметів не знайдено</string>
+    <string name="plan_custom_time_auto">Стандартний (90 хв)</string>
+    <string name="plan_custom_time_manual">Власний час</string>
+    <string name="plan_custom_time_no_classes">Немає занять цього дня</string>
+    <string name="plan_custom_notes_label">Примітки</string>
+    <string name="plan_custom_notes_hint">Аудиторія, правила тощо.</string>
+    <string name="plan_custom_summary_subject">Предмет</string>
+    <string name="plan_custom_summary_type">Тип</string>
+    <string name="plan_custom_summary_date">Дата</string>
+    <string name="plan_custom_summary_time">Час</string>
+    <string name="plan_custom_btn_next">Далі</string>
+    <string name="plan_custom_btn_back">Назад</string>
+    <string name="plan_custom_btn_save">Зберегти</string>
+    <string name="plan_custom_btn_cancel">Скасувати</string>
+    <string name="plan_custom_duplicate_warning">У вас вже є подія на цей час!</string>
+    <string name="plan_custom_list_empty">Немає доданих іспитів чи тестів.</string>
+    <string name="plan_custom_list_title">Найближчі іспити</string>
+    <string name="wear_sync_request_title">Запит на синхронізацію</string>
+    <string name="wear_sync_request_positive">Синхронізувати</string>
+    <string name="wear_sync_request_negative">Ігнорувати</string>
+    <string name="wear_install_dialog_title">Встановити додаток на годинник</string>
+    <string name="wear_install_dialog_message">Щоб скористатися цією функцією, потрібен додаток mZUT на годиннику. Відкрити Play Маркет на годиннику?</string>
+    <string name="wear_install_dialog_open_store">Відкрити Маркет</string>
+    <string name="wear_install_dialog_dont_ask">Більше не питати</string>
+    <string name="wear_install_sent_toast">Запит надіслано на годинник</string>
 </resources>

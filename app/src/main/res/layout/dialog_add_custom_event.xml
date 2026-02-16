@@ -284,34 +284,42 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:orientation="horizontal"
-        android:gravity="end">
+        android:orientation="vertical">
 
         <Button
             android:id="@+id/btnDelete"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/plan_custom_remove_marker"
-            android:textColor="?attr/mzMuted"
+            android:textColor="?attr/mzDanger"
             style="?android:attr/borderlessButtonStyle"
+            android:layout_gravity="start"
             android:visibility="gone" />
 
-        <Button
-            android:id="@+id/btnCancel"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/plan_quick_btn_cancel"
-            android:textColor="?attr/mzMuted"
-            style="?android:attr/borderlessButtonStyle" />
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="4dp">
 
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/plan_quick_btn_save"
-            android:textColor="@android:color/white"
-            android:backgroundTint="?attr/mzPrimary"
-            android:layout_marginStart="8dp" />
+            <Button
+                android:id="@+id/btnCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_quick_btn_cancel"
+                android:textColor="?attr/mzMuted"
+                style="?android:attr/borderlessButtonStyle" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/plan_quick_btn_save"
+                android:textColor="@android:color/white"
+                android:backgroundTint="?attr/mzPrimary"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
     </LinearLayout>
 
     </LinearLayout>

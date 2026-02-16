@@ -6,16 +6,13 @@
 
     android:background="@drawable/bg_spinner_dark"
 
-    android:drawableEnd="@drawable/ic_spinner_arrow"
-    android:drawablePadding="12dp"
-    android:drawableTint="?attr/mzMuted"
-
     android:gravity="center_vertical"
-
-    android:paddingStart="12dp"
-    android:paddingTop="10dp"
+    android:minHeight="48dp"
+    android:paddingStart="4dp"
     android:paddingEnd="12dp"
-    android:paddingBottom="10dp"
+    android:ellipsize="end"
+    android:maxLines="1"
 
     android:textColor="?attr/mzText"
-    android:textSize="12sp" />
+    android:textSize="15sp"
+    android:fontFamily="sans-serif-medium" />

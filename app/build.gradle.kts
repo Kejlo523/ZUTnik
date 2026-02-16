@@ -10,8 +10,8 @@ android {
         applicationId = "pl.kejlo.mzutv2"
         minSdk = 26
         targetSdk = 35
-        versionCode = 143
-        versionName = "1.52"
+        versionCode = 144
+        versionName = "1.53"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -46,4 +46,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation("com.google.android.play:review:2.0.1")
 }
