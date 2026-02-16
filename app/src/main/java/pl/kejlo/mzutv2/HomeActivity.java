@@ -9,7 +9,6 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
@@ -107,51 +106,6 @@ public class HomeActivity extends MzutBaseActivity {
         setupGrid();
         prepareIntroAnimations();
         scheduleIntroAnimations();
-
-        // RESET: Clean implementation of "Swipe to Open".
-        // We use a helper to detect a distinct "Swipe Right" gesture.
-        // We do not mess with dragging or reflection to avoid visual glitches.
-        gestureDetector = new android.view.GestureDetector(this,
-                new android.view.GestureDetector.SimpleOnGestureListener() {
-                    @Override
-                    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                        if (e1 == null || e2 == null)
-                            return false;
-
-                        float deltaX = e2.getX() - e1.getX();
-                        float deltaY = e2.getY() - e1.getY();
-
-                        // Logic:
-                        // 1. Swipe Right (deltaX > 0)
-                        // 2. Horizontal separation significant (> 50px)
-                        // 3. Horizontal velocity significant (> 100)
-                        // 4. Horizontal motion dominant (deltaX > deltaY) - prevents opening on
-                        // diagonal scroll
-                        if (deltaX > 50 && velocityX > 100 && Math.abs(deltaX) > Math.abs(deltaY)) {
-                            // BLOCK if in edit mode
-                            if (tileGrid.isEditMode()) {
-                                return false;
-                            }
-                            if (!drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START)) {
-                                drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                });
-    }
-
-    private android.view.GestureDetector gestureDetector;
-
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        // Pass touch events to detector first
-        if (gestureDetector != null) {
-            gestureDetector.onTouchEvent(ev);
-        }
-        // Always pass to generic handler so clicks/scrolls still work
-        return super.dispatchTouchEvent(ev);
     }
 
 

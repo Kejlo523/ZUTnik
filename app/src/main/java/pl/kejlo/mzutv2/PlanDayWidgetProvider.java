@@ -38,7 +38,6 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
-    private static final String PREFS_SETTINGS = "mzut_settings";
     // private static final long REFRESH_INTERVAL_MS = 30L * 60L * 1000L; // Removed
     // constant
 
@@ -334,8 +333,12 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         cancelPeriodicRefresh(context);
 
         // 2. Read interval
-        String intervalStr = context.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE)
-                .getString("widget_refresh_interval", "30");
+        String intervalStr = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE)
+                .getString(
+                        SettingsPrefs.KEY_WIDGET_REFRESH_INTERVAL,
+                        SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL);
         long intervalMin = 30;
         try {
             intervalMin = Long.parseLong(intervalStr);

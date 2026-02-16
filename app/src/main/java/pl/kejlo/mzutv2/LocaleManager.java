@@ -9,10 +9,6 @@ import java.util.Locale;
 
 public class LocaleManager {
 
-    private static final String PREFS_SETTINGS = "mzut_settings";
-    private static final String KEY_LANGUAGE = "app_language";
-    private static final String DEFAULT_LANG = "pl";
-
     public static Context wrap(Context context) {
         String lang = getLanguage(context);
         return updateResources(context, lang);
@@ -20,15 +16,19 @@ public class LocaleManager {
 
     public static void setLanguage(Context context, String langCode) {
         if (langCode == null || langCode.isEmpty()) {
-            langCode = DEFAULT_LANG;
+            langCode = SettingsPrefs.DEFAULT_APP_LANGUAGE;
         }
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE);
-        prefs.edit().putString(KEY_LANGUAGE, langCode).apply();
+        SharedPreferences prefs = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        prefs.edit().putString(SettingsPrefs.KEY_APP_LANGUAGE, langCode).apply();
     }
 
     public static String getLanguage(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_LANGUAGE, DEFAULT_LANG);
+        SharedPreferences prefs = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        return prefs.getString(SettingsPrefs.KEY_APP_LANGUAGE, SettingsPrefs.DEFAULT_APP_LANGUAGE);
     }
 
     private static Context updateResources(Context context, String langCode) {

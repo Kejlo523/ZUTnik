@@ -22,170 +22,114 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:clipToPadding="false"
         android:fillViewport="true"
         android:overScrollMode="ifContentScrolls"
+        android:paddingBottom="12dp"
         android:scrollbars="none">
 
-            <LinearLayout
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="28dp">
+
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingTop="16dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="24dp">
+                android:layout_marginBottom="22dp"
+                app:cardBackgroundColor="?attr/mzCard"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
 
-                <!-- Appearance Section -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="WYGLĄD I JĘZYK"
-                    android:textColor="?attr/mzPrimary"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.05"/>
-
-                <androidx.cardview.widget.CardView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:contentPadding="0dp">
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="22dp">
+
+                    <ImageView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_circle_soft"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_settings_24"
+                        app:tint="?attr/mzPrimary" />
+
+                    <TextView
+                        android:id="@+id/settingsTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/settings_title"
+                        android:textColor="?attr/mzText"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/settingsSubtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="@string/settings_subtitle"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="8dp"
+                android:letterSpacing="0.06"
+                android:text="@string/settings_section_appearance"
+                android:textAllCaps="true"
+                android:textColor="?attr/mzPrimary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="?attr/mzCard"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <!-- Theme Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:id="@+id/settingsSectionThemeTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
-                                android:text="@string/settings_theme_label"
-                                android:textColor="?attr/mzText"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="48dp"
-                                android:background="@drawable/bg_spinner_dark">
-
-                                <Spinner
-                                    android:id="@+id/spinnerTheme"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:background="@null"
-                                    android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar"
-                                    android:popupBackground="?attr/mzCard"
-                                    android:spinnerMode="dropdown" />
-                                    
-                                <ImageView
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_gravity="center_vertical|end"
-                                    android:layout_marginEnd="12dp"
-                                    android:src="@drawable/ic_spinner_arrow"
-                                    app:tint="?attr/mzMuted"/>
-                            </FrameLayout>
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="?attr/mzBorderSoft"
-                            android:layout_marginHorizontal="16dp"/>
-
-                        <!-- Language Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:id="@+id/settingsSectionLanguageTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
-                                android:text="@string/settings_language_label"
-                                android:textColor="?attr/mzText"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="48dp"
-                                android:background="@drawable/bg_spinner_dark">
-
-                                <Spinner
-                                    android:id="@+id/spinnerLanguage"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:background="@null"
-                                    android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar"
-                                    android:popupBackground="?attr/mzCard"
-                                    android:spinnerMode="dropdown" />
-                                    
-                                <ImageView
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_gravity="center_vertical|end"
-                                    android:layout_marginEnd="12dp"
-                                    android:src="@drawable/ic_spinner_arrow"
-                                    app:tint="?attr/mzMuted"/>
-                            </FrameLayout>
-                        </LinearLayout>
-
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
-                <!-- Widget Section -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="WIDGET"
-                    android:textColor="?attr/mzPrimary"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.05"/>
-
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:contentPadding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:padding="18dp">
 
                         <TextView
-                            android:id="@+id/settingsSectionRefreshTitle"
+                            android:id="@+id/settingsSectionThemeTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:text="@string/settings_widget_refresh_label"
+                            android:text="@string/settings_theme_label"
                             android:textColor="?attr/mzText"
                             android:textSize="16sp"
                             android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="10dp"
+                            android:text="@string/settings_theme_description"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
 
                         <FrameLayout
                             android:layout_width="match_parent"
@@ -193,24 +137,148 @@
                             android:background="@drawable/bg_spinner_dark">
 
                             <Spinner
-                                android:id="@+id/spinnerWidgetRefresh"
+                                android:id="@+id/spinnerTheme"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:background="@null"
-                                android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar"
                                 android:popupBackground="?attr/mzCard"
-                                android:spinnerMode="dropdown" />
-                                
+                                android:spinnerMode="dropdown"
+                                android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
+
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_gravity="center_vertical|end"
                                 android:layout_marginEnd="12dp"
                                 android:src="@drawable/ic_spinner_arrow"
-                                app:tint="?attr/mzMuted"/>
+                                app:tint="?attr/mzMuted" />
                         </FrameLayout>
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
-            </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="18dp"
+                        android:background="?attr/mzBorderSoft" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <TextView
+                            android:id="@+id/settingsSectionLanguageTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_language_label"
+                            android:textColor="?attr/mzText"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="10dp"
+                            android:text="@string/settings_language_info_hint"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_spinner_dark">
+
+                            <Spinner
+                                android:id="@+id/spinnerLanguage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@null"
+                                android:popupBackground="?attr/mzCard"
+                                android:spinnerMode="dropdown"
+                                android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center_vertical|end"
+                                android:layout_marginEnd="12dp"
+                                android:src="@drawable/ic_spinner_arrow"
+                                app:tint="?attr/mzMuted" />
+                        </FrameLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="8dp"
+                android:letterSpacing="0.06"
+                android:text="@string/settings_section_widget"
+                android:textAllCaps="true"
+                android:textColor="?attr/mzPrimary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="?attr/mzCard"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:id="@+id/settingsSectionRefreshTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_widget_refresh_label"
+                        android:textColor="?attr/mzText"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="10dp"
+                        android:text="@string/settings_widget_refresh_description"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="13sp" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_spinner_dark">
+
+                        <Spinner
+                            android:id="@+id/spinnerWidgetRefresh"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@null"
+                            android:popupBackground="?attr/mzCard"
+                            android:spinnerMode="dropdown"
+                            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center_vertical|end"
+                            android:layout_marginEnd="12dp"
+                            android:src="@drawable/ic_spinner_arrow"
+                            app:tint="?attr/mzMuted" />
+                    </FrameLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
     </ScrollView>
 </LinearLayout>

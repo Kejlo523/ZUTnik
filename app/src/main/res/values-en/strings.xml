@@ -314,11 +314,15 @@
     <string name="settings_subtitle">
         Choose the interface language. The change may require restarting the app.
     </string>
+    <string name="settings_section_appearance">Appearance and language</string>
+    <string name="settings_section_widget">Widget</string>
 
     <string name="settings_language_label">App language</string>
     <string name="settings_language_polish">Polish</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_ukrainian">Ukrainian</string>
+    <string name="settings_language_german">German</string>
+    <string name="settings_language_pirate">Polish (Pirate)</string>
 
     <string name="settings_language_info_hint">
         Changing the language may require restarting the app.
@@ -333,8 +337,21 @@
     </string>
     <string name="settings_widget_refresh_saved">Widget settings saved</string>
     <string name="settings_theme_label">App theme</string>
+    <string name="settings_theme_default">Default</string>
+    <string name="settings_theme_description">Choose the app color variant.</string>
     <string name="settings_widget_refresh_label">Widget refresh interval</string>
+    <string name="settings_widget_refresh_description">
+        Set how often the widget should refresh in the background.
+    </string>
     <string name="settings_theme_changed">Theme changed</string>
+    <string name="settings_widget_refresh_entry_15m">15 min</string>
+    <string name="settings_widget_refresh_entry_30m_default">30 min (default)</string>
+    <string name="settings_widget_refresh_entry_45m">45 min</string>
+    <string name="settings_widget_refresh_entry_1h">1 hour</string>
+    <string name="settings_widget_refresh_entry_2h">2 hours</string>
+    <string name="settings_widget_refresh_entry_3h">3 hours</string>
+    <string name="settings_widget_refresh_entry_4h">4 hours</string>
+    <string name="settings_widget_refresh_entry_manual">Never (manual)</string>
 
     <string name="useful_links_header_title">Your most important addresses in one place</string>
     <string name="useful_links_header_sub">

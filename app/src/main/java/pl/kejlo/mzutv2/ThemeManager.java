@@ -10,17 +10,16 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 public class ThemeManager {
 
-    private static final String PREFS_NAME = "mzut_settings";
-    private static final String KEY_THEME = "app_theme";
-
     public static final String THEME_DEFAULT = "default";
     public static final String THEME_DEEP_BLUE = "deep_blue";
     public static final String THEME_LIME = "lime";
     public static final String THEME_HIGH_CONTRAST = "high_contrast";
 
     public static void applyTheme(Activity activity) {
-        SharedPreferences prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String theme = prefs.getString(KEY_THEME, THEME_DEFAULT);
+        SharedPreferences prefs = activity.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        String theme = prefs.getString(SettingsPrefs.KEY_APP_THEME, THEME_DEFAULT);
 
         switch (theme) {
             case THEME_DEEP_BLUE:
@@ -57,14 +56,14 @@ public class ThemeManager {
     }
 
     public static String getTheme(Context context) {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .getString(KEY_THEME, THEME_DEFAULT);
+        return context.getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, Context.MODE_PRIVATE)
+                .getString(SettingsPrefs.KEY_APP_THEME, THEME_DEFAULT);
     }
 
     public static void setTheme(Context context, String themeValue) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        context.getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, Context.MODE_PRIVATE)
                 .edit()
-                .putString(KEY_THEME, themeValue)
+                .putString(SettingsPrefs.KEY_APP_THEME, themeValue)
                 .apply();
     }
 

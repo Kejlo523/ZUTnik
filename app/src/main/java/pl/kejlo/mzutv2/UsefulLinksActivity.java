@@ -38,6 +38,12 @@ import okhttp3.Response;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import android.content.SharedPreferences;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -261,224 +267,73 @@ public class UsefulLinksActivity extends AppCompatActivity {
 
         return 3;
     }
-
     /** Builds the list of useful links. */
     private List<LinkItem> buildAllLinks() {
         List<LinkItem> list = new ArrayList<>();
+        try {
+            JSONArray links = new JSONArray(readRawTextResource(R.raw.useful_links));
+            for (int i = 0; i < links.length(); i++) {
+                JSONObject raw = links.optJSONObject(i);
+                if (raw == null) {
+                    continue;
+                }
 
-        // Global
+                String id = raw.optString("id", "");
+                String title = raw.optString("title", "");
+                String url = raw.optString("url", "");
+                String description = raw.optString("description", "");
+                LinkScope scope = parseLinkScope(raw.optString("scope", ""));
+                String facultyCode = emptyToNull(raw.optString("facultyCode", null));
+                String majorCode = emptyToNull(raw.optString("majorCode", null));
 
-        list.add(new LinkItem(
-                "global_plan_zajec",
-                "Plan zajęć (Rozkład)",
-                "https://plan.zut.edu.pl",
-                "Aktualny rozkład zajęć dla wszystkich kierunków i grup.",
-                LinkScope.GLOBAL,
-                null,
-                null));
+                if (id.isEmpty() || title.isEmpty() || url.isEmpty()) {
+                    continue;
+                }
 
-        list.add(new LinkItem(
-                "global_usosweb",
-                "USOSweb / e-dziekanat",
-                "https://usosweb.zut.edu.pl",
-                "Oceny, zapisy na przedmioty, płatności, wnioski.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_office365",
-                "Poczta / Office 365",
-                "https://o365.zut.edu.pl",
-                "Poczta studencka, Teams, OneDrive (Office 365).",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_elearning",
-                "E-learning ZUT (Moodle)",
-                "https://e-edukacja.zut.edu.pl",
-                "Kursy online, materiały wykładowe, przesyłanie prac.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_zut_home",
-                "Strona główna ZUT",
-                "https://www.zut.edu.pl",
-                "Aktualności uczelniane i komunikaty rektora.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        // IT / Account
-
-        list.add(new LinkItem(
-                "global_konto_zut",
-                "Zarządzanie kontem ZUT",
-                "https://konto.zut.edu.pl",
-                "Zmiana hasła, odzyskiwanie dostępu, konfiguracja WiFi (Eduroam).",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_mleg",
-                "mLegitymacja",
-                "https://mlegitymacja.zut.edu.pl",
-                "Aktywacja i przedłużanie mLegitymacji w aplikacji mObywatel.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_uci",
-                "Pomoc IT (UCI)",
-                "https://uci.zut.edu.pl",
-                "Instrukcje konfiguracji sieci, VPN, zgłaszanie awarii.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        // Student life
-
-        list.add(new LinkItem(
-                "global_library",
-                "Biblioteka Główna",
-                "https://bg.zut.edu.pl",
-                "Katalog książek, dostęp do baz danych i artykułów.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_pomoc_materialna",
-                "Stypendia i pomoc materialna",
-                "https://www.zut.edu.pl/zut-studenci/pomoc-materialna-akademiki-kredyty.html",
-                "Regulaminy, terminy i wzory wniosków o stypendia.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_osiedle_studenckie",
-                "Akademiki (Osiedle Studenckie)",
-                "https://osiedlestudenckie.zut.edu.pl",
-                "Opłaty, kwaterowanie, regulaminy domów studenckich.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_samorzad",
-                "Samorząd Studencki",
-                "https://www.samorzad.zut.edu.pl",
-                "Wydarzenia, juwenalia, prawa studenta, koła naukowe.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_biuro_karier",
-                "Biuro Karier",
-                "https://biurokarier.zut.edu.pl",
-                "Oferty pracy, staże, targi pracy.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        list.add(new LinkItem(
-                "global_prk_portal",
-                "Sylabusy i programy (PRK)",
-                "https://prk.zut.edu.pl",
-                "Wyszukiwarka sylabusów (kart przedmiotów) i programów studiów.",
-                LinkScope.GLOBAL,
-                null,
-                null));
-
-        // Faculties
-
-        // Faculty of Computer Science (WI)
-        list.add(new LinkItem(
-                "inf_wi_home",
-                "Wydział Informatyki (WI)",
-                "https://www.wi.zut.edu.pl",
-                "Strona główna wydziału, ogłoszenia dziekanatu.",
-                LinkScope.FACULTY,
-                "WI",
-                null));
-
-        list.add(new LinkItem(
-                "inf_wi_students",
-                "WI – Strefa Studenta",
-                "https://www.wi.zut.edu.pl/pl/dla-studenta",
-                "Plany studiów, dyplomowanie, druki do pobrania.",
-                LinkScope.FACULTY,
-                "WI",
-                null));
-
-        // Faculty of Economics (WNEiZ)
-        list.add(new LinkItem(
-                "eko_faculty_home",
-                "Wydział Ekonomiczny",
-                "https://ekonomia.zut.edu.pl",
-                "Aktualności wydziałowe i informacje dla studentów.",
-                LinkScope.FACULTY,
-                "WNEIZ",
-                null));
-
-        list.add(new LinkItem(
-                "eko_plany",
-                "Wydział Ekonomiczny – Strefa studenta",
-                "https://ekonomia.zut.edu.pl/strona-studentow",
-                "Organizacja roku, praktyki, plany i dokumenty dla studentów.",
-                LinkScope.FACULTY,
-                "WNEIZ",
-                null));
-
-        // Faculty of Mechanical Engineering (WIMiM)
-        list.add(new LinkItem(
-                "mech_faculty_home",
-                "Wydział Inżynierii Mech. i Mechatroniki",
-                "https://wimim.zut.edu.pl",
-                "Strona wydziału WIMiM.",
-                LinkScope.FACULTY,
-                "WIMIM",
-                null));
-
-        // Faculty of Electrical Engineering (WE)
-        list.add(new LinkItem(
-                "we_faculty_home",
-                "Wydział Elektryczny (WE)",
-                "https://we.zut.edu.pl",
-                "Strona wydziału, aktualności dla elektryków i automatyków.",
-                LinkScope.FACULTY,
-                "WE",
-                null));
-
-        // Faculty of Civil Engineering and Environmental Engineering (WBiIŚ)
-        list.add(new LinkItem(
-                "wbiis_faculty_home",
-                "Wydział Budownictwa i Inżynierii Środowiska",
-                "https://wbiis.zut.edu.pl",
-                "Strona wydziału WBiIŚ.",
-                LinkScope.FACULTY,
-                "WBIA",
-                null));
-
-        // Faculty of Architecture (WA)
-        list.add(new LinkItem(
-                "wa_faculty_home",
-                "Wydział Architektury",
-                "https://wa.zut.edu.pl",
-                "Strona wydziału Architektury (WA).",
-                LinkScope.FACULTY,
-                "WBIA",
-                null));
-
+                list.add(new LinkItem(
+                        id,
+                        title,
+                        url,
+                        description,
+                        scope,
+                        facultyCode,
+                        majorCode));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return list;
+    }
+
+    private LinkScope parseLinkScope(String rawScope) {
+        if (rawScope == null) {
+            return LinkScope.OTHER;
+        }
+        try {
+            return LinkScope.valueOf(rawScope.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return LinkScope.OTHER;
+        }
+    }
+
+    private String emptyToNull(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value;
+    }
+
+    private String readRawTextResource(int resId) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        try (InputStream in = getResources().openRawResource(resId);
+                InputStreamReader isr = new InputStreamReader(in, StandardCharsets.UTF_8);
+                BufferedReader reader = new BufferedReader(isr)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        }
+        return sb.toString();
     }
 
     private void fetchOgData(LinkItem item) {

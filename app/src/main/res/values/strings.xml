@@ -362,11 +362,15 @@
     <string name="settings_subtitle">
         Wybierz język interfejsu. Zmiana może wymagać ponownego uruchomienia aplikacji.
     </string>
+    <string name="settings_section_appearance">Wygląd i język</string>
+    <string name="settings_section_widget">Widget</string>
 
     <string name="settings_language_label">Język aplikacji</string>
     <string name="settings_language_polish">Polski</string>
     <string name="settings_language_english">Angielski</string>
     <string name="settings_language_ukrainian">Ukraiński</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_pirate">Polski (Piracki)</string>
 
     <string name="settings_language_info_hint">
         Zmiana języka może wymagać ponownego uruchomienia aplikacji.
@@ -378,8 +382,21 @@
 
     <string name="settings_widget_refresh_saved">Zapisano ustawienia widgetu</string>
     <string name="settings_theme_label">Motyw aplikacji</string>
+    <string name="settings_theme_default">Domyślny</string>
+    <string name="settings_theme_description">Wybierz wariant kolorystyczny interfejsu.</string>
     <string name="settings_widget_refresh_label">Częstotliwość odświeżania widgetu</string>
+    <string name="settings_widget_refresh_description">
+        Ustaw jak często widget ma odświeżać dane w tle.
+    </string>
     <string name="settings_theme_changed">Zmieniono motyw</string>
+    <string name="settings_widget_refresh_entry_15m">15 min</string>
+    <string name="settings_widget_refresh_entry_30m_default">30 min (domyślnie)</string>
+    <string name="settings_widget_refresh_entry_45m">45 min</string>
+    <string name="settings_widget_refresh_entry_1h">1 godz.</string>
+    <string name="settings_widget_refresh_entry_2h">2 godz.</string>
+    <string name="settings_widget_refresh_entry_3h">3 godz.</string>
+    <string name="settings_widget_refresh_entry_4h">4 godz.</string>
+    <string name="settings_widget_refresh_entry_manual">Nigdy (ręcznie)</string>
 
     <string name="useful_links_header_title">Twoje najważniejsze adresy w jednym miejscu</string>
     <string name="useful_links_header_sub">

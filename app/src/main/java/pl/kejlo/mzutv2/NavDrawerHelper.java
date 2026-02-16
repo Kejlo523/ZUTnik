@@ -265,41 +265,87 @@ public class NavDrawerHelper {
 
     private static class SwipeWindowCallback implements android.view.Window.Callback {
         private final android.view.Window.Callback wrapped;
-        private final android.view.GestureDetector detector;
         private final DrawerLayout drawerLayout;
+        private final int touchSlop;
+        private final float openSwipeThreshold;
+        private float downX;
+        private float downY;
+        private boolean trackingSwipe;
+        private boolean consumedBySwipe;
 
         public SwipeWindowCallback(android.view.Window.Callback wrapped, android.content.Context context,
                 DrawerLayout drawerLayout) {
             this.wrapped = wrapped;
             this.drawerLayout = drawerLayout;
-            this.detector = new android.view.GestureDetector(context,
-                    new android.view.GestureDetector.SimpleOnGestureListener() {
-                        @Override
-                        public boolean onFling(android.view.MotionEvent e1, android.view.MotionEvent e2,
-                                float velocityX, float velocityY) {
-                            if (e1 == null || e2 == null)
-                                return false;
-                            float deltaX = e2.getX() - e1.getX();
-                            float deltaY = e2.getY() - e1.getY();
-                            if (deltaX > 50 && velocityX > 100 && Math.abs(deltaX) > Math.abs(deltaY)) {
-                                if (drawerLayout.getDrawerLockMode(
-                                        androidx.core.view.GravityCompat.START) == DrawerLayout.LOCK_MODE_LOCKED_CLOSED) {
-                                    return false;
-                                }
-                                if (!drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START)) {
-                                    drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-                    });
+            android.view.ViewConfiguration config = android.view.ViewConfiguration.get(context);
+            this.touchSlop = config.getScaledTouchSlop();
+            this.openSwipeThreshold = Math.max(
+                    touchSlop * 2f,
+                    context.getResources().getDisplayMetrics().density * 56f);
         }
 
         @Override
         public boolean dispatchTouchEvent(android.view.MotionEvent event) {
-            detector.onTouchEvent(event);
+            if (event == null) {
+                return false;
+            }
+
+            int action = event.getActionMasked();
+            if (consumedBySwipe && action != android.view.MotionEvent.ACTION_DOWN) {
+                if (action == android.view.MotionEvent.ACTION_UP
+                        || action == android.view.MotionEvent.ACTION_CANCEL) {
+                    consumedBySwipe = false;
+                    trackingSwipe = false;
+                }
+                return true;
+            }
+
+            switch (action) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    downX = event.getX();
+                    downY = event.getY();
+                    trackingSwipe = true;
+                    consumedBySwipe = false;
+                    break;
+                case android.view.MotionEvent.ACTION_MOVE:
+                    if (trackingSwipe && canOpenDrawer()) {
+                        float deltaX = event.getX() - downX;
+                        float deltaY = event.getY() - downY;
+                        float absDeltaY = Math.abs(deltaY);
+
+                        // Vertical scroll should keep normal interaction flow.
+                        if (absDeltaY > touchSlop && absDeltaY > Math.abs(deltaX)) {
+                            trackingSwipe = false;
+                            break;
+                        }
+
+                        // Distinct horizontal swipe-right opens drawer and consumes tap sequence.
+                        if (deltaX > openSwipeThreshold && Math.abs(deltaX) > absDeltaY * 1.15f) {
+                            drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
+                            consumedBySwipe = true;
+                            trackingSwipe = false;
+                            return true;
+                        }
+                    }
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    if (consumedBySwipe) {
+                        consumedBySwipe = false;
+                        trackingSwipe = false;
+                        return true;
+                    }
+                    trackingSwipe = false;
+                    break;
+                default:
+                    break;
+            }
             return wrapped.dispatchTouchEvent(event);
+        }
+
+        private boolean canOpenDrawer() {
+            return drawerLayout.getDrawerLockMode(androidx.core.view.GravityCompat.START) != DrawerLayout.LOCK_MODE_LOCKED_CLOSED
+                    && !drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START);
         }
 
         @Override
