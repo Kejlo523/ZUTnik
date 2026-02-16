@@ -41,6 +41,7 @@ public class BackgroundSyncWorker extends Worker {
 
     private static final int NOTIF_ID_GRADES = 9101;
     private static final int NOTIF_ID_PLAN = 9102;
+    private static final int PLAN_REFRESH_THRESHOLD = 10;
 
     private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault());
 
@@ -206,7 +207,8 @@ public class BackgroundSyncWorker extends Worker {
         boolean movedEnabled = NotificationSyncManager.isPlanMovedEnabled(context);
         boolean cancelledEnabled = NotificationSyncManager.isPlanCancelledEnabled(context);
         boolean addedEnabled = NotificationSyncManager.isPlanAddedEnabled(context);
-        if (!movedEnabled && !cancelledEnabled && !addedEnabled) {
+        boolean removedEnabled = NotificationSyncManager.isPlanRemovedEnabled(context);
+        if (!movedEnabled && !cancelledEnabled && !addedEnabled && !removedEnabled) {
             return;
         }
 
@@ -223,6 +225,16 @@ public class BackgroundSyncWorker extends Worker {
         }
 
         PlanDiff diff = diffPlan(previous, current, movedEnabled);
+        int totalChanges = diff.moved.size()
+                + diff.cancelled.size()
+                + diff.removed.size()
+                + diff.added.size();
+
+        if (totalChanges > PLAN_REFRESH_THRESHOLD) {
+            notifyPlanRefreshed(context);
+            savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+            return;
+        }
 
         List<String> lines = new ArrayList<>();
         if (movedEnabled) {
@@ -240,6 +252,15 @@ public class BackgroundSyncWorker extends Worker {
             for (PlanSnapshotEvent ev : diff.cancelled) {
                 lines.add(context.getString(
                         R.string.notif_plan_line_cancelled,
+                        ev.title,
+                        formatDate(ev.date),
+                        formatTime(ev.startMin)));
+            }
+        }
+        if (removedEnabled) {
+            for (PlanSnapshotEvent ev : diff.removed) {
+                lines.add(context.getString(
+                        R.string.notif_plan_line_removed,
                         ev.title,
                         formatDate(ev.date),
                         formatTime(ev.startMin)));
@@ -272,16 +293,7 @@ public class BackgroundSyncWorker extends Worker {
         String title = context.getString(R.string.notif_plan_title);
         String summary = context.getString(R.string.notif_plan_summary, lines.size());
         String bigText = buildBigText(lines, 7, summary);
-
-        Intent openIntent = new Intent(context, PlanActivity.class);
-        openIntent.putExtra("viewMode", "week");
-        openIntent.putExtra("currentDate", LocalDate.now().toString());
-
-        PendingIntent pi = PendingIntent.getActivity(
-                context,
-                91020,
-                openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pi = buildPlanPendingIntent(context);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationSyncManager.CHANNEL_PLAN)
                 .setSmallIcon(R.drawable.ic_calendar)
@@ -293,6 +305,40 @@ public class BackgroundSyncWorker extends Worker {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID_PLAN, builder.build());
+    }
+
+    private void notifyPlanRefreshed(Context context) {
+        if (!NotificationSyncManager.hasNotificationPermission(context)) {
+            return;
+        }
+
+        NotificationSyncManager.ensureChannels(context);
+
+        PendingIntent pi = buildPlanPendingIntent(context);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationSyncManager.CHANNEL_PLAN)
+                .setSmallIcon(R.drawable.ic_calendar)
+                .setContentTitle(context.getString(R.string.notif_plan_refreshed_title))
+                .setContentText(context.getString(R.string.notif_plan_refreshed_text))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(
+                        context.getString(R.string.notif_plan_refreshed_text)))
+                .setAutoCancel(true)
+                .setContentIntent(pi)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_PLAN, builder.build());
+    }
+
+    private PendingIntent buildPlanPendingIntent(Context context) {
+        Intent openIntent = new Intent(context, PlanActivity.class);
+        openIntent.putExtra("viewMode", "week");
+        openIntent.putExtra("currentDate", LocalDate.now().toString());
+
+        return PendingIntent.getActivity(
+                context,
+                91020,
+                openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private List<PlanSnapshotEvent> collectPlanSnapshot(Context context) throws IOException, org.json.JSONException {
@@ -408,14 +454,21 @@ public class BackgroundSyncWorker extends Worker {
             added = remainingAdded;
         }
 
-        diff.cancelled.addAll(removed);
-        diff.added.addAll(added);
+        diff.removed.addAll(removed);
+        for (PlanSnapshotEvent ev : added) {
+            if (ev.cancelledType) {
+                diff.cancelled.add(ev);
+            } else {
+                diff.added.add(ev);
+            }
+        }
 
         Comparator<PlanSnapshotEvent> byDateTime = Comparator
                 .comparing((PlanSnapshotEvent e) -> e.date)
                 .thenComparingInt(e -> e.startMin)
                 .thenComparing(e -> e.title);
         diff.cancelled.sort(byDateTime);
+        diff.removed.sort(byDateTime);
         diff.added.sort(byDateTime);
         diff.moved.sort(Comparator
                 .comparing((PlanMove m) -> m.to.date)
@@ -550,6 +603,7 @@ public class BackgroundSyncWorker extends Worker {
 
     private static class PlanDiff {
         final List<PlanSnapshotEvent> cancelled = new ArrayList<>();
+        final List<PlanSnapshotEvent> removed = new ArrayList<>();
         final List<PlanSnapshotEvent> added = new ArrayList<>();
         final List<PlanMove> moved = new ArrayList<>();
     }
@@ -570,13 +624,15 @@ public class BackgroundSyncWorker extends Worker {
         final LocalDate date;
         final int startMin;
         final int endMin;
+        final boolean cancelledType;
 
-        PlanSnapshotEvent(String core, String title, LocalDate date, int startMin, int endMin) {
+        PlanSnapshotEvent(String core, String title, LocalDate date, int startMin, int endMin, boolean cancelledType) {
             this.core = core;
             this.title = title;
             this.date = date;
             this.startMin = startMin;
             this.endMin = endMin;
+            this.cancelledType = cancelledType;
         }
 
         static PlanSnapshotEvent from(LocalDate date, PlanRepository.PlanEventUi event) {
@@ -589,7 +645,8 @@ public class BackgroundSyncWorker extends Worker {
             String core = (title + "|" + teacher + "|" + group + "|" + room + "|" + type + "|" + duration)
                     .trim()
                     .toLowerCase(Locale.ROOT);
-            return new PlanSnapshotEvent(core, title, date, event.startMin, event.endMin);
+            boolean cancelledType = "week-event-type-cancelled".equalsIgnoreCase(type);
+            return new PlanSnapshotEvent(core, title, date, event.startMin, event.endMin, cancelledType);
         }
 
         JSONObject toJson() {
@@ -600,6 +657,7 @@ public class BackgroundSyncWorker extends Worker {
                 obj.put("d", date != null ? date.toString() : "");
                 obj.put("s", startMin);
                 obj.put("e", endMin);
+                obj.put("x", cancelledType);
             } catch (Exception ignored) {
             }
             return obj;
@@ -613,7 +671,8 @@ public class BackgroundSyncWorker extends Worker {
                 LocalDate date = LocalDate.parse(dateStr);
                 int start = obj.optInt("s", 0);
                 int end = obj.optInt("e", start);
-                return new PlanSnapshotEvent(core, title, date, start, end);
+                boolean cancelledType = obj.optBoolean("x", false);
+                return new PlanSnapshotEvent(core, title, date, start, end, cancelledType);
             } catch (Exception e) {
                 return null;
             }

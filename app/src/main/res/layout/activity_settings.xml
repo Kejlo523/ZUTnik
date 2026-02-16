@@ -362,6 +362,14 @@
                             android:text="@string/settings_notifications_plan_added"
                             android:textColor="?attr/mzText"
                             android:textSize="14sp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchNotifPlanRemoved"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_notifications_plan_removed"
+                            android:textColor="?attr/mzText"
+                            android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

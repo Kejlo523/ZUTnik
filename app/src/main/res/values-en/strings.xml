@@ -368,6 +368,7 @@
     <string name="settings_notifications_plan_moved">Moved classes</string>
     <string name="settings_notifications_plan_cancelled">Cancelled classes</string>
     <string name="settings_notifications_plan_added">New classes</string>
+    <string name="settings_notifications_plan_removed">Removed classes</string>
     <string name="settings_notifications_saved">Notification settings saved</string>
     <string name="settings_notifications_permission_denied">Without notification permission, this feature is disabled</string>
     <string name="settings_notifications_permission_required">To enable this, grant notification permission</string>
@@ -390,6 +391,9 @@
     <string name="notif_plan_line_moved">%1$s: %2$s %3$s -> %4$s %5$s</string>
     <string name="notif_plan_line_cancelled">%1$s: cancelled (%2$s %3$s)</string>
     <string name="notif_plan_line_added">%1$s: new (%2$s %3$s)</string>
+    <string name="notif_plan_line_removed">%1$s: removed (%2$s %3$s)</string>
+    <string name="notif_plan_refreshed_title">Timetable refreshed</string>
+    <string name="notif_plan_refreshed_text">Large amount of changes detected. A new/refreshed timetable is available.</string>
 
     <string name="useful_links_header_title">Your most important addresses in one place</string>
     <string name="useful_links_header_sub">

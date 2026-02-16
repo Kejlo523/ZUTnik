@@ -33,4 +33,7 @@ public final class SettingsPrefs {
 
     public static final String KEY_NOTIFICATIONS_PLAN_ADDED_ENABLED = "notifications_plan_added_enabled";
     public static final boolean DEFAULT_NOTIFICATIONS_PLAN_ADDED_ENABLED = true;
+
+    public static final String KEY_NOTIFICATIONS_PLAN_REMOVED_ENABLED = "notifications_plan_removed_enabled";
+    public static final boolean DEFAULT_NOTIFICATIONS_PLAN_REMOVED_ENABLED = true;
 }

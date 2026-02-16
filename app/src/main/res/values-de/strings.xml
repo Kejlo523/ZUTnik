@@ -611,6 +611,7 @@
     <string name="settings_notifications_plan_moved">Verlegung von Lehrveranstaltungen</string>
     <string name="settings_notifications_plan_cancelled">Ausfall von Lehrveranstaltungen</string>
     <string name="settings_notifications_plan_added">Neue Lehrveranstaltungen</string>
+    <string name="settings_notifications_plan_removed">Entfernte Lehrveranstaltungen</string>
     <string name="settings_notifications_saved">Benachrichtigungseinstellungen gespeichert</string>
     <string name="settings_notifications_permission_denied">
         Ohne Benachrichtigungsberechtigung wurde diese Funktion deaktiviert
@@ -638,6 +639,9 @@
     <string name="notif_plan_line_moved">%1$s: %2$s %3$s -&gt; %4$s %5$s</string>
     <string name="notif_plan_line_cancelled">%1$s: abgesagt (%2$s %3$s)</string>
     <string name="notif_plan_line_added">%1$s: neu (%2$s %3$s)</string>
+    <string name="notif_plan_line_removed">%1$s: entfernt (%2$s %3$s)</string>
+    <string name="notif_plan_refreshed_title">Stundenplan aktualisiert</string>
+    <string name="notif_plan_refreshed_text">Viele Aenderungen erkannt. Ein neuer/aktualisierter Stundenplan ist verfuegbar.</string>
 
     <!-- Okresy kalendarza -->
     <string name="calendar_period_start_label">Beginn</string>
