@@ -1,0 +1,164 @@
+[
+  {
+    "id": "global_plan_zajec",
+    "title": "Plan zajęć (Rozkład)",
+    "url": "https://plan.zut.edu.pl",
+    "description": "Aktualny rozkład zajęć dla wszystkich kierunków i grup.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_usosweb",
+    "title": "USOSweb / e-dziekanat",
+    "url": "https://usosweb.zut.edu.pl",
+    "description": "Oceny, zapisy na przedmioty, płatności i wnioski.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_office365",
+    "title": "Poczta / Office 365",
+    "url": "https://o365.zut.edu.pl",
+    "description": "Poczta studencka, Teams, OneDrive (Office 365).",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_elearning",
+    "title": "E-learning ZUT (Moodle)",
+    "url": "https://e-edukacja.zut.edu.pl",
+    "description": "Kursy online, materiały wykładowe i przesyłanie prac.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_zut_home",
+    "title": "Strona główna ZUT",
+    "url": "https://www.zut.edu.pl",
+    "description": "Aktualności uczelniane i komunikaty.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_konto_zut",
+    "title": "Zarządzanie kontem ZUT",
+    "url": "https://konto.zut.edu.pl",
+    "description": "Zmiana hasła, odzyskiwanie dostępu i konfiguracja Wi-Fi (Eduroam).",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_mleg",
+    "title": "mLegitymacja",
+    "url": "https://mlegitymacja.zut.edu.pl",
+    "description": "Aktywacja i przedłużanie mLegitymacji w aplikacji mObywatel.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_uci",
+    "title": "Pomoc IT (UCI)",
+    "url": "https://uci.zut.edu.pl",
+    "description": "Instrukcje konfiguracji sieci, VPN i zgłaszanie awarii.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_library",
+    "title": "Biblioteka Główna",
+    "url": "https://bg.zut.edu.pl",
+    "description": "Katalog książek oraz dostęp do baz danych i artykułów.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_pomoc_materialna",
+    "title": "Stypendia i pomoc materialna",
+    "url": "https://www.zut.edu.pl/zut-studenci/pomoc-materialna-akademiki-kredyty.html",
+    "description": "Regulaminy, terminy i wzory wniosków o stypendia.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_osiedle_studenckie",
+    "title": "Akademiki (Osiedle Studenckie)",
+    "url": "https://osiedlestudenckie.zut.edu.pl",
+    "description": "Opłaty, kwaterowanie i regulaminy domów studenckich.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_samorzad",
+    "title": "Samorząd Studencki",
+    "url": "https://www.samorzad.zut.edu.pl",
+    "description": "Wydarzenia, juwenalia, prawa studenta i koła naukowe.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_biuro_karier",
+    "title": "Biuro Karier",
+    "url": "https://biurokarier.zut.edu.pl",
+    "description": "Oferty pracy, staże i targi pracy.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "global_prk_portal",
+    "title": "Sylabusy i programy (PRK)",
+    "url": "https://prk.zut.edu.pl",
+    "description": "Wyszukiwarka sylabusów (kart przedmiotów) i programów studiów.",
+    "scope": "GLOBAL"
+  },
+  {
+    "id": "inf_wi_home",
+    "title": "Wydział Informatyki (WI)",
+    "url": "https://www.wi.zut.edu.pl",
+    "description": "Strona główna wydziału i ogłoszenia dziekanatu.",
+    "scope": "FACULTY",
+    "facultyCode": "WI"
+  },
+  {
+    "id": "inf_wi_students",
+    "title": "WI - Strefa Studenta",
+    "url": "https://www.wi.zut.edu.pl/pl/dla-studenta",
+    "description": "Plany studiów, dyplomowanie i druki do pobrania.",
+    "scope": "FACULTY",
+    "facultyCode": "WI"
+  },
+  {
+    "id": "eko_faculty_home",
+    "title": "Wydział Ekonomiczny",
+    "url": "https://ekonomia.zut.edu.pl",
+    "description": "Aktualności wydziałowe i informacje dla studentów.",
+    "scope": "FACULTY",
+    "facultyCode": "WNEIZ"
+  },
+  {
+    "id": "eko_plany",
+    "title": "Wydział Ekonomiczny - Strefa studenta",
+    "url": "https://ekonomia.zut.edu.pl/strona-studentow",
+    "description": "Organizacja roku, praktyki, plany i dokumenty dla studentów.",
+    "scope": "FACULTY",
+    "facultyCode": "WNEIZ"
+  },
+  {
+    "id": "mech_faculty_home",
+    "title": "Wydział Inżynierii Mechanicznej i Mechatroniki",
+    "url": "https://wimim.zut.edu.pl",
+    "description": "Strona wydziału WIMiM.",
+    "scope": "FACULTY",
+    "facultyCode": "WIMIM"
+  },
+  {
+    "id": "we_faculty_home",
+    "title": "Wydział Elektryczny (WE)",
+    "url": "https://we.zut.edu.pl",
+    "description": "Strona wydziału i aktualności dla elektryków i automatyków.",
+    "scope": "FACULTY",
+    "facultyCode": "WE"
+  },
+  {
+    "id": "wbiis_faculty_home",
+    "title": "Wydział Budownictwa i Inżynierii Środowiska",
+    "url": "https://wbiis.zut.edu.pl",
+    "description": "Strona wydziału WBiIŚ.",
+    "scope": "FACULTY",
+    "facultyCode": "WBIA"
+  },
+  {
+    "id": "wa_faculty_home",
+    "title": "Wydział Architektury",
+    "url": "https://wa.zut.edu.pl",
+    "description": "Strona wydziału Architektury (WA).",
+    "scope": "FACULTY",
+    "facultyCode": "WBIA"
+  }
+]
