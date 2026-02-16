@@ -462,19 +462,10 @@ public class NavDrawerHelper {
     // endregion
 
     private static void doLogout(AppCompatActivity activity) {
-        MzutSession s = MzutSession.getInstance();
-        s.setUserId(null);
-        s.setUsername(null);
-        s.setAuthKey(null);
-        s.setImageUrl(null);
-
-        activity.getSharedPreferences("mzut_prefs", AppCompatActivity.MODE_PRIVATE)
-                .edit()
-                .remove("user_id")
-                .remove("auth_key")
-                .remove("username")
-                .remove("image_url")
-                .apply();
+        Context appContext = activity.getApplicationContext();
+        MzutSession.clearSessionData(appContext);
+        SessionExpiryManager.clearSessionExpiredNotice(appContext);
+        NotificationSyncManager.cancelWorker(appContext);
 
         Toast.makeText(activity, R.string.logout_success_message, Toast.LENGTH_SHORT).show();
 

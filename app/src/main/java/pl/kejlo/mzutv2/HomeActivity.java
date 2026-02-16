@@ -66,6 +66,8 @@ public class HomeActivity extends MzutBaseActivity {
             return;
         }
 
+        NotificationSyncManager.syncWorkerSchedule(getApplicationContext());
+
         setContentView(R.layout.activity_home);
         ThemeManager.applySystemBars(this);
 

@@ -1,24 +1,42 @@
 package pl.kejlo.mzutv2;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.os.LocaleListCompat;
 
+import com.google.android.material.switchmaterial.SwitchMaterial;
+
 public class SettingsActivity extends AppCompatActivity {
 
     private Spinner spinnerLanguage;
+    private SwitchMaterial switchNotifMaster;
+    private SwitchMaterial switchNotifGrades;
+    private SwitchMaterial switchNotifPlan;
+    private SwitchMaterial switchNotifPlanMoved;
+    private SwitchMaterial switchNotifPlanCancelled;
+    private SwitchMaterial switchNotifPlanAdded;
+    private LinearLayout layoutPlanNotifCategories;
+
+    private boolean internalNotifUiChange = false;
+    private boolean pendingEnableByPermission = false;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -28,6 +46,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupNotificationPermissionLauncher();
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_settings);
@@ -168,6 +187,190 @@ public class SettingsActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
+        setupNotificationSettings();
+    }
+
+    private void setupNotificationPermissionLauncher() {
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    SharedPreferences prefs = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+                    prefs.edit()
+                            .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                            .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, granted && pendingEnableByPermission)
+                            .apply();
+
+                    if (!granted) {
+                        Toast.makeText(
+                                this,
+                                R.string.settings_notifications_permission_denied,
+                                Toast.LENGTH_LONG).show();
+                    }
+                    pendingEnableByPermission = false;
+                    bindNotificationSwitchesFromPrefs();
+                    NotificationSyncManager.syncWorkerSchedule(this);
+                });
+    }
+
+    private void setupNotificationSettings() {
+        switchNotifMaster = findViewById(R.id.switchNotifMaster);
+        switchNotifGrades = findViewById(R.id.switchNotifGrades);
+        switchNotifPlan = findViewById(R.id.switchNotifPlan);
+        switchNotifPlanMoved = findViewById(R.id.switchNotifPlanMoved);
+        switchNotifPlanCancelled = findViewById(R.id.switchNotifPlanCancelled);
+        switchNotifPlanAdded = findViewById(R.id.switchNotifPlanAdded);
+        layoutPlanNotifCategories = findViewById(R.id.layoutPlanNotifCategories);
+
+        if (switchNotifMaster == null || switchNotifGrades == null || switchNotifPlan == null
+                || switchNotifPlanMoved == null || switchNotifPlanCancelled == null || switchNotifPlanAdded == null) {
+            return;
+        }
+
+        bindNotificationSwitchesFromPrefs();
+
+        switchNotifMaster.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+
+            if (isChecked && !NotificationSyncManager.hasNotificationPermission(this)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    pendingEnableByPermission = true;
+                    internalNotifUiChange = true;
+                    switchNotifMaster.setChecked(false);
+                    internalNotifUiChange = false;
+                    Toast.makeText(
+                            this,
+                            R.string.settings_notifications_permission_required,
+                            Toast.LENGTH_SHORT).show();
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                    return;
+                }
+            }
+
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, isChecked)
+                    .apply();
+            updateNotificationSwitchEnabledState();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifGrades.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_GRADES_ENABLED, isChecked)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifPlan.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PLAN_ENABLED, isChecked)
+                    .apply();
+            updateNotificationSwitchEnabledState();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifPlanMoved.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PLAN_MOVED_ENABLED, isChecked)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifPlanCancelled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PLAN_CANCELLED_ENABLED, isChecked)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifPlanAdded.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PLAN_ADDED_ENABLED, isChecked)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void bindNotificationSwitchesFromPrefs() {
+        SharedPreferences prefs = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+
+        internalNotifUiChange = true;
+        switchNotifMaster.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_MASTER_ENABLED));
+        switchNotifGrades.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_GRADES_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_GRADES_ENABLED));
+        switchNotifPlan.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_PLAN_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_ENABLED));
+        switchNotifPlanMoved.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_PLAN_MOVED_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_MOVED_ENABLED));
+        switchNotifPlanCancelled.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_PLAN_CANCELLED_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_CANCELLED_ENABLED));
+        switchNotifPlanAdded.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_PLAN_ADDED_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_ADDED_ENABLED));
+        internalNotifUiChange = false;
+
+        updateNotificationSwitchEnabledState();
+    }
+
+    private void updateNotificationSwitchEnabledState() {
+        if (switchNotifMaster == null) {
+            return;
+        }
+
+        boolean hasPermission = NotificationSyncManager.hasNotificationPermission(this);
+        boolean masterEnabled = switchNotifMaster.isChecked() && hasPermission;
+        boolean planEnabled = masterEnabled && switchNotifPlan.isChecked();
+
+        switchNotifGrades.setEnabled(masterEnabled);
+        switchNotifPlan.setEnabled(masterEnabled);
+        switchNotifPlanMoved.setEnabled(planEnabled);
+        switchNotifPlanCancelled.setEnabled(planEnabled);
+        switchNotifPlanAdded.setEnabled(planEnabled);
+
+        if (!hasPermission && switchNotifMaster.isChecked()) {
+            internalNotifUiChange = true;
+            switchNotifMaster.setChecked(false);
+            internalNotifUiChange = false;
+        }
+
+        if (layoutPlanNotifCategories != null) {
+            layoutPlanNotifCategories.setAlpha(planEnabled ? 1f : 0.45f);
+        }
     }
 
     @Override

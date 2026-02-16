@@ -1,14 +1,19 @@
 package pl.kejlo.mzutv2;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
@@ -39,6 +44,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private static final String TAG = "mZUTv2";
+    public static final String EXTRA_SESSION_EXPIRED = "extra_session_expired";
 
     private static final String PREFS_NAME = "mzut_prefs";
     private static final String KEY_LAST_LOGIN = "last_login";
@@ -63,12 +69,18 @@ public class LoginActivity extends AppCompatActivity {
     private static final long ANIM_DURATION_ENTER = 600;
     private static final long ANIM_STAGGER_DELAY = 100;
     private ObjectAnimator loadingAnimator;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
+    private boolean pendingHomeAfterPermission = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
+
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                this::onNotificationPermissionResult);
 
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
@@ -82,6 +94,11 @@ public class LoginActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_login);
         ThemeManager.applySystemBars(this);
+
+        if (getIntent().getBooleanExtra(EXTRA_SESSION_EXPIRED, false)
+                || SessionExpiryManager.consumeSessionExpiredNotice(this)) {
+            Toast.makeText(this, R.string.session_expired_toast, Toast.LENGTH_LONG).show();
+        }
 
         appIcon = findViewById(R.id.appIcon);
         loginCard = findViewById(R.id.loginCard);
@@ -333,7 +350,7 @@ public class LoginActivity extends AppCompatActivity {
                 this,
                 getString(R.string.login_success, username),
                 Toast.LENGTH_LONG).show();
-        runSuccessTransitionAndOpenHome();
+        prepareNotificationsAndOpenHome();
     }
 
     private void startLoadingState() {
@@ -380,6 +397,68 @@ public class LoginActivity extends AppCompatActivity {
         ObjectAnimator shake = ObjectAnimator.ofFloat(view, "translationX", 0, 25, -25, 25, -25, 15, -15, 6, -6, 0);
         shake.setDuration(700);
         shake.start();
+    }
+
+    private void prepareNotificationsAndOpenHome() {
+        SessionExpiryManager.clearSessionExpiredNotice(this);
+        SharedPreferences settings = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+        boolean asked = settings.getBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, false);
+        boolean hasPermission = NotificationSyncManager.hasNotificationPermission(this);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            if (!asked) {
+                settings.edit()
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
+                        .apply();
+            }
+            NotificationSyncManager.syncWorkerSchedule(this);
+            runSuccessTransitionAndOpenHome();
+            return;
+        }
+
+        if (hasPermission) {
+            if (!asked) {
+                settings.edit()
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
+                        .apply();
+            }
+            NotificationSyncManager.syncWorkerSchedule(this);
+            runSuccessTransitionAndOpenHome();
+            return;
+        }
+
+        if (!asked) {
+            pendingHomeAfterPermission = true;
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            return;
+        }
+
+        settings.edit()
+                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, false)
+                .apply();
+        NotificationSyncManager.syncWorkerSchedule(this);
+        runSuccessTransitionAndOpenHome();
+    }
+
+    private void onNotificationPermissionResult(boolean granted) {
+        SharedPreferences settings = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+        settings.edit()
+                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, granted)
+                .apply();
+
+        if (!granted) {
+            Toast.makeText(this, R.string.settings_notifications_permission_denied, Toast.LENGTH_LONG).show();
+        }
+
+        NotificationSyncManager.syncWorkerSchedule(this);
+
+        if (pendingHomeAfterPermission) {
+            pendingHomeAfterPermission = false;
+            runSuccessTransitionAndOpenHome();
+        }
     }
 
     private void runSuccessTransitionAndOpenHome() {
@@ -522,6 +601,6 @@ public class LoginActivity extends AppCompatActivity {
                 getString(R.string.login_success, displayName),
                 Toast.LENGTH_LONG).show();
 
-        runSuccessTransitionAndOpenHome();
+        prepareNotificationsAndOpenHome();
     }
 }

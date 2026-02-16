@@ -3,6 +3,8 @@ package pl.kejlo.mzutv2;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -35,8 +37,17 @@ public class MzutApi {
 
         // Execute request
         try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+            int code = response.code();
+            if (code == 401 || code == 403) {
+                Context appContext = MzutSession.getAppContextOrNull();
+                if (appContext != null) {
+                    SessionExpiryManager.handleSessionExpired(appContext, "HTTP " + code);
+                }
+                throw new SessionExpiredException("Session unauthorized (HTTP " + code + ")");
+            }
+
             if (!response.isSuccessful()) {
-                throw new IOException("HTTP error: " + response.code());
+                throw new IOException("HTTP error: " + code);
             }
 
             String respBody = response.body() != null ? response.body().string() : "";
@@ -44,7 +55,18 @@ public class MzutApi {
                 return null;
             }
 
-            return new JSONObject(respBody);
+            JSONObject json = new JSONObject(respBody);
+            if (SessionExpiryManager.isSessionExpiredResponse(json)) {
+                Context appContext = MzutSession.getAppContextOrNull();
+                if (appContext != null) {
+                    SessionExpiryManager.handleSessionExpired(
+                            appContext,
+                            SessionExpiryManager.extractSessionExpiredReason(json));
+                }
+                throw new SessionExpiredException("Session expired");
+            }
+
+            return json;
         }
     }
 }

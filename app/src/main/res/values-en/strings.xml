@@ -357,6 +357,39 @@
     <string name="settings_widget_refresh_entry_3h">3 hours</string>
     <string name="settings_widget_refresh_entry_4h">4 hours</string>
     <string name="settings_widget_refresh_entry_manual">Never (manual)</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_notifications_master_label">Enable notifications</string>
+    <string name="settings_notifications_master_desc">Notifications about grades and timetable changes.</string>
+    <string name="settings_notifications_grades_label">Grade notifications</string>
+    <string name="settings_notifications_grades_desc">Check new grades periodically (every 30 min).</string>
+    <string name="settings_notifications_plan_label">Timetable change notifications</string>
+    <string name="settings_notifications_plan_desc">Monitor timetable changes up to 2 weeks ahead.</string>
+    <string name="settings_notifications_plan_categories">Timetable change categories</string>
+    <string name="settings_notifications_plan_moved">Moved classes</string>
+    <string name="settings_notifications_plan_cancelled">Cancelled classes</string>
+    <string name="settings_notifications_plan_added">New classes</string>
+    <string name="settings_notifications_saved">Notification settings saved</string>
+    <string name="settings_notifications_permission_denied">Without notification permission, this feature is disabled</string>
+    <string name="settings_notifications_permission_required">To enable this, grant notification permission</string>
+
+    <string name="session_expired_toast">Session expired. Log in again.</string>
+    <string name="session_expired_notification_title">Login required again</string>
+    <string name="session_expired_notification_text">Session expired. Open the app and log in again.</string>
+
+    <string name="notif_channel_grades_name">Grades</string>
+    <string name="notif_channel_grades_desc">Notifications about new grades</string>
+    <string name="notif_channel_plan_name">Timetable</string>
+    <string name="notif_channel_plan_desc">Notifications about timetable changes</string>
+    <string name="notif_channel_auth_name">Session security</string>
+    <string name="notif_channel_auth_desc">Information about session expiration</string>
+
+    <string name="notif_grades_title">New grades</string>
+    <string name="notif_grades_summary">New grades added: %1$d</string>
+    <string name="notif_plan_title">Timetable changes</string>
+    <string name="notif_plan_summary">Changes: %1$d</string>
+    <string name="notif_plan_line_moved">%1$s: %2$s %3$s -> %4$s %5$s</string>
+    <string name="notif_plan_line_cancelled">%1$s: cancelled (%2$s %3$s)</string>
+    <string name="notif_plan_line_added">%1$s: new (%2$s %3$s)</string>
 
     <string name="useful_links_header_title">Your most important addresses in one place</string>
     <string name="useful_links_header_sub">

@@ -94,12 +94,31 @@ public final class MzutSession {
      * Useful on logout.
      */
     public static synchronized void clear(Context context) {
-        // Clear singleton
-        instance = null;
+        clearSessionData(context);
+    }
 
-        // Clear SharedPreferences
+    /**
+     * Clears only session-related keys while keeping unrelated preference values
+     * (e.g. last login hint).
+     */
+    public static synchronized void clearSessionData(Context context) {
+        instance = null;
         SharedPreferences prefs = getPreferences(context);
-        prefs.edit().clear().apply();
+        prefs.edit()
+                .remove(KEY_USER_ID)
+                .remove(KEY_AUTH_KEY)
+                .remove(KEY_USERNAME)
+                .remove(KEY_IMAGE_URL)
+                .remove(KEY_ACTIVE_STUDY_INDEX)
+                .remove(KEY_STUDIES_JSON)
+                .apply();
+    }
+
+    public static synchronized Context getAppContextOrNull() {
+        if (instance == null) {
+            return null;
+        }
+        return instance.appContext;
     }
 
     // endregion
