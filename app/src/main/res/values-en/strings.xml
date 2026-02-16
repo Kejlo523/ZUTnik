@@ -262,10 +262,15 @@
     <string name="plan_widget_subtitle_today">Today classes</string>
     <string name="plan_widget_subtitle_in_progress">Classes in progress</string>
     <string name="plan_widget_subtitle_next_prefix">Next in </string>
+    <string name="plan_widget_subtitle_next_in_format">Next in %1$s</string>
     <string name="plan_widget_hours_suffix"> h</string>
     <string name="plan_widget_minutes_suffix"> min</string>
+    <string name="plan_widget_time_hours_minutes">%1$d h %2$d min</string>
+    <string name="plan_widget_time_hours">%1$d h</string>
+    <string name="plan_widget_time_minutes">%1$d min</string>
     <string name="plan_widget_subtitle_no_classes_tomorrow">No classes tomorrow</string>
     <string name="plan_widget_subtitle_tomorrow">Tomorrow classes</string>
+    <string name="plan_widget_subtitle_no_classes_until">%1$s · no classes until %2$s</string>
     <string name="plan_widget_subtitle_login_required">
         Log in in the mZUT app
     </string>
@@ -535,6 +540,13 @@
     <string name="session_winter">winter</string>
     <string name="session_summer">summer</string>
     <string name="session_retake">retake</string>
+    <string name="calendar_period_start_label">Start</string>
+    <string name="calendar_period_end_label">End</string>
+    <string name="period_break_winter_semester">didactic break (winter semester)</string>
+    <string name="period_break_summer_semester">didactic break (summer semester)</string>
+    <string name="period_break_generic">didactic break</string>
+    <string name="period_holiday_winter">winter holidays</string>
+    <string name="period_holiday_summer">summer holidays</string>
 
     <!-- Extracted Strings -->
     <string name="useful_links_header_desc">Collection of the most useful university services and websites.</string>

@@ -262,10 +262,15 @@
     <string name="plan_widget_subtitle_today">Сьогоднішні заняття</string>
     <string name="plan_widget_subtitle_in_progress">Заняття тривають</string>
     <string name="plan_widget_subtitle_next_prefix">Найближчі за </string>
+    <string name="plan_widget_subtitle_next_in_format">Найближчі за %1$s</string>
     <string name="plan_widget_hours_suffix"> год</string>
     <string name="plan_widget_minutes_suffix"> хв</string>
+    <string name="plan_widget_time_hours_minutes">%1$d год %2$d хв</string>
+    <string name="plan_widget_time_hours">%1$d год</string>
+    <string name="plan_widget_time_minutes">%1$d хв</string>
     <string name="plan_widget_subtitle_no_classes_tomorrow">Немає занять завтра</string>
     <string name="plan_widget_subtitle_tomorrow">Завтрашні заняття</string>
+    <string name="plan_widget_subtitle_no_classes_until">%1$s · немає занять до %2$s</string>
     <string name="plan_widget_subtitle_login_required">
         Увійдіть в застосунок mZUT
     </string>
@@ -534,6 +539,13 @@
     <string name="session_winter">зимової</string>
     <string name="session_summer">літньої</string>
     <string name="session_retake">перескладання</string>
+    <string name="calendar_period_start_label">Початок</string>
+    <string name="calendar_period_end_label">Кінець</string>
+    <string name="period_break_winter_semester">перерви від занять (зимовий семестр)</string>
+    <string name="period_break_summer_semester">перерви від занять (літній семестр)</string>
+    <string name="period_break_generic">перерви від занять</string>
+    <string name="period_holiday_winter">зимових канікул</string>
+    <string name="period_holiday_summer">літніх канікул</string>
 
     <!-- Extracted Strings -->
     <string name="useful_links_header_desc">Збірка найважливіших сервісів та сторінок університету.</string>

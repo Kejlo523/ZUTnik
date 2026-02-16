@@ -18,68 +18,17 @@
         android:paddingEnd="16dp"
         android:titleTextColor="?attr/mzText" />
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:baselineAligned="false"
-        android:orientation="horizontal"
-        android:padding="16dp">
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginEnd="14dp"
-            android:layout_weight="0.36"
-            app:cardBackgroundColor="?attr/mzCard"
-            app:cardCornerRadius="22dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:padding="24dp">
-
-                <ImageView
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:background="@drawable/bg_circle_soft"
-                    android:padding="14dp"
-                    android:src="@drawable/ic_settings_24"
-                    app:tint="?attr/mzPrimary" />
-
-                <TextView
-                    android:id="@+id/settingsTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:text="@string/settings_title"
-                    android:textColor="?attr/mzText"
-                    android:textSize="30sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/settingsSubtitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:gravity="center"
-                    android:text="@string/settings_subtitle"
-                    android:textColor="?attr/mzMuted"
-                    android:textSize="14sp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <ScrollView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="0.64"
-            android:clipToPadding="false"
-            android:fillViewport="true"
-            android:overScrollMode="ifContentScrolls"
-            android:paddingBottom="8dp"
-            android:scrollbars="none">
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="ifContentScrolls"
+        android:paddingStart="16dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:scrollbars="none">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -283,6 +232,5 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
             </LinearLayout>
-        </ScrollView>
-    </LinearLayout>
+    </ScrollView>
 </LinearLayout>

@@ -305,10 +305,15 @@
     <string name="plan_widget_subtitle_today">Dzisiejsze zajęcia</string>
     <string name="plan_widget_subtitle_in_progress">Zajęcia w trakcie</string>
     <string name="plan_widget_subtitle_next_prefix">Najbliższe za </string>
+    <string name="plan_widget_subtitle_next_in_format">Najbliższe za %1$s</string>
     <string name="plan_widget_hours_suffix"> h</string>
     <string name="plan_widget_minutes_suffix"> min</string>
+    <string name="plan_widget_time_hours_minutes">%1$d h %2$d min</string>
+    <string name="plan_widget_time_hours">%1$d h</string>
+    <string name="plan_widget_time_minutes">%1$d min</string>
     <string name="plan_widget_subtitle_no_classes_tomorrow">Brak zajęć jutro</string>
     <string name="plan_widget_subtitle_tomorrow">Jutrzejsze zajęcia</string>
+    <string name="plan_widget_subtitle_no_classes_until">%1$s · brak zajęć do %2$s</string>
     <string name="plan_widget_subtitle_login_required">
         Zaloguj się w aplikacji mZUT
     </string>
@@ -588,6 +593,13 @@
     <string name="session_winter">zimowej</string>
     <string name="session_summer">letniej</string>
     <string name="session_retake">poprawkowej</string>
+    <string name="calendar_period_start_label">Początek</string>
+    <string name="calendar_period_end_label">Koniec</string>
+    <string name="period_break_winter_semester">przerwy dydaktycznej (semestr zimowy)</string>
+    <string name="period_break_summer_semester">przerwy dydaktycznej (semestr letni)</string>
+    <string name="period_break_generic">przerwy dydaktycznej</string>
+    <string name="period_holiday_winter">wakacji zimowych</string>
+    <string name="period_holiday_summer">wakacji letnich</string>
 
     <!-- Extracted Strings -->
     <string name="useful_links_header_desc">Zbiór najpotrzebniejszych serwisów i stron uczelnianych.</string>

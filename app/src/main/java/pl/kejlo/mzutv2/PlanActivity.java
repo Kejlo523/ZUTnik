@@ -2101,27 +2101,64 @@ public class PlanActivity extends MzutBaseActivity {
     private void addSessionMarkerLines(LinearLayout container, LocalDate prevDate, LocalDate curDate, int columnHeight) {
         if (sessionDates == null || sessionDates.isEmpty()) return;
 
-        // First: END markers (sessions ending on prevDate)
-        for (PlanRepository.SessionPeriod session : sessionDates) {
-            if (prevDate.equals(session.endDate)) {
-                String label = getString(R.string.session_end_label) + " " + getSessionDisplayName(session.name);
-                int color = ThemeManager.resolveColor(this, R.attr.mzDanger);
-                if (color == 0) color = 0xFFF44336;
+        for (PlanRepository.SessionPeriod period : sessionDates) {
+            if (prevDate.equals(period.endDate)) {
+                String label = buildPeriodMarkerLabel(period, false);
+                int color = resolvePeriodMarkerColor(period);
                 View sep = buildMarkerLine(label, color, columnHeight);
                 container.addView(sep);
             }
         }
 
-        // Then: START markers (sessions starting on curDate)
-        for (PlanRepository.SessionPeriod session : sessionDates) {
-            if (curDate.equals(session.startDate)) {
-                String label = getString(R.string.session_start_label) + " " + getSessionDisplayName(session.name);
-                int color = ThemeManager.resolveColor(this, R.attr.mzSuccess);
-                if (color == 0) color = 0xFF4CAF50;
+        for (PlanRepository.SessionPeriod period : sessionDates) {
+            if (curDate.equals(period.startDate)) {
+                String label = buildPeriodMarkerLabel(period, true);
+                int color = resolvePeriodMarkerColor(period);
                 View sep = buildMarkerLine(label, color, columnHeight);
                 container.addView(sep);
             }
         }
+    }
+
+    private String buildPeriodMarkerLabel(PlanRepository.SessionPeriod period, boolean start) {
+        if (period == null) {
+            return "";
+        }
+        String name = PlanRepository.getPeriodDisplayName(this, period.name);
+        int prefixRes;
+        if (PlanRepository.isSessionPeriodName(period.name)) {
+            prefixRes = start ? R.string.session_start_label : R.string.session_end_label;
+        } else {
+            prefixRes = start ? R.string.calendar_period_start_label : R.string.calendar_period_end_label;
+        }
+        return getString(prefixRes) + " " + name;
+    }
+
+    private int resolvePeriodMarkerColor(PlanRepository.SessionPeriod period) {
+        if (period == null || period.name == null) {
+            int fallback = ThemeManager.resolveColor(this, R.attr.mzAccent);
+            return fallback != 0 ? fallback : 0xFF4F8DFF;
+        }
+
+        String name = period.name.toLowerCase(java.util.Locale.ROOT);
+        if (PlanRepository.isSessionPeriodName(name)) {
+            int red = ThemeManager.resolveColor(this, R.attr.mzDanger);
+            return red != 0 ? red : 0xFFF44336;
+        }
+        if (name.startsWith("przerwa_")) {
+            int accent = ThemeManager.resolveColor(this, R.attr.mzAccent);
+            return accent != 0 ? accent : 0xFF4F8DFF;
+        }
+        if ("wakacje_zimowe".equals(name)) {
+            int primary = ThemeManager.resolveColor(this, R.attr.mzPrimary);
+            return primary != 0 ? primary : 0xFF1976D2;
+        }
+        if ("wakacje_letnie".equals(name)) {
+            int lime = ThemeManager.resolveColor(this, R.attr.mzLime);
+            return lime != 0 ? lime : 0xFF8BC34A;
+        }
+        int fallback = ThemeManager.resolveColor(this, R.attr.mzAccent);
+        return fallback != 0 ? fallback : 0xFF4F8DFF;
     }
 
     /**
@@ -2171,7 +2208,7 @@ public class PlanActivity extends MzutBaseActivity {
         badge.setSingleLine(true);
         badge.setGravity(Gravity.CENTER);
         badge.setPadding(padH / 2, padV / 2, padH / 2, padV / 2);
-        badge.setRotation(-90f);
+        badge.setRotation(90f);
 
         GradientDrawable badgeBg = new GradientDrawable();
         badgeBg.setColor(color);
@@ -2186,16 +2223,6 @@ public class PlanActivity extends MzutBaseActivity {
         separator.addView(badge);
 
         return separator;
-    }
-
-    private String getSessionDisplayName(String parsedName) {
-        if (parsedName == null) return "";
-        switch (parsedName) {
-            case "zimowa": return getString(R.string.session_winter);
-            case "letnia": return getString(R.string.session_summer);
-            case "poprawkowa": return getString(R.string.session_retake);
-            default: return parsedName;
-        }
     }
 
     private void updateFixedWeekHeaders(List<PlanRepository.DayColumn> rawCols, LocalDate pageDate) {
