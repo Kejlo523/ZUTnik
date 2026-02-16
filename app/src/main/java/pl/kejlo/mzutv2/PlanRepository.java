@@ -223,7 +223,7 @@ public class PlanRepository {
                     break;
             }
         } else {
-            String[] dniPl = { "Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So" };
+            String[] dniPl = { "Nd", "Pn", "Wt", "Ĺšr", "Cz", "Pt", "So" };
             int dow = date.getDayOfWeek().getValue() % 7;
             dz = dniPl[dow];
         }
@@ -253,7 +253,7 @@ public class PlanRepository {
         return dt.getHour() * 60 + dt.getMinute();
     }
 
-    // Helpers – ZUT API
+    // Helpers â€“ ZUT API
 
     private JSONArray httpGetJsonArray(String urlStr, PlanDebug debug) throws IOException, JSONException {
         PlanDebug.RequestDebug rd = new PlanDebug.RequestDebug();
@@ -388,7 +388,7 @@ public class PlanRepository {
             rangeStart = weekStart;
             rangeEnd = weekEnd;
             r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM"))
-                    + " – " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+                    + " - " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         } else {
             rangeStart = currentDate.withDayOfMonth(1);
             rangeEnd = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
@@ -697,13 +697,13 @@ public class PlanRepository {
             return "week-event-type-exam-remote";
         if (hay.contains("egzamin"))
             return "week-event-type-exam";
-        if (hay.contains("odwołane"))
+        if (hay.contains("odwoĹ‚ane"))
             return "week-event-type-cancelled";
         if (hay.contains("rektorskie"))
             return "week-event-type-rector";
-        if (hay.contains("dziekańskie") || hay.contains("godziny dziekańskie"))
+        if (hay.contains("dziekaĹ„skie") || hay.contains("godziny dziekaĹ„skie"))
             return "week-event-type-dean";
-        if (hay.contains("zajęcia zdalne") || hay.contains("zdalne"))
+        if (hay.contains("zajÄ™cia zdalne") || hay.contains("zdalne"))
             return "week-event-type-remote";
 
         // Pass types
@@ -737,7 +737,7 @@ public class PlanRepository {
             return "week-event-type-lab";
         if (hay.contains("audytoryjne") || "a".equals(formShort))
             return "week-event-type-auditory";
-        if (hay.contains("wykład") || "w".equals(formShort))
+        if (hay.contains("wykĹ‚ad") || "w".equals(formShort))
             return "week-event-type-lecture";
 
         if ("z".equals(formShort))
@@ -1328,8 +1328,7 @@ public class PlanRepository {
             LocalDate weekEnd = weekStart.plusDays(6);
             rangeStart = weekStart;
             rangeEnd = weekEnd;
-            r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM")) + " – "
-                    + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM")) + " - " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         } else {
             rangeStart = currentDate.withDayOfMonth(1);
             rangeEnd = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
@@ -1493,7 +1492,7 @@ public class PlanRepository {
                         typeKey = "lab";
                     else if (form.contains("audytoryjne"))
                         typeKey = "aud";
-                    else if (form.contains("wykład"))
+                    else if (form.contains("wykĹ‚ad"))
                         typeKey = "lec";
 
                     if (typeKey == null)
@@ -1514,7 +1513,7 @@ public class PlanRepository {
                 if (types.containsKey("lec")) {
                     SubjectFilterItem it = new SubjectFilterItem();
                     it.label = subject;
-                    it.typeLabel = "Wykład";
+                    it.typeLabel = "WykĹ‚ad";
                     it.filterKey = types.get("lec");
                     items.add(it);
                 }
@@ -1650,11 +1649,10 @@ public class PlanRepository {
 
         return result;
     }
-
     // --- Session Dates ---
 
     public static class SessionPeriod {
-        public String name;       // e.g. "zimowa", "letnia", "poprawkowa"
+        public String name; // canonical key, e.g. "sesja_zimowa", "wakacje_letnie"
         public LocalDate startDate;
         public LocalDate endDate;
 
@@ -1663,10 +1661,26 @@ public class PlanRepository {
             this.startDate = startDate;
             this.endDate = endDate;
         }
+
+        public boolean contains(LocalDate date) {
+            if (date == null || startDate == null || endDate == null) {
+                return false;
+            }
+            return !date.isBefore(startDate) && !date.isAfter(endDate);
+        }
     }
 
-    private static final String KEY_SESSION_CACHE_JSON = "session_dates_cache_json_v2";
-    private static final String KEY_SESSION_CACHE_TS = "session_dates_cache_ts";
+    private static final String PERIOD_SESSION_WINTER = "sesja_zimowa";
+    private static final String PERIOD_SESSION_SUMMER = "sesja_letnia";
+    private static final String PERIOD_SESSION_RETAKE = "sesja_poprawkowa";
+    private static final String PERIOD_BREAK_WINTER = "przerwa_dydaktyczna_zimowa";
+    private static final String PERIOD_BREAK_SUMMER = "przerwa_dydaktyczna_letnia";
+    private static final String PERIOD_BREAK_GENERIC = "przerwa_dydaktyczna";
+    private static final String PERIOD_HOLIDAY_WINTER = "wakacje_zimowe";
+    private static final String PERIOD_HOLIDAY_SUMMER = "wakacje_letnie";
+
+    private static final String KEY_SESSION_CACHE_JSON = "session_dates_cache_json_v3";
+    private static final String KEY_SESSION_CACHE_TS = "session_dates_cache_ts_v3";
     private static final long SESSION_CACHE_TTL_MS = 24L * 60L * 60L * 1000L;
 
     private static List<SessionPeriod> sCachedSessions;
@@ -1675,12 +1689,10 @@ public class PlanRepository {
     public List<SessionPeriod> fetchSessionDates() {
         long now = System.currentTimeMillis();
 
-        // In-memory cache
         if (sCachedSessions != null && (now - sCachedSessionsTs) < SESSION_CACHE_TTL_MS) {
             return sCachedSessions;
         }
 
-        // Disk cache
         if (appContext != null) {
             SharedPreferences sp = appContext.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
             long ts = sp.getLong(KEY_SESSION_CACHE_TS, 0);
@@ -1697,7 +1709,6 @@ public class PlanRepository {
             }
         }
 
-        // Fetch from web
         List<SessionPeriod> sessions = scrapeSessionDates();
         if (sessions != null && !sessions.isEmpty()) {
             sCachedSessions = sessions;
@@ -1713,15 +1724,101 @@ public class PlanRepository {
         return sessions != null ? sessions : new ArrayList<>();
     }
 
-    private List<SessionPeriod> scrapeSessionDates() {
-        // Try multiple academic year URLs (current and next)
-        int year = java.time.Year.now().getValue();
-        String[] urls = {
-                "https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + year + (year + 1) + ".html",
-                "https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + (year - 1) + year + ".html"
-        };
+    public static List<SessionPeriod> getCachedSessionDates(Context context) {
+        if (context == null) {
+            return new ArrayList<>();
+        }
 
-        for (String url : urls) {
+        long now = System.currentTimeMillis();
+        if (sCachedSessions != null && (now - sCachedSessionsTs) < SESSION_CACHE_TTL_MS) {
+            return new ArrayList<>(sCachedSessions);
+        }
+
+        SharedPreferences sp = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
+        String json = sp.getString(KEY_SESSION_CACHE_JSON, null);
+        if (json == null || json.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<SessionPeriod> parsed = parseSessionJson(json);
+        if (!parsed.isEmpty()) {
+            sCachedSessions = parsed;
+            sCachedSessionsTs = now;
+        }
+        return parsed;
+    }
+
+    public static SessionPeriod findActivePeriod(List<SessionPeriod> periods, LocalDate date, boolean noClassesOnly) {
+        if (periods == null || periods.isEmpty() || date == null) {
+            return null;
+        }
+        for (SessionPeriod period : periods) {
+            if (period == null || !period.contains(date)) {
+                continue;
+            }
+            if (!noClassesOnly || isNoClassesPeriodName(period.name)) {
+                return period;
+            }
+        }
+        return null;
+    }
+
+    public static boolean isSessionPeriodName(String name) {
+        if (name == null) {
+            return false;
+        }
+        String n = name.trim().toLowerCase(Locale.ROOT);
+        return PERIOD_SESSION_WINTER.equals(n)
+                || PERIOD_SESSION_SUMMER.equals(n)
+                || PERIOD_SESSION_RETAKE.equals(n)
+                || "zimowa".equals(n)
+                || "letnia".equals(n)
+                || "poprawkowa".equals(n);
+    }
+
+    public static boolean isNoClassesPeriodName(String name) {
+        if (name == null) {
+            return false;
+        }
+        String n = name.trim().toLowerCase(Locale.ROOT);
+        return n.startsWith("przerwa_") || n.startsWith("wakacje_");
+    }
+
+    public static String getPeriodDisplayName(Context context, String name) {
+        if (name == null) {
+            return "";
+        }
+        String n = name.trim().toLowerCase(Locale.ROOT);
+        if (context == null) {
+            return n;
+        }
+        switch (n) {
+            case PERIOD_SESSION_WINTER:
+            case "zimowa":
+                return context.getString(R.string.session_winter);
+            case PERIOD_SESSION_SUMMER:
+            case "letnia":
+                return context.getString(R.string.session_summer);
+            case PERIOD_SESSION_RETAKE:
+            case "poprawkowa":
+                return context.getString(R.string.session_retake);
+            case PERIOD_BREAK_WINTER:
+                return context.getString(R.string.period_break_winter_semester);
+            case PERIOD_BREAK_SUMMER:
+                return context.getString(R.string.period_break_summer_semester);
+            case PERIOD_BREAK_GENERIC:
+                return context.getString(R.string.period_break_generic);
+            case PERIOD_HOLIDAY_WINTER:
+                return context.getString(R.string.period_holiday_winter);
+            case PERIOD_HOLIDAY_SUMMER:
+                return context.getString(R.string.period_holiday_summer);
+            default:
+                return n;
+        }
+    }
+
+    private List<SessionPeriod> scrapeSessionDates() {
+        for (String url : buildCandidateCalendarUrls()) {
             try {
                 Request request = new Request.Builder()
                         .url(url)
@@ -1729,9 +1826,13 @@ public class PlanRepository {
                         .build();
 
                 try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
-                    if (!response.isSuccessful()) continue;
+                    if (!response.isSuccessful()) {
+                        continue;
+                    }
                     String html = response.body() != null ? response.body().string() : "";
-                    if (html.isEmpty()) continue;
+                    if (html.isEmpty()) {
+                        continue;
+                    }
 
                     List<SessionPeriod> sessions = parseSessionHtml(html);
                     if (sessions != null && !sessions.isEmpty()) {
@@ -1745,60 +1846,172 @@ public class PlanRepository {
         return new ArrayList<>();
     }
 
-    private List<SessionPeriod> parseSessionHtml(String html) {
-        List<SessionPeriod> sessions = new ArrayList<>();
-        DateTimeFormatter ddMMyyyy = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private List<String> buildCandidateCalendarUrls() {
+        LinkedHashSet<String> urls = new LinkedHashSet<>();
 
-        // Patterns for session dates in HTML: "sesja zimowa - DD.MM.YYYY r. – DD.MM.YYYY r."
-        String[][] sessionDefs = {
-                {"zimowa", "sesja zimowa"},
-                {"letnia", "sesja letnia"},
-                {"poprawkowa", "sesja poprawkowa"}
-        };
+        // Stable fallback URL that is often redirected to latest academic year.
+        urls.add("https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-20232024.html");
+        urls.add("https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego.html");
 
-        // Normalize: strip tags, entities, unicode, and collapse whitespace
-        String normalized = html
-                .replaceAll("<[^>]+>", " ")          // strip HTML tags
-                .replace("&ndash;", "–")
-                .replace("&mdash;", "—")
-                .replace("&nbsp;", " ")
-                .replace("\u00A0", " ")
-                .replaceAll("\\s+", " ");             // collapse all whitespace to single space
+        int year = java.time.Year.now().getValue();
+        urls.add("https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + year + (year + 1) + ".html");
+        urls.add("https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + (year - 1) + year + ".html");
+        urls.add("https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + (year + 1) + (year + 2) + ".html");
+        urls.add("https://www.zut.edu.pl/zut-studenci/organizacja-roku-akademickiego-" + (year - 2) + (year - 1) + ".html");
 
-        String normalizedLower = normalized.toLowerCase(java.util.Locale.ROOT);
+        urls.addAll(discoverAcademicCalendarUrlsFromStudentsPage());
+        return new ArrayList<>(urls);
+    }
 
-        for (String[] def : sessionDefs) {
-            String name = def[0];
-            String needle = def[1].toLowerCase(java.util.Locale.ROOT);
-            int idx = normalizedLower.indexOf(needle);
-            if (idx < 0) continue;
-
-            // Extract region around the match
-            int regionEnd = Math.min(idx + 200, normalized.length());
-            String region = normalized.substring(idx, regionEnd);
-
-            // Find date patterns: DD.MM.YYYY
-            java.util.regex.Pattern datePat = java.util.regex.Pattern.compile("(\\d{2}\\.\\d{2}\\.\\d{4})");
-            java.util.regex.Matcher m = datePat.matcher(region);
-
-            List<LocalDate> dates = new ArrayList<>();
-            while (m.find() && dates.size() < 2) {
-                try {
-                    dates.add(LocalDate.parse(m.group(1), ddMMyyyy));
-                } catch (Exception ignored) {
+    private List<String> discoverAcademicCalendarUrlsFromStudentsPage() {
+        List<String> links = new ArrayList<>();
+        try {
+            Request request = new Request.Builder()
+                    .url("https://www.zut.edu.pl/zut-studenci/")
+                    .header("User-Agent", "mZUTv2-Android-Plan/1.0")
+                    .build();
+            try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    return links;
                 }
+                String html = response.body() != null ? response.body().string() : "";
+                if (html.isEmpty()) {
+                    return links;
+                }
+                links.addAll(extractAcademicCalendarLinks(html));
             }
+        } catch (Exception ignored) {
+        }
+        return links;
+    }
 
-            if (dates.size() == 2) {
-                sessions.add(new SessionPeriod(name, dates.get(0), dates.get(1)));
+    private List<String> extractAcademicCalendarLinks(String html) {
+        LinkedHashSet<String> links = new LinkedHashSet<>();
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile(
+                "(https?://www\\.zut\\.edu\\.pl)?(/zut-studenci/organizacja-roku-akademickiego-\\d{8}\\.html)",
+                java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher m = p.matcher(html);
+        while (m.find()) {
+            String host = m.group(1);
+            String path = m.group(2);
+            if (path == null || path.isEmpty()) {
+                continue;
+            }
+            if (host == null || host.isEmpty()) {
+                links.add("https://www.zut.edu.pl" + path);
+            } else {
+                links.add(host + path);
             }
         }
+        return new ArrayList<>(links);
+    }
 
+    private List<SessionPeriod> parseSessionHtml(String html) {
+        List<SessionPeriod> sessions = new ArrayList<>();
+        DateTimeFormatter ddMMyyyy = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT);
+
+        String normalized = normalizeCalendarHtml(html);
+        String ascii = stripDiacritics(normalized.toLowerCase(Locale.ROOT));
+        Set<String> dedup = new HashSet<>();
+
+        collectPeriods(sessions, dedup, ascii, ddMMyyyy, PERIOD_SESSION_WINTER, "sesja\\s+zimowa");
+        collectPeriods(sessions, dedup, ascii, ddMMyyyy, PERIOD_SESSION_SUMMER, "sesja\\s+letnia");
+        collectPeriods(sessions, dedup, ascii, ddMMyyyy, PERIOD_SESSION_RETAKE, "sesja\\s+poprawkowa");
+
+        collectPeriods(
+                sessions,
+                dedup,
+                ascii,
+                ddMMyyyy,
+                PERIOD_BREAK_WINTER,
+                "przerwa\\s+od\\s+zajec\\s+dydaktycznych\\s+w\\s+semestrze\\s+zimowym");
+        collectPeriods(
+                sessions,
+                dedup,
+                ascii,
+                ddMMyyyy,
+                PERIOD_BREAK_SUMMER,
+                "przerwa\\s+od\\s+zajec\\s+dydaktycznych\\s+w\\s+semestrze\\s+letnim");
+
+        boolean hasSpecificBreak = false;
+        for (SessionPeriod period : sessions) {
+            if (PERIOD_BREAK_WINTER.equals(period.name) || PERIOD_BREAK_SUMMER.equals(period.name)) {
+                hasSpecificBreak = true;
+                break;
+            }
+        }
+        if (!hasSpecificBreak) {
+            collectPeriods(
+                    sessions,
+                    dedup,
+                    ascii,
+                    ddMMyyyy,
+                    PERIOD_BREAK_GENERIC,
+                    "przerwa\\s+od\\s+zajec\\s+dydaktycznych");
+        }
+
+        collectPeriods(sessions, dedup, ascii, ddMMyyyy, PERIOD_HOLIDAY_WINTER, "(wakacje|ferie)\\s+zimowe");
+        collectPeriods(sessions, dedup, ascii, ddMMyyyy, PERIOD_HOLIDAY_SUMMER, "wakacje\\s+letnie");
+
+        sessions.sort(Comparator.comparing(sp -> sp.startDate));
         Log.d(TAG, "Parsed " + sessions.size() + " session periods from HTML");
         return sessions;
     }
 
-    private String sessionToJson(List<SessionPeriod> sessions) {
+    private String normalizeCalendarHtml(String html) {
+        return html
+                .replaceAll("<[^>]+>", " ")
+                .replace("&ndash;", "-")
+                .replace("&mdash;", "-")
+                .replace("&nbsp;", " ")
+                .replace("\u00A0", " ")
+                .replaceAll("\\s+", " ");
+    }
+
+    private String stripDiacritics(String input) {
+        if (input == null) {
+            return "";
+        }
+        String normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+        return normalized
+                .replace('ł', 'l')
+                .replace('Ł', 'l')
+                .replace('đ', 'd')
+                .replace('Đ', 'd');
+    }
+
+    private void collectPeriods(
+            List<SessionPeriod> out,
+            Set<String> dedup,
+            String text,
+            DateTimeFormatter formatter,
+            String canonicalName,
+            String labelRegex) {
+
+        String pattern = labelRegex + "[^0-9]{0,60}(\\d{2}\\.\\d{2}\\.\\d{4})[^0-9]{1,30}(\\d{2}\\.\\d{2}\\.\\d{4})";
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile(
+                pattern,
+                java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE)
+                .matcher(text);
+
+        while (matcher.find()) {
+            try {
+                LocalDate start = LocalDate.parse(matcher.group(1), formatter);
+                LocalDate end = LocalDate.parse(matcher.group(2), formatter);
+                if (end.isBefore(start)) {
+                    continue;
+                }
+                String dedupKey = canonicalName + "|" + start + "|" + end;
+                if (dedup.add(dedupKey)) {
+                    out.add(new SessionPeriod(canonicalName, start, end));
+                }
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private static String sessionToJson(List<SessionPeriod> sessions) {
         try {
             JSONArray arr = new JSONArray();
             for (SessionPeriod sp : sessions) {
@@ -1814,7 +2027,7 @@ public class PlanRepository {
         }
     }
 
-    private List<SessionPeriod> parseSessionJson(String json) {
+    private static List<SessionPeriod> parseSessionJson(String json) {
         List<SessionPeriod> result = new ArrayList<>();
         try {
             JSONArray arr = new JSONArray(json);

@@ -2096,108 +2096,207 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     /**
-     * Adds separate session marker lines (END then START) for the gap between prevDate and curDate.
+     * Marker descriptor used by combined period separators.
      */
-    private void addSessionMarkerLines(LinearLayout container, LocalDate prevDate, LocalDate curDate, int columnHeight) {
-        if (sessionDates == null || sessionDates.isEmpty()) return;
+    private static class MarkerSpec {
+        final String label;
+        final int color;
 
-        // First: END markers (sessions ending on prevDate)
-        for (PlanRepository.SessionPeriod session : sessionDates) {
-            if (prevDate.equals(session.endDate)) {
-                String label = getString(R.string.session_end_label) + " " + getSessionDisplayName(session.name);
-                int color = ThemeManager.resolveColor(this, R.attr.mzDanger);
-                if (color == 0) color = 0xFFF44336;
-                View sep = buildMarkerLine(label, color, columnHeight);
-                container.addView(sep);
-            }
-        }
-
-        // Then: START markers (sessions starting on curDate)
-        for (PlanRepository.SessionPeriod session : sessionDates) {
-            if (curDate.equals(session.startDate)) {
-                String label = getString(R.string.session_start_label) + " " + getSessionDisplayName(session.name);
-                int color = ThemeManager.resolveColor(this, R.attr.mzSuccess);
-                if (color == 0) color = 0xFF4CAF50;
-                View sep = buildMarkerLine(label, color, columnHeight);
-                container.addView(sep);
-            }
+        MarkerSpec(String label, int color) {
+            this.label = label;
+            this.color = color;
         }
     }
 
     /**
-     * Builds a single marker line: thin 2dp vertical line + rotated label badge.
-     * Badge uses EXPLICIT pixel dimensions (measured text) to avoid AT_MOST clipping.
+     * Adds one shared marker separator for the gap between prevDate and curDate.
+     * End markers are placed first (top), start markers next (bottom).
      */
-    private View buildMarkerLine(String label, int color, int columnHeight) {
-        // Measure text to compute explicit badge dimensions
+    private void addSessionMarkerLines(LinearLayout container, LocalDate prevDate, LocalDate curDate, int columnHeight) {
+        if (sessionDates == null || sessionDates.isEmpty()) {
+            return;
+        }
+
+        List<MarkerSpec> markers = new ArrayList<>();
+
+        for (PlanRepository.SessionPeriod period : sessionDates) {
+            if (prevDate.equals(period.endDate)) {
+                markers.add(new MarkerSpec(
+                        buildPeriodMarkerLabel(period, false),
+                        resolvePeriodMarkerColor(period)));
+            }
+        }
+
+        for (PlanRepository.SessionPeriod period : sessionDates) {
+            if (curDate.equals(period.startDate)) {
+                markers.add(new MarkerSpec(
+                        buildPeriodMarkerLabel(period, true),
+                        resolvePeriodMarkerColor(period)));
+            }
+        }
+
+        if (markers.isEmpty()) {
+            return;
+        }
+
+        container.addView(buildCombinedMarkerLine(markers, columnHeight));
+    }
+
+    private String buildPeriodMarkerLabel(PlanRepository.SessionPeriod period, boolean start) {
+        if (period == null) {
+            return "";
+        }
+        String name = PlanRepository.getPeriodDisplayName(this, period.name);
+        int prefixRes;
+        if (PlanRepository.isSessionPeriodName(period.name)) {
+            prefixRes = start ? R.string.session_start_label : R.string.session_end_label;
+        } else {
+            prefixRes = start ? R.string.calendar_period_start_label : R.string.calendar_period_end_label;
+        }
+        return getString(prefixRes) + " " + name;
+    }
+
+    private int resolvePeriodMarkerColor(PlanRepository.SessionPeriod period) {
+        if (period == null || period.name == null) {
+            int fallback = ThemeManager.resolveColor(this, R.attr.mzAccent);
+            return fallback != 0 ? fallback : 0xFF4F8DFF;
+        }
+
+        String name = period.name.toLowerCase(java.util.Locale.ROOT);
+        if (PlanRepository.isSessionPeriodName(name)) {
+            int red = ThemeManager.resolveColor(this, R.attr.mzDanger);
+            return red != 0 ? red : 0xFFF44336;
+        }
+        if (name.startsWith("przerwa_")) {
+            int accent = ThemeManager.resolveColor(this, R.attr.mzAccent);
+            return accent != 0 ? accent : 0xFF4F8DFF;
+        }
+        if ("wakacje_zimowe".equals(name)) {
+            int primary = ThemeManager.resolveColor(this, R.attr.mzPrimary);
+            return primary != 0 ? primary : 0xFF1976D2;
+        }
+        if ("wakacje_letnie".equals(name)) {
+            int lime = ThemeManager.resolveColor(this, R.attr.mzLime);
+            return lime != 0 ? lime : 0xFF8BC34A;
+        }
+        int fallback = ThemeManager.resolveColor(this, R.attr.mzAccent);
+        return fallback != 0 ? fallback : 0xFF4F8DFF;
+    }
+
+    /**
+     * Builds one separator line that can hold multiple markers ordered top-to-bottom.
+     * The center line uses a vertical gradient based on marker colors.
+     */
+    private View buildCombinedMarkerLine(List<MarkerSpec> markers, int columnHeight) {
         float textSizePx = android.util.TypedValue.applyDimension(
                 android.util.TypedValue.COMPLEX_UNIT_SP, 9f,
                 getResources().getDisplayMetrics());
-        android.graphics.Paint paint = new android.graphics.Paint();
+        android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         paint.setTextSize(textSizePx);
         android.graphics.Paint.FontMetrics fm = paint.getFontMetrics();
 
-        int padH = dpToPx(12); // horizontal padding (left + right)
-        int padV = dpToPx(6);  // vertical padding (top + bottom)
-        int badgeTextWidth = (int) Math.ceil(paint.measureText(label)) + padH;
-        int badgeTextHeight = (int) Math.ceil(fm.descent - fm.ascent) + padV;
+        int padH = dpToPx(12);
+        int padV = dpToPx(6);
+        int badgeHeight = (int) Math.ceil(fm.descent - fm.ascent) + padV;
+        int separatorWidth = Math.max(badgeHeight, dpToPx(20));
+        int markerEdgePadding = dpToPx(8);
 
-        // Separator width = badge visual width after -90° rotation = badgeTextHeight
-        int separatorWidth = Math.max(badgeTextHeight, dpToPx(20));
-
-        // Build separator
         FrameLayout separator = new FrameLayout(this);
-        LinearLayout.LayoutParams sepLp = new LinearLayout.LayoutParams(
-                separatorWidth, columnHeight);
+        separator.setClipChildren(false);
+        separator.setClipToPadding(false);
+        LinearLayout.LayoutParams sepLp = new LinearLayout.LayoutParams(separatorWidth, columnHeight);
         separator.setLayoutParams(sepLp);
 
-        // Thin 2dp vertical line from top to bottom
         View line = new View(this);
-        line.setBackgroundColor(color);
         FrameLayout.LayoutParams lineLp = new FrameLayout.LayoutParams(
                 dpToPx(2), FrameLayout.LayoutParams.MATCH_PARENT);
-        lineLp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        lineLp.gravity = Gravity.CENTER_HORIZONTAL;
         line.setLayoutParams(lineLp);
-        line.setAlpha(0.85f);
+
+        int[] gradientColors = buildMarkerGradientColors(markers);
+        if (gradientColors.length == 1) {
+            line.setBackgroundColor(gradientColors[0]);
+        } else {
+            GradientDrawable lineBg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, gradientColors);
+            line.setBackground(lineBg);
+        }
+        line.setAlpha(0.9f);
         separator.addView(line);
 
-        // Badge: EXPLICIT pixel size so FrameLayout's AT_MOST won't constrain it.
-        // Pre-rotation: width = badgeTextWidth, height = separatorWidth
-        // After -90° rotation: visual width = separatorWidth, visual height = badgeTextWidth
+        int count = markers.size();
+        for (int i = 0; i < count; i++) {
+            MarkerSpec marker = markers.get(i);
+            int badgeTextWidth = (int) Math.ceil(paint.measureText(marker.label)) + padH;
+            TextView badge = buildMarkerBadge(marker, badgeTextWidth, separatorWidth, padH, padV);
+
+            FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
+                    badgeTextWidth, separatorWidth);
+            badgeLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+
+            int badgeVisualHeight = badgeTextWidth;
+            int centerY;
+            if (count == 1) {
+                centerY = columnHeight / 2;
+            } else if (count == 2) {
+                centerY = (i == 0)
+                        ? (badgeVisualHeight / 2 + markerEdgePadding)
+                        : (columnHeight - badgeVisualHeight / 2 - markerEdgePadding);
+            } else {
+                int safeTop = badgeVisualHeight / 2 + markerEdgePadding;
+                int safeBottom = columnHeight - badgeVisualHeight / 2 - markerEdgePadding;
+                if (safeBottom <= safeTop) {
+                    centerY = columnHeight / 2;
+                } else {
+                    float progress = (float) i / (float) (count - 1);
+                    centerY = safeTop + Math.round((safeBottom - safeTop) * progress);
+                }
+            }
+
+            int top = centerY - (separatorWidth / 2);
+            int maxTop = Math.max(0, columnHeight - separatorWidth);
+            badgeLp.topMargin = Math.max(0, Math.min(top, maxTop));
+            badge.setLayoutParams(badgeLp);
+            separator.addView(badge);
+        }
+
+        return separator;
+    }
+
+    private TextView buildMarkerBadge(
+            MarkerSpec marker,
+            int badgeTextWidth,
+            int separatorWidth,
+            int padH,
+            int padV) {
         TextView badge = new TextView(this);
-        badge.setText(label);
+        badge.setText(marker.label);
         badge.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 9f);
         badge.setTextColor(0xFFFFFFFF);
         badge.setSingleLine(true);
         badge.setGravity(Gravity.CENTER);
         badge.setPadding(padH / 2, padV / 2, padH / 2, padV / 2);
-        badge.setRotation(-90f);
+        badge.setRotation(90f);
 
         GradientDrawable badgeBg = new GradientDrawable();
-        badgeBg.setColor(color);
+        badgeBg.setColor(marker.color);
         badgeBg.setCornerRadius(dpToPx(4));
+        badgeBg.setStroke(dpToPx(1), ColorUtils.blendARGB(marker.color, 0xFF000000, 0.22f));
         badge.setBackground(badgeBg);
-
-        // Explicit size: pre-rotation width = text width, height = separator width
-        FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
-                badgeTextWidth, separatorWidth);
-        badgeLp.gravity = android.view.Gravity.CENTER;
-        badge.setLayoutParams(badgeLp);
-        separator.addView(badge);
-
-        return separator;
+        badge.setLayoutParams(new FrameLayout.LayoutParams(badgeTextWidth, separatorWidth));
+        return badge;
     }
 
-    private String getSessionDisplayName(String parsedName) {
-        if (parsedName == null) return "";
-        switch (parsedName) {
-            case "zimowa": return getString(R.string.session_winter);
-            case "letnia": return getString(R.string.session_summer);
-            case "poprawkowa": return getString(R.string.session_retake);
-            default: return parsedName;
+    private int[] buildMarkerGradientColors(List<MarkerSpec> markers) {
+        if (markers == null || markers.isEmpty()) {
+            int fallback = ThemeManager.resolveColor(this, R.attr.mzAccent);
+            return new int[] { fallback != 0 ? fallback : 0xFF4F8DFF };
         }
+        int[] colors = new int[markers.size()];
+        for (int i = 0; i < markers.size(); i++) {
+            colors[i] = markers.get(i).color;
+        }
+        return colors;
     }
-
     private void updateFixedWeekHeaders(List<PlanRepository.DayColumn> rawCols, LocalDate pageDate) {
         if (layoutWeekHeadersRow == null || layoutWeekHeadersFixed == null)
             return;

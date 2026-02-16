@@ -27,94 +27,35 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:baselineAligned="false"
-            android:orientation="horizontal"
-            android:padding="16dp">
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="8dp">
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.33"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:background="@drawable/bg_landscape_panel"
-                android:layout_marginEnd="16dp">
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-                <LinearLayout
-                    android:id="@+id/linksHeaderCard"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/listLinks"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_card_soft"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:id="@+id/textLinksTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/useful_links_header_title"
-                        android:textColor="?attr/mzText"
-                        android:textSize="26sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/textLinksSub"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:text="@string/useful_links_header_sub"
-                        android:textColor="?attr/mzMuted"
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.67"
-                android:orientation="vertical"
-                android:background="@drawable/bg_landscape_panel"
-                android:padding="12dp">
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingBottom="18dp"
+                    android:scrollbars="vertical" />
 
                 <TextView
-                    android:id="@+id/textLinksSectionTitle"
-                    android:layout_width="match_parent"
+                    android:id="@+id/tvLinksEmpty"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="@string/useful_links_section_title"
-                    android:textColor="?attr/mzText"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/listLinks"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:clipToPadding="false"
-                        android:paddingBottom="16dp"
-                        android:scrollbars="vertical" />
-
-                    <TextView
-                        android:id="@+id/tvLinksEmpty"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:gravity="center"
-                        android:text="@string/useful_links_empty"
-                        android:textColor="?attr/mzMuted"
-                        android:textSize="14sp"
-                        android:visibility="gone" />
-                </FrameLayout>
-            </LinearLayout>
-
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:text="@string/useful_links_empty"
+                    android:textColor="?attr/mzMuted"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+            </FrameLayout>
         </LinearLayout>
     </LinearLayout>
 

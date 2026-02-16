@@ -1,38 +1,29 @@
 package pl.kejlo.mzutv2;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
-import android.content.Intent;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.core.os.LocaleListCompat;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private Spinner spinnerLanguage;
+
     @Override
     protected void attachBaseContext(Context newBase) {
-        // Keep behavior consistent with InfoActivity / NewsDetailActivity
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
-
-    private static final String PREFS_SETTINGS = "mzut_settings";
-    private static final String KEY_APP_LANGUAGE = "app_language"; // "pl" / "en" / "uk"
-
-    private Spinner spinnerLanguage;
-    private LinearLayout contentRoot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,25 +33,15 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
         ThemeManager.applySystemBars(this);
 
-        contentRoot = findViewById(R.id.contentRoot);
-        // Toolbar setup, same pattern as other screens
         Toolbar toolbar = findViewById(R.id.toolbar);
-
-        // ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
-        //    Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-        //    v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-        //    return WindowInsetsCompat.CONSUMED;
-        // });
-
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(R.string.settings_title);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
         spinnerLanguage = findViewById(R.id.spinnerLanguage);
 
-        // Adapter with custom dark layout (white text), same style as in InfoActivity
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this,
                 R.array.settings_language_entries,
@@ -68,22 +49,14 @@ public class SettingsActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerLanguage.setAdapter(adapter);
 
-        // Load current language setting
-        String currentLang = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
-                .getString(KEY_APP_LANGUAGE, "pl");
+        String currentLang = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                .getString(SettingsPrefs.KEY_APP_LANGUAGE, SettingsPrefs.DEFAULT_APP_LANGUAGE);
 
         String[] values = getResources().getStringArray(R.array.settings_language_values);
-        int initialPos = 0; // Default to first (PL)
-        for (int i = 0; i < values.length; i++) {
-            if (values[i].equals(currentLang)) {
-                initialPos = i;
-                break;
-            }
-        }
+        int initialPos = findValuePosition(values, currentLang, 0);
         spinnerLanguage.setSelection(initialPos);
 
         spinnerLanguage.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
             boolean firstCall = true;
 
             @Override
@@ -93,23 +66,19 @@ public class SettingsActivity extends AppCompatActivity {
                     return;
                 }
 
-                // Get values dynamically
                 String[] values = getResources().getStringArray(R.array.settings_language_values);
-                String langCode = "pl";
+                String langCode = SettingsPrefs.DEFAULT_APP_LANGUAGE;
                 if (position >= 0 && position < values.length) {
                     langCode = values[position];
                 }
-
                 applyLanguage(langCode);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // no-op
             }
         });
 
-        // Widget Refresh Setup
         Spinner spinnerRefresh = findViewById(R.id.spinnerWidgetRefresh);
         ArrayAdapter<CharSequence> adapterRefresh = ArrayAdapter.createFromResource(
                 this,
@@ -118,18 +87,16 @@ public class SettingsActivity extends AppCompatActivity {
         adapterRefresh.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerRefresh.setAdapter(adapterRefresh);
 
-        // Load current
-        SharedPreferences prefs = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE);
-        String currentRefreshVal = prefs.getString("widget_refresh_interval", "30"); // default 30
+        SharedPreferences prefs = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+        String currentRefreshVal = prefs.getString(
+                SettingsPrefs.KEY_WIDGET_REFRESH_INTERVAL,
+                SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL);
 
         String[] refreshValues = getResources().getStringArray(R.array.settings_widget_refresh_values);
-        int refreshPos = 1; // Default to 30 (index 1)
-        for (int i = 0; i < refreshValues.length; i++) {
-            if (refreshValues[i].equals(currentRefreshVal)) {
-                refreshPos = i;
-                break;
-            }
-        }
+        int refreshPos = findValuePosition(
+                refreshValues,
+                currentRefreshVal,
+                findValuePosition(refreshValues, SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL, 0));
         spinnerRefresh.setSelection(refreshPos);
 
         spinnerRefresh.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -141,15 +108,16 @@ public class SettingsActivity extends AppCompatActivity {
                     firstCall = false;
                     return;
                 }
+                if (position < 0 || position >= refreshValues.length) {
+                    return;
+                }
                 String val = refreshValues[position];
-                getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
                         .edit()
-                        .putString("widget_refresh_interval", val)
+                        .putString(SettingsPrefs.KEY_WIDGET_REFRESH_INTERVAL, val)
                         .apply();
 
-                // Reschedule widget
                 PlanDayWidgetProvider.rescheduleRefresh(SettingsActivity.this);
-
                 Toast.makeText(SettingsActivity.this, R.string.settings_widget_refresh_saved, Toast.LENGTH_SHORT).show();
             }
 
@@ -158,7 +126,6 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
-        // Theme Setup
         Spinner spinnerTheme = findViewById(R.id.spinnerTheme);
         ArrayAdapter<CharSequence> adapterTheme = ArrayAdapter.createFromResource(
                 this,
@@ -169,13 +136,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         String currentTheme = ThemeManager.getTheme(this);
         String[] themeValues = getResources().getStringArray(R.array.settings_theme_values);
-        int themePos = 0;
-        for (int i = 0; i < themeValues.length; i++) {
-            if (themeValues[i].equals(currentTheme)) {
-                themePos = i;
-                break;
-            }
-        }
+        int themePos = findValuePosition(themeValues, currentTheme, 0);
         spinnerTheme.setSelection(themePos);
 
         spinnerTheme.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -187,13 +148,15 @@ public class SettingsActivity extends AppCompatActivity {
                     firstCall = false;
                     return;
                 }
+                if (position < 0 || position >= themeValues.length) {
+                    return;
+                }
                 String val = themeValues[position];
                 String current = ThemeManager.getTheme(SettingsActivity.this);
                 if (!val.equals(current)) {
                     ThemeManager.setTheme(SettingsActivity.this, val);
                     Toast.makeText(SettingsActivity.this, R.string.settings_theme_changed, Toast.LENGTH_SHORT).show();
 
-                    // Restart app with cleared back stack to apply theme everywhere
                     Intent i = new Intent(SettingsActivity.this, HomeActivity.class);
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(i);
@@ -205,7 +168,6 @@ public class SettingsActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-
     }
 
     @Override
@@ -224,7 +186,6 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Back arrow in toolbar, same behavior as in NewsDetailActivity
         if (item.getItemId() == android.R.id.home) {
             finish();
             return true;
@@ -233,8 +194,8 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void applyLanguage(String langCode) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE);
-        prefs.edit().putString(KEY_APP_LANGUAGE, langCode).apply();
+        SharedPreferences prefs = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+        prefs.edit().putString(SettingsPrefs.KEY_APP_LANGUAGE, langCode).apply();
 
         LocaleListCompat appLocale = LocaleListCompat.forLanguageTags(langCode);
         AppCompatDelegate.setApplicationLocales(appLocale);
@@ -244,10 +205,24 @@ public class SettingsActivity extends AppCompatActivity {
                 getString(R.string.settings_language_changed_toast),
                 Toast.LENGTH_SHORT).show();
 
-        // Restart app with cleared back stack to apply language everywhere
         Intent i = new Intent(this, HomeActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();
+    }
+
+    private int findValuePosition(String[] values, String value, int fallback) {
+        if (values == null || values.length == 0) {
+            return fallback;
+        }
+        if (value == null) {
+            return fallback;
+        }
+        for (int i = 0; i < values.length; i++) {
+            if (value.equals(values[i])) {
+                return i;
+            }
+        }
+        return fallback;
     }
 }

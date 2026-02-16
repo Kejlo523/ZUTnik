@@ -35,12 +35,11 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             Locale.getDefault());
 
     private static final DateTimeFormatter TIME_LABEL = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter SHORT_DATE_LABEL = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
-    private static final String PREFS_SETTINGS = "mzut_settings";
-    // private static final long REFRESH_INTERVAL_MS = 30L * 60L * 1000L; // Removed
-    // constant
+    private static final long NO_CLASSES_WIDGET_REFRESH_MINUTES = 12L * 60L;
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -96,7 +95,8 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                     updateOneWidget(context, mgr, appWidgetId);
                     mgr.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
                 }
-        result.finish();
+                schedulePeriodicRefresh(context);
+                result.finish();
             });
         }
     }
@@ -106,26 +106,16 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         MzutSession s = MzutSession.getInstance();
         return s.getUserId() != null && s.getAuthKey() != null;
     }
-
     private void updateOneWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_glass);
 
-        // Apply Theme Background
         String theme = ThemeManager.getTheme(context);
-        int bgRes = R.drawable.bg_widget_dark_glass; // Default
         int textColorPrimary = context.getColor(R.color.glass_text_primary);
         int textColorSecondary = context.getColor(R.color.glass_text_secondary);
 
         switch (theme) {
             case ThemeManager.THEME_DEEP_BLUE:
-                // Deep Blue Glass (reuse existing drawable or similar tint)
-                views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
-                // Maybe tint it blue? For now keep glass.
-                break;
             case ThemeManager.THEME_LIME:
-                // Lime theme uses the same glass background for now
-                views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
-                break;
             default:
                 views.setInt(R.id.widgetRoot, "setBackgroundResource", R.drawable.bg_widget_dark_glass);
                 break;
@@ -134,7 +124,6 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         views.setTextColor(R.id.widgetDate, textColorPrimary);
         views.setTextColor(R.id.widgetSubtitle, textColorSecondary);
         views.setTextColor(R.id.widgetLastRefresh, textColorSecondary);
-        // Loading spinner tint
         views.setInt(R.id.widgetRefresh, "setColorFilter", textColorSecondary);
 
         views.setViewVisibility(R.id.widgetRefresh, android.view.View.VISIBLE);
@@ -146,87 +135,85 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
         LocalDate targetDate = today;
         String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
+        boolean hideList = false;
 
         boolean hasSession = ensureSessionFromPrefs(context);
 
         if (hasSession) {
             try {
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
-                Set<String> hiddenSubjectKeys = context
-                        .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
-                        .getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
+                List<PlanRepository.SessionPeriod> periods = repo.fetchSessionDates();
+                PlanRepository.SessionPeriod activeNoClasses =
+                        PlanRepository.findActivePeriod(periods, today, true);
 
-                // Load current week AND next week to ensure we find future events
-                PlanRepository.PlanResult weekResult = repo.loadPlan("week", today);
-                PlanRepository.PlanResult nextWeekResult = repo.loadPlan("week", today.plusDays(7));
-
-                // Merge next week's data into result
-                if (nextWeekResult != null && nextWeekResult.dayColumns != null && weekResult != null) {
-                    if (weekResult.dayColumns == null) {
-                        weekResult.dayColumns = new java.util.ArrayList<>();
-                    }
-                    for (PlanRepository.DayColumn col : nextWeekResult.dayColumns) {
-                        // Only add if not already present
-                        boolean found = false;
-                        for (PlanRepository.DayColumn existing : weekResult.dayColumns) {
-                            if (existing.date != null && existing.date.equals(col.date)) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            weekResult.dayColumns.add(col);
-                        }
-                    }
-                }
-
-                // Now find the suitable day to show
-                targetDate = findBestDateToShow(weekResult, today, nowMin, hiddenSubjectKeys);
-
-                // Determine subtitle based on what we found
-                if (targetDate.equals(today)) {
-                    // Check if we have upcoming events today
-                    List<PlanRepository.PlanEventUi> eventsToday = getEventsForDate(weekResult, today,
-                            hiddenSubjectKeys);
-                    List<PlanRepository.PlanEventUi> upcoming = new ArrayList<>();
-                    for (PlanRepository.PlanEventUi ev : eventsToday) {
-                        if (ev.endMin > nowMin)
-                            upcoming.add(ev);
-                    }
-
-                    if (!upcoming.isEmpty()) {
-                        PlanRepository.PlanEventUi next = upcoming.get(0);
-                        if (next.startMin <= nowMin) {
-                            subtitleText = context.getString(R.string.plan_widget_subtitle_in_progress);
-                        } else {
-                            int diffMin = next.startMin - nowMin;
-                            int h = diffMin / 60;
-                            int m = diffMin % 60;
-                            if (h > 0) {
-                                String hours = h + context.getString(R.string.plan_widget_hours_suffix);
-                                String minutes = m > 0 ? " " + m + context.getString(R.string.plan_widget_minutes_suffix) : "";
-                                subtitleText = context.getString(R.string.plan_widget_subtitle_next_prefix) + hours + minutes;
-                            } else {
-                                subtitleText = context.getString(R.string.plan_widget_subtitle_next_prefix)
-                                        + m + context.getString(R.string.plan_widget_minutes_suffix);
-                            }
-                        }
-                    } else {
-                        // All events today passed, but findBestDateToShow returned today?
-                        // This implies no future events found at all, or logic decided to stay on
-                        // today.
-                        // Actually, if findBestDateToShow returns today but no upcoming,
-                        // it means there were NO events in future days either.
-                        subtitleText = context.getString(R.string.plan_widget_subtitle_today);
-                    }
-                } else if (targetDate.equals(today.plusDays(1))) {
-                    subtitleText = context.getString(R.string.plan_widget_subtitle_tomorrow);
+                if (activeNoClasses != null) {
+                    LocalDate nextClassesDate = activeNoClasses.endDate.plusDays(1);
+                    String periodLabel = PlanRepository.getPeriodDisplayName(context, activeNoClasses.name);
+                    subtitleText = context.getString(
+                            R.string.plan_widget_subtitle_no_classes_until,
+                            periodLabel,
+                            nextClassesDate.format(SHORT_DATE_LABEL));
+                    targetDate = nextClassesDate;
+                    hideList = true;
                 } else {
-                    String dayName = targetDate.format(DAY_OF_WEEK_LABEL);
-                    dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1);
-                    subtitleText = dayName;
-                }
+                    Set<String> hiddenSubjectKeys = context
+                            .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
+                            .getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
 
+                    PlanRepository.PlanResult weekResult = repo.loadPlan("week", today);
+                    PlanRepository.PlanResult nextWeekResult = repo.loadPlan("week", today.plusDays(7));
+
+                    if (nextWeekResult != null && nextWeekResult.dayColumns != null && weekResult != null) {
+                        if (weekResult.dayColumns == null) {
+                            weekResult.dayColumns = new ArrayList<>();
+                        }
+                        for (PlanRepository.DayColumn col : nextWeekResult.dayColumns) {
+                            boolean found = false;
+                            for (PlanRepository.DayColumn existing : weekResult.dayColumns) {
+                                if (existing.date != null && existing.date.equals(col.date)) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                weekResult.dayColumns.add(col);
+                            }
+                        }
+                    }
+
+                    targetDate = findBestDateToShow(weekResult, today, nowMin, hiddenSubjectKeys);
+                    LocalDate tomorrow = today.plusDays(1);
+                    boolean tomorrowHasClasses = !getEventsForDate(weekResult, tomorrow, hiddenSubjectKeys).isEmpty();
+
+                    if (targetDate.equals(today)) {
+                        List<PlanRepository.PlanEventUi> eventsToday = getEventsForDate(weekResult, today, hiddenSubjectKeys);
+                        List<PlanRepository.PlanEventUi> upcoming = new ArrayList<>();
+                        for (PlanRepository.PlanEventUi ev : eventsToday) {
+                            if (ev.endMin > nowMin) {
+                                upcoming.add(ev);
+                            }
+                        }
+
+                        if (!upcoming.isEmpty()) {
+                            PlanRepository.PlanEventUi next = upcoming.get(0);
+                            if (next.startMin <= nowMin) {
+                                subtitleText = context.getString(R.string.plan_widget_subtitle_in_progress);
+                            } else {
+                                subtitleText = formatNextClassSubtitle(context, next.startMin - nowMin);
+                            }
+                        } else {
+                            subtitleText = context.getString(R.string.plan_widget_subtitle_today);
+                        }
+                    } else if (!tomorrowHasClasses) {
+                        subtitleText = context.getString(R.string.plan_widget_subtitle_no_classes_tomorrow);
+                    } else if (targetDate.equals(tomorrow)) {
+                        subtitleText = context.getString(R.string.plan_widget_subtitle_tomorrow);
+                    } else {
+                        String dayName = targetDate.format(DAY_OF_WEEK_LABEL);
+                        dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1);
+                        subtitleText = dayName;
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -234,9 +221,10 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             subtitleText = context.getString(R.string.plan_widget_subtitle_login_required);
         }
 
-        String dateLabel = targetDate.format(DATE_LABEL);
+        String dateLabel = hideList ? today.format(DATE_LABEL) : targetDate.format(DATE_LABEL);
         views.setTextViewText(R.id.widgetDate, dateLabel);
         views.setTextViewText(R.id.widgetSubtitle, subtitleText);
+        views.setViewVisibility(R.id.widgetList, hideList ? android.view.View.GONE : android.view.View.VISIBLE);
 
         String refreshedLabel = context.getString(R.string.plan_widget_refreshed_prefix)
                 + " " + LocalTime.now().format(TIME_LABEL);
@@ -279,6 +267,23 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         views.setPendingIntentTemplate(R.id.widgetList, rowPI);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+    private String formatNextClassSubtitle(Context context, int diffMin) {
+        if (diffMin <= 0) {
+            return context.getString(R.string.plan_widget_subtitle_in_progress);
+        }
+
+        int hours = diffMin / 60;
+        int minutes = diffMin % 60;
+        String timePart;
+        if (hours > 0 && minutes > 0) {
+            timePart = context.getString(R.string.plan_widget_time_hours_minutes, hours, minutes);
+        } else if (hours > 0) {
+            timePart = context.getString(R.string.plan_widget_time_hours, hours);
+        } else {
+            timePart = context.getString(R.string.plan_widget_time_minutes, minutes);
+        }
+        return context.getString(R.string.plan_widget_subtitle_next_in_format, timePart);
     }
 
     private LocalDate findBestDateToShow(PlanRepository.PlanResult weekResult, LocalDate today, int nowMin,
@@ -330,12 +335,14 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         if (am == null)
             return;
 
-        // 1. Cancel existing
         cancelPeriodicRefresh(context);
 
-        // 2. Read interval
-        String intervalStr = context.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE)
-                .getString("widget_refresh_interval", "30");
+        String intervalStr = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE)
+                .getString(
+                        SettingsPrefs.KEY_WIDGET_REFRESH_INTERVAL,
+                        SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL);
         long intervalMin = 30;
         try {
             intervalMin = Long.parseLong(intervalStr);
@@ -344,8 +351,16 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         }
 
         if (intervalMin <= 0) {
-            // "Never" / Manual only
             return;
+        }
+
+        List<PlanRepository.SessionPeriod> cachedPeriods = PlanRepository.getCachedSessionDates(context);
+        PlanRepository.SessionPeriod activeNoClasses = PlanRepository.findActivePeriod(
+                cachedPeriods,
+                LocalDate.now(),
+                true);
+        if (activeNoClasses != null) {
+            intervalMin = Math.max(intervalMin, NO_CLASSES_WIDGET_REFRESH_MINUTES);
         }
 
         long intervalMs = intervalMin * 60L * 1000L;
@@ -356,7 +371,6 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + intervalMs,
                 intervalMs, pi);
-
     }
 
     public static void rescheduleRefresh(Context context) {

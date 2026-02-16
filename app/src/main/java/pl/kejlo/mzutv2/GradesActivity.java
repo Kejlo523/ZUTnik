@@ -49,7 +49,6 @@ public class GradesActivity extends MzutBaseActivity {
     // Grades cache – valid for 7 days
     private static final long GRADES_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L; // 7 days
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
-    private static final String PREFS_SETTINGS = "mzut_settings";
     private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
 
     private DrawerLayout drawerLayout;
@@ -137,7 +136,7 @@ public class GradesActivity extends MzutBaseActivity {
 
         // RecyclerView
         listGrades.setLayoutManager(new LinearLayoutManager(this));
-        groupingEnabled = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+        groupingEnabled = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
                 .getBoolean(KEY_GRADES_GROUPING, true);
         flatAdapter = new GradesAdapter(currentGradesRaw);
         groupedAdapter = new GroupedGradesAdapter();
@@ -189,7 +188,7 @@ public class GradesActivity extends MzutBaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_toggle_grouping) {
             groupingEnabled = !groupingEnabled;
-            getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
                     .edit()
                     .putBoolean(KEY_GRADES_GROUPING, groupingEnabled)
                     .apply();

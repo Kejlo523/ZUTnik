@@ -262,10 +262,15 @@
     <string name="plan_widget_subtitle_today">Сьогоднішні заняття</string>
     <string name="plan_widget_subtitle_in_progress">Заняття тривають</string>
     <string name="plan_widget_subtitle_next_prefix">Найближчі за </string>
+    <string name="plan_widget_subtitle_next_in_format">Найближчі за %1$s</string>
     <string name="plan_widget_hours_suffix"> год</string>
     <string name="plan_widget_minutes_suffix"> хв</string>
+    <string name="plan_widget_time_hours_minutes">%1$d год %2$d хв</string>
+    <string name="plan_widget_time_hours">%1$d год</string>
+    <string name="plan_widget_time_minutes">%1$d хв</string>
     <string name="plan_widget_subtitle_no_classes_tomorrow">Немає занять завтра</string>
     <string name="plan_widget_subtitle_tomorrow">Завтрашні заняття</string>
+    <string name="plan_widget_subtitle_no_classes_until">%1$s · немає занять до %2$s</string>
     <string name="plan_widget_subtitle_login_required">
         Увійдіть в застосунок mZUT
     </string>
@@ -317,15 +322,24 @@
     <string name="settings_subtitle">
         Виберіть мову інтерфейсу. Зміна може вимагати повторного запуску застосунку.
     </string>
+    <string name="settings_section_appearance">Вигляд і мова</string>
+    <string name="settings_section_widget">Віджет</string>
     <string name="settings_widget_refresh_saved">Налаштування віджета збережено</string>
     <string name="settings_theme_label">Тема додатка</string>
+    <string name="settings_theme_default">Типова</string>
+    <string name="settings_theme_description">Оберіть кольорову тему інтерфейсу.</string>
     <string name="settings_widget_refresh_label">Частота оновлення віджета</string>
+    <string name="settings_widget_refresh_description">
+        Вкажіть, як часто віджет має оновлюватися у фоновому режимі.
+    </string>
     <string name="settings_theme_changed">Тему змінено</string>
 
     <string name="settings_language_label">Мова застосунку</string>
     <string name="settings_language_polish">Польська</string>
     <string name="settings_language_english">Англійська</string>
     <string name="settings_language_ukrainian">Українська</string>
+    <string name="settings_language_german">Німецька</string>
+    <string name="settings_language_pirate">Польська (Піратська)</string>
 
     <string name="settings_language_info_hint">
         Зміна мови може вимагати повторного запуску застосунку.
@@ -334,6 +348,14 @@
     <string name="settings_language_changed_toast">
         Мову змінено. Інтерфейс було перезавантажено.
     </string>
+    <string name="settings_widget_refresh_entry_15m">15 хв</string>
+    <string name="settings_widget_refresh_entry_30m_default">30 хв (типово)</string>
+    <string name="settings_widget_refresh_entry_45m">45 хв</string>
+    <string name="settings_widget_refresh_entry_1h">1 год</string>
+    <string name="settings_widget_refresh_entry_2h">2 год</string>
+    <string name="settings_widget_refresh_entry_3h">3 год</string>
+    <string name="settings_widget_refresh_entry_4h">4 год</string>
+    <string name="settings_widget_refresh_entry_manual">Ніколи (вручну)</string>
 
     <string name="useful_links_header_title">Ваші найважливіші адреси в одному місці</string>
     <string name="useful_links_header_sub">
@@ -517,6 +539,13 @@
     <string name="session_winter">зимової</string>
     <string name="session_summer">літньої</string>
     <string name="session_retake">перескладання</string>
+    <string name="calendar_period_start_label">Початок</string>
+    <string name="calendar_period_end_label">Кінець</string>
+    <string name="period_break_winter_semester">перерви від занять (зимовий семестр)</string>
+    <string name="period_break_summer_semester">перерви від занять (літній семестр)</string>
+    <string name="period_break_generic">перерви від занять</string>
+    <string name="period_holiday_winter">зимових канікул</string>
+    <string name="period_holiday_summer">літніх канікул</string>
 
     <!-- Extracted Strings -->
     <string name="useful_links_header_desc">Збірка найважливіших сервісів та сторінок університету.</string>
