@@ -33,11 +33,16 @@ public class BackgroundSyncWorker extends Worker {
 
     private static final String TAG = "mZUTv2-BgSync";
 
-    private static final String PREFS_BG = "mzut_background_sync_cache";
-    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
-    private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v1";
-    private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
-    private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v1";
+    static final String PREFS_BG = "mzut_background_sync_cache";
+    static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
+    static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v1";
+    static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
+    static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v1";
+
+    public static final String INPUT_DEBUG_RUN_ONCE = "input_debug_run_once";
+    public static final String INPUT_DEBUG_FORCE_GRADES = "input_debug_force_grades";
+    public static final String INPUT_DEBUG_FORCE_PLAN = "input_debug_force_plan";
+    public static final String INPUT_DEBUG_IGNORE_ACADEMIC_WINDOW = "input_debug_ignore_academic_window";
 
     private static final int NOTIF_ID_GRADES = 9101;
     private static final int NOTIF_ID_PLAN = 9102;
@@ -54,21 +59,32 @@ public class BackgroundSyncWorker extends Worker {
         Context context = getApplicationContext();
         MzutSession.initializeFromPreferences(context);
 
+        boolean debugRunOnce = getInputData().getBoolean(INPUT_DEBUG_RUN_ONCE, false);
+        boolean forceGrades = getInputData().getBoolean(INPUT_DEBUG_FORCE_GRADES, false);
+        boolean forcePlan = getInputData().getBoolean(INPUT_DEBUG_FORCE_PLAN, false);
+        boolean ignoreAcademicWindow = getInputData().getBoolean(INPUT_DEBUG_IGNORE_ACADEMIC_WINDOW, false);
+
         try {
-            if (!canRunChecks(context)) {
+            if (!canRunChecks(context, debugRunOnce)) {
                 return Result.success();
             }
 
-            if (!isWithinAcademicNotificationWindow(context)) {
+            if (!ignoreAcademicWindow && !isWithinAcademicNotificationWindow(context)) {
                 Log.d(TAG, "Skipping checks outside didactic/session period.");
                 return Result.success();
             }
 
-            if (NotificationSyncManager.isGradesEnabled(context)) {
+            boolean shouldCheckGrades = debugRunOnce ? forceGrades : NotificationSyncManager.isGradesEnabled(context);
+            boolean shouldCheckPlan = debugRunOnce
+                    ? forcePlan
+                    : (NotificationSyncManager.isPlanEnabled(context)
+                            && NotificationSyncManager.isAnyPlanCategoryEnabled(context));
+
+            if (shouldCheckGrades) {
                 checkGrades(context);
             }
 
-            if (NotificationSyncManager.isPlanEnabled(context) && NotificationSyncManager.isAnyPlanCategoryEnabled(context)) {
+            if (shouldCheckPlan) {
                 checkPlanChanges(context);
             }
             return Result.success();
@@ -84,17 +100,34 @@ public class BackgroundSyncWorker extends Worker {
         }
     }
 
-    private boolean canRunChecks(Context context) {
+    private boolean canRunChecks(Context context, boolean debugRunOnce) {
         MzutSession session = MzutSession.getInstance();
         boolean hasSession = session.getUserId() != null && session.getAuthKey() != null;
         if (!hasSession) {
             NotificationSyncManager.cancelWorker(context);
             return false;
         }
+        if (debugRunOnce) {
+            return true;
+        }
         if (!NotificationSyncManager.hasNotificationPermission(context)) {
             return false;
         }
         return NotificationSyncManager.isAnyFeatureEnabled(context);
+    }
+
+    public static void clearBaselines(Context context) {
+        if (context == null) {
+            return;
+        }
+        context.getApplicationContext()
+                .getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_GRADES_BASELINE_READY)
+                .remove(KEY_GRADES_BASELINE_JSON)
+                .remove(KEY_PLAN_BASELINE_READY)
+                .remove(KEY_PLAN_BASELINE_JSON)
+                .apply();
     }
 
     private boolean isWithinAcademicNotificationWindow(Context context) {

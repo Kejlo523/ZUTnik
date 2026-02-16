@@ -10,8 +10,10 @@ import android.os.Build;
 
 import androidx.core.content.ContextCompat;
 import androidx.work.Constraints;
+import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
@@ -143,6 +145,32 @@ public final class NotificationSyncManager {
 
     public static void cancelWorker(Context context) {
         WorkManager.getInstance(context.getApplicationContext()).cancelUniqueWork(UNIQUE_WORK_NAME);
+    }
+
+    public static void runDebugSyncNow(
+            Context context,
+            boolean forceGrades,
+            boolean forcePlan,
+            boolean ignoreAcademicWindow) {
+        Context appContext = context.getApplicationContext();
+        Data input = new Data.Builder()
+                .putBoolean(BackgroundSyncWorker.INPUT_DEBUG_RUN_ONCE, true)
+                .putBoolean(BackgroundSyncWorker.INPUT_DEBUG_FORCE_GRADES, forceGrades)
+                .putBoolean(BackgroundSyncWorker.INPUT_DEBUG_FORCE_PLAN, forcePlan)
+                .putBoolean(BackgroundSyncWorker.INPUT_DEBUG_IGNORE_ACADEMIC_WINDOW, ignoreAcademicWindow)
+                .build();
+
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
+                .build();
+
+        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(BackgroundSyncWorker.class)
+                .setInputData(input)
+                .setConstraints(constraints)
+                .build();
+
+        WorkManager.getInstance(appContext).enqueue(request);
     }
 
     public static void ensureChannels(Context context) {

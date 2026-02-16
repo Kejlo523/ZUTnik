@@ -1,15 +1,20 @@
 package pl.kejlo.mzutv2;
 
 import android.Manifest;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -21,9 +26,17 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.os.LocaleListCompat;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
 public class SettingsActivity extends AppCompatActivity {
+    private static final String DEBUG_USER_LOGIN = "nj57796";
+    private static final DateTimeFormatter DEBUG_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.getDefault());
 
     private Spinner spinnerLanguage;
     private SwitchMaterial switchNotifMaster;
@@ -33,8 +46,20 @@ public class SettingsActivity extends AppCompatActivity {
     private SwitchMaterial switchNotifPlanCancelled;
     private SwitchMaterial switchNotifPlanAdded;
     private LinearLayout layoutPlanNotifCategories;
+    private LinearLayout settingsDebugSectionContainer;
+    private SwitchMaterial switchDebugTools;
+    private SwitchMaterial switchDebugRunGrades;
+    private SwitchMaterial switchDebugRunPlan;
+    private SwitchMaterial switchDebugIgnoreCalendar;
+    private LinearLayout layoutDebugToolsBody;
+    private Button btnDebugRunNow;
+    private Button btnDebugResetBaselines;
+    private Button btnDebugTestGradesNotif;
+    private Button btnDebugTestPlanNotif;
+    private Button btnDebugExpireSession;
 
     private boolean internalNotifUiChange = false;
+    private boolean internalDebugUiChange = false;
     private boolean pendingEnableByPermission = false;
     private ActivityResultLauncher<String> notificationPermissionLauncher;
 
@@ -189,6 +214,7 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         setupNotificationSettings();
+        setupDebugToolsSection();
     }
 
     private void setupNotificationPermissionLauncher() {
@@ -371,6 +397,434 @@ public class SettingsActivity extends AppCompatActivity {
         if (layoutPlanNotifCategories != null) {
             layoutPlanNotifCategories.setAlpha(planEnabled ? 1f : 0.45f);
         }
+    }
+
+    private void setupDebugToolsSection() {
+        settingsDebugSectionContainer = findViewById(R.id.settingsDebugSectionContainer);
+        switchDebugTools = findViewById(R.id.switchDebugTools);
+        switchDebugRunGrades = findViewById(R.id.switchDebugRunGrades);
+        switchDebugRunPlan = findViewById(R.id.switchDebugRunPlan);
+        switchDebugIgnoreCalendar = findViewById(R.id.switchDebugIgnoreCalendar);
+        layoutDebugToolsBody = findViewById(R.id.layoutDebugToolsBody);
+        btnDebugRunNow = findViewById(R.id.btnDebugRunNow);
+        btnDebugResetBaselines = findViewById(R.id.btnDebugResetBaselines);
+        btnDebugTestGradesNotif = findViewById(R.id.btnDebugTestGradesNotif);
+        btnDebugTestPlanNotif = findViewById(R.id.btnDebugTestPlanNotif);
+        btnDebugExpireSession = findViewById(R.id.btnDebugExpireSession);
+
+        if (settingsDebugSectionContainer == null
+                || switchDebugTools == null
+                || switchDebugRunGrades == null
+                || switchDebugRunPlan == null
+                || switchDebugIgnoreCalendar == null
+                || layoutDebugToolsBody == null
+                || btnDebugRunNow == null
+                || btnDebugResetBaselines == null
+                || btnDebugTestGradesNotif == null
+                || btnDebugTestPlanNotif == null
+                || btnDebugExpireSession == null) {
+            return;
+        }
+
+        if (!isDebugUser()) {
+            settingsDebugSectionContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        settingsDebugSectionContainer.setVisibility(View.VISIBLE);
+        bindDebugControlsFromPrefs();
+
+        switchDebugTools.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalDebugUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_DEBUG_TOOLS_ENABLED, isChecked)
+                    .apply();
+            updateDebugControlsState();
+            Toast.makeText(this, R.string.settings_debug_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchDebugRunGrades.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalDebugUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_DEBUG_RUN_GRADES, isChecked)
+                    .apply();
+            Toast.makeText(this, R.string.settings_debug_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchDebugRunPlan.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalDebugUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_DEBUG_RUN_PLAN, isChecked)
+                    .apply();
+            Toast.makeText(this, R.string.settings_debug_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchDebugIgnoreCalendar.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalDebugUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_DEBUG_IGNORE_CALENDAR, isChecked)
+                    .apply();
+            Toast.makeText(this, R.string.settings_debug_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        btnDebugRunNow.setOnClickListener(v -> {
+            if (!isDebugEnabled()) {
+                Toast.makeText(this, R.string.settings_debug_not_available, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            boolean runGrades = switchDebugRunGrades.isChecked();
+            boolean runPlan = switchDebugRunPlan.isChecked();
+            if (!runGrades && !runPlan) {
+                Toast.makeText(this, R.string.settings_debug_select_scope, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            NotificationSyncManager.runDebugSyncNow(
+                    this,
+                    runGrades,
+                    runPlan,
+                    switchDebugIgnoreCalendar.isChecked());
+
+            if (!NotificationSyncManager.hasNotificationPermission(this)) {
+                Toast.makeText(this, R.string.settings_debug_missing_notifications_permission, Toast.LENGTH_SHORT).show();
+            }
+            Toast.makeText(this, R.string.settings_debug_run_started, Toast.LENGTH_SHORT).show();
+        });
+
+        btnDebugResetBaselines.setOnClickListener(v -> {
+            if (!isDebugEnabled()) {
+                Toast.makeText(this, R.string.settings_debug_not_available, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            BackgroundSyncWorker.clearBaselines(this);
+            Toast.makeText(this, R.string.settings_debug_baselines_reset, Toast.LENGTH_SHORT).show();
+        });
+
+        btnDebugTestGradesNotif.setOnClickListener(v -> {
+            if (!isDebugEnabled()) {
+                Toast.makeText(this, R.string.settings_debug_not_available, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!NotificationSyncManager.hasNotificationPermission(this)) {
+                Toast.makeText(this, R.string.settings_debug_missing_notifications_permission, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showDebugGradeSimulationDialog();
+        });
+
+        btnDebugTestPlanNotif.setOnClickListener(v -> {
+            if (!isDebugEnabled()) {
+                Toast.makeText(this, R.string.settings_debug_not_available, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!NotificationSyncManager.hasNotificationPermission(this)) {
+                Toast.makeText(this, R.string.settings_debug_missing_notifications_permission, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showDebugPlanSimulationDialog();
+        });
+
+        btnDebugExpireSession.setOnClickListener(v -> {
+            if (!isDebugEnabled()) {
+                Toast.makeText(this, R.string.settings_debug_not_available, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            SessionExpiryManager.handleSessionExpired(getApplicationContext(), "DEBUG_TOOL");
+            finish();
+        });
+    }
+
+    private boolean isDebugUser() {
+        MzutSession.initializeFromPreferences(this);
+        String userId = MzutSession.getInstance().getUserId();
+        return userId != null && DEBUG_USER_LOGIN.equalsIgnoreCase(userId.trim());
+    }
+
+    private boolean isDebugEnabled() {
+        return isDebugUser() && switchDebugTools != null && switchDebugTools.isChecked();
+    }
+
+    private void bindDebugControlsFromPrefs() {
+        SharedPreferences prefs = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+        internalDebugUiChange = true;
+        switchDebugTools.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_DEBUG_TOOLS_ENABLED,
+                SettingsPrefs.DEFAULT_DEBUG_TOOLS_ENABLED));
+        switchDebugRunGrades.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_DEBUG_RUN_GRADES,
+                SettingsPrefs.DEFAULT_DEBUG_RUN_GRADES));
+        switchDebugRunPlan.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_DEBUG_RUN_PLAN,
+                SettingsPrefs.DEFAULT_DEBUG_RUN_PLAN));
+        switchDebugIgnoreCalendar.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_DEBUG_IGNORE_CALENDAR,
+                SettingsPrefs.DEFAULT_DEBUG_IGNORE_CALENDAR));
+        internalDebugUiChange = false;
+        updateDebugControlsState();
+    }
+
+    private void updateDebugControlsState() {
+        if (switchDebugTools == null) {
+            return;
+        }
+        boolean enabled = switchDebugTools.isChecked();
+        if (switchDebugRunGrades != null) {
+            switchDebugRunGrades.setEnabled(enabled);
+        }
+        if (switchDebugRunPlan != null) {
+            switchDebugRunPlan.setEnabled(enabled);
+        }
+        if (switchDebugIgnoreCalendar != null) {
+            switchDebugIgnoreCalendar.setEnabled(enabled);
+        }
+        if (btnDebugRunNow != null) {
+            btnDebugRunNow.setEnabled(enabled);
+        }
+        if (btnDebugResetBaselines != null) {
+            btnDebugResetBaselines.setEnabled(enabled);
+        }
+        if (btnDebugTestGradesNotif != null) {
+            btnDebugTestGradesNotif.setEnabled(enabled);
+        }
+        if (btnDebugTestPlanNotif != null) {
+            btnDebugTestPlanNotif.setEnabled(enabled);
+        }
+        if (btnDebugExpireSession != null) {
+            btnDebugExpireSession.setEnabled(enabled);
+        }
+        if (layoutDebugToolsBody != null) {
+            layoutDebugToolsBody.setAlpha(enabled ? 1f : 0.45f);
+        }
+    }
+
+    private interface DebugDateCallback {
+        void onDateSelected(LocalDate date);
+    }
+
+    private interface DebugTimeCallback {
+        void onTimeSelected(int minutesFromMidnight);
+    }
+
+    private void showDebugGradeSimulationDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_debug_simulate_grade, null);
+        EditText subjectInput = dialogView.findViewById(R.id.etDebugGradeSubject);
+        EditText gradeInput = dialogView.findViewById(R.id.etDebugGradeValue);
+        EditText dateInput = dialogView.findViewById(R.id.etDebugGradeDate);
+
+        LocalDate[] selectedDate = new LocalDate[]{LocalDate.now()};
+        subjectInput.setText(getString(R.string.settings_debug_default_subject));
+        gradeInput.setText(getString(R.string.settings_debug_default_grade_value));
+        dateInput.setText(formatDebugDate(selectedDate[0]));
+
+        dateInput.setOnClickListener(v -> showDebugDatePicker(
+                selectedDate[0],
+                date -> {
+                    selectedDate[0] = date;
+                    dateInput.setText(formatDebugDate(date));
+                }));
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.settings_debug_dialog_grade_title)
+                .setView(dialogView)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.settings_debug_dialog_send, (dialog, which) -> {
+                    String subject = readTextOrDefault(subjectInput, R.string.settings_debug_default_subject);
+                    String gradeValue = readTextOrDefault(gradeInput, R.string.settings_debug_default_grade_value);
+                    NotificationDebugTools.showSimulatedGradeNotification(
+                            this,
+                            subject,
+                            gradeValue,
+                            selectedDate[0]);
+                    Toast.makeText(this, R.string.settings_debug_simulation_sent, Toast.LENGTH_SHORT).show();
+                })
+                .show();
+    }
+
+    private void showDebugPlanSimulationDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_debug_simulate_plan_change, null);
+        Spinner spinnerChangeType = dialogView.findViewById(R.id.spinnerDebugPlanChangeType);
+        EditText subjectInput = dialogView.findViewById(R.id.etDebugPlanSubject);
+        EditText fromDateInput = dialogView.findViewById(R.id.etDebugPlanFromDate);
+        EditText fromTimeInput = dialogView.findViewById(R.id.etDebugPlanFromTime);
+        LinearLayout movedTargetLayout = dialogView.findViewById(R.id.layoutDebugPlanMovedTarget);
+        EditText toDateInput = dialogView.findViewById(R.id.etDebugPlanToDate);
+        EditText toTimeInput = dialogView.findViewById(R.id.etDebugPlanToTime);
+
+        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.debug_plan_change_type_entries,
+                R.layout.spinner_item_dark);
+        typeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
+        spinnerChangeType.setAdapter(typeAdapter);
+
+        String[] changeTypeValues = getResources().getStringArray(R.array.debug_plan_change_type_values);
+
+        LocalDate[] fromDate = new LocalDate[]{LocalDate.now()};
+        int[] fromMinutes = new int[]{8 * 60};
+        LocalDate[] toDate = new LocalDate[]{LocalDate.now().plusDays(1)};
+        int[] toMinutes = new int[]{10 * 60};
+
+        subjectInput.setText(getString(R.string.settings_debug_default_subject));
+        fromDateInput.setText(formatDebugDate(fromDate[0]));
+        fromTimeInput.setText(formatDebugTime(fromMinutes[0]));
+        toDateInput.setText(formatDebugDate(toDate[0]));
+        toTimeInput.setText(formatDebugTime(toMinutes[0]));
+
+        spinnerChangeType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                NotificationDebugTools.PlanChangeType type = mapPlanChangeType(changeTypeValues, position);
+                movedTargetLayout.setVisibility(type == NotificationDebugTools.PlanChangeType.MOVED
+                        ? View.VISIBLE
+                        : View.GONE);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                movedTargetLayout.setVisibility(View.GONE);
+            }
+        });
+
+        fromDateInput.setOnClickListener(v -> showDebugDatePicker(
+                fromDate[0],
+                date -> {
+                    fromDate[0] = date;
+                    fromDateInput.setText(formatDebugDate(date));
+                }));
+
+        fromTimeInput.setOnClickListener(v -> showDebugTimePicker(
+                fromMinutes[0],
+                minutes -> {
+                    fromMinutes[0] = minutes;
+                    fromTimeInput.setText(formatDebugTime(minutes));
+                }));
+
+        toDateInput.setOnClickListener(v -> showDebugDatePicker(
+                toDate[0],
+                date -> {
+                    toDate[0] = date;
+                    toDateInput.setText(formatDebugDate(date));
+                }));
+
+        toTimeInput.setOnClickListener(v -> showDebugTimePicker(
+                toMinutes[0],
+                minutes -> {
+                    toMinutes[0] = minutes;
+                    toTimeInput.setText(formatDebugTime(minutes));
+                }));
+
+        spinnerChangeType.setSelection(0);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.settings_debug_dialog_plan_title)
+                .setView(dialogView)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.settings_debug_dialog_send, (dialog, which) -> {
+                    NotificationDebugTools.PlanChangeType type = mapPlanChangeType(
+                            changeTypeValues,
+                            spinnerChangeType.getSelectedItemPosition());
+                    String subject = readTextOrDefault(subjectInput, R.string.settings_debug_default_subject);
+
+                    NotificationDebugTools.showSimulatedPlanNotification(
+                            this,
+                            type,
+                            subject,
+                            fromDate[0],
+                            fromMinutes[0],
+                            toDate[0],
+                            toMinutes[0]);
+                    Toast.makeText(this, R.string.settings_debug_simulation_sent, Toast.LENGTH_SHORT).show();
+                })
+                .show();
+    }
+
+    private void showDebugDatePicker(LocalDate currentDate, DebugDateCallback callback) {
+        LocalDate safeDate = currentDate != null ? currentDate : LocalDate.now();
+        DatePickerDialog picker = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    if (callback != null) {
+                        callback.onDateSelected(LocalDate.of(year, month + 1, dayOfMonth));
+                    }
+                },
+                safeDate.getYear(),
+                safeDate.getMonthValue() - 1,
+                safeDate.getDayOfMonth());
+        picker.show();
+    }
+
+    private void showDebugTimePicker(int currentMinutes, DebugTimeCallback callback) {
+        int safeMinutes = normalizeMinutes(currentMinutes);
+        int hour = safeMinutes / 60;
+        int minute = safeMinutes % 60;
+
+        TimePickerDialog picker = new TimePickerDialog(
+                this,
+                (view, hourOfDay, selectedMinute) -> {
+                    if (callback != null) {
+                        callback.onTimeSelected((hourOfDay * 60) + selectedMinute);
+                    }
+                },
+                hour,
+                minute,
+                true);
+        picker.show();
+    }
+
+    private NotificationDebugTools.PlanChangeType mapPlanChangeType(String[] values, int position) {
+        if (values != null && position >= 0 && position < values.length) {
+            String value = values[position];
+            if ("cancelled".equalsIgnoreCase(value)) {
+                return NotificationDebugTools.PlanChangeType.CANCELLED;
+            }
+            if ("moved".equalsIgnoreCase(value)) {
+                return NotificationDebugTools.PlanChangeType.MOVED;
+            }
+        }
+        return NotificationDebugTools.PlanChangeType.ADDED;
+    }
+
+    private String readTextOrDefault(EditText input, int fallbackResId) {
+        String fallback = getString(fallbackResId);
+        if (input == null || input.getText() == null) {
+            return fallback;
+        }
+        String value = input.getText().toString().trim();
+        return value.isEmpty() ? fallback : value;
+    }
+
+    private String formatDebugDate(LocalDate date) {
+        LocalDate safeDate = date != null ? date : LocalDate.now();
+        return safeDate.format(DEBUG_DATE_FORMAT);
+    }
+
+    private String formatDebugTime(int minutes) {
+        int safeMinutes = normalizeMinutes(minutes);
+        int hour = safeMinutes / 60;
+        int minute = safeMinutes % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
+    }
+
+    private int normalizeMinutes(int minutes) {
+        if (minutes < 0) {
+            return 0;
+        }
+        if (minutes > (23 * 60 + 59)) {
+            return 23 * 60 + 59;
+        }
+        return minutes;
     }
 
     @Override

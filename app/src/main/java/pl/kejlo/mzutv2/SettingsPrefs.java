@@ -33,4 +33,16 @@ public final class SettingsPrefs {
 
     public static final String KEY_NOTIFICATIONS_PLAN_ADDED_ENABLED = "notifications_plan_added_enabled";
     public static final boolean DEFAULT_NOTIFICATIONS_PLAN_ADDED_ENABLED = true;
+
+    public static final String KEY_DEBUG_TOOLS_ENABLED = "debug_tools_enabled";
+    public static final boolean DEFAULT_DEBUG_TOOLS_ENABLED = false;
+
+    public static final String KEY_DEBUG_RUN_GRADES = "debug_run_grades";
+    public static final boolean DEFAULT_DEBUG_RUN_GRADES = true;
+
+    public static final String KEY_DEBUG_RUN_PLAN = "debug_run_plan";
+    public static final boolean DEFAULT_DEBUG_RUN_PLAN = true;
+
+    public static final String KEY_DEBUG_IGNORE_CALENDAR = "debug_ignore_calendar";
+    public static final boolean DEFAULT_DEBUG_IGNORE_CALENDAR = true;
 }
