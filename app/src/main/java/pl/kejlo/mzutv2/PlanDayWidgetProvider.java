@@ -182,6 +182,8 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                     }
 
                     targetDate = findBestDateToShow(weekResult, today, nowMin, hiddenSubjectKeys);
+                    LocalDate tomorrow = today.plusDays(1);
+                    boolean tomorrowHasClasses = !getEventsForDate(weekResult, tomorrow, hiddenSubjectKeys).isEmpty();
 
                     if (targetDate.equals(today)) {
                         List<PlanRepository.PlanEventUi> eventsToday = getEventsForDate(weekResult, today, hiddenSubjectKeys);
@@ -202,7 +204,9 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         } else {
                             subtitleText = context.getString(R.string.plan_widget_subtitle_today);
                         }
-                    } else if (targetDate.equals(today.plusDays(1))) {
+                    } else if (!tomorrowHasClasses) {
+                        subtitleText = context.getString(R.string.plan_widget_subtitle_no_classes_tomorrow);
+                    } else if (targetDate.equals(tomorrow)) {
                         subtitleText = context.getString(R.string.plan_widget_subtitle_tomorrow);
                     } else {
                         String dayName = targetDate.format(DAY_OF_WEEK_LABEL);

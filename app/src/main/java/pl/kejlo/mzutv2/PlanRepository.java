@@ -388,7 +388,7 @@ public class PlanRepository {
             rangeStart = weekStart;
             rangeEnd = weekEnd;
             r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM"))
-                    + " â€“ " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+                    + " - " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         } else {
             rangeStart = currentDate.withDayOfMonth(1);
             rangeEnd = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
@@ -1328,8 +1328,7 @@ public class PlanRepository {
             LocalDate weekEnd = weekStart.plusDays(6);
             rangeStart = weekStart;
             rangeEnd = weekEnd;
-            r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM")) + " â€“ "
-                    + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            r.headerLabel = weekStart.format(DateTimeFormatter.ofPattern("dd.MM")) + " - " + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         } else {
             rangeStart = currentDate.withDayOfMonth(1);
             rangeEnd = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
