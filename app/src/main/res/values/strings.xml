@@ -402,6 +402,39 @@
     <string name="settings_widget_refresh_entry_3h">3 godz.</string>
     <string name="settings_widget_refresh_entry_4h">4 godz.</string>
     <string name="settings_widget_refresh_entry_manual">Nigdy (ręcznie)</string>
+    <string name="settings_section_notifications">Powiadomienia</string>
+    <string name="settings_notifications_master_label">Włącz powiadomienia</string>
+    <string name="settings_notifications_master_desc">Powiadomienia o ocenach i zmianach w planie zajęć.</string>
+    <string name="settings_notifications_grades_label">Powiadomienia o ocenach</string>
+    <string name="settings_notifications_grades_desc">Sprawdzaj nowe oceny cyklicznie (co 30 min).</string>
+    <string name="settings_notifications_plan_label">Powiadomienia o zmianach planu</string>
+    <string name="settings_notifications_plan_desc">Monitoruj zmiany w planie do 2 tygodni do przodu.</string>
+    <string name="settings_notifications_plan_categories">Kategorie zmian planu</string>
+    <string name="settings_notifications_plan_moved">Przeniesienie zajęć</string>
+    <string name="settings_notifications_plan_cancelled">Odwołanie zajęć</string>
+    <string name="settings_notifications_plan_added">Nowe zajęcia</string>
+    <string name="settings_notifications_saved">Zapisano ustawienia powiadomień</string>
+    <string name="settings_notifications_permission_denied">Bez zgody na powiadomienia funkcja została wyłączona</string>
+    <string name="settings_notifications_permission_required">Aby włączyć, nadaj uprawnienie do powiadomień</string>
+
+    <string name="session_expired_toast">Sesja wygasła. Zaloguj się ponownie.</string>
+    <string name="session_expired_notification_title">Wymagane ponowne logowanie</string>
+    <string name="session_expired_notification_text">Sesja wygasła. Otwórz aplikację i zaloguj się ponownie.</string>
+
+    <string name="notif_channel_grades_name">Oceny</string>
+    <string name="notif_channel_grades_desc">Powiadomienia o nowych ocenach</string>
+    <string name="notif_channel_plan_name">Plan zajęć</string>
+    <string name="notif_channel_plan_desc">Powiadomienia o zmianach planu</string>
+    <string name="notif_channel_auth_name">Bezpieczeństwo sesji</string>
+    <string name="notif_channel_auth_desc">Informacje o wygaśnięciu sesji</string>
+
+    <string name="notif_grades_title">Nowe oceny</string>
+    <string name="notif_grades_summary">Dodano nowych ocen: %1$d</string>
+    <string name="notif_plan_title">Zmiany w planie zajęć</string>
+    <string name="notif_plan_summary">Zmiany: %1$d</string>
+    <string name="notif_plan_line_moved">%1$s: %2$s %3$s -> %4$s %5$s</string>
+    <string name="notif_plan_line_cancelled">%1$s: odwołane (%2$s %3$s)</string>
+    <string name="notif_plan_line_added">%1$s: nowe (%2$s %3$s)</string>
 
     <string name="useful_links_header_title">Twoje najważniejsze adresy w jednym miejscu</string>
     <string name="useful_links_header_sub">
