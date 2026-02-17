@@ -60,10 +60,8 @@ public class ThemeManager {
         boolean light = ColorUtils.calculateLuminance(bg) > 0.5;
         WindowInsetsControllerCompat controller =
                 WindowCompat.getInsetsController(window, window.getDecorView());
-        if (controller != null) {
-            controller.setAppearanceLightStatusBars(light);
-            controller.setAppearanceLightNavigationBars(light);
-        }
+        controller.setAppearanceLightStatusBars(light);
+        controller.setAppearanceLightNavigationBars(light);
     }
 
     public static String getTheme(Context context) {

@@ -6,6 +6,8 @@
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:label="@string/app_name_wear"
         android:icon="@mipmap/ic_zut_logo_round"
         android:roundIcon="@mipmap/ic_zut_logo_round"
@@ -16,7 +18,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_zut_logo_round"
             android:roundIcon="@mipmap/ic_zut_logo_round"
-            android:label="@string/app_name_wear">
+            android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

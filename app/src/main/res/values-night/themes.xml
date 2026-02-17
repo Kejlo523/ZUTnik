@@ -6,7 +6,7 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowBackground">?attr/mzBg</item>
 
-        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
 
         <!-- No Title -->
         <item name="windowActionBar">false</item>
@@ -14,10 +14,10 @@
         <item name="windowNoTitle">true</item>
 
         <!-- Splash -->
-        <item name="android:windowSplashScreenBackground">?attr/mzBg</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_zut_logo</item>
-        <item name="android:windowSplashScreenAnimationDuration">200</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">?attr/mzBg</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_zut_logo</item>
+        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="31">200</item>
+        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@android:color/transparent</item>
 
         <!-- Dialogs & Popups -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.MZUTv2.AlertDialog</item>
@@ -92,7 +92,7 @@
         <item name="mzDangerSoft">#3B1C1C</item>
         
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
 
         <!-- Plan Deep Blue Overrides -->
         <item name="mzPlanHourLine">#20FFFFFF</item> 
@@ -133,7 +133,7 @@
         <item name="mzDangerSoft">#3B1C1C</item>
 
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
 
         <!-- Plan Lime Overrides -->
         <item name="mzPlanHourLine">#20FFFFFF</item>
@@ -174,7 +174,7 @@
         <item name="mzToolbarGradEnd">#000000</item>
 
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
 
         <!-- Plan High Contrast Night -->
         <item name="mzPlanHourLine">#FFFFFF</item>
