@@ -28,143 +28,138 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingStart="24dp"
-            android:paddingTop="16dp"
-            android:paddingEnd="24dp">
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp">
 
-            <FrameLayout
+            <LinearLayout
+                android:id="@+id/gradesHero"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:background="@drawable/bg_card_primary"
-                android:elevation="4dp"
-                android:padding="20dp">
-
-                <ImageView
-                    android:id="@+id/btnGradesRefresh"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="top|end"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@android:drawable/ic_popup_sync"
-                    app:tint="?attr/mzText"
-                    android:alpha="0.6"/>
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_soft"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="10dp">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:baselineAligned="false">
+                    android:layout_weight="1"
+                    android:baselineAligned="false"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_grades_metric_card"
+                        android:orientation="vertical"
+                        android:paddingStart="10dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="8dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
                             android:text="@string/grades_summary_average_label"
                             android:textAllCaps="true"
                             android:textColor="?attr/mzMuted"
-                            android:textSize="12sp"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tvAverageValue"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
                             android:text="@string/grades_average_placeholder"
                             android:textColor="?attr/mzText"
-                            android:textSize="32sp"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="?attr/mzBorderSoft" />
-
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
+                        android:background="@drawable/bg_grades_metric_card"
+                        android:orientation="vertical"
+                        android:paddingStart="10dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="8dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
                             android:text="@string/grades_summary_ects_label"
                             android:textAllCaps="true"
                             android:textColor="?attr/mzMuted"
-                            android:textSize="12sp"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tvEctsValue"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                        android:text="@string/common_zero"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/common_zero"
                             android:textColor="?attr/mzText"
-                            android:textSize="32sp"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
-            </FrameLayout>
+
+                <ImageView
+                    android:id="@+id/btnGradesRefresh"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="8dp"
+                    android:alpha="0.8"
+                    android:background="@drawable/bg_circle_soft"
+                    android:contentDescription="@string/grades_refresh_toast"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_popup_sync"
+                    app:tint="?attr/mzMuted" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:orientation="horizontal">
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_soft"
+                android:baselineAligned="false"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="8dp">
 
-                <LinearLayout
+                <Spinner
+                    android:id="@+id/spinnerStudies"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_card_soft"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:gravity="center_vertical">
-                    <Spinner
-                        android:id="@+id/spinnerStudies"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_spinner_dark"
-                        android:spinnerMode="dropdown" />
-                </LinearLayout>
+                    android:background="@drawable/bg_spinner_dark"
+                    android:spinnerMode="dropdown" />
 
-                <LinearLayout
+                <Spinner
+                    android:id="@+id/spinnerSemesters"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.7"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_card_soft"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:gravity="center_vertical">
-
-                    <Spinner
-                        android:id="@+id/spinnerSemesters"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_spinner_dark"
-                        android:spinnerMode="dropdown" />
-                </LinearLayout>
+                    android:layout_height="40dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.82"
+                    android:background="@drawable/bg_spinner_dark"
+                    android:spinnerMode="dropdown" />
             </LinearLayout>
 
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1">
+                android:layout_weight="1"
+                android:background="@drawable/bg_grades_surface_card">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/listGrades"
@@ -172,20 +167,30 @@
                     android:layout_height="match_parent"
                     android:clipToPadding="false"
                     android:overScrollMode="ifContentScrolls"
-                    android:paddingBottom="24dp"
+                    android:paddingStart="10dp"
+                    android:paddingTop="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="12dp"
                     android:scrollbars="vertical" />
 
                 <TextView
                     android:id="@+id/tvEmpty"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginTop="-32dp"
+                    android:drawableTop="@drawable/ic_star"
+                    android:drawablePadding="10dp"
                     android:gravity="center"
+                    android:maxWidth="260dp"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
                     android:text="@string/grades_empty_state"
                     android:textColor="?attr/mzMuted"
                     android:textSize="14sp"
-                    android:visibility="gone" />
+                    android:visibility="gone"
+                    android:drawableTint="?attr/mzMuted" />
 
                 <ProgressBar
                     android:id="@+id/gradesProgress"
@@ -193,7 +198,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginTop="-32dp"
                     android:visibility="gone" />
             </FrameLayout>
 

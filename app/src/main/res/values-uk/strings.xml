@@ -32,11 +32,11 @@
     <string name="home_title">Головна панель</string>
     <string name="home_toolbar_title">Головна сторінка</string>
 
-    <string name="home_welcome_message">Вітаємо, %1$s</string>
+    <string name="home_welcome_message">Вітаємо %1$s</string>
     <string name="home_welcome_subtitle">
         Швидкий доступ до розкладу, оцінок, інформації про навчання та новин ZUT – усе в одному місці.
     </string>
-    <string name="home_welcome_fallback">Вітаємо, Студенте 👋</string>
+    <string name="home_welcome_fallback">Вітаємо Студенте 👋</string>
 
     <string name="home_grades_not_available">Екран оцінок ще не підключено.</string>
     <string name="home_news_not_available">Екран новин ще не підключено.</string>
