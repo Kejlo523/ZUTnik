@@ -187,7 +187,7 @@
   <string name="plan_widget_label_today">Heute</string>
   <string name="plan_widget_refreshed_placeholder">Aktualisiert: --:--</string>
   <string name="plan_widget_item_title_placeholder">Fach</string>
-  <string name="plan_widget_item_time_placeholder">08:00 - 09:30</string>
+  <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Raum 123</string>
   <string name="about_title">Über die App</string>
   <string name="about_project_description_1">
@@ -232,7 +232,7 @@
   <string name="dialog_add_edit_tile_label_desc">Beschreibung</string>
   <string name="dialog_add_edit_tile_hint_desc">Kurze Beschreibung</string>
   <string name="dialog_add_edit_tile_label_action">Aktionstyp</string>
-  <string name="dialog_add_edit_tile_label_url_section">URL-Adresse (https://...)</string>
+  <string name="dialog_add_edit_tile_label_url_section">URL-Adresse (https://…)</string>
   <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
   <string name="dialog_add_edit_tile_label_saved_search">Gespeicherte Suche wählen</string>
   <string name="dialog_add_edit_tile_label_color">Kachelfarbe</string>

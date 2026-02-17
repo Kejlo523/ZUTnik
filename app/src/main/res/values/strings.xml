@@ -227,7 +227,7 @@
   <string name="plan_widget_label_today">Dzisiaj</string>
   <string name="plan_widget_refreshed_placeholder">Odświeżono: --:--</string>
   <string name="plan_widget_item_title_placeholder">Przedmiot</string>
-  <string name="plan_widget_item_time_placeholder">08:00 - 09:30</string>
+  <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Sala 123</string>
   <string name="about_title">O aplikacji</string>
   <string name="about_rate_title">Oceń aplikację</string>
@@ -324,7 +324,7 @@
   <string name="dialog_add_edit_tile_label_desc">Opis</string>
   <string name="dialog_add_edit_tile_hint_desc">Krótki opis</string>
   <string name="dialog_add_edit_tile_label_action">Typ Akcji</string>
-  <string name="dialog_add_edit_tile_label_url_section">Adres URL (https://...)</string>
+  <string name="dialog_add_edit_tile_label_url_section">Adres URL (https://…)</string>
   <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
   <string name="dialog_add_edit_tile_label_saved_search">Wybierz Zapisane Wyszukiwanie</string>
   <string name="dialog_add_edit_tile_label_color">Kolor Kafelka</string>

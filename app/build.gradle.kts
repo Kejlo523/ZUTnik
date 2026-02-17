@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace = "pl.kejlo.mzutv2"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "pl.kejlo.mzutv2"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 144
         versionName = "1.6"
 
@@ -37,8 +37,8 @@ android {
 
 dependencies {
     implementation(libs.activity)
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("androidx.work:work-runtime:2.9.1")
+    implementation(libs.okhttp)
+    implementation(libs.work.runtime)
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.play.services.wearable)
@@ -46,5 +46,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation("com.google.android.play:review:2.0.1")
+    implementation(libs.play.review)
 }

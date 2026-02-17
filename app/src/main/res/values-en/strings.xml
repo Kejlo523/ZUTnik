@@ -185,13 +185,13 @@
   <string name="plan_widget_subtitle_tomorrow">Tomorrow classes</string>
   <string name="plan_widget_subtitle_no_classes_until">%1$s · no classes until %2$s</string>
   <string name="plan_widget_subtitle_login_required">
-        Log in in the mZUT app
+        Log in to the mZUT app
     </string>
   <string name="plan_widget_refreshed_prefix">Refreshed: </string>
   <string name="plan_widget_label_today">Today</string>
   <string name="plan_widget_refreshed_placeholder">Refreshed: --:--</string>
   <string name="plan_widget_item_title_placeholder">Subject</string>
-  <string name="plan_widget_item_time_placeholder">08:00 - 09:30</string>
+  <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Room 123</string>
   <string name="about_title">About the app</string>
   <string name="about_project_description_1">
@@ -286,7 +286,7 @@
   <string name="dialog_add_edit_tile_label_desc">Description</string>
   <string name="dialog_add_edit_tile_hint_desc">Short description</string>
   <string name="dialog_add_edit_tile_label_action">Action Type</string>
-  <string name="dialog_add_edit_tile_label_url_section">URL Address (https://...)</string>
+  <string name="dialog_add_edit_tile_label_url_section">URL Address (https://…)</string>
   <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
   <string name="dialog_add_edit_tile_label_saved_search">Select Saved Search</string>
   <string name="dialog_add_edit_tile_label_color">Tile Color</string>
