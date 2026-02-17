@@ -3,14 +3,10 @@
     <!-- Base Application Theme -->
     <style name="Base.Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimaryDark">?attr/mzBg</item>
-        <!-- Status Bar -->
-        <item name="android:statusBarColor">?attr/mzBg</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">?attr/mzBg</item>
 
-        <!-- Navigation Bar -->
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
 
         <!-- No Title -->
         <item name="windowActionBar">false</item>
@@ -18,10 +14,10 @@
         <item name="windowNoTitle">true</item>
 
         <!-- Splash -->
-        <item name="android:windowSplashScreenBackground">?attr/mzBg</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_zut_logo</item>
-        <item name="android:windowSplashScreenAnimationDuration">200</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">?attr/mzBg</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_zut_logo</item>
+        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="31">200</item>
+        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@android:color/transparent</item>
 
         <!-- Dialogs & Popups -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.MZUTv2.AlertDialog</item>
@@ -95,9 +91,8 @@
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#F0F8FF</item>
         
-        <item name="android:statusBarColor">#F0F8FF</item> 
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
 
         <!-- Plan Deep Blue Overrides -->
         <item name="mzPlanHourLine">#20000000</item> 
@@ -139,9 +134,8 @@
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#F4FFF6</item>
 
-        <item name="android:statusBarColor">#F4FFF6</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
 
         <!-- Plan Lime Overrides -->
         <item name="mzPlanHourLine">#1A14532D</item>
@@ -181,9 +175,8 @@
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#FFFFFF</item>
 
-        <item name="android:statusBarColor">#FFFFFF</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
 
         <!-- Plan High Contrast -->
         <item name="mzPlanHourLine">#000000</item>
