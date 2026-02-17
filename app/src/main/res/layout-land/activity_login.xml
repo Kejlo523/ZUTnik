@@ -99,6 +99,9 @@
                         android:layout_height="wrap_content"
                         android:inputType="text"
                         android:paddingStart="12dp"
+                        android:paddingTop="10dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="10dp"
                         android:textColor="?attr/mzText" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -124,6 +127,9 @@
                         android:layout_height="wrap_content"
                         android:inputType="textPassword"
                         android:paddingStart="12dp"
+                        android:paddingTop="10dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="10dp"
                         android:textColor="?attr/mzText" />
                 </com.google.android.material.textfield.TextInputLayout>
 

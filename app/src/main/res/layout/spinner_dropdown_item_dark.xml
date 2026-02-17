@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:padding="12dp"
+    android:paddingStart="14dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="12dp"
     android:textColor="?attr/mzText"
     android:textSize="14sp"
     android:background="?attr/mzCardSoft"

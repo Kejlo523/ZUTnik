@@ -172,9 +172,9 @@ public class AddEditTileDialog extends DialogFragment {
         actionLabels.add(getString(R.string.tile_action_url));
         actionValues.add(Tile.ACTION_URL);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item,
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item_dark,
                 actionLabels);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerAction.setAdapter(adapter);
 
         // Load Saved Searches
@@ -187,9 +187,9 @@ public class AddEditTileDialog extends DialogFragment {
                 savedLabels.add(s.label + " (" + s.catLabel + ": " + s.query + ")");
             }
         }
-        ArrayAdapter<String> savedAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item,
+        ArrayAdapter<String> savedAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item_dark,
                 savedLabels);
-        savedAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        savedAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerSavedParams.setAdapter(savedAdapter);
 
         spinnerAction.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {

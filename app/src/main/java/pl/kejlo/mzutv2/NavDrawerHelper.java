@@ -495,10 +495,13 @@ public class NavDrawerHelper {
         // 1. Inflate and show dialog IMMEDIATELY
         View content = LayoutInflater.from(activity)
                 .inflate(R.layout.dialog_watch_status, null, false);
-        
+
         // Find views
         View loadingView = content.findViewById(R.id.watchStatusLoading);
         View contentView = content.findViewById(R.id.watchStatusContent);
+        View disconnectedHint = content.findViewById(R.id.watchDisconnectedHint);
+        View batteryCard = content.findViewById(R.id.watchBatteryCard);
+        View infoContainer = content.findViewById(R.id.watchInfoContainer);
         View installContainer = content.findViewById(R.id.watchInstallContainer);
         View installButton = content.findViewById(R.id.watchInstallButton);
 
@@ -531,36 +534,51 @@ public class NavDrawerHelper {
             // Hide loading, show content
             loadingView.setVisibility(View.GONE);
             contentView.setVisibility(View.VISIBLE);
+            installContainer.setVisibility(View.GONE);
 
-            // First check if completely disconnected
-            if (status == null || (!status.connected && !status.paired)) {
-                 // Update UI to show not found state (reuse existing views or show simple message)
-                 // For simplicity, we stick to the dialog structure but update text
-                 titleView.setText(R.string.nav_watch_not_found_title);
-                 subtitleView.setText(R.string.nav_watch_not_found_msg);
-                 nameView.setText("-");
-                 batteryView.setText("");
-                 return;
-            }
-
-            // Populate status strings with existing logic
-            String name = (status.name != null && !status.name.isEmpty())
+            boolean isConnected = status != null && status.connected;
+            boolean isPaired = status != null && status.paired;
+            String name = (status != null && status.name != null && !status.name.isEmpty())
                     ? status.name
                     : activity.getString(R.string.nav_watch_label);
 
-            String statusLine;
-            if (status.connected) {
-                statusLine = activity.getString(status.responsive
+            nameView.setVisibility(View.VISIBLE);
+            nameView.setText(activity.getString(R.string.nav_watch_status_name, name));
+
+            // Not paired and not connected: keep the dialog minimal.
+            if (!isConnected && !isPaired) {
+                titleView.setText(R.string.nav_watch_not_found_title);
+                subtitleView.setText(R.string.nav_watch_not_found_msg);
+                nameView.setVisibility(View.GONE);
+                disconnectedHint.setVisibility(View.GONE);
+                batteryCard.setVisibility(View.GONE);
+                infoContainer.setVisibility(View.GONE);
+                return;
+            }
+
+            // Paired but disconnected: hide technical cards and show only key guidance.
+            if (!isConnected) {
+                titleView.setText(R.string.nav_watch_paired_title);
+                subtitleView.setText(R.string.nav_watch_status_paired);
+                if (disconnectedHint instanceof TextView) {
+                    ((TextView) disconnectedHint).setText(
+                            activity.getString(R.string.nav_watch_paired_msg, name));
+                }
+                disconnectedHint.setVisibility(View.VISIBLE);
+                batteryCard.setVisibility(View.GONE);
+                infoContainer.setVisibility(View.GONE);
+                return;
+            }
+
+            disconnectedHint.setVisibility(View.GONE);
+            batteryCard.setVisibility(View.VISIBLE);
+            infoContainer.setVisibility(View.VISIBLE);
+
+            String statusLine = activity.getString(status.responsive
                         ? R.string.nav_watch_status_connected
                         : R.string.nav_watch_status_connected_unresponsive);
-            } else {
-                statusLine = activity.getString(R.string.nav_watch_status_paired);
-            }
-            titleView.setText(status.connected
-                    ? R.string.nav_watch_found_title
-                    : R.string.nav_watch_paired_title);
+            titleView.setText(R.string.nav_watch_found_title);
             subtitleView.setText(statusLine);
-            nameView.setText(activity.getString(R.string.nav_watch_status_name, name));
 
             int battery = status.battery;
             if (battery >= 0 && battery <= 100) {
@@ -641,6 +659,9 @@ public class NavDrawerHelper {
 
             // Now check if app is missing to decide button
             pl.kejlo.mzutv2.wear.WearSyncManager.checkIfWatchMissingApp(activity, missingNodeId -> {
+                if (activity.isDestroyed() || activity.isFinishing() || !dialog.isShowing()) {
+                    return;
+                }
                 if (missingNodeId != null) {
                     // App is missing! Show "Install" button
                     installContainer.setVisibility(View.VISIBLE);

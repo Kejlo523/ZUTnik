@@ -32,16 +32,22 @@ import java.util.Set;
 public class BackgroundSyncWorker extends Worker {
 
     private static final String TAG = "mZUTv2-BgSync";
+    public static final String INPUT_BOOTSTRAP_PREFETCH = "input_bootstrap_prefetch";
 
     private static final String PREFS_BG = "mzut_background_sync_cache";
     private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
     private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v1";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
     private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v1";
+    private static final String KEY_LAST_GRADES_ALERT_HASH = "grades_last_alert_hash_v1";
+    private static final String KEY_LAST_GRADES_ALERT_TS = "grades_last_alert_ts_v1";
+    private static final String KEY_LAST_PLAN_ALERT_HASH = "plan_last_alert_hash_v1";
+    private static final String KEY_LAST_PLAN_ALERT_TS = "plan_last_alert_ts_v1";
 
     private static final int NOTIF_ID_GRADES = 9101;
     private static final int NOTIF_ID_PLAN = 9102;
     private static final int PLAN_REFRESH_THRESHOLD = 10;
+    private static final long ALERT_DEDUP_WINDOW_MS = 24L * 60L * 60L * 1000L;
 
     private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault());
 
@@ -63,6 +69,10 @@ public class BackgroundSyncWorker extends Worker {
             if (!isWithinAcademicNotificationWindow(context)) {
                 Log.d(TAG, "Skipping checks outside didactic/session period.");
                 return Result.success();
+            }
+
+            if (getInputData().getBoolean(INPUT_BOOTSTRAP_PREFETCH, false)) {
+                runBootstrapPrefetch(context);
             }
 
             if (NotificationSyncManager.isGradesEnabled(context)) {
@@ -96,6 +106,19 @@ public class BackgroundSyncWorker extends Worker {
             return false;
         }
         return NotificationSyncManager.isAnyFeatureEnabled(context);
+    }
+
+    private void runBootstrapPrefetch(Context context) {
+        if (!(NotificationSyncManager.isPlanEnabled(context) && NotificationSyncManager.isAnyPlanCategoryEnabled(context))) {
+            return;
+        }
+        try {
+            PlanRepository repo = new PlanRepository(context);
+            repo.loadPlan("week", LocalDate.now(), true);
+            Log.d(TAG, "Bootstrap prefetch: plan full-refresh completed");
+        } catch (Exception e) {
+            Log.w(TAG, "Bootstrap prefetch: plan full-refresh failed", e);
+        }
     }
 
     private boolean isWithinAcademicNotificationWindow(Context context) {
@@ -167,7 +190,14 @@ public class BackgroundSyncWorker extends Worker {
                 }
             }
             Collections.sort(lines);
-            notifyGrades(context, addedKeys.size(), lines);
+            saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
+
+            String signature = buildAlertSignatureFromList(addedKeys);
+            if (!isDuplicateAlert(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature)) {
+                notifyGrades(context, addedKeys.size(), lines);
+                rememberAlertSignature(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature);
+            }
+            return;
         }
 
         saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
@@ -231,8 +261,12 @@ public class BackgroundSyncWorker extends Worker {
                 + diff.added.size();
 
         if (totalChanges > PLAN_REFRESH_THRESHOLD) {
-            notifyPlanRefreshed(context);
             savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+            String signature = "refresh_" + totalChanges + "_" + current.size();
+            if (!isDuplicateAlert(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+                notifyPlanRefreshed(context);
+                rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
+            }
             return;
         }
 
@@ -276,11 +310,14 @@ public class BackgroundSyncWorker extends Worker {
             }
         }
 
-        if (!lines.isEmpty()) {
-            notifyPlanChanges(context, lines);
-        }
-
         savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+        if (!lines.isEmpty()) {
+            String signature = buildAlertSignatureFromList(lines);
+            if (!isDuplicateAlert(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+                notifyPlanChanges(context, lines);
+                rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
+            }
+        }
     }
 
     private void notifyPlanChanges(Context context, List<String> lines) {
@@ -568,7 +605,7 @@ public class BackgroundSyncWorker extends Worker {
         for (String value : values) {
             arr.put(value);
         }
-        prefs.edit().putString(key, arr.toString()).apply();
+        prefs.edit().putString(key, arr.toString()).commit();
     }
 
     private List<PlanSnapshotEvent> readPlanSnapshot(String json) {
@@ -598,7 +635,45 @@ public class BackgroundSyncWorker extends Worker {
         for (PlanSnapshotEvent ev : events) {
             arr.put(ev.toJson());
         }
-        prefs.edit().putString(key, arr.toString()).apply();
+        prefs.edit().putString(key, arr.toString()).commit();
+    }
+
+    private String buildAlertSignatureFromList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "";
+        }
+        List<String> sorted = new ArrayList<>(values);
+        Collections.sort(sorted);
+        StringBuilder sb = new StringBuilder();
+        for (String value : sorted) {
+            if (value == null) {
+                continue;
+            }
+            sb.append(value.trim().toLowerCase(Locale.ROOT)).append('\n');
+        }
+        return Integer.toHexString(sb.toString().hashCode());
+    }
+
+    private boolean isDuplicateAlert(SharedPreferences prefs, String hashKey, String tsKey, String signature) {
+        if (signature == null || signature.isEmpty()) {
+            return false;
+        }
+        String prev = prefs.getString(hashKey, "");
+        if (!signature.equals(prev)) {
+            return false;
+        }
+        long lastTs = prefs.getLong(tsKey, 0L);
+        return (System.currentTimeMillis() - lastTs) < ALERT_DEDUP_WINDOW_MS;
+    }
+
+    private void rememberAlertSignature(SharedPreferences prefs, String hashKey, String tsKey, String signature) {
+        if (signature == null || signature.isEmpty()) {
+            return;
+        }
+        prefs.edit()
+                .putString(hashKey, signature)
+                .putLong(tsKey, System.currentTimeMillis())
+                .apply();
     }
 
     private static class PlanDiff {

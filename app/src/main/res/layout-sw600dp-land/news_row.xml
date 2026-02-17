@@ -3,28 +3,27 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
-    android:layout_marginTop="6dp"
-    android:layout_marginEnd="10dp"
-    android:layout_marginBottom="6dp"
+    android:layout_marginStart="12dp"
+    android:layout_marginTop="7dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginBottom="7dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="?attr/mzBgSurface"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="0dp"
-    app:cardUseCompatPadding="false">
+    app:cardCornerRadius="18dp"
+    app:cardElevation="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_news_surface_card"
+        android:background="@drawable/bg_tablet_surface_soft"
         android:gravity="center_vertical"
-        android:minHeight="104dp"
+        android:minHeight="118dp"
         android:orientation="horizontal"
-        android:paddingStart="12dp"
+        android:paddingStart="14dp"
         android:paddingTop="12dp"
-        android:paddingEnd="12dp"
+        android:paddingEnd="14dp"
         android:paddingBottom="12dp">
 
         <LinearLayout
@@ -39,45 +38,46 @@
                 android:id="@+id/newsDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_news_chip_soft"
+                android:background="@drawable/bg_tablet_chip"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:paddingStart="9dp"
-                android:paddingTop="3dp"
-                android:paddingEnd="9dp"
-                android:paddingBottom="3dp"
+                android:paddingStart="10dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
                 android:textColor="?attr/mzMuted"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/newsTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="9dp"
                 android:ellipsize="end"
+                android:lineSpacingExtra="1dp"
                 android:maxLines="2"
                 android:textColor="?attr/mzText"
-                android:textSize="15sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/newsSnippet"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="7dp"
                 android:ellipsize="end"
-                android:lineSpacingExtra="1dp"
+                android:lineSpacingExtra="2dp"
                 android:maxLines="3"
                 android:textColor="?attr/mzMuted"
-                android:textSize="12sp" />
+                android:textSize="13sp" />
         </LinearLayout>
 
         <ImageView
             android:id="@+id/newsThumb"
-            android:layout_width="118dp"
-            android:layout_height="84dp"
-            android:layout_marginStart="8dp"
+            android:layout_width="148dp"
+            android:layout_height="104dp"
+            android:layout_marginStart="10dp"
             android:background="@drawable/bg_thumb_rounded"
             android:clipToOutline="true"
             android:contentDescription="@null"

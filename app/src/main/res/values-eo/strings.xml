@@ -30,6 +30,7 @@
     <string name="login_success">Ahoj, %1$s!</string>
 
     <string name="home_title">Mostek KapitaĹ„ski</string>
+    <string name="home_toolbar_title">Główna strona</string>
 
     <string name="home_welcome_message">Ahoj, %1$s!</string>
     <string name="home_welcome_subtitle">

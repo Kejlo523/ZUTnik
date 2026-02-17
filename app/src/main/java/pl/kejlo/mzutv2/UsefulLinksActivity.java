@@ -10,6 +10,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -66,6 +67,11 @@ import android.widget.Toast;
  * - TextView @+id/tvLinksEmpty (optional "no data" label)
  */
 public class UsefulLinksActivity extends AppCompatActivity {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;

@@ -1,6 +1,5 @@
 package pl.kejlo.mzutv2;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -14,6 +13,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 
 import android.os.Bundle;
+import android.text.format.DateUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -41,8 +41,8 @@ public class NewsActivity extends MzutBaseActivity {
     private static final String PREFS_NEWS_CACHE = "mzut_news_cache";
     private static final String KEY_NEWS_LIST_JSON = "news_list_json";
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
-    // Cache at most for one week – after that always refreshed from network
-    private static final long NEWS_CACHE_TTL_MS = 2L * 24L * 60L * 60L * 1000L; // 7 days
+    // Cache is valid for up to 2 days, then we refresh from network.
+    private static final long NEWS_CACHE_TTL_MS = 2L * 24L * 60L * 60L * 1000L;
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -52,6 +52,7 @@ public class NewsActivity extends MzutBaseActivity {
     private RecyclerView listNews;
     private ProgressBar progress;
     private TextView tvEmpty;
+    private TextView tvInfo;
     private ImageView btnNewsRefresh;
 
     private NewsRepository repo;
@@ -100,15 +101,18 @@ public class NewsActivity extends MzutBaseActivity {
         listNews = findViewById(R.id.listNews);
         progress = findViewById(R.id.newsProgress);
         tvEmpty = findViewById(R.id.tvNewsEmpty);
+        tvInfo = findViewById(R.id.tvNewsInfo);
         btnNewsRefresh = findViewById(R.id.btnNewsRefresh);
 
         listNews.setLayoutManager(new LinearLayoutManager(this));
 
         adapter = new NewsAdapter(this, items);
         listNews.setAdapter(adapter);
+        setRefreshing(false);
 
         // 1) Try to show cached data
         loadNewsFromCacheIfAvailable();
+        updateNewsInfo(getCacheTimestamp());
         checkAutoOpen();
 
         // 2) If cache is missing or outdated, fetch from network
@@ -160,6 +164,7 @@ public class NewsActivity extends MzutBaseActivity {
             // Clear items from adapter to visual feedback of reload
             items.clear();
             adapter.notifyDataSetChanged();
+            updateNewsInfo(0L);
 
             // Also suggest clearing image cache if desired
             ImageCache.getInstance().clear();
@@ -171,6 +176,7 @@ public class NewsActivity extends MzutBaseActivity {
     private void executeLoadNewsTask() {
         progress.setVisibility(View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
+        setRefreshing(true);
 
         currentNewsFuture = executor.submit(() -> {
             List<NewsItem> loaded = null;
@@ -190,6 +196,7 @@ public class NewsActivity extends MzutBaseActivity {
 
             handler.post(() -> {
                 progress.setVisibility(View.GONE);
+                setRefreshing(false);
 
                 if (!finalSuccess || finalLoaded == null) {
                     if (items.isEmpty()) {
@@ -217,6 +224,7 @@ public class NewsActivity extends MzutBaseActivity {
 
                 // Save to cache after successful fetch
                 saveNewsToCache(finalLoaded);
+                updateNewsInfo(getCacheTimestamp());
                 checkAutoOpen();
             });
         });
@@ -232,6 +240,36 @@ public class NewsActivity extends MzutBaseActivity {
         }
         long now = System.currentTimeMillis();
         return (now - ts) > NEWS_CACHE_TTL_MS;
+    }
+
+    private long getCacheTimestamp() {
+        return getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE)
+                .getLong(KEY_NEWS_TIMESTAMP, 0L);
+    }
+
+    private void updateNewsInfo(long timestamp) {
+        if (tvInfo == null) {
+            return;
+        }
+        String baseInfo = getString(R.string.news_header_source_info);
+        if (timestamp <= 0L) {
+            tvInfo.setText(baseInfo);
+            return;
+        }
+        CharSequence relative = DateUtils.getRelativeTimeSpanString(
+                timestamp,
+                System.currentTimeMillis(),
+                DateUtils.MINUTE_IN_MILLIS);
+        tvInfo.setText(baseInfo + " \u2022 " + relative);
+    }
+
+    private void setRefreshing(boolean refreshing) {
+        if (btnNewsRefresh == null) {
+            return;
+        }
+
+        btnNewsRefresh.setEnabled(!refreshing);
+        btnNewsRefresh.setAlpha(0.6f);
     }
 
     private void loadNewsFromCacheIfAvailable() {
@@ -313,4 +351,14 @@ public class NewsActivity extends MzutBaseActivity {
             // Cache is optional, ignore errors
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        if (currentNewsFuture != null) {
+            currentNewsFuture.cancel(true);
+        }
+        executor.shutdownNow();
+        super.onDestroy();
+    }
 }
+

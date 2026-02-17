@@ -266,6 +266,42 @@ public class PlanActivity extends MzutBaseActivity {
         return allColumns;
     }
 
+    private boolean areWeekendsHidden(List<PlanRepository.DayColumn> rawColumns, List<PlanRepository.DayColumn> visibleColumns) {
+        if (!isWeekMode() || rawColumns == null || rawColumns.isEmpty() || visibleColumns == null || visibleColumns.isEmpty()) {
+            return false;
+        }
+
+        boolean rawHasSaturday = false;
+        boolean rawHasSunday = false;
+        for (PlanRepository.DayColumn col : rawColumns) {
+            if (col == null || col.date == null) {
+                continue;
+            }
+            DayOfWeek dow = col.date.getDayOfWeek();
+            if (dow == DayOfWeek.SATURDAY) {
+                rawHasSaturday = true;
+            } else if (dow == DayOfWeek.SUNDAY) {
+                rawHasSunday = true;
+            }
+        }
+
+        boolean visibleHasSaturday = false;
+        boolean visibleHasSunday = false;
+        for (PlanRepository.DayColumn col : visibleColumns) {
+            if (col == null || col.date == null) {
+                continue;
+            }
+            DayOfWeek dow = col.date.getDayOfWeek();
+            if (dow == DayOfWeek.SATURDAY) {
+                visibleHasSaturday = true;
+            } else if (dow == DayOfWeek.SUNDAY) {
+                visibleHasSunday = true;
+            }
+        }
+
+        return rawHasSaturday && rawHasSunday && !visibleHasSaturday && !visibleHasSunday;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -1319,6 +1355,7 @@ public class PlanActivity extends MzutBaseActivity {
             List<PlanRepository.DayColumn> rawCols = result.dayColumns != null ? result.dayColumns
                     : Collections.emptyList();
             List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
+            boolean weekendsHidden = areWeekendsHidden(rawCols, cols);
 
             if (cols.isEmpty()) {
                 TextView empty = new TextView(context);
@@ -1410,7 +1447,8 @@ public class PlanActivity extends MzutBaseActivity {
             // After last column: trailing check (e.g. Saturday session, or session starting on last day)
             if (!dayColumnDates.isEmpty()) {
                 LocalDate lastDate = dayColumnDates.get(dayColumnDates.size() - 1);
-                LocalDate dayAfter = lastDate.plusDays(1);
+                long trailingGapDays = (weekendsHidden && lastDate.getDayOfWeek() == DayOfWeek.FRIDAY) ? 3L : 1L;
+                LocalDate dayAfter = lastDate.plusDays(trailingGapDays);
                 addSessionMarkerLines(columnsContainer, lastDate, dayAfter, columnHeight);
             }
         }
@@ -2116,11 +2154,29 @@ public class PlanActivity extends MzutBaseActivity {
         if (sessionDates == null || sessionDates.isEmpty()) {
             return;
         }
+        if (prevDate == null || curDate == null) {
+            return;
+        }
 
         List<MarkerSpec> markers = new ArrayList<>();
+        boolean hasForwardRange = curDate.isAfter(prevDate);
+        long gapDays = hasForwardRange ? java.time.temporal.ChronoUnit.DAYS.between(prevDate, curDate) : 0L;
 
         for (PlanRepository.SessionPeriod period : sessionDates) {
-            if (prevDate.equals(period.endDate)) {
+            if (period == null || period.endDate == null) {
+                continue;
+            }
+
+            boolean matchesEnd;
+            if (hasForwardRange) {
+                // Boundary includes all hidden dates between prev and cur:
+                // [prevDate, curDate)
+                matchesEnd = !period.endDate.isBefore(prevDate) && period.endDate.isBefore(curDate);
+            } else {
+                matchesEnd = prevDate.equals(period.endDate);
+            }
+
+            if (matchesEnd) {
                 markers.add(new MarkerSpec(
                         buildPeriodMarkerLabel(period, false),
                         resolvePeriodMarkerColor(period)));
@@ -2128,7 +2184,22 @@ public class PlanActivity extends MzutBaseActivity {
         }
 
         for (PlanRepository.SessionPeriod period : sessionDates) {
-            if (curDate.equals(period.startDate)) {
+            if (period == null || period.startDate == null) {
+                continue;
+            }
+
+            boolean matchesStart;
+            if (hasForwardRange) {
+                LocalDate effectiveEnd = gapDays > 1L ? curDate.minusDays(1) : curDate;
+                // Standard boundary is (prevDate, curDate]. For collapsed multi-day gaps
+                // (e.g. hidden weekend), we cap to hidden days to avoid leaking markers
+                // from the next visible day.
+                matchesStart = period.startDate.isAfter(prevDate) && !period.startDate.isAfter(effectiveEnd);
+            } else {
+                matchesStart = curDate.equals(period.startDate);
+            }
+
+            if (matchesStart) {
                 markers.add(new MarkerSpec(
                         buildPeriodMarkerLabel(period, true),
                         resolvePeriodMarkerColor(period)));

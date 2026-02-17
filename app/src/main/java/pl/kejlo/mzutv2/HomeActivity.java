@@ -86,7 +86,6 @@ public class HomeActivity extends MzutBaseActivity {
 
         // Setup Toolbar
         setSupportActionBar(toolbar);
-        toolbar.setTitle(R.string.home_title);
 
         NavDrawerHelper.setupNavigation(
                 this,
@@ -94,6 +93,12 @@ public class HomeActivity extends MzutBaseActivity {
                 navigationView,
                 toolbar,
                 NavDrawerHelper.Screen.HOME);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(R.string.home_toolbar_title);
+        } else {
+            toolbar.setTitle(R.string.home_toolbar_title);
+        }
 
         textWelcome = findViewById(R.id.textWelcome);
         textWelcomeSub = findViewById(R.id.textWelcomeSub);
