@@ -26,14 +26,10 @@ import java.util.Locale;
 
 import pl.kejlo.mzutv2.wear.model.WearPlanSnapshot;
 import pl.kejlo.mzutv2.wear.sync.WearSnapshotStore;
+import pl.kejlo.mzutv2.wear.util.WearLocaleManager;
 import pl.kejlo.mzutv2.wear.util.WearScheduleUtils;
 
 public class MzutWatchFaceRenderer extends Renderer.CanvasRenderer {
-
-    private static final DateTimeFormatter TIME_FMT =
-            DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault());
-    private static final DateTimeFormatter DATE_FMT =
-            DateTimeFormatter.ofPattern("EEE dd.MM", Locale.getDefault());
 
     private final Paint timePaint = new Paint();
     private final Paint datePaint = new Paint();
@@ -118,6 +114,10 @@ public class MzutWatchFaceRenderer extends Renderer.CanvasRenderer {
     @Override
     public void render(@NonNull Canvas canvas, @NonNull Rect bounds, @NonNull ZonedDateTime time) {
         boolean ambient = watchState.isAmbient().getValue();
+        Context localizedContext = WearLocaleManager.wrap(context);
+        if (localizedContext == null) {
+            localizedContext = context;
+        }
 
         int base = Math.min(bounds.width(), bounds.height());
         float cx = bounds.centerX();
@@ -174,8 +174,15 @@ public class MzutWatchFaceRenderer extends Renderer.CanvasRenderer {
             etaPaint.setColor(text);
         }
 
-        String timeStr = TIME_FMT.format(time);
-        String dateStr = DATE_FMT.format(time);
+        Locale locale = Locale.getDefault();
+        if (localizedContext.getResources().getConfiguration().getLocales() != null
+                && !localizedContext.getResources().getConfiguration().getLocales().isEmpty()) {
+            locale = localizedContext.getResources().getConfiguration().getLocales().get(0);
+        }
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm", locale);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEE dd.MM", locale);
+        String timeStr = timeFormatter.format(time);
+        String dateStr = dateFormatter.format(time);
 
         float timeSize = base * 0.26f;
         float dateSize = base * 0.08f;
@@ -217,19 +224,19 @@ public class MzutWatchFaceRenderer extends Renderer.CanvasRenderer {
         canvas.drawText(dateStr, cx, cy + base * 0.12f, datePaint);
 
         if (snap != null && snap.loginRequired) {
-            String info = context.getString(pl.kejlo.mzutv2.wear.R.string.watch_face_login_required);
+            String info = localizedContext.getString(pl.kejlo.mzutv2.wear.R.string.watch_face_login_required);
             canvas.drawText(info, cx, cy + base * 0.28f, infoPaint);
             return;
         }
 
         if (next == null || next.event == null) {
-            String info = context.getString(pl.kejlo.mzutv2.wear.R.string.watch_face_no_next);
+            String info = localizedContext.getString(pl.kejlo.mzutv2.wear.R.string.watch_face_no_next);
             canvas.drawText(info, cx, cy + base * 0.30f, infoPaint);
             return;
         }
 
         String title = WearScheduleUtils.ellipsize(next.event.title, 20);
-        String eta = WearScheduleUtils.formatEta(context, time, next.start);
+        String eta = WearScheduleUtils.formatEta(localizedContext, time, next.start);
         String timeRange = next.timeRange != null ? next.timeRange : "";
 
         if (ambient) {
@@ -279,7 +286,7 @@ public class MzutWatchFaceRenderer extends Renderer.CanvasRenderer {
         cardLabelPaint.setColor(accent);
         float textX = bar.right + pad;
         float y = cardRect.top + pad + cardLabelPaint.getTextSize();
-        canvas.drawText(context.getString(pl.kejlo.mzutv2.wear.R.string.watch_face_next_label),
+        canvas.drawText(localizedContext.getString(pl.kejlo.mzutv2.wear.R.string.watch_face_next_label),
                 textX, y, cardLabelPaint);
         y += cardTitlePaint.getTextSize() + base * 0.01f;
         canvas.drawText(title, textX, y, cardTitlePaint);

@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import pl.kejlo.mzutv2.LocaleManager;
 import pl.kejlo.mzutv2.R;
 
 /**
@@ -45,6 +47,7 @@ public class WearSyncManager {
     private static final long DEFAULT_AUTO_SYNC_INTERVAL_MIN = 60L;
     private static final long DEFAULT_POLL_INTERVAL_MS = 10_000L;
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final AtomicBoolean syncInProgress = new AtomicBoolean(false);
 
     // ============================================================
     // Compatibility stubs (no-ops for removed functionality)
@@ -85,43 +88,52 @@ public class WearSyncManager {
         if (context == null) {
             return;
         }
-        Log.d(TAG, "syncNowBlocking: start");
-        sendProgress(context, 15, context.getString(R.string.wear_sync_status_prepare));
-
-        WearPlanSnapshot snapshot = WearPlanSnapshotBuilder.build(context);
-        if (snapshot == null) {
-            Log.w(TAG, "syncNowBlocking: snapshot null");
-            sendProgress(context, 0, context.getString(R.string.wear_sync_status_no_data));
+        if (!tryAcquireSyncSlot()) {
+            Log.d(TAG, "syncNowBlocking: skipped (already running or throttled)");
             return;
         }
-
-        String payload = snapshot.toJson();
-        int payloadBytes = payload != null
-                ? payload.getBytes(java.nio.charset.StandardCharsets.UTF_8).length
-                : 0;
-        Log.d(TAG, "syncNowBlocking: payload bytes=" + payloadBytes);
-
-        sendProgress(context, 40, context.getString(R.string.wear_sync_status_sending));
-
-        // Send via DataClient with urgent flag for immediate sync
         try {
-            PutDataMapRequest req = PutDataMapRequest.create(WearSyncConstants.PATH_PLAN_SNAPSHOT);
-            DataMap map = req.getDataMap();
-            map.putString(WearSyncConstants.KEY_PAYLOAD, payload);
-            map.putLong(WearSyncConstants.KEY_TIMESTAMP, System.currentTimeMillis());
+            Log.d(TAG, "syncNowBlocking: start");
+            Context localized = LocaleManager.wrap(context);
+            sendProgress(context, 15, localized.getString(R.string.wear_sync_status_prepare));
 
-            Tasks.await(Wearable.getDataClient(context)
-                    .putDataItem(req.asPutDataRequest().setUrgent()));
-            Log.d(TAG, "syncNowBlocking: DataItem sent");
-            sendProgress(context, 70, context.getString(R.string.wear_sync_status_waiting_watch));
-        } catch (Exception e) {
-            Log.e(TAG, "syncNowBlocking: DataItem send failed", e);
-            sendProgress(context, 0, context.getString(R.string.wear_sync_status_error));
-            return;
+            WearPlanSnapshot snapshot = WearPlanSnapshotBuilder.build(context);
+            if (snapshot == null) {
+                Log.w(TAG, "syncNowBlocking: snapshot null");
+                sendProgress(context, 0, localized.getString(R.string.wear_sync_status_no_data));
+                return;
+            }
+
+            String payload = snapshot.toJson();
+            int payloadBytes = payload != null
+                    ? payload.getBytes(java.nio.charset.StandardCharsets.UTF_8).length
+                    : 0;
+            Log.d(TAG, "syncNowBlocking: payload bytes=" + payloadBytes);
+
+            sendProgress(context, 40, localized.getString(R.string.wear_sync_status_sending));
+
+            // Send via DataClient with urgent flag for immediate sync
+            try {
+                PutDataMapRequest req = PutDataMapRequest.create(WearSyncConstants.PATH_PLAN_SNAPSHOT);
+                DataMap map = req.getDataMap();
+                map.putString(WearSyncConstants.KEY_PAYLOAD, payload);
+                map.putLong(WearSyncConstants.KEY_TIMESTAMP, System.currentTimeMillis());
+
+                Tasks.await(Wearable.getDataClient(context)
+                        .putDataItem(req.asPutDataRequest().setUrgent()));
+                Log.d(TAG, "syncNowBlocking: DataItem sent");
+                sendProgress(context, 70, localized.getString(R.string.wear_sync_status_waiting_watch));
+            } catch (Exception e) {
+                Log.e(TAG, "syncNowBlocking: DataItem send failed", e);
+                sendProgress(context, 0, localized.getString(R.string.wear_sync_status_error));
+                return;
+            }
+
+            // Also send via MessageClient for immediate delivery
+            sendSnapshotMessage(context, payload);
+        } finally {
+            releaseSyncSlot();
         }
-
-        // Also send via MessageClient for immediate delivery
-        sendSnapshotMessage(context, payload);
     }
 
     public static long getLastSyncTimestamp(Context context) {
@@ -486,6 +498,14 @@ public class WearSyncManager {
         void onNodes(List<Node> nodes);
     }
 
+    private static boolean tryAcquireSyncSlot() {
+        return syncInProgress.compareAndSet(false, true);
+    }
+
+    private static void releaseSyncSlot() {
+        syncInProgress.set(false);
+    }
+
     private static void withWatchNodes(Context context, NodeCallback callback) {
         if (context == null || callback == null) {
             return;
@@ -560,7 +580,8 @@ public class WearSyncManager {
                         .addOnFailureListener(e -> Log.e(TAG,
                                 "sendSnapshotMessage: fail node=" + n.getDisplayName(), e));
             }
-            sendProgress(context, 85, context.getString(R.string.wear_sync_status_waiting_watch));
+            Context localized = LocaleManager.wrap(context);
+            sendProgress(context, 85, localized.getString(R.string.wear_sync_status_waiting_watch));
         });
     }
     // ============================================================

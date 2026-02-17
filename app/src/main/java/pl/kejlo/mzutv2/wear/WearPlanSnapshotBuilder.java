@@ -18,6 +18,7 @@ import java.util.Set;
 import pl.kejlo.mzutv2.MzutSession;
 import pl.kejlo.mzutv2.PlanRepository;
 import pl.kejlo.mzutv2.R;
+import pl.kejlo.mzutv2.SettingsPrefs;
 import pl.kejlo.mzutv2.ThemeManager;
 
 public class WearPlanSnapshotBuilder {
@@ -25,12 +26,6 @@ public class WearPlanSnapshotBuilder {
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
-    private static final DateTimeFormatter DATE_LABEL = DateTimeFormatter.ofPattern("d MMMM yyyy",
-            Locale.getDefault());
-    private static final DateTimeFormatter WEEK_DAY_LABEL = DateTimeFormatter.ofPattern("EEE dd.MM",
-            Locale.getDefault());
-    private static final DateTimeFormatter DAY_OF_WEEK_LABEL = DateTimeFormatter.ofPattern("EEEE",
-            Locale.getDefault());
     private static final DateTimeFormatter TIME_LABEL = DateTimeFormatter.ofPattern("HH:mm");
 
     public static WearPlanSnapshot build(Context context) {
@@ -40,16 +35,23 @@ public class WearPlanSnapshotBuilder {
 
         WearPlanSnapshot snap = new WearPlanSnapshot();
         applyThemePalette(context, snap);
+        String languageTag = resolveAppLanguageTag(context);
+        Locale snapshotLocale = parseLocale(languageTag);
+        DateTimeFormatter dateLabelFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", snapshotLocale);
+        DateTimeFormatter weekDayLabelFormatter = DateTimeFormatter.ofPattern("EEE dd.MM", snapshotLocale);
+        DateTimeFormatter dayOfWeekFormatter = DateTimeFormatter.ofPattern("EEEE", snapshotLocale);
+        Context localizedContext = createLocalizedContext(context, snapshotLocale);
+        snap.languageTag = languageTag;
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
         int nowMin = now.getHour() * 60 + now.getMinute();
 
         if (!ensureSessionFromPrefs(context)) {
             snap.loginRequired = true;
-            snap.subtitle = context.getString(R.string.plan_widget_subtitle_login_required);
+            snap.subtitle = localizedContext.getString(R.string.plan_widget_subtitle_login_required);
             snap.dateIso = today.toString();
-            snap.dateLabel = today.format(DATE_LABEL);
-            snap.refreshedLabel = context.getString(R.string.plan_widget_refreshed_prefix)
+            snap.dateLabel = today.format(dateLabelFormatter);
+            snap.refreshedLabel = localizedContext.getString(R.string.plan_widget_refreshed_prefix)
                     + " " + now.format(TIME_LABEL);
             return snap;
         }
@@ -83,9 +85,9 @@ public class WearPlanSnapshotBuilder {
             LocalDate targetDate = findBestDateToShow(weekResult, today, nowMin, hiddenKeys);
 
             snap.dateIso = targetDate.toString();
-            snap.dateLabel = targetDate.format(DATE_LABEL);
+            snap.dateLabel = targetDate.format(dateLabelFormatter);
 
-            String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
+            String subtitleText = localizedContext.getString(R.string.plan_widget_subtitle_today);
             if (targetDate.equals(today)) {
                 List<PlanRepository.PlanEventUi> eventsToday = getEventsForDate(weekResult, today, hiddenKeys);
                 List<PlanRepository.PlanEventUi> upcoming = new ArrayList<>();
@@ -97,35 +99,36 @@ public class WearPlanSnapshotBuilder {
                 if (!upcoming.isEmpty()) {
                     PlanRepository.PlanEventUi next = upcoming.get(0);
                     if (next.startMin <= nowMin) {
-                        subtitleText = context.getString(R.string.plan_widget_subtitle_in_progress);
+                        subtitleText = localizedContext.getString(R.string.plan_widget_subtitle_in_progress);
                     } else {
                         int diffMin = next.startMin - nowMin;
                         int h = diffMin / 60;
                         int m = diffMin % 60;
                         if (h > 0) {
-                            String hours = h + context.getString(R.string.plan_widget_hours_suffix);
+                            String hours = h + localizedContext.getString(R.string.plan_widget_hours_suffix);
                             String minutes = m > 0
-                                    ? " " + m + context.getString(R.string.plan_widget_minutes_suffix)
+                                    ? " " + m + localizedContext.getString(R.string.plan_widget_minutes_suffix)
                                     : "";
-                            subtitleText = context.getString(R.string.plan_widget_subtitle_next_prefix) + hours + minutes;
+                            subtitleText = localizedContext.getString(R.string.plan_widget_subtitle_next_prefix)
+                                    + hours + minutes;
                         } else {
-                            subtitleText = context.getString(R.string.plan_widget_subtitle_next_prefix)
-                                    + m + context.getString(R.string.plan_widget_minutes_suffix);
+                            subtitleText = localizedContext.getString(R.string.plan_widget_subtitle_next_prefix)
+                                    + m + localizedContext.getString(R.string.plan_widget_minutes_suffix);
                         }
                     }
                 } else {
-                    subtitleText = context.getString(R.string.plan_widget_subtitle_today);
+                    subtitleText = localizedContext.getString(R.string.plan_widget_subtitle_today);
                 }
             } else if (targetDate.equals(today.plusDays(1))) {
-                subtitleText = context.getString(R.string.plan_widget_subtitle_tomorrow);
+                subtitleText = localizedContext.getString(R.string.plan_widget_subtitle_tomorrow);
             } else {
-                String dayName = targetDate.format(DAY_OF_WEEK_LABEL);
+                String dayName = targetDate.format(dayOfWeekFormatter);
                 dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1);
                 subtitleText = dayName;
             }
 
             snap.subtitle = subtitleText;
-            snap.refreshedLabel = context.getString(R.string.plan_widget_refreshed_prefix)
+            snap.refreshedLabel = localizedContext.getString(R.string.plan_widget_refreshed_prefix)
                     + " " + LocalTime.now().format(TIME_LABEL);
 
             // Build full week list (current week range)
@@ -141,7 +144,7 @@ public class WearPlanSnapshotBuilder {
             while (!d.isAfter(weekEnd)) {
                 WearPlanSnapshot.WeekDay day = new WearPlanSnapshot.WeekDay();
                 day.dateIso = d.toString();
-                day.dateLabel = d.format(WEEK_DAY_LABEL);
+                day.dateLabel = d.format(weekDayLabelFormatter);
                 List<PlanRepository.PlanEventUi> dayEventsFull = getEventsForDate(weekResult, d, hiddenKeys);
                 for (PlanRepository.PlanEventUi ev : dayEventsFull) {
                     WearPlanSnapshot.Event e = new WearPlanSnapshot.Event();
@@ -214,6 +217,49 @@ public class WearPlanSnapshotBuilder {
         }
 
         return snap;
+    }
+
+    private static String resolveAppLanguageTag(Context context) {
+        if (context == null) {
+            return SettingsPrefs.DEFAULT_APP_LANGUAGE;
+        }
+        SharedPreferences prefs = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        String raw = prefs.getString(
+                SettingsPrefs.KEY_APP_LANGUAGE,
+                SettingsPrefs.DEFAULT_APP_LANGUAGE);
+        return normalizeLanguageTag(raw);
+    }
+
+    private static String normalizeLanguageTag(String raw) {
+        if (raw == null) {
+            return SettingsPrefs.DEFAULT_APP_LANGUAGE;
+        }
+        String normalized = raw.trim().replace('_', '-');
+        if (normalized.isEmpty()) {
+            return SettingsPrefs.DEFAULT_APP_LANGUAGE;
+        }
+        return normalized;
+    }
+
+    private static Locale parseLocale(String languageTag) {
+        String normalized = normalizeLanguageTag(languageTag);
+        Locale locale = Locale.forLanguageTag(normalized);
+        if (locale == null || locale.getLanguage() == null || locale.getLanguage().isEmpty()) {
+            return Locale.getDefault();
+        }
+        return locale;
+    }
+
+    private static Context createLocalizedContext(Context context, Locale locale) {
+        if (context == null || locale == null) {
+            return context;
+        }
+        android.content.res.Configuration cfg =
+                new android.content.res.Configuration(context.getResources().getConfiguration());
+        cfg.setLocale(locale);
+        return context.createConfigurationContext(cfg);
     }
 
     private static void applyThemePalette(Context context, WearPlanSnapshot snap) {

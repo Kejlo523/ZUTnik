@@ -12,6 +12,7 @@ public class WearPlanSnapshot {
     public String dateLabel;
     public String subtitle;
     public String refreshedLabel;
+    public String languageTag;
     public boolean loginRequired;
     public String theme;
     public int colorBg;
@@ -49,6 +50,7 @@ public class WearPlanSnapshot {
             snap.dateLabel = root.optString("dateLabel", "");
             snap.subtitle = root.optString("subtitle", "");
             snap.refreshedLabel = root.optString("refreshedLabel", "");
+            snap.languageTag = root.optString("languageTag", "");
             snap.loginRequired = root.optBoolean("loginRequired", false);
             snap.theme = root.optString("theme", "");
             snap.colorBg = root.optInt("colorBg", 0);

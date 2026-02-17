@@ -5,14 +5,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
@@ -23,13 +24,10 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.SnapHelper;
 
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.DataMap;
@@ -40,582 +38,132 @@ import com.google.android.gms.wearable.Wearable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Main WearOS activity for MZUT.
- * Vertical list with snapping, Rotary for horizontal navigation.
- */
+import pl.kejlo.mzutv2.wear.model.WearPlanSnapshot;
+import pl.kejlo.mzutv2.wear.sync.WearSnapshotStore;
+import pl.kejlo.mzutv2.wear.sync.WearSyncConstants;
+import pl.kejlo.mzutv2.wear.util.WearLocaleManager;
+
 public class MainWearActivity extends Activity {
 
     private static final String TAG = "MZUTWearSync/WEAR";
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final long SYNC_REQUEST_TIMEOUT_MS = 20_000L;
+    private static final long SYNC_TAP_DEBOUNCE_MS = 1_200L;
+    private static final float ROTARY_THRESHOLD = 48f;
 
-    // Views
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
     private FrameLayout rootContainer;
-    private LinearLayout dayIndicator;
-    private FrameLayout pageContainer;
     private LinearLayout dayPageContent;
-    private LinearLayout syncPageContent;
+    private LinearLayout dayHeaderCard;
     private TextView dayTitle;
+    private TextView dayCounter;
     private RecyclerView eventsList;
-    
-    // Sync views
+
+    private LinearLayout syncPageContent;
+    private LinearLayout syncSheet;
     private TextView syncTitle;
-    private TextView syncDesc;
-    private LinearLayout syncStatusCard;
+    private TextView syncCounter;
     private TextView syncStatus;
     private ProgressBar syncProgress;
-    private Button btnSync;
+    private Button btnSyncNow;
 
-    // State
-    private int currentPageIndex = 0;
+    private EventAdapter eventAdapter;
+    private WearPlanSnapshot currentSnap;
+
     private int totalDays = 0;
-    private pl.kejlo.mzutv2.wear.model.WearPlanSnapshot currentSnap;
-    private boolean isNavigating = false;
+    private int currentPage = 0; // 0..(totalDays-1) = day pages, totalDays = sync page
+    private int activeEventIndex = 0;
 
-    // Theme colors
-    private int themeBg = 0xFF0B1020;
-    private int themeCard = 0xFF1A2235;
+    private float rotaryAccumulator = 0f;
+    private float swipeStartX = 0f;
+    private float swipeStartY = 0f;
+
+    private volatile boolean syncRequestInFlight = false;
+    private long lastSyncTapTs = 0L;
+
+    private int themeBg = 0xFF000000;
+    private int themeCard = 0xFF171717;
     private int themeText = 0xFFFFFFFF;
-    private int themeMuted = 0xFFB0B7C3;
-    private int themeSubtle = 0xFF8F96A3;
+    private int themeMuted = 0xFFAEB6C4;
     private int themeAccent = 0xFF4F8DFF;
 
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable statusRunnable = () -> {
-        publishWatchStatus();
-        handler.postDelayed(this.statusRunnable, 5 * 60 * 1000);
+    private final Runnable statusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            publishWatchStatus();
+            handler.postDelayed(this, 5 * 60 * 1000L);
+        }
     };
 
-    private final BroadcastReceiver snapshotReceiver = new BroadcastReceiver() {
+    private final Runnable syncRequestTimeoutRunnable = () -> {
+        if (!syncRequestInFlight) {
+            return;
+        }
+        syncRequestInFlight = false;
+        WearSnapshotStore.setProgress(
+                MainWearActivity.this,
+                0,
+                getString(R.string.wear_main_sync_failed));
+        refreshSyncStatusUi();
+    };
+
+    private final BroadcastReceiver syncReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (intent == null) {
+                return;
+            }
             String action = intent.getAction();
-            if (pl.kejlo.mzutv2.wear.sync.WearSyncConstants.ACTION_SNAPSHOT_UPDATED.equals(action)) {
+            if (WearSyncConstants.ACTION_SNAPSHOT_UPDATED.equals(action)) {
+                syncRequestInFlight = false;
+                handler.removeCallbacks(syncRequestTimeoutRunnable);
+                if (WearLocaleManager.needsRecreateForCurrentContext(MainWearActivity.this)) {
+                    recreate();
+                    return;
+                }
                 updateUI();
-                if (syncPageContent != null && syncPageContent.getVisibility() == View.VISIBLE) {
-                    if (syncStatus != null) syncStatus.setText("Pobrano pomyślnie");
-                    if (syncProgress != null) syncProgress.setVisibility(View.GONE);
-                    if (btnSync != null) btnSync.setEnabled(true);
-                }
-            } else if (pl.kejlo.mzutv2.wear.sync.WearSyncConstants.ACTION_SYNC_PROGRESS.equals(action)) {
-                // Let updateUI or showSyncPage handle progress if needed, or just update valid views
-                if (syncPageContent != null && syncPageContent.getVisibility() == View.VISIBLE) {
-                    showSyncPage(); // Refreshes status from store
-                }
+                refreshSyncStatusUi();
+                return;
+            }
+            if (WearSyncConstants.ACTION_SYNC_PROGRESS.equals(action)) {
+                refreshSyncStatusUi();
             }
         }
     };
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(WearLocaleManager.wrap(newBase));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        buildUI();
-        setupRotaryInput();
+        setContentView(R.layout.activity_wear_main);
+        bindViews();
+        setupList();
+        setupActions();
         applyRoundInsets();
         updateUI();
+        refreshSyncStatusUi();
     }
 
-    private void buildUI() {
-        // Root container
-        rootContainer = new FrameLayout(this);
-        rootContainer.setBackgroundColor(themeBg);
-        setContentView(rootContainer);
-
-        // Day indicator at top
-        dayIndicator = new LinearLayout(this);
-        dayIndicator.setOrientation(LinearLayout.HORIZONTAL);
-        dayIndicator.setGravity(Gravity.CENTER);
-        FrameLayout.LayoutParams indicatorLp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT);
-        indicatorLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        indicatorLp.topMargin = dp(6);
-        rootContainer.addView(dayIndicator, indicatorLp);
-
-        // Page container
-        pageContainer = new FrameLayout(this);
-        FrameLayout.LayoutParams pageLp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT);
-        pageLp.topMargin = dp(16); // Reduced to minimize top space but clear dots
-        rootContainer.addView(pageContainer, pageLp);
-
-        // Day page
-        buildDayPage();
-        
-        // Sync page
-        buildSyncPage();
-    }
-
-    private void buildDayPage() {
-        dayPageContent = new LinearLayout(this);
-        dayPageContent.setOrientation(LinearLayout.VERTICAL);
-        dayPageContent.setGravity(Gravity.CENTER_HORIZONTAL);
-        pageContainer.addView(dayPageContent, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT));
-
-        // Day title
-        dayTitle = new TextView(this);
-        dayTitle.setTextSize(12f);
-        dayTitle.setTextColor(themeText);
-        dayTitle.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        titleLp.bottomMargin = dp(4);
-        dayPageContent.addView(dayTitle, titleLp);
-
-        // Events RecyclerView
-        eventsList = new RecyclerView(this);
-        eventsList.setLayoutManager(new LinearLayoutManager(this));
-        eventsList.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        eventsList.setClipToPadding(false); // Important for centering
-        
-        // Snapping
-        new TopSnapHelper().attachToRecyclerView(eventsList);
-        
-        // Scaling listener
-        eventsList.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                applyScaling();
-            }
-        });
-        
-        LinearLayout.LayoutParams listLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 
-                LinearLayout.LayoutParams.MATCH_PARENT);
-        dayPageContent.addView(eventsList, listLp);
-    }
-
-    private void buildSyncPage() {
-        syncPageContent = new LinearLayout(this);
-        syncPageContent.setOrientation(LinearLayout.VERTICAL);
-        syncPageContent.setGravity(Gravity.CENTER);
-        syncPageContent.setPadding(dp(18), dp(12), dp(18), dp(12));
-        syncPageContent.setVisibility(View.GONE);
-        pageContainer.addView(syncPageContent, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT));
-
-        syncTitle = new TextView(this);
-        syncTitle.setText(R.string.wear_main_title);
-        syncTitle.setTextSize(13f);
-        syncTitle.setTextColor(themeText);
-        syncTitle.setGravity(Gravity.CENTER);
-        syncPageContent.addView(syncTitle);
-
-        syncDesc = new TextView(this);
-        syncDesc.setText(R.string.wear_main_desc);
-        syncDesc.setTextSize(10f);
-        syncDesc.setTextColor(themeMuted);
-        syncDesc.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams descLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        descLp.topMargin = dp(4);
-        syncPageContent.addView(syncDesc, descLp);
-
-        syncStatusCard = new LinearLayout(this);
-        syncStatusCard.setOrientation(LinearLayout.VERTICAL);
-        syncStatusCard.setGravity(Gravity.CENTER);
-        syncStatusCard.setPadding(dp(10), dp(8), dp(10), dp(8));
-        GradientDrawable cardBg = new GradientDrawable();
-        cardBg.setColor(themeCard);
-        cardBg.setCornerRadius(dp(10));
-        syncStatusCard.setBackground(cardBg);
-        syncStatusCard.setVisibility(View.GONE);
-        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        cardLp.topMargin = dp(10);
-        syncPageContent.addView(syncStatusCard, cardLp);
-
-        syncStatus = new TextView(this);
-        syncStatus.setTextSize(10f);
-        syncStatus.setTextColor(themeText);
-        syncStatus.setGravity(Gravity.CENTER);
-        syncStatusCard.addView(syncStatus);
-
-        syncProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        syncProgress.setMax(100);
-        syncProgress.setVisibility(View.GONE);
-        LinearLayout.LayoutParams progLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(4));
-        progLp.topMargin = dp(6);
-        syncStatusCard.addView(syncProgress, progLp);
-
-        btnSync = new Button(this);
-        btnSync.setText(R.string.wear_main_sync);
-        btnSync.setTextColor(0xFFFFFFFF);
-        btnSync.setTextSize(12f);
-        btnSync.setAllCaps(false);
-        GradientDrawable btnBg = new GradientDrawable();
-        btnBg.setColor(themeAccent);
-        btnBg.setCornerRadius(dp(20));
-        btnSync.setBackground(btnBg);
-        btnSync.setOnClickListener(v -> requestSync());
-        LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(42));
-        btnLp.topMargin = dp(12);
-        syncPageContent.addView(btnSync, btnLp);
-    }
-
-    private void setupRotaryInput() {
-        rootContainer.setFocusableInTouchMode(true);
-        rootContainer.requestFocus();
-        
-        final float scrollFactor = ViewConfiguration.get(this).getScaledVerticalScrollFactor();
-        final float[] accumulatedRotation = {0f};
-        final float ROTATION_THRESHOLD = 50f;
-        
-        View.OnGenericMotionListener rotaryListener = (v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_SCROLL
-                    && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
-                
-                float delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL) * scrollFactor;
-                accumulatedRotation[0] += delta;
-                
-                if (Math.abs(accumulatedRotation[0]) > ROTATION_THRESHOLD && !isNavigating) {
-                    // Check if horizontal navigation logic applies
-                    int direction = accumulatedRotation[0] > 0 ? 1 : -1;
-                    accumulatedRotation[0] = 0;
-                    
-                    // Consume event for navigation
-                    navigateWithAnimation(direction);
-                    return true;
-                }
-                
-                // If not navigating, let it bubble (maybe relevant for list scroll?)
-                // Actually, standard RecyclerView handles rotary by itself usually?
-                // But we return true to consume it if we want custom nav.
-                // If we want RecyclerView to scroll vertically, we should return false.
-                // WEAR UX: Rotary usually scrolls list. User wants rotary to SWITCH DAYS.
-                // So we always return true to consume and navigate days.
-                // "Palcem można góra dół przewijać" -> Finger for vertical scroll.
-                // "Tarcze zegarka obrotowe ruch lewo prawo" -> Rotary for horizontal scroll.
-                return true; 
-            }
-            return false;
-        };
-
-        rootContainer.setOnGenericMotionListener(rotaryListener);
-        // Also attach to list so it doesn't steal focus and handle scroll itself
-        if (eventsList != null) {
-            eventsList.setOnGenericMotionListener(rotaryListener);
-        }
-    }
-
-    // Animation logic
-    private void navigateWithAnimation(int direction) {
-        int nextIndex = currentPageIndex + direction;
-        int maxPage = totalDays;
-        
-        if (nextIndex < 0 || nextIndex > maxPage) return;
-        
-        isNavigating = true;
-        
-        // Slide OUT
-        float translationDest = direction > 0 ? -dp(50) : dp(50); // Move left if going right, etc
-        
-        View activeView = (currentPageIndex >= totalDays) ? syncPageContent : dayPageContent;
-        if (activeView.getVisibility() != View.VISIBLE) activeView = dayPageContent; // Fallback
-        
-        activeView.animate()
-                .translationX(translationDest)
-                .alpha(0f)
-                .setDuration(150)
-                .withEndAction(() -> {
-                    currentPageIndex = nextIndex;
-                    renderCurrentPage();
-                    
-                    // Prepare slide IN
-                    View newView = (currentPageIndex >= totalDays) ? syncPageContent : dayPageContent;
-                    newView.setTranslationX(-translationDest);
-                    newView.setAlpha(0f);
-                    
-                    newView.animate()
-                            .translationX(0f)
-                            .alpha(1f)
-                            .setDuration(150)
-                            .withEndAction(() -> isNavigating = false)
-                            .start();
-                })
-                .start();
-    }
-
-    private void renderCurrentPage() {
-        renderDayIndicator();
-        
-        if (currentPageIndex >= totalDays) {
-            showSyncPage();
-        } else {
-            showDayPage();
-        }
-    }
-
-    private void showDayPage() {
-        if (dayPageContent != null) dayPageContent.setVisibility(View.VISIBLE);
-        if (syncPageContent != null) syncPageContent.setVisibility(View.GONE);
-        
-        if (currentSnap == null || currentSnap.weekDays == null || 
-            currentPageIndex >= currentSnap.weekDays.size()) {
-            return;
-        }
-
-        var day = currentSnap.weekDays.get(currentPageIndex);
-
-        if (dayTitle != null) {
-            dayTitle.setText(day.dateLabel != null ? day.dateLabel : "");
-            String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM"));
-            boolean isToday = day.dateLabel != null && day.dateLabel.contains(today);
-            dayTitle.setTextColor(isToday ? themeAccent : themeText);
-        }
-
-        // Update List
-        if (eventsList != null) {
-            List<EventItem> items = new ArrayList<>();
-            if (day.events != null) {
-                for (var ev : day.events) {
-                    items.add(new EventItem(ev.title, ev.time, ev.room, ev.color));
-                }
-            }
-            if (items.isEmpty()) {
-                items.add(new EventItem(getString(R.string.tile_no_events), null, null, 0));
-            }
-            eventsList.setAdapter(new EventAdapter(items));
-            
-            // Wait for layout to center first item or scroll to 0
-            eventsList.scrollToPosition(0);
-            eventsList.post(this::applyScaling);
-        }
-    }
-    
-    // ... showSyncPage same as before ...
-    private void showSyncPage() {
-        if (dayPageContent != null) dayPageContent.setVisibility(View.GONE);
-        if (syncPageContent != null) syncPageContent.setVisibility(View.VISIBLE);
-        
-        String statusText = pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.getStatus(this);
-        int progressValue = pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.getProgress(this);
-        boolean busy = progressValue > 0 && progressValue < 100;
-
-        if (syncStatus != null) {
-            if (statusText != null && !statusText.isEmpty()) {
-                syncStatus.setText(statusText);
-            } else if (currentSnap != null && currentSnap.loginRequired) {
-                syncStatus.setText(R.string.wear_main_status_login_required);
-            } else {
-                syncStatus.setText(R.string.wear_main_status_idle);
-            }
-        }
-        
-        if (syncStatusCard != null) syncStatusCard.setVisibility(busy ? View.VISIBLE : View.GONE);
-        if (syncProgress != null) {
-            syncProgress.setVisibility(busy ? View.VISIBLE : View.GONE);
-            syncProgress.setProgress(progressValue);
-        }
-        if (btnSync != null) {
-            btnSync.setEnabled(!busy);
-            btnSync.setAlpha(busy ? 0.6f : 1f);
-        }
-    }
-
-    private void renderDayIndicator() {
-        if (dayIndicator == null) return;
-        
-        int totalPages = totalDays + 1;
-        if (totalPages <= 1) {
-            dayIndicator.removeAllViews();
-            return;
-        }
-
-        int windowSize = Math.min(totalPages, 3);
-        int start = Math.max(0, currentPageIndex - 1);
-        if (start + windowSize > totalPages) start = totalPages - windowSize;
-        int end = start + windowSize - 1;
-
-        // Rebuild if count differs (simple approach, or optimize later)
-        if (dayIndicator.getChildCount() != windowSize) {
-            dayIndicator.removeAllViews();
-            for (int i = 0; i < windowSize; i++) {
-                View dot = new View(this);
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(6), dp(6));
-                lp.setMargins(dp(3), 0, dp(3), 0);
-                // Background shape
-                GradientDrawable bg = new GradientDrawable();
-                bg.setShape(GradientDrawable.OVAL);
-                bg.setColor(themeSubtle);
-                dot.setBackground(bg);
-                dayIndicator.addView(dot, lp);
-            }
-        }
-
-        // Animate state
-        for (int i = 0; i < windowSize; i++) {
-            View dot = dayIndicator.getChildAt(i);
-            int logicalIndex = start + i; // The page index this dot represents
-            boolean isActive = (logicalIndex == currentPageIndex);
-            
-            int targetSize = isActive ? dp(8) : dp(6);
-            int targetColor = isActive ? themeAccent : themeSubtle;
-            
-            // Animate layout params (size) - difficult smoothly without Transition, 
-            // but we can scale.
-            float targetScale = isActive ? 1.3f : 1.0f;
-            
-            dot.animate().cancel();
-            dot.animate()
-               .scaleX(targetScale)
-               .scaleY(targetScale)
-               .setDuration(200)
-               .start();
-
-            // Color animation
-            GradientDrawable bg = (GradientDrawable) dot.getBackground();
-            // bg.setColor() is instant. For animation we'd need ValueAnimator / ArgbEvaluator.
-            // Keeping it simple for now, but apply color immediately.
-            bg.setColor(targetColor); 
-            // Ideally use color filter or animator
-        }
-    }
-
-    private void applyScaling() {
-        if (eventsList == null) return;
-        
-        int parentHeight = eventsList.getHeight();
-        if (parentHeight == 0) return;
-
-        // Focal point is near the top (where items snap)
-        // Item center should be approx at paddingTop + halfItemHeight.
-        // Focal point matches new tight top padding
-        int paddingTop = eventsList.getPaddingTop();
-        int focalCenterY = paddingTop + dp(40); // Approx center of first item
-        // If first item is highlighted, it should be fully opaque/scaled at this point.
-        
-        // Range for scaling effect
-        float maxDist = parentHeight * 0.4f;
-
-        for (int i = 0; i < eventsList.getChildCount(); i++) {
-            View child = eventsList.getChildAt(i);
-            if (child == null) continue;
-            
-            int childCenterY = (child.getTop() + child.getBottom()) / 2;
-            float dist = Math.abs(childCenterY - focalCenterY);
-            
-            float scale = 1f;
-            float alpha = 1f;
-            
-            if (dist < maxDist) {
-                float norm = dist / maxDist; 
-                // Sharper curve?
-                scale = 1f - (norm * 0.25f); // Max shrink to 0.75
-                alpha = 1f - (norm * 0.5f);
-            } else {
-                scale = 0.75f;
-                alpha = 0.5f;
-            }
-            child.setScaleX(scale);
-            child.setScaleY(scale);
-            child.setAlpha(alpha);
-        }
-    }
-
-    private void applyRoundInsets() {
-        boolean isRound = getResources().getConfiguration().isScreenRound();
-        int screenHeight = getResources().getDisplayMetrics().heightPixels;
-        int screenWidth = getResources().getDisplayMetrics().widthPixels;
-        
-        // Asymmetric padding to force snapping to Top
-        // Asymmetric padding to force snapping to Top
-        // Top padding: minimized to remove "pusta przestrzeń"
-        // Title is outside (above) the list, so list padding can be small.
-        int paddingVerticalTop = dp(4); 
-        int paddingVerticalBottom = (int) (screenHeight * 0.55f); 
-        
-        if (eventsList != null) {
-            eventsList.setPadding(0, paddingVerticalTop, 0, paddingVerticalBottom);
-        }
-
-        if (isRound) {
-            int inset = (int) (screenWidth * 0.1f);
-            if (dayPageContent != null) {
-                // Apply horizontal padding to list
-                 eventsList.setPadding(inset, paddingVerticalTop, inset, paddingVerticalBottom);
-            }
-            if (syncPageContent != null) syncPageContent.setPadding(inset, dp(8), inset, inset);
-        }
-    }
-
-    private void updateUI() {
-        currentSnap = pl.kejlo.mzutv2.wear.sync.WearSnapshotStore.load(this);
-        applyThemeFromSnapshot(currentSnap);
-        boolean wasSyncPage = (currentPageIndex >= totalDays && totalDays > 0);
-        int oldDayIndex = currentPageIndex < totalDays ? currentPageIndex : 0;
-
-        if (currentSnap != null && currentSnap.weekDays != null && !currentSnap.weekDays.isEmpty()) {
-            totalDays = currentSnap.weekDays.size();
-            if (wasSyncPage) {
-                currentPageIndex = totalDays;
-            } else {
-                if (oldDayIndex < totalDays) {
-                    currentPageIndex = oldDayIndex;
-                } else {
-                    String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM"));
-                    currentPageIndex = 0;
-                    for (int i = 0; i < currentSnap.weekDays.size(); i++) {
-                        var day = currentSnap.weekDays.get(i);
-                        if (day.dateLabel != null && day.dateLabel.contains(today)) {
-                            currentPageIndex = i;
-                            break;
-                        }
-                    }
-                }
-            }
-        } else {
-            totalDays = 0;
-            currentPageIndex = 0;
-        }
-        renderCurrentPage();
-    }
-    
-    // ... helpers ...
-    private void applyThemeFromSnapshot(pl.kejlo.mzutv2.wear.model.WearPlanSnapshot snap) {
-        if (snap == null) return;
-        if (snap.colorBg != 0) themeBg = snap.colorBg;
-        if (snap.colorCard != 0) themeCard = snap.colorCard;
-        if (snap.colorText != 0) themeText = snap.colorText;
-        if (snap.colorMuted != 0) themeMuted = snap.colorMuted;
-        if (snap.colorSubtle != 0) themeSubtle = snap.colorSubtle;
-        if (snap.colorAccent != 0) themeAccent = snap.colorAccent;
-
-        if (rootContainer != null) rootContainer.setBackgroundColor(themeBg);
-        if (dayTitle != null) dayTitle.setTextColor(themeText);
-        if (syncTitle != null) syncTitle.setTextColor(themeText);
-        // ... rest same ...
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
-    }
-    
-    // ... onStart/onStop ...
     @Override
     protected void onStart() {
         super.onStart();
         IntentFilter filter = new IntentFilter();
-        filter.addAction(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.ACTION_SNAPSHOT_UPDATED);
-        filter.addAction(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.ACTION_SYNC_PROGRESS);
+        filter.addAction(WearSyncConstants.ACTION_SNAPSHOT_UPDATED);
+        filter.addAction(WearSyncConstants.ACTION_SYNC_PROGRESS);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(snapshotReceiver, filter, RECEIVER_NOT_EXPORTED);
+            registerReceiver(syncReceiver, filter, RECEIVER_NOT_EXPORTED);
         } else {
-            registerReceiver(snapshotReceiver, filter);
+            registerReceiver(syncReceiver, filter);
         }
         handler.post(statusRunnable);
     }
@@ -623,192 +171,688 @@ public class MainWearActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
-        unregisterReceiver(snapshotReceiver);
+        try {
+            unregisterReceiver(syncReceiver);
+        } catch (IllegalArgumentException ignored) {
+        }
         handler.removeCallbacks(statusRunnable);
+        handler.removeCallbacks(syncRequestTimeoutRunnable);
     }
 
-    // ... publishWatchStatus, requestSync ...
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.shutdownNow();
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        if (event != null
+                && event.getAction() == MotionEvent.ACTION_SCROLL
+                && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
+
+            float delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
+                    * ViewConfiguration.get(this).getScaledVerticalScrollFactor();
+            rotaryAccumulator += delta;
+            if (Math.abs(rotaryAccumulator) >= ROTARY_THRESHOLD) {
+                int direction = rotaryAccumulator > 0f ? 1 : -1;
+                rotaryAccumulator = 0f;
+                navigatePage(direction, true);
+            }
+            return true;
+        }
+        return super.dispatchGenericMotionEvent(event);
+    }
+
+    private void bindViews() {
+        rootContainer = findViewById(R.id.rootContainer);
+        dayPageContent = findViewById(R.id.dayPageContent);
+        dayHeaderCard = findViewById(R.id.dayHeaderCard);
+        dayTitle = findViewById(R.id.dayTitle);
+        dayCounter = findViewById(R.id.dayCounter);
+        eventsList = findViewById(R.id.eventsList);
+
+        syncPageContent = findViewById(R.id.syncPageContent);
+        syncSheet = findViewById(R.id.syncSheet);
+        syncTitle = findViewById(R.id.syncTitle);
+        syncCounter = findViewById(R.id.syncCounter);
+        syncStatus = findViewById(R.id.syncStatus);
+        syncProgress = findViewById(R.id.syncProgress);
+        btnSyncNow = findViewById(R.id.btnSyncNow);
+    }
+
+    private void setupList() {
+        eventsList.setLayoutManager(new LinearLayoutManager(this));
+        eventsList.setItemAnimator(null);
+        eventsList.setClipToPadding(false);
+        eventAdapter = new EventAdapter(new ArrayList<>());
+        eventsList.setAdapter(eventAdapter);
+        eventsList.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                updateCarouselVisuals();
+            }
+
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    updateCarouselVisuals();
+                }
+            }
+        });
+    }
+
+    private void setupActions() {
+        btnSyncNow.setOnClickListener(v -> requestSync());
+        rootContainer.setOnTouchListener((v, event) -> {
+            if (event == null) {
+                return false;
+            }
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN) {
+                swipeStartX = event.getX();
+                swipeStartY = event.getY();
+                return false;
+            }
+            if (action == MotionEvent.ACTION_UP) {
+                float dx = event.getX() - swipeStartX;
+                float dy = event.getY() - swipeStartY;
+                if (Math.abs(dx) > dp(40) && Math.abs(dx) > Math.abs(dy) * 1.2f) {
+                    int direction = dx < 0 ? 1 : -1;
+                    navigatePage(direction, true);
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    private void updateUI() {
+        currentSnap = WearSnapshotStore.load(this);
+        boolean localeChanged = WearLocaleManager.updateOverrideFromSnapshot(this, currentSnap);
+        if (localeChanged && WearLocaleManager.needsRecreateForCurrentContext(this)) {
+            recreate();
+            return;
+        }
+        applyThemeFromSnapshot(currentSnap);
+
+        if (currentSnap != null && currentSnap.weekDays != null && !currentSnap.weekDays.isEmpty()) {
+            totalDays = currentSnap.weekDays.size();
+            if (currentPage > totalDays) {
+                currentPage = totalDays;
+            }
+            if (currentPage < 0) {
+                currentPage = findInitialDayIndex(currentSnap);
+            }
+        } else {
+            totalDays = 0;
+            currentPage = 0;
+        }
+
+        renderCurrentPage(false, 0);
+    }
+
+    private int findInitialDayIndex(WearPlanSnapshot snap) {
+        LocalDate today = LocalDate.now();
+        for (int i = 0; i < snap.weekDays.size(); i++) {
+            WearPlanSnapshot.WeekDay day = snap.weekDays.get(i);
+            if (day == null) {
+                continue;
+            }
+            if (!TextUtils.isEmpty(day.dateIso)) {
+                try {
+                    if (today.equals(LocalDate.parse(day.dateIso))) {
+                        return i;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            if (!TextUtils.isEmpty(day.dateLabel)) {
+                String marker = today.format(DateTimeFormatter.ofPattern("dd.MM"));
+                if (day.dateLabel.contains(marker)) {
+                    return i;
+                }
+            }
+        }
+        return 0;
+    }
+
+    private void navigatePage(int direction, boolean animate) {
+        int maxPage = totalDays; // last page is sync
+        int next = currentPage + direction;
+        if (next < 0 || next > maxPage) {
+            return;
+        }
+        currentPage = next;
+        renderCurrentPage(animate, direction);
+    }
+
+    private void renderCurrentPage(boolean animate, int direction) {
+        if (currentPage >= totalDays) {
+            showSyncPage(animate, direction);
+        } else {
+            showDayPage(animate, direction);
+        }
+    }
+
+    private void showDayPage(boolean animate, int direction) {
+        dayPageContent.setVisibility(View.VISIBLE);
+        syncPageContent.setVisibility(View.GONE);
+
+        List<EventItem> items = new ArrayList<>();
+        if (currentSnap == null || currentSnap.weekDays == null || currentSnap.weekDays.isEmpty()) {
+            dayTitle.setText(R.string.tile_no_data);
+            dayCounter.setText(getString(R.string.wear_day_counter_format, 1, 1));
+            items.add(new EventItem(getString(R.string.tile_no_events), "", "", 0));
+            eventAdapter.setItems(items);
+            activeEventIndex = 0;
+            eventAdapter.setActiveIndex(activeEventIndex);
+            eventsList.post(this::applyCarouselTransforms);
+            return;
+        }
+
+        WearPlanSnapshot.WeekDay day = currentSnap.weekDays.get(currentPage);
+        dayTitle.setText(!TextUtils.isEmpty(day.dateLabel) ? day.dateLabel : day.dateIso);
+        dayCounter.setText(getString(R.string.wear_day_counter_format, currentPage + 1, totalDays + 1));
+
+        if (day.events == null || day.events.isEmpty()) {
+            items.add(new EventItem(getString(R.string.tile_no_events), "", "", 0));
+        } else {
+            for (WearPlanSnapshot.Event ev : day.events) {
+                items.add(new EventItem(ev.title, ev.time, ev.room, ev.color));
+            }
+        }
+
+        eventAdapter.setItems(items);
+        activeEventIndex = 0;
+        eventAdapter.setActiveIndex(activeEventIndex);
+        eventsList.scrollToPosition(0);
+        eventsList.post(this::updateCarouselVisuals);
+
+        if (animate) {
+            float fromX = direction > 0 ? dp(20) : -dp(20);
+            dayPageContent.setTranslationX(fromX);
+            dayPageContent.setAlpha(0f);
+            dayPageContent.animate().translationX(0f).alpha(1f).setDuration(150).start();
+        }
+    }
+
+    private void showSyncPage(boolean animate, int direction) {
+        dayPageContent.setVisibility(View.GONE);
+        syncPageContent.setVisibility(View.VISIBLE);
+        syncCounter.setText(getString(R.string.wear_sync_counter_format, totalDays + 1, totalDays + 1));
+        refreshSyncStatusUi();
+
+        if (animate) {
+            float fromX = direction > 0 ? dp(20) : -dp(20);
+            syncPageContent.setTranslationX(fromX);
+            syncPageContent.setAlpha(0f);
+            syncPageContent.animate().translationX(0f).alpha(1f).setDuration(150).start();
+        }
+    }
+
+    private void refreshSyncStatusUi() {
+        String statusText = WearSnapshotStore.getStatus(this);
+        int progressValue = WearSnapshotStore.getProgress(this);
+
+        if (TextUtils.isEmpty(statusText)) {
+            if (currentSnap != null && currentSnap.loginRequired) {
+                statusText = getString(R.string.wear_main_status_login_required);
+            } else {
+                statusText = getString(R.string.wear_main_status_idle);
+            }
+        }
+
+        boolean progressBusy = progressValue > 0 && progressValue < 100;
+        boolean busy = syncRequestInFlight || progressBusy;
+
+        syncStatus.setText(shortenStatus(statusText));
+        syncProgress.setVisibility(busy ? View.VISIBLE : View.GONE);
+        if (busy) {
+            syncProgress.setProgress(progressValue > 0 ? progressValue : 5);
+        }
+        btnSyncNow.setEnabled(!busy);
+        btnSyncNow.setAlpha(busy ? 0.6f : 1f);
+    }
+
+    private void updateCarouselVisuals() {
+        updateActiveEventFromScroll();
+        applyCarouselTransforms();
+    }
+
+    private void updateActiveEventFromScroll() {
+        if (eventsList == null || eventAdapter == null || eventAdapter.getItemCount() == 0) {
+            return;
+        }
+
+        int anchorY = eventsList.getPaddingTop() + dp(34);
+        int closestPos = activeEventIndex;
+        float minDist = Float.MAX_VALUE;
+
+        int childCount = eventsList.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View child = eventsList.getChildAt(i);
+            if (child == null) {
+                continue;
+            }
+            int pos = eventsList.getChildAdapterPosition(child);
+            if (pos == RecyclerView.NO_POSITION) {
+                continue;
+            }
+            float centerY = (child.getTop() + child.getBottom()) / 2f;
+            float dist = Math.abs(centerY - anchorY);
+            if (dist < minDist) {
+                minDist = dist;
+                closestPos = pos;
+            }
+        }
+
+        if (closestPos != activeEventIndex) {
+            activeEventIndex = closestPos;
+            eventAdapter.setActiveIndex(activeEventIndex);
+        }
+    }
+
+    private void applyCarouselTransforms() {
+        if (eventsList == null) {
+            return;
+        }
+        int listHeight = eventsList.getHeight();
+        if (listHeight <= 0) {
+            return;
+        }
+
+        int anchorY = eventsList.getPaddingTop() + dp(34);
+        float maxDist = Math.max(dp(120), listHeight * 0.7f);
+
+        int childCount = eventsList.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View child = eventsList.getChildAt(i);
+            if (child == null) {
+                continue;
+            }
+            float centerY = (child.getTop() + child.getBottom()) / 2f;
+            float dist = Math.abs(centerY - anchorY);
+            float norm = Math.min(1f, dist / maxDist);
+            float scale = 1f - (0.2f * norm);
+            float alpha = 1f - (0.55f * norm);
+            child.setScaleX(scale);
+            child.setScaleY(scale);
+            child.setAlpha(alpha);
+        }
+    }
+
+    private String shortenStatus(String text) {
+        if (text == null) {
+            return "";
+        }
+        String out = text.trim();
+        if (out.length() > 44) {
+            out = out.substring(0, 41) + "...";
+        }
+        return out;
+    }
+
+    private void requestSync() {
+        long now = System.currentTimeMillis();
+        if (syncRequestInFlight) {
+            return;
+        }
+        if (now - lastSyncTapTs < SYNC_TAP_DEBOUNCE_MS) {
+            return;
+        }
+        lastSyncTapTs = now;
+
+        currentPage = totalDays;
+        renderCurrentPage(false, 0);
+
+        syncRequestInFlight = true;
+        handler.removeCallbacks(syncRequestTimeoutRunnable);
+        WearSnapshotStore.setProgress(this, 5, getString(R.string.wear_main_status_syncing));
+        refreshSyncStatusUi();
+
+        executor.execute(() -> {
+            try {
+                List<Node> nodes = resolveSyncNodes();
+                if (nodes.isEmpty()) {
+                    onSyncRequestFailed(R.string.wear_main_no_phone);
+                    return;
+                }
+
+                int sentCount = 0;
+                for (Node node : nodes) {
+                    try {
+                        Tasks.await(Wearable.getMessageClient(this).sendMessage(
+                                node.getId(),
+                                WearSyncConstants.PATH_REQUEST_SYNC,
+                                new byte[0]));
+                        sentCount++;
+                    } catch (Exception e) {
+                        Log.e(TAG, "requestSync: message failed for node " + node.getDisplayName(), e);
+                    }
+                }
+
+                boolean dataRequestSent = sendDataSyncRequest();
+                if (sentCount == 0 && !dataRequestSent) {
+                    onSyncRequestFailed(R.string.wear_main_sync_failed);
+                    return;
+                }
+
+                WearSnapshotStore.setProgress(this, 20, getString(R.string.wear_main_status_waiting));
+                runOnUiThread(() -> {
+                    refreshSyncStatusUi();
+                });
+                handler.postDelayed(syncRequestTimeoutRunnable, SYNC_REQUEST_TIMEOUT_MS);
+            } catch (Exception e) {
+                Log.e(TAG, "requestSync: fatal", e);
+                onSyncRequestFailed(R.string.wear_main_sync_failed);
+            }
+        });
+    }
+
+    private void onSyncRequestFailed(int statusRes) {
+        syncRequestInFlight = false;
+        handler.removeCallbacks(syncRequestTimeoutRunnable);
+        WearSnapshotStore.setProgress(this, 0, getString(statusRes));
+        runOnUiThread(() -> {
+            refreshSyncStatusUi();
+        });
+    }
+
+    private boolean sendDataSyncRequest() {
+        try {
+            PutDataMapRequest req = PutDataMapRequest.create(WearSyncConstants.PATH_REQUEST_SYNC);
+            DataMap map = req.getDataMap();
+            map.putLong(WearSyncConstants.KEY_TIMESTAMP, System.currentTimeMillis());
+            map.putString("source", "watch_button");
+            Tasks.await(Wearable.getDataClient(this).putDataItem(req.asPutDataRequest().setUrgent()));
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "sendDataSyncRequest: failed", e);
+            return false;
+        }
+    }
+
+    private List<Node> resolveSyncNodes() {
+        try {
+            List<Node> nodes = Tasks.await(Wearable.getNodeClient(this).getConnectedNodes());
+            if (nodes != null) {
+                return nodes;
+            }
+            return Collections.emptyList();
+        } catch (Exception e) {
+            Log.e(TAG, "resolveSyncNodes: failed", e);
+            return Collections.emptyList();
+        }
+    }
+
     private void publishWatchStatus() {
         try {
             BatteryManager bm = (BatteryManager) getSystemService(BATTERY_SERVICE);
             int level = bm != null ? bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) : -1;
             String deviceName = Build.MODEL != null ? Build.MODEL : getString(R.string.wear_device_default_name);
-            PutDataMapRequest req = PutDataMapRequest.create(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_WATCH_STATUS);
+
+            PutDataMapRequest req = PutDataMapRequest.create(WearSyncConstants.PATH_WATCH_STATUS);
             DataMap map = req.getDataMap();
-            map.putInt(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_BATTERY, level);
-            map.putString(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_DEVICE_NAME, deviceName);
-            map.putLong(pl.kejlo.mzutv2.wear.sync.WearSyncConstants.KEY_TIMESTAMP, System.currentTimeMillis());
-            Wearable.getDataClient(this).putDataItem(req.asPutDataRequest());
-        } catch (Exception e) { Log.e(TAG, "fail", e); }
-    }
-    
-    private void requestSync() {
-        executor.execute(() -> {
-            try {
-                // ... same logic as before ...
-                List<Node> nodes = Tasks.await(Wearable.getNodeClient(this).getConnectedNodes());
-                if (nodes == null || nodes.isEmpty()) {
-                    runOnUiThread(() -> Toast.makeText(this, R.string.wear_main_no_phone, Toast.LENGTH_SHORT).show());
-                    return;
-                }
-                runOnUiThread(() -> {
-                   if (syncStatus != null) syncStatus.setText(R.string.wear_main_status_syncing);
-                   // ...
-                });
-                for (Node n : nodes) {
-                   Wearable.getMessageClient(this).sendMessage(n.getId(),
-                       pl.kejlo.mzutv2.wear.sync.WearSyncConstants.PATH_REQUEST_SYNC, new byte[0]);
-                }
-                // ...
-            } catch (Exception e) {}
-        });
-    }
-
-    // Custom Spot for SnapHelper
-    private static class TopSnapHelper extends LinearSnapHelper {
-        @Override
-        public int[] calculateDistanceToFinalSnap(@NonNull RecyclerView.LayoutManager layoutManager, @NonNull View targetView) {
-            int[] out = new int[2];
-            int viewTop = layoutManager.getDecoratedTop(targetView);
-            int snapTop = layoutManager.getPaddingTop(); 
-            out[1] = viewTop - snapTop;
-            out[0] = 0;
-            return out;
+            map.putInt(WearSyncConstants.KEY_BATTERY, level);
+            map.putString(WearSyncConstants.KEY_DEVICE_NAME, deviceName);
+            map.putLong(WearSyncConstants.KEY_TIMESTAMP, System.currentTimeMillis());
+            Wearable.getDataClient(this).putDataItem(req.asPutDataRequest().setUrgent());
+        } catch (Exception e) {
+            Log.e(TAG, "publishWatchStatus: failed", e);
         }
+    }
 
-        @Override
-        public View findSnapView(RecyclerView.LayoutManager layoutManager) {
-            if (!(layoutManager instanceof LinearLayoutManager)) return null;
-            LinearLayoutManager llm = (LinearLayoutManager) layoutManager;
-            
-            int snapTop = llm.getPaddingTop();
-            int minDist = Integer.MAX_VALUE;
-            View closest = null;
-            
-            int childCount = llm.getChildCount();
-            for (int i = 0; i < childCount; i++) {
-                View child = llm.getChildAt(i);
-                if (child == null) continue;
-                int top = llm.getDecoratedTop(child);
-                int dist = Math.abs(top - snapTop);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closest = child;
-                }
+    private void applyRoundInsets() {
+        boolean isRound = getResources().getConfiguration().isScreenRound();
+        float fontScale = getResources().getConfiguration().fontScale;
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+
+        int inset = isRound ? Math.max((int) (screenWidth * 0.11f), dp(14)) : dp(10);
+        int fontExtra = Math.max(0, Math.round((fontScale - 1f) * dp(8)));
+
+        dayPageContent.setPadding(inset, dp(8), inset, dp(8) + fontExtra);
+        syncPageContent.setPadding(inset, dp(8), inset, dp(6) + fontExtra);
+        eventsList.setPadding(0, dp(2), 0, dp(38) + fontExtra);
+    }
+
+    private void applyThemeFromSnapshot(WearPlanSnapshot snap) {
+        if (snap != null) {
+            if (snap.colorCard != 0) {
+                themeCard = snap.colorCard;
             }
-            return closest;
+            if (snap.colorText != 0) {
+                themeText = snap.colorText;
+            }
+            if (snap.colorMuted != 0) {
+                themeMuted = snap.colorMuted;
+            }
+            if (snap.colorAccent != 0) {
+                themeAccent = snap.colorAccent;
+            }
+        }
+        themeBg = 0xFF000000;
+
+        rootContainer.setBackgroundColor(themeBg);
+        dayHeaderCard.setBackground(null);
+        syncSheet.setBackground(null);
+
+        dayTitle.setTextColor(themeText);
+        dayCounter.setTextColor(themeAccent);
+        syncTitle.setTextColor(themeText);
+        syncCounter.setTextColor(themeAccent);
+        syncStatus.setTextColor(themeText);
+        btnSyncNow.setBackground(makeRounded(themeAccent, dp(18)));
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            syncProgress.setProgressTintList(ColorStateList.valueOf(themeAccent));
+            syncProgress.setProgressBackgroundTintList(ColorStateList.valueOf(0x33222222));
+        }
+
+        if (eventAdapter != null) {
+            eventAdapter.notifyDataSetChanged();
         }
     }
 
-    // Adapter for RecyclerView
-    private static class EventItem {
-        String title, time, room;
-        int color;
-        EventItem(String t, String ti, String r, int c) { title=t; time=ti; room=r; color=c; }
+    private GradientDrawable makeRounded(int color, int radius) {
+        GradientDrawable d = new GradientDrawable();
+        d.setShape(GradientDrawable.RECTANGLE);
+        d.setColor(color);
+        d.setCornerRadius(radius);
+        return d;
     }
 
-    private class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
+    private GradientDrawable makeRoundedWithStroke(int color, int radius, int strokeColor) {
+        GradientDrawable d = makeRounded(color, radius);
+        d.setStroke(dp(1), strokeColor);
+        return d;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private static final class EventItem {
+        final String title;
+        final String time;
+        final String room;
+        final int color;
+
+        EventItem(String title, String time, String room, int color) {
+            this.title = title != null ? title : "";
+            this.time = time != null ? time : "";
+            this.room = room != null ? room : "";
+            this.color = color;
+        }
+    }
+
+    private final class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
         private final List<EventItem> items;
-        EventAdapter(List<EventItem> items) { this.items = items; }
-        
+        private int activeIndex = 0;
+
+        EventAdapter(List<EventItem> items) {
+            this.items = items;
+        }
+
+        void setItems(List<EventItem> newItems) {
+            items.clear();
+            if (newItems != null) {
+                items.addAll(newItems);
+            }
+            activeIndex = 0;
+            notifyDataSetChanged();
+        }
+
+        void setActiveIndex(int index) {
+            int bounded = Math.max(0, Math.min(index, Math.max(0, items.size() - 1)));
+            if (activeIndex == bounded) {
+                return;
+            }
+            int old = activeIndex;
+            activeIndex = bounded;
+            if (old >= 0 && old < items.size()) {
+                notifyItemChanged(old);
+            }
+            if (activeIndex >= 0 && activeIndex < items.size()) {
+                notifyItemChanged(activeIndex);
+            }
+        }
+
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             LinearLayout row = new LinearLayout(MainWearActivity.this);
             row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(dp(4), dp(4), dp(4), dp(4)); // Reduced to 4dp (very tight)
-            
-            GradientDrawable bg = new GradientDrawable();
-            bg.setColor(themeCard);
-            bg.setCornerRadius(dp(16)); // Slightly smaller radius
-            row.setBackground(bg);
-            
-            // Layout params for RecyclerView
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(10), dp(8), dp(10), dp(8));
+
             RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
                     RecyclerView.LayoutParams.MATCH_PARENT,
                     RecyclerView.LayoutParams.WRAP_CONTENT);
-            lp.setMargins(0, 0, 0, 0); // Reset here
+            lp.setMargins(0, 0, 0, dp(4));
             row.setLayoutParams(lp);
-            return new ViewHolder(row);
+
+            View stripe = new View(MainWearActivity.this);
+            LinearLayout.LayoutParams stripeLp = new LinearLayout.LayoutParams(dp(4), dp(34));
+            stripeLp.setMarginEnd(dp(10));
+            row.addView(stripe, stripeLp);
+
+            LinearLayout content = new LinearLayout(MainWearActivity.this);
+            content.setOrientation(LinearLayout.VERTICAL);
+            content.setLayoutParams(new LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f));
+
+            TextView title = new TextView(MainWearActivity.this);
+            title.setTextSize(12f);
+            title.setTextColor(themeText);
+            title.setMaxLines(2);
+            title.setEllipsize(TextUtils.TruncateAt.END);
+            content.addView(title);
+
+            TextView time = new TextView(MainWearActivity.this);
+            time.setTextSize(10f);
+            time.setTextColor(themeMuted);
+            time.setSingleLine(true);
+            time.setEllipsize(TextUtils.TruncateAt.END);
+            content.addView(time);
+
+            TextView room = new TextView(MainWearActivity.this);
+            room.setTextSize(10f);
+            room.setTextColor(themeMuted);
+            room.setSingleLine(true);
+            room.setEllipsize(TextUtils.TruncateAt.END);
+            content.addView(room);
+
+            row.addView(content);
+            return new ViewHolder(row, stripe, title, time, room);
         }
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             EventItem item = items.get(position);
-            LinearLayout row = (LinearLayout) holder.itemView;
-            
-            // Dynamic margins
-            RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) row.getLayoutParams();
-            if (position == 0) {
-                // "ten wyróżniony jeszcze bardziej w dół przesuń" -> Push first item down using MARGIN, not global padding
-                lp.setMargins(0, dp(40), 0, dp(1)); 
+            boolean isPrimary = position == activeIndex;
+            RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) holder.row.getLayoutParams();
+            if (isPrimary) {
+                lp.setMargins(0, 0, 0, dp(4));
+                holder.row.setPadding(dp(10), dp(8), dp(10), dp(8));
+                holder.row.setBackground(makeRoundedWithStroke(themeCard, dp(10), 0x28FFFFFF));
+                holder.title.setTextSize(12f);
+                holder.title.setMaxLines(2);
+                holder.time.setTextSize(10f);
+                holder.room.setTextSize(10f);
             } else {
-                // "zmniejsz odstępy" -> Gap is just bottom margin (1dp)
-                lp.setMargins(0, 0, 0, dp(1));
+                lp.setMargins(dp(18), 0, dp(18), dp(3));
+                holder.row.setPadding(dp(8), dp(5), dp(8), dp(5));
+                holder.row.setBackground(makeRoundedWithStroke(0x1F222222, dp(8), 0x1FFFFFFF));
+                holder.title.setTextSize(10f);
+                holder.title.setMaxLines(1);
+                holder.time.setTextSize(9f);
+                holder.room.setTextSize(9f);
             }
-            row.setLayoutParams(lp);
+            holder.row.setLayoutParams(lp);
 
-            row.removeAllViews();
-            
-            // Stripe
-            if (item.color != 0 || item.time != null) {
-                View stripe = new View(MainWearActivity.this);
-                stripe.setBackground(makeRounded(item.color != 0 ? item.color : themeAccent, dp(2)));
-                LinearLayout.LayoutParams stripeLp = new LinearLayout.LayoutParams(dp(4), dp(36));
-                stripeLp.setMarginEnd(dp(12));
-                row.addView(stripe, stripeLp);
-            }
-            
-            // Content
-            LinearLayout col = new LinearLayout(MainWearActivity.this);
-            col.setOrientation(LinearLayout.VERTICAL);
-            col.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
-            
-            TextView title = new TextView(MainWearActivity.this);
-            // Filter out group (e.g. "(A)")
             String safeTitle = item.title.replaceAll("\\s*\\(.*?\\)$", "");
-            title.setText(safeTitle);
-            title.setTextSize(13f);
-            title.setTextColor(themeText);
-            title.setMaxLines(2);
-            title.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            col.addView(title);
+            holder.title.setText(safeTitle);
+            holder.title.setTextColor(themeText);
+            holder.time.setTextColor(themeMuted);
+            holder.room.setTextColor(themeMuted);
 
-            if (item.time != null) {
-                TextView timeTv = new TextView(MainWearActivity.this);
-                timeTv.setText(item.time);
-                timeTv.setTextSize(10f);
-                timeTv.setTextColor(themeMuted); // Revert to muted
-                timeTv.setSingleLine(true);
-                col.addView(timeTv);
+            boolean hasMeta = !TextUtils.isEmpty(item.time) || !TextUtils.isEmpty(item.room);
+            int stripeColor = item.color != 0 ? item.color : themeAccent;
+            holder.stripe.setVisibility(hasMeta ? View.VISIBLE : View.GONE);
+            holder.stripe.setBackground(makeRounded(stripeColor, dp(2)));
+            ViewGroup.LayoutParams stripeRawLp = holder.stripe.getLayoutParams();
+            if (stripeRawLp instanceof LinearLayout.LayoutParams) {
+                LinearLayout.LayoutParams stripeLp = (LinearLayout.LayoutParams) stripeRawLp;
+                stripeLp.width = isPrimary ? dp(4) : dp(3);
+                stripeLp.height = isPrimary ? dp(34) : dp(18);
+                stripeLp.setMarginEnd(isPrimary ? dp(10) : dp(8));
+                holder.stripe.setLayoutParams(stripeLp);
             }
-            
-            if (item.room != null) {
-                TextView roomTv = new TextView(MainWearActivity.this);
-                roomTv.setText(item.room);
-                roomTv.setTextSize(10f);
-                roomTv.setTextColor(themeMuted);
-                roomTv.setSingleLine(true);
-                col.addView(roomTv);
+
+            if (TextUtils.isEmpty(item.time)) {
+                holder.time.setVisibility(View.GONE);
+            } else {
+                holder.time.setVisibility(View.VISIBLE);
+                if (isPrimary) {
+                    holder.time.setText(item.time);
+                } else if (TextUtils.isEmpty(item.room)) {
+                    holder.time.setText(item.time);
+                } else {
+                    holder.time.setText(item.time + " · " + item.room);
+                }
             }
-            row.addView(col);
+
+            if (!isPrimary || TextUtils.isEmpty(item.room)) {
+                holder.room.setVisibility(View.GONE);
+            } else {
+                holder.room.setVisibility(View.VISIBLE);
+                holder.room.setText(item.room);
+            }
         }
 
         @Override
         public int getItemCount() {
-            return items != null ? items.size() : 0;
+            return items.size();
         }
 
-        class ViewHolder extends RecyclerView.ViewHolder {
-            ViewHolder(View v) { super(v); }
+        final class ViewHolder extends RecyclerView.ViewHolder {
+            final LinearLayout row;
+            final View stripe;
+            final TextView title;
+            final TextView time;
+            final TextView room;
+
+            ViewHolder(@NonNull View itemView, View stripe, TextView title, TextView time, TextView room) {
+                super(itemView);
+                this.row = (LinearLayout) itemView;
+                this.stripe = stripe;
+                this.title = title;
+                this.time = time;
+                this.room = room;
+            }
         }
-    }
-    
-    private android.graphics.drawable.Drawable makeRounded(int color, int radius) {
-        GradientDrawable d = new GradientDrawable();
-        d.setColor(color);
-        d.setCornerRadius(radius);
-        return d;
     }
 }
