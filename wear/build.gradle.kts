@@ -10,8 +10,8 @@ android {
         applicationId = "pl.kejlo.mzutv2"
         minSdk = 26
         targetSdk = 35
-        versionCode = 142
-        versionName = "1.52"
+        versionCode = 145
+        versionName = "1.6"
     }
 
     buildTypes {

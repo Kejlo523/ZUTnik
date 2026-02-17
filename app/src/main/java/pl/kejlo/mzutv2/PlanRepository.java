@@ -193,6 +193,7 @@ public class PlanRepository {
 
     private static String sCachedAlbum;
     private static long sCachedAlbumTs;
+    private static String sCachedAlbumStudyId;
     private static final long ALBUM_TTL_MS = 24L * 60L * 60L * 1000L; // 24h
 
     private static String fmtPlDate(LocalDate date) {
@@ -223,7 +224,7 @@ public class PlanRepository {
                     break;
             }
         } else {
-            String[] dniPl = { "Nd", "Pn", "Wt", "Ĺšr", "Cz", "Pt", "So" };
+            String[] dniPl = { "Nd", "Pn", "Wt", "\u015Ar", "Cz", "Pt", "So" };
             int dow = date.getDayOfWeek().getValue() % 7;
             dz = dniPl[dow];
         }
@@ -253,7 +254,7 @@ public class PlanRepository {
         return dt.getHour() * 60 + dt.getMinute();
     }
 
-    // Helpers â€“ ZUT API
+    // Helpers - ZUT API
 
     private JSONArray httpGetJsonArray(String urlStr, PlanDebug debug) throws IOException, JSONException {
         PlanDebug.RequestDebug rd = new PlanDebug.RequestDebug();
@@ -292,23 +293,6 @@ public class PlanRepository {
     private String resolveAlbumNumber() throws IOException, JSONException {
         long now = System.currentTimeMillis();
 
-        if (sCachedAlbum != null && (now - sCachedAlbumTs) < ALBUM_TTL_MS) {
-            return sCachedAlbum;
-        }
-
-        // Try to recover album from persisted cache (offline support)
-        if (sFullPlanCache == null) {
-            FullPlanCache fromDisk = readCacheFromDisk();
-            if (fromDisk != null) {
-                sFullPlanCache = fromDisk;
-            }
-        }
-        if (sFullPlanCache != null && sFullPlanCache.album != null && !sFullPlanCache.album.isEmpty()) {
-            sCachedAlbum = sFullPlanCache.album;
-            sCachedAlbumTs = now;
-            return sCachedAlbum;
-        }
-
         MzutSession session = MzutSession.getInstance();
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
@@ -333,11 +317,38 @@ public class PlanRepository {
         if (active.przynaleznoscId == null) {
             return null;
         }
+        String activeStudyId = active.przynaleznoscId.trim();
+        if (activeStudyId.isEmpty()) {
+            return null;
+        }
+
+        if (sCachedAlbum != null
+                && sCachedAlbumStudyId != null
+                && sCachedAlbumStudyId.equals(activeStudyId)
+                && (now - sCachedAlbumTs) < ALBUM_TTL_MS) {
+            return sCachedAlbum;
+        }
+
+        // Disk cache fallback is safe only when user has exactly one direction.
+        if (studies.size() == 1) {
+            if (sFullPlanCache == null) {
+                FullPlanCache fromDisk = readCacheFromDisk();
+                if (fromDisk != null) {
+                    sFullPlanCache = fromDisk;
+                }
+            }
+            if (sFullPlanCache != null && sFullPlanCache.album != null && !sFullPlanCache.album.isEmpty()) {
+                sCachedAlbum = sFullPlanCache.album;
+                sCachedAlbumTs = now;
+                sCachedAlbumStudyId = activeStudyId;
+                return sCachedAlbum;
+            }
+        }
 
         HashMap<String, String> params = new HashMap<>();
         params.put("login", userId);
         params.put("token", authKey);
-        params.put("przynaleznoscId", active.przynaleznoscId);
+        params.put("przynaleznoscId", activeStudyId);
 
         JSONObject resp = MzutApi.callApi("getStudy", params);
         if (resp == null) {
@@ -354,10 +365,10 @@ public class PlanRepository {
 
         sCachedAlbum = album;
         sCachedAlbumTs = now;
+        sCachedAlbumStudyId = activeStudyId;
 
         return album;
     }
-
     // Search functionality
 
     public PlanResult searchPlan(String viewMode, LocalDate currentDate, SearchParams search)
@@ -697,13 +708,13 @@ public class PlanRepository {
             return "week-event-type-exam-remote";
         if (hay.contains("egzamin"))
             return "week-event-type-exam";
-        if (hay.contains("odwoĹ‚ane"))
+        if (hay.contains("odwo\u0142ane"))
             return "week-event-type-cancelled";
         if (hay.contains("rektorskie"))
             return "week-event-type-rector";
-        if (hay.contains("dziekaĹ„skie") || hay.contains("godziny dziekaĹ„skie"))
+        if (hay.contains("dzieka\u0144skie") || hay.contains("godziny dzieka\u0144skie"))
             return "week-event-type-dean";
-        if (hay.contains("zajÄ™cia zdalne") || hay.contains("zdalne"))
+        if (hay.contains("zaj\u0119cia zdalne") || hay.contains("zdalne"))
             return "week-event-type-remote";
 
         // Pass types
@@ -737,7 +748,7 @@ public class PlanRepository {
             return "week-event-type-lab";
         if (hay.contains("audytoryjne") || "a".equals(formShort))
             return "week-event-type-auditory";
-        if (hay.contains("wykĹ‚ad") || "w".equals(formShort))
+        if (hay.contains("wyk\u0142ad") || "w".equals(formShort))
             return "week-event-type-lecture";
 
         if ("z".equals(formShort))
@@ -1457,85 +1468,221 @@ public class PlanRepository {
     }
 
     public List<SubjectFilterItem> loadSubjectsForFilter() throws IOException, JSONException {
-        // Optimized: Scan the CACHE instead of calling N+1 API endpoints.
-
         String album = resolveAlbumNumber();
-        if (album == null)
+        if (album == null) {
             return Collections.emptyList();
+        }
 
-        // Ensure we have some data? No, we can only filter what we have.
-        // If cache is empty, we might want to trigger a full refresh or just return
-        // empty.
-        // Returning empty is safer than blocking for 10 seconds to download everything.
+        AcademicRange range = resolveCurrentAcademicTermRange(LocalDate.now());
+        Map<LocalDate, List<PlanEventRaw>> byDate = ensureScopeData(
+                album,
+                range.start,
+                range.end,
+                "filter_current",
+                false,
+                new PlanDebug());
 
-        synchronized (PlanRepository.class) {
-            if (sFullPlanCache == null) {
-                readCacheFromDisk();
-            }
-            if (sFullPlanCache == null || sFullPlanCache.byDate == null) {
-                return Collections.emptyList();
-            }
+        if (byDate == null || byDate.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-            Map<String, Map<String, String>> subjectsAll = new TreeMap<>();
+        Map<String, String> normalizedToSubject = new HashMap<>();
+        Map<String, Set<String>> normalizedToTypes = new HashMap<>();
 
-            for (List<PlanEventRaw> events : sFullPlanCache.byDate.values()) {
-                if (events == null)
-                    continue;
+        LocalDate iter = range.start;
+        while (!iter.isAfter(range.end)) {
+            List<PlanEventRaw> events = byDate.get(iter);
+            if (events != null) {
                 for (PlanEventRaw e : events) {
-                    String subject = (e.subject != null ? e.subject : e.title).trim();
-                    if (subject.isEmpty())
+                    String subject = (e.subject != null ? e.subject : e.title);
+                    if (subject == null) {
                         continue;
-
-                    String form = (e.lessonForm != null ? e.lessonForm : "").toLowerCase(Locale.ROOT);
-                    String typeKey = null;
-                    if (form.contains("laboratorium"))
-                        typeKey = "lab";
-                    else if (form.contains("audytoryjne"))
-                        typeKey = "aud";
-                    else if (form.contains("wykĹ‚ad"))
-                        typeKey = "lec";
-
-                    if (typeKey == null)
+                    }
+                    subject = subject.trim();
+                    if (subject.isEmpty()) {
                         continue;
+                    }
 
-                    subjectsAll.putIfAbsent(subject, new HashMap<>());
-                    Map<String, String> types = subjectsAll.get(subject);
-                    String filterKey = subject + "||" + typeKey;
-                    types.put(typeKey, filterKey);
+                    String typeKey = resolveFilterTypeKey(e);
+                    if (typeKey == null) {
+                        continue;
+                    }
+
+                    String normalizedSubject = normalizeFilterString(subject);
+                    if (normalizedSubject.isEmpty()) {
+                        continue;
+                    }
+
+                    normalizedToSubject.putIfAbsent(normalizedSubject, subject);
+                    normalizedToTypes
+                            .computeIfAbsent(normalizedSubject, k -> new HashSet<>())
+                            .add(typeKey);
                 }
             }
+            iter = iter.plusDays(1);
+        }
 
-            List<SubjectFilterItem> items = new ArrayList<>();
-            for (Map.Entry<String, Map<String, String>> entry : subjectsAll.entrySet()) {
-                String subject = entry.getKey();
-                Map<String, String> types = entry.getValue();
+        if (normalizedToSubject.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-                if (types.containsKey("lec")) {
-                    SubjectFilterItem it = new SubjectFilterItem();
-                    it.label = subject;
-                    it.typeLabel = "WykĹ‚ad";
-                    it.filterKey = types.get("lec");
-                    items.add(it);
-                }
-                if (types.containsKey("aud")) {
-                    SubjectFilterItem it = new SubjectFilterItem();
-                    it.label = subject;
-                    it.typeLabel = "Audytoryjne";
-                    it.filterKey = types.get("aud");
-                    items.add(it);
-                }
-                if (types.containsKey("lab")) {
-                    SubjectFilterItem it = new SubjectFilterItem();
-                    it.label = subject;
-                    it.typeLabel = "Laboratorium";
-                    it.filterKey = types.get("lab");
-                    items.add(it);
-                }
+        List<String> normalizedKeys = new ArrayList<>(normalizedToSubject.keySet());
+        normalizedKeys.sort((a, b) -> normalizedToSubject.get(a).compareToIgnoreCase(normalizedToSubject.get(b)));
+
+        List<SubjectFilterItem> items = new ArrayList<>();
+        for (String normalizedSubject : normalizedKeys) {
+            String subject = normalizedToSubject.get(normalizedSubject);
+            Set<String> types = normalizedToTypes.getOrDefault(normalizedSubject, Collections.emptySet());
+
+            if (types.contains("lec")) {
+                SubjectFilterItem it = new SubjectFilterItem();
+                it.label = subject;
+                it.typeKey = "lec";
+                it.typeLabel = getFilterTypeLabel("lec");
+                it.filterKey = subject + "||lec";
+                items.add(it);
             }
-            return items;
+            if (types.contains("aud")) {
+                SubjectFilterItem it = new SubjectFilterItem();
+                it.label = subject;
+                it.typeKey = "aud";
+                it.typeLabel = getFilterTypeLabel("aud");
+                it.filterKey = subject + "||aud";
+                items.add(it);
+            }
+            if (types.contains("lab")) {
+                SubjectFilterItem it = new SubjectFilterItem();
+                it.label = subject;
+                it.typeKey = "lab";
+                it.typeLabel = getFilterTypeLabel("lab");
+                it.filterKey = subject + "||lab";
+                items.add(it);
+            }
+        }
+
+        return items;
+    }
+
+    private static class AcademicRange {
+        final LocalDate start;
+        final LocalDate end;
+
+        AcademicRange(LocalDate start, LocalDate end) {
+            this.start = start;
+            this.end = end;
         }
     }
 
+    private AcademicRange resolveCurrentAcademicTermRange(LocalDate date) {
+        LocalDate now = date != null ? date : LocalDate.now();
+        int month = now.getMonthValue();
+
+        // Winter term: October -> February
+        if (month >= 10) {
+            int yStart = now.getYear();
+            int yEnd = yStart + 1;
+            LocalDate start = LocalDate.of(yStart, 10, 1);
+            LocalDate end = LocalDate.of(yEnd, 2, LocalDate.of(yEnd, 2, 1).lengthOfMonth());
+            return new AcademicRange(start, end);
+        }
+        if (month <= 2) {
+            int yEnd = now.getYear();
+            int yStart = yEnd - 1;
+            LocalDate start = LocalDate.of(yStart, 10, 1);
+            LocalDate end = LocalDate.of(yEnd, 2, LocalDate.of(yEnd, 2, 1).lengthOfMonth());
+            return new AcademicRange(start, end);
+        }
+
+        // Summer term: March -> September
+        int y = now.getYear();
+        LocalDate start = LocalDate.of(y, 3, 1);
+        LocalDate end = LocalDate.of(y, 9, 30);
+        return new AcademicRange(start, end);
+    }
+
+    private String resolveFilterTypeKey(PlanEventRaw e) {
+        if (e == null) {
+            return null;
+        }
+
+        String formShort = normalizeFilterString(e.lessonFormShort);
+        if ("l".equals(formShort) || formShort.contains("lab")) {
+            return "lab";
+        }
+        if ("a".equals(formShort) || formShort.contains("aud")) {
+            return "aud";
+        }
+        if ("w".equals(formShort) || formShort.contains("wyk") || formShort.contains("lec")) {
+            return "lec";
+        }
+
+        String typeClass = lower(eventTypeClass(e));
+        if (typeClass.endsWith("-lab")) {
+            return "lab";
+        }
+        if (typeClass.endsWith("-auditory")) {
+            return "aud";
+        }
+        if (typeClass.endsWith("-lecture")) {
+            return "lec";
+        }
+
+        String form = normalizeFilterString(e.lessonForm);
+        if (form.contains("laboratorium") || form.contains("laboratory")) {
+            return "lab";
+        }
+        if (form.contains("audytoryjne") || form.contains("auditory") || form.contains("auditorium")) {
+            return "aud";
+        }
+        if (form.contains("wyklad") || form.contains("lecture")) {
+            return "lec";
+        }
+
+        return null;
+    }
+
+    private String getFilterTypeLabel(String typeKey) {
+        if (appContext != null) {
+            switch (typeKey) {
+                case "lec":
+                    return appContext.getString(R.string.plan_type_lecture);
+                case "aud":
+                    return appContext.getString(R.string.plan_type_auditory);
+                case "lab":
+                    return appContext.getString(R.string.plan_type_lab);
+                default:
+                    return "";
+            }
+        }
+        switch (typeKey) {
+            case "lec":
+                return "Lecture";
+            case "aud":
+                return "Auditory";
+            case "lab":
+                return "Laboratory";
+            default:
+                return "";
+        }
+    }
+
+    private String normalizeFilterString(String value) {
+        if (value == null) {
+            return "";
+        }
+        String lower = value.trim().toLowerCase(Locale.ROOT);
+        if (lower.isEmpty()) {
+            return "";
+        }
+
+        String normalized = java.text.Normalizer.normalize(lower, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+        return normalized
+                .replace('\u0142', 'l')
+                .replace('\u0141', 'l')
+                .replace('\u0111', 'd')
+                .replace('\u0110', 'd');
+    }
     /**
      * Merges custom events (exams, tests) with official plan events for a given
      * day.
@@ -1975,10 +2122,10 @@ public class PlanRepository {
         String normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "");
         return normalized
-                .replace('ł', 'l')
-                .replace('Ł', 'l')
-                .replace('đ', 'd')
-                .replace('Đ', 'd');
+                .replace('\u0142', 'l')
+                .replace('\u0141', 'l')
+                .replace('\u0111', 'd')
+                .replace('\u0110', 'd');
     }
 
     private void collectPeriods(
