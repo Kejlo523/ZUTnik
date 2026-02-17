@@ -1,655 +1,455 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="battery_opt_dialog_title">Kapitanie, problem!</string>
-    <string name="battery_opt_dialog_message">Łajba musi płynąć w tle, żeby widgety nie poszły na dno. Wyłącz oszczędzanie energii dla tej krypy.</string>
-    <string name="battery_opt_button_settings">Ustawienia Łajby</string>
-    <string name="battery_opt_button_cancel">Poddaj się</string>
-
-    <string name="app_name">mZUT v2 (Pirate Ed.)</string>
-    <string name="app_version">Wersja %1$s (Alpha &amp; Omega)</string>
-
-    <string name="nav_header_default_username">Majtek</string>
-    <string name="logout_success_message">Opuszczono pokład!</string>
-    <string name="nav_settings_label">Kajuta Kapitana</string>
-    <string name="nav_useful_links">Mapy Skarbów</string>
-    <string name="nav_logout_label">Opuszczam Okręt</string>
-
-    <string name="login_card_title">Pokaż Przepustkę</string>
-    <string name="login_hint">Ksywa (Login)</string>
-    <string name="login_password_hint">Tajny Kod (Hasło)</string>
-    <string name="login_button">Wchodzę na pokład</string>
-    <string name="login_info_text">
+  <string name="battery_opt_dialog_title">Kapitanie, problem!</string>
+  <string name="battery_opt_dialog_message">Łajba musi płynąć w tle, żeby widgety nie poszły na dno. Wyłącz oszczędzanie energii dla tej krypy.</string>
+  <string name="battery_opt_button_settings">Ustawienia Łajby</string>
+  <string name="battery_opt_button_cancel">Poddaj się</string>
+  <string name="app_name">mZUT v2 (Pirate Ed.)</string>
+  <string name="app_version">Wersja %1$s (Alpha &amp; Omega)</string>
+  <string name="nav_header_default_username">Majtek</string>
+  <string name="logout_success_message">Opuszczono pokład!</string>
+  <string name="nav_settings_label">Kajuta Kapitana</string>
+  <string name="nav_useful_links">Mapy Skarbów</string>
+  <string name="nav_logout_label">Opuszczam Okręt</string>
+  <string name="login_card_title">Pokaż Przepustkę</string>
+  <string name="login_hint">Ksywa (Login)</string>
+  <string name="login_password_hint">Tajny Kod (Hasło)</string>
+  <string name="login_button">Wchodzę na pokład</string>
+  <string name="login_info_text">
         Twoje dane lecą prosto do ZUT (Krakena). Login zostanie wyryty na tym urządzeniu.
     </string>
-
-    <string name="login_enter_credentials">Podaj Ksywę i Tajny Kod, szczurze lądowy!</string>
-    <string name="login_error_generic">Sztorm: %1$s</string>
-    <string name="login_no_server_response">Kraken nie odpowiada (Brak serwera)</string>
-    <string name="login_system_error">Statek tonie! (SYSTEM ERROR).</string>
-    <string name="login_invalid_credentials">Zła przepustka! (Błędny login/hasło).</string>
-    <string name="login_success">Ahoj, %1$s!</string>
-
-    <string name="home_title">Mostek Kapitański</string>
-    <string name="home_toolbar_title">Mostek Kapitański</string>
-
-    <string name="home_welcome_message">Ahoj %1$s!</string>
-    <string name="home_welcome_subtitle">
+  <string name="login_enter_credentials">Podaj Ksywę i Tajny Kod, szczurze lądowy!</string>
+  <string name="login_error_generic">Sztorm: %1$s</string>
+  <string name="login_no_server_response">Kraken nie odpowiada (Brak serwera)</string>
+  <string name="login_system_error">Statek tonie! (SYSTEM ERROR).</string>
+  <string name="login_invalid_credentials">Zła przepustka! (Błędny login/hasło).</string>
+  <string name="login_success">Ahoj, %1$s!</string>
+  <string name="home_title">Mostek Kapitański</string>
+  <string name="home_toolbar_title">Mostek Kapitański</string>
+  <string name="home_welcome_message">Ahoj %1$s!</string>
+  <string name="home_welcome_subtitle">
         Tu masz mapę zajęć, swoje łupy (oceny) i wieści ze świata. Nie zgub się!
     </string>
-    <string name="home_welcome_fallback">Ahoj Majtku 👋</string>
-
-    <string name="home_grades_not_available">Skrzynia ze skarbami jest zamknięta (Oceny niedostępne).</string>
-    <string name="home_news_not_available">Bocianie gniazdo puste (Aktualności niedostępne).</string>
-
-    <string name="home_tip_plan">Mapa: gdzie dziś płyniemy (zajęcia).</string>
-    <string name="home_tip_grades">Łupy: ile złota zebrałeś (ECTS, Oceny).</string>
-    <string name="home_tip_info">Info: kto ty jesteś, dokąd zmierzasz.</string>
-    <string name="home_tip_news">Wieści: co tam słychać na morzu.</string>
-
-    <string name="home_shortcuts_title">Szybka Szalupa</string>
-    <string name="home_side_panel_desc">Burtowy panel</string>
-
-    <string name="home_action_plan_label">📅 Plan Rejsu</string>
-    <string name="home_action_grades_label">⭐ Złoto i Łupy</string>
-
-    <string name="home_tile_plan_title">📅 Plan Rejsu</string>
-    <string name="home_tile_plan_desc">
+  <string name="home_welcome_fallback">Ahoj Majtku 👋</string>
+  <string name="home_grades_not_available">Skrzynia ze skarbami jest zamknięta (Oceny niedostępne).</string>
+  <string name="home_shortcuts_title">Szybka Szalupa</string>
+  <string name="home_side_panel_desc">Burtowy panel</string>
+  <string name="home_tile_plan_title">📅 Plan Rejsu</string>
+  <string name="home_tile_plan_desc">
         Gdzie i kiedy masz wiosłować.
     </string>
-
-    <string name="home_tile_grades_title">⭐ Złoto i Łupy</string>
-    <string name="home_tile_grades_desc">
+  <string name="home_tile_grades_title">⭐ Złoto i Łupy</string>
+  <string name="home_tile_grades_desc">
         Podsumowanie Twoich zdobyczy i punktów.
     </string>
-
-    <string name="home_tile_info_title">🎓 O Tobie</string>
-    <string name="home_tile_info_desc">
+  <string name="home_tile_info_title">🎓 O Tobie</string>
+  <string name="home_tile_info_desc">
         Kierunek rejsu, ranga i inne papiery.
     </string>
-
-    <string name="home_tile_news_title">📰 Wieści z Portu</string>
-    <string name="home_tile_news_desc">
+  <string name="home_tile_news_title">📰 Wieści z Portu</string>
+  <string name="home_tile_news_desc">
         Co tam krzyczą w porcie (Komunikaty).
     </string>
-
-    <string name="home_footer_meta">
+  <string name="home_footer_meta">
         Dane kradzione z ZUT i kitrane lokalnie. Jak coś śmierdzi, sprawdź w oficjalnym dzienniku pokładowym.
     </string>
-
-    <string name="info_title">Papiery Majtka</string>
-    <string name="info_user_id">ID Pirata: %1$s</string>
-    <string name="info_user_id_placeholder">ID Pirata: -</string>
-
-    <string name="info_sync_in_progress">Szorowanie pokładu (Sync)…</string>
-    <string name="info_error_loading">Mapa zamokła: %1$s</string>
-
-    <string name="info_history_empty">Brak historii rejsów.</string>
-    <string name="info_history_item">%1$s – %2$s</string>
-    <string name="info_history_title">Historia Rejsów</string>
-
-    <string name="info_header_title">Twoje Papiery</string>
-    <string name="info_header_subtitle">
-        Wszystko co o Tobie wiedzą: ranga, cel podróży i przebyte mile morskie.
-    </string>
-
-    <string name="info_study_switch_label">Cel podróży / Kierunek</string>
-
-    <string name="info_current_studies_title">Obecny Kurs</string>
-    <string name="info_label_album">Nr tatuażu (Album):</string>
-    <string name="info_label_faculty">Banderola (Wydział):</string>
-    <string name="info_label_field">Kurs (Kierunek):</string>
-    <string name="info_label_form">Tryb żeglugi:</string>
-    <string name="info_label_level">Poziom wtajemniczenia:</string>
-    <string name="info_label_specialty">Fach:</string>
-    <string name="info_label_specialisation">Specjalizacja:</string>
-    <string name="info_label_status">Status:</string>
-    <string name="info_label_academic_year">Rok na morzu:</string>
-    <string name="info_label_semester">Wachta (Semestr):</string>
-
-    <string name="plan_title">Plan Rejsu</string>
-
-    <string name="plan_filters_cache_cleared">
-        Wyczyszczono lunetę. Nowa mapa przy następnym otwarciu.
-    </string>
-    <string name="plan_filters_loading">Rozwijam żagle…</string>
-    <string name="plan_filters_error">Nie widać lądu (Błąd): %1$s</string>
-    <string name="plan_filters_empty">Pusto na horyzoncie.</string>
-    <string name="plan_filters_dialog_title">Wyrzuć za burtę (Filtr)</string>
-    <string name="plan_filters_apply">Tak ma być!</string>
-    <string name="plan_filters_reset">Od nowa</string>
-    <string name="plan_filters_cancel">Wrrróć</string>
-
-    <string name="plan_error_loading_plan_with_message">Zgubiono mapę: %1$s</string>
-    <string name="plan_error_loading_plan_generic">Zgubiono mapę.</string>
-    <string name="plan_no_classes_in_range">Wolne! Pijemy rum!</string>
-    <string name="plan_no_data_for_month">Brak rozkazów na ten miesiąc.</string>
-
-    <string name="plan_month_cell_has_events_hint">Robota w ten dzień</string>
-
-    <string name="plan_event_default_title">Robota</string>
-    <string name="plan_event_room_prefix">Kajuta: </string>
-    <string name="plan_event_group_prefix">Załoga: </string>
-    <string name="plan_event_teacher_prefix">Bosman: </string>
-
-    <string name="plan_header_mon_short">Pn</string>
-    <string name="plan_header_tue_short">Wt</string>
-    <string name="plan_header_wed_short">Śr</string>
-    <string name="plan_header_thu_short">Cz</string>
-    <string name="plan_header_fri_short">Pt</string>
-    <string name="plan_header_sat_short">Sb</string>
-    <string name="plan_header_sun_short">Nd</string>
-
-    <string name="plan_month_weekday_mon">Pon</string>
-    <string name="plan_month_weekday_tue">Wt</string>
-    <string name="plan_month_weekday_wed">Śr</string>
-    <string name="plan_month_weekday_thu">Czw</string>
-    <string name="plan_month_weekday_fri">Pt</string>
-    <string name="plan_month_weekday_sat">Sob</string>
-    <string name="plan_month_weekday_sun">Nd</string>
-
-    <string name="plan_view_day">Dzień</string>
-    <string name="plan_view_week">Tydzień</string>
-    <string name="plan_view_month">Miesiąc</string>
-    <string name="plan_view_mode_label">Widok</string>
-    <string name="plan_actions_label">Rozkazy</string>
-
-    <string name="plan_button_today">Dziś</string>
-    <string name="plan_button_refresh">Przetrzyj lunetę</string>
-    <string name="plan_button_filters">Filtr</string>
-
-    <string name="plan_search_hint">Gdzie to jest?</string>
-
-    <string name="plan_toast_resetting_search">Zwijam mapę…</string>
-    <string name="plan_toast_refreshed">Luneta przetarta (Odświeżono)</string>
-    <string name="plan_toast_search_prefix">Szukam: %1$s %2$s</string>
-    <string name="plan_search_dialog_title">Szukaj na mapie</string>
-    <string name="plan_search_category_label">Kategorio</string>
-    <string name="plan_search_hint_input">Co chcesz znaleźć?</string>
-    <string name="plan_search_button">Szukaj!</string>
-    <string name="plan_search_saved_title">Zakopane mapy</string>
-    <string name="plan_search_save_label">Zakop (Zapisz)</string>
-    <string name="plan_search_save_hint_label">Nazwa skarbu (opcjonalnie)</string>
-    <string name="plan_search_save_title">Zakop mapę</string>
-    <string name="plan_search_save_confirm">Zakop</string>
-    <string name="plan_search_saved_toast">Zakopane!</string>
-    <string name="plan_search_no_saved">Brak zakopanych map</string>
-    <string name="plan_search_saved_clear">Spal mapy</string>
-    <string name="plan_search_saved_cleared">Mapy spalone</string>
-    <string name="plan_search_empty_query">Wpisz coś, niemoto</string>
-
-    <string name="plan_search_cat_album">Nr tatuażu</string>
-    <string name="plan_search_cat_teacher">Bosman</string>
-    <string name="plan_search_cat_room">Kajuta</string>
-    <string name="plan_search_cat_subject">Robota</string>
-    <string name="plan_search_cat_group">Załoga</string>
-    <string name="plan_search_no_suggestions">Brak podpowiedzi</string>
-    <string name="plan_search_album_no_autocomplete">Wpisz numer albumu i kliknij Szukaj</string>
-    <string name="plan_search_type_to_search">Zacznij pisac, by zobaczyc podpowiedzi...</string>
-
-    <string name="plan_type_lecture">Wykład (Spanie)</string>
-    <string name="plan_type_lab">Laboratorium (Wybuchy)</string>
-    <string name="plan_type_auditory">Ćwiczenia (Męczarnia)</string>
-    <string name="plan_type_exam">Walka z Bossem (Egzamin)</string>
-    <string name="plan_type_cancelled">Odwołane (Pijemy!)</string>
-    <string name="plan_type_rector">Dzień Kapitana</string>
-    <string name="plan_type_remote">Zaleganie w koi (Zdalne)</string>
-    <string name="plan_type_pass">Walka (Zaliczenie)</string>
-    <string name="plan_type_pass_retake">Druga szansa (Poprawka)</string>
-    <string name="plan_type_pass_remote">Walka z koi (Zdalne zal.)</string>
-    <string name="plan_type_pass_remote_retake">Druga szansa z koi</string>
-
-    <string name="grades_title">Skarbiec</string>
-    <string name="grades_refresh_toast">Liczenie złota…</string>
-
-    <string name="grades_error_initial_load">Ktoś ukradł skrzynię: %1$s</string>
-    <string name="grades_error_loading_semesters">Błąd wacht: %1$s</string>
-    <string name="grades_no_semesters_for_study">Brak wacht na tym kursie.</string>
-    <string name="grades_refresh_network_failed_using_cache">
+  <string name="info_title">Papiery Majtka</string>
+  <string name="info_user_id">ID Pirata: %1$s</string>
+  <string name="info_user_id_placeholder">ID Pirata: -</string>
+  <string name="info_sync_in_progress">Szorowanie pokładu (Sync)…</string>
+  <string name="info_error_loading">Mapa zamokła: %1$s</string>
+  <string name="info_history_empty">Brak historii rejsów.</string>
+  <string name="info_history_item">%1$s – %2$s</string>
+  <string name="info_history_title">Historia Rejsów</string>
+  <string name="info_study_switch_label">Cel podróży / Kierunek</string>
+  <string name="info_current_studies_title">Obecny Kurs</string>
+  <string name="info_label_album">Nr tatuażu (Album):</string>
+  <string name="info_label_faculty">Banderola (Wydział):</string>
+  <string name="info_label_field">Kurs (Kierunek):</string>
+  <string name="info_label_form">Tryb żeglugi:</string>
+  <string name="info_label_level">Poziom wtajemniczenia:</string>
+  <string name="info_label_specialty">Fach:</string>
+  <string name="info_label_specialisation">Specjalizacja:</string>
+  <string name="info_label_status">Status:</string>
+  <string name="info_label_academic_year">Rok na morzu:</string>
+  <string name="info_label_semester">Wachta (Semestr):</string>
+  <string name="plan_title">Plan Rejsu</string>
+  <string name="plan_filters_loading">Rozwijam żagle…</string>
+  <string name="plan_filters_error">Nie widać lądu (Błąd): %1$s</string>
+  <string name="plan_filters_empty">Pusto na horyzoncie.</string>
+  <string name="plan_filters_dialog_title">Wyrzuć za burtę (Filtr)</string>
+  <string name="plan_filters_apply">Tak ma być!</string>
+  <string name="plan_filters_reset">Od nowa</string>
+  <string name="plan_filters_cancel">Wrrróć</string>
+  <string name="plan_no_classes_in_range">Wolne! Pijemy rum!</string>
+  <string name="plan_month_cell_has_events_hint">Robota w ten dzień</string>
+  <string name="plan_event_room_prefix">Kajuta: </string>
+  <string name="plan_event_group_prefix">Załoga: </string>
+  <string name="plan_event_teacher_prefix">Bosman: </string>
+  <string name="plan_header_mon_short">Pn</string>
+  <string name="plan_header_tue_short">Wt</string>
+  <string name="plan_header_wed_short">Śr</string>
+  <string name="plan_header_thu_short">Cz</string>
+  <string name="plan_header_fri_short">Pt</string>
+  <string name="plan_header_sat_short">Sb</string>
+  <string name="plan_header_sun_short">Nd</string>
+  <string name="plan_month_weekday_mon">Pon</string>
+  <string name="plan_month_weekday_tue">Wt</string>
+  <string name="plan_month_weekday_wed">Śr</string>
+  <string name="plan_month_weekday_thu">Czw</string>
+  <string name="plan_month_weekday_fri">Pt</string>
+  <string name="plan_month_weekday_sat">Sob</string>
+  <string name="plan_month_weekday_sun">Nd</string>
+  <string name="plan_view_day">Dzień</string>
+  <string name="plan_view_week">Tydzień</string>
+  <string name="plan_view_month">Miesiąc</string>
+  <string name="plan_view_mode_label">Widok</string>
+  <string name="plan_actions_label">Rozkazy</string>
+  <string name="plan_button_today">Dziś</string>
+  <string name="plan_button_refresh">Przetrzyj lunetę</string>
+  <string name="plan_button_filters">Filtr</string>
+  <string name="plan_toast_resetting_search">Zwijam mapę…</string>
+  <string name="plan_toast_refreshed">Luneta przetarta (Odświeżono)</string>
+  <string name="plan_toast_search_prefix">Szukam: %1$s %2$s</string>
+  <string name="plan_search_dialog_title">Szukaj na mapie</string>
+  <string name="plan_search_category_label">Kategorio</string>
+  <string name="plan_search_hint_input">Co chcesz znaleźć?</string>
+  <string name="plan_search_button">Szukaj!</string>
+  <string name="plan_search_saved_title">Zakopane mapy</string>
+  <string name="plan_search_save_label">Zakop (Zapisz)</string>
+  <string name="plan_search_save_hint_label">Nazwa skarbu (opcjonalnie)</string>
+  <string name="plan_search_save_title">Zakop mapę</string>
+  <string name="plan_search_save_confirm">Zakop</string>
+  <string name="plan_search_saved_toast">Zakopane!</string>
+  <string name="plan_search_no_saved">Brak zakopanych map</string>
+  <string name="plan_search_saved_clear">Spal mapy</string>
+  <string name="plan_search_saved_cleared">Mapy spalone</string>
+  <string name="plan_search_empty_query">Wpisz coś, niemoto</string>
+  <string name="plan_search_cat_album">Nr tatuażu</string>
+  <string name="plan_search_cat_teacher">Bosman</string>
+  <string name="plan_search_cat_room">Kajuta</string>
+  <string name="plan_search_cat_subject">Robota</string>
+  <string name="plan_search_cat_group">Załoga</string>
+  <string name="plan_search_no_suggestions">Brak podpowiedzi</string>
+  <string name="plan_search_album_no_autocomplete">Wpisz numer albumu i kliknij Szukaj</string>
+  <string name="plan_search_type_to_search">Zacznij pisac, by zobaczyc podpowiedzi…</string>
+  <string name="plan_type_lecture">Wykład (Spanie)</string>
+  <string name="plan_type_lab">Laboratorium (Wybuchy)</string>
+  <string name="plan_type_auditory">Ćwiczenia (Męczarnia)</string>
+  <string name="plan_type_exam">Walka z Bossem (Egzamin)</string>
+  <string name="plan_type_cancelled">Odwołane (Pijemy!)</string>
+  <string name="plan_type_rector">Dzień Kapitana</string>
+  <string name="plan_type_remote">Zaleganie w koi (Zdalne)</string>
+  <string name="plan_type_pass">Walka (Zaliczenie)</string>
+  <string name="grades_title">Skarbiec</string>
+  <string name="grades_refresh_toast">Liczenie złota…</string>
+  <string name="grades_error_initial_load">Ktoś ukradł skrzynię: %1$s</string>
+  <string name="grades_error_loading_semesters">Błąd wacht: %1$s</string>
+  <string name="grades_no_semesters_for_study">Brak wacht na tym kursie.</string>
+  <string name="grades_refresh_network_failed_using_cache">
         Nie mogę policzyć złota. Pokazuję stare zapiski.
     </string>
-    <string name="grades_load_network_failed_using_cache">
+  <string name="grades_load_network_failed_using_cache">
         Sztorm na łączach. Pokazuję stare zapiski.
     </string>
-    <string name="grades_error_loading_grades">Nie mogę otworzyć skrzyni: %1$s</string>
-
-    <string name="grades_semester_label">Wachta %1$s (%2$s)</string>
-
-    <string name="grades_average_placeholder">?</string>
-
-    <string name="grades_hero_title">Twój Łup</string>
-    <string name="grades_hero_subtitle">
-        Ile masz złota (ECTS), średnia jakość łupu i lista zdobyczy.
-    </string>
-
-    <string name="grades_summary_average_label">Jakość łupu (Średnia)</string>
-    <string name="grades_summary_average_description">
-        Warzona jakość Twoich zdobyczy.
-    </string>
-
-    <string name="grades_summary_ects_label">Suma Złota (ECTS)</string>
-    <string name="grades_summary_ects_description">
-        Ile złota zebrałeś na tej wachcie.
-    </string>
-
-    <string name="grades_study_label">Obecny Rejs</string>
-    <string name="grades_semester_caption">Wachta</string>
-
-    <string name="grades_table_header_subject">Cel</string>
-    <string name="grades_table_header_type">Typ walki</string>
-    <string name="grades_table_header_grade">Wynik</string>
-    <string name="grades_table_header_date">Data</string>
-
-    <string name="grades_empty_state">Pusta skrzynia. Do roboty!</string>
-
-    <string name="news_title">Wieści z Portu</string>
-    <string name="news_refresh_toast">Nasłuchuję mew…</string>
-    <string name="news_error_rss">Mewy milczą: %1$s</string>
-
-    <string name="news_detail_title">Plotka</string>
-    <string name="news_detail_source_label">Z portu: zut.edu.pl</string>
-    <string name="news_detail_no_content">
+  <string name="grades_error_loading_grades">Nie mogę otworzyć skrzyni: %1$s</string>
+  <string name="grades_semester_label">Wachta %1$s (%2$s)</string>
+  <string name="grades_average_placeholder">\?</string>
+  <string name="grades_summary_average_label">Jakość łupu (Średnia)</string>
+  <string name="grades_summary_ects_label">Suma Złota (ECTS)</string>
+  <string name="grades_empty_state">Pusta skrzynia. Do roboty!</string>
+  <string name="news_title">Wieści z Portu</string>
+  <string name="news_refresh_toast">Nasłuchuję mew…</string>
+  <string name="news_error_rss">Mewy milczą: %1$s</string>
+  <string name="news_detail_title">Plotka</string>
+  <string name="news_detail_source_label">Z portu: zut.edu.pl</string>
+  <string name="news_detail_no_content">
         Pusta butelka (Brak treści).
     </string>
-
-    <string name="news_header_title">Krzyki w Porcie</string>
-    <string name="news_header_source_info">Źródło: Majtkowie ZUT</string>
-
-    <string name="news_empty_state">
+  <string name="news_header_title">Krzyki w Porcie</string>
+  <string name="news_header_source_info">Źródło: Majtkowie ZUT</string>
+  <string name="news_empty_state">
         Cisza na morzu.
     </string>
-
-    <string name="news_detail_tag">📰 Plotka</string>
-
-    <string name="plan_widget_subtitle_today">Dzisiejsza Orka</string>
-    <string name="plan_widget_subtitle_in_progress">Wiosłujesz teraz</string>
-    <string name="plan_widget_subtitle_next_prefix">Kolejna fala za </string>
-    <string name="plan_widget_hours_suffix"> h</string>
-    <string name="plan_widget_minutes_suffix"> min</string>
-    <string name="plan_widget_subtitle_no_classes_tomorrow">Jutro leżymy do góry brzuchem</string>
-    <string name="plan_widget_subtitle_tomorrow">Jutrzejsza Orka</string>
-    <string name="plan_widget_subtitle_login_required">
+  <string name="news_detail_tag">📰 Plotka</string>
+  <string name="plan_widget_subtitle_today">Dzisiejsza Orka</string>
+  <string name="plan_widget_subtitle_in_progress">Wiosłujesz teraz</string>
+  <string name="plan_widget_subtitle_next_prefix">Kolejna fala za </string>
+  <string name="plan_widget_hours_suffix"> h</string>
+  <string name="plan_widget_minutes_suffix"> min</string>
+  <string name="plan_widget_subtitle_no_classes_tomorrow">Jutro leżymy do góry brzuchem</string>
+  <string name="plan_widget_subtitle_tomorrow">Jutrzejsza Orka</string>
+  <string name="plan_widget_subtitle_login_required">
         Pokaż przepustkę w apce!
     </string>
-    <string name="plan_widget_date_tomorrow_suffix">(jutro)</string>
-    <string name="plan_widget_refreshed_prefix">Sprawdzono: </string>
-    <string name="plan_widget_label_today">Dziś</string>
-    <string name="plan_widget_refreshed_placeholder">Sprawdzono: --:--</string>
-    <string name="plan_widget_item_title_placeholder">Robota</string>
-    <string name="plan_widget_item_time_placeholder">08:00 - 09:30</string>
-    <string name="plan_widget_item_room_placeholder">Kajuta 123</string>
-
-    <string name="about_title">O tej łajbie</string>
-
-    <string name="about_subtitle">
-        Piracka apka dla szczurów lądowych z ZUT. Plan, łupy i wieści - bez szpiegów i reklam.
-    </string>
-
-    <string name="about_section_project_title">Kto to zbudował?</string>
-    <string name="about_author_line">Szkutnik: Jędrzej Nowak.</string>
-    <string name="about_project_description_1">
+  <string name="plan_widget_refreshed_prefix">Sprawdzono: </string>
+  <string name="plan_widget_label_today">Dziś</string>
+  <string name="plan_widget_refreshed_placeholder">Sprawdzono: —:—</string>
+  <string name="plan_widget_item_title_placeholder">Robota</string>
+  <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
+  <string name="plan_widget_item_room_placeholder">Kajuta 123</string>
+  <string name="about_title">O tej łajbie</string>
+  <string name="about_project_description_1">
         mZUT v2 powstał, bo oryginalne mapy były do niczego. Szybko i bez zbędnego balastu.
     </string>
-    <string name="about_project_description_2">
-        Bierzemy dane z portu, ale Twoje klucze zostają w Twojej kieszeni.
-    </string>
-    <string name="about_rate_cta">Oceń łajbę (%1$s ★)</string>
-    <string name="about_rate_title">Oceń okręt</string>
-    <string name="about_rate_desc">Twój głos trzyma nas na powierzchni!</string>
-
-    <string name="about_section_contact_title">Gołąb pocztowy</string>
-    <string name="about_contact_email">List w butelce: kejlo@endozero.pl</string>
-    <string name="about_contact_website">Port: endozero.pl</string>
-    <string name="about_contact_app_website">Dok: mzut.endozero.pl</string>
-    <string name="about_contact_github">Stocznia: Plany (Kod)</string>
-
-    <string name="about_section_privacy_title">Sekrety</string>
-    <string name="about_privacy_text_1">
-        Zero szpiegów. Zero kapusiów.
-    </string>
-    <string name="about_privacy_text_2">
-        Twoje klucze służą tylko do otwierania bram portu ZUT. Nikomu ich nie dajemy.
-    </string>
-    <string name="about_privacy_policy_url">https://mzut.endozero.pl/privacy-policy</string>
-    <string name="about_review_error">Iluminator ocen zacięty!</string>
-
-    <string name="about_footer_disclaimer">
-        To jest piracka łajba, a nie oficjalny okręt ZUT.
-    </string>
-
-    <string name="settings_title">Kajuta Kapitana (Ustawienia)</string>
-    <string name="settings_subtitle">
-        Wybierz dialekt. Może trzeba będzie przeładować armaty (restart).
-    </string>
-
-    <string name="settings_language_label">Język załogi</string>
-    <string name="settings_language_polish">Polski (Lądowy, bez rumu)</string>
-    <string name="settings_language_english">Angielski (Admirała)</string>
-    <string name="settings_language_ukrainian">Ukraiński (Bratnia Flota)</string>
-
-    <string name="settings_language_info_hint">
+  <string name="about_rate_title">Oceń okręt</string>
+  <string name="about_rate_desc">Twój głos trzyma nas na powierzchni!</string>
+  <string name="about_contact_email">List w butelce: kejlo@endozero.pl</string>
+  <string name="about_contact_website">Port: endozero.pl</string>
+  <string name="about_contact_app_website">Dok: mzut.endozero.pl</string>
+  <string name="about_privacy_policy_url">https://mzut.endozero.pl/privacy-policy</string>
+  <string name="settings_title">Kajuta Kapitana (Ustawienia)</string>
+  <string name="settings_language_label">Język załogi</string>
+  <string name="settings_language_polish">Polski (Lądowy, bez rumu)</string>
+  <string name="settings_language_english">Angielski (Admirała)</string>
+  <string name="settings_language_ukrainian">Ukraiński (Bratnia Flota)</string>
+  <string name="settings_language_info_hint">
         Jak zmienisz język, może trzeba będzie zrestartować łajbę.
     </string>
-
-    <string name="settings_language_changed_toast">
+  <string name="settings_language_changed_toast">
         Język zmieniony. Ahoj!
     </string>
-
-    <string name="useful_links_header_title">Ważne Mapy</string>
-    <string name="useful_links_header_sub">
-        Dziekanat, regulaminy i inne nudy.
-    </string>
-    <string name="useful_links_section_title">Lista Map</string>
-    <string name="useful_links_empty">
+  <string name="useful_links_empty">
         Pusto. Dodaj coś w kajucie albo weź standardowe.
     </string>
-
-    <string name="logout_confirm_title">Uciekasz?</string>
-    <string name="logout_confirm_message">Chcesz opuścić okręt?</string>
-    <string name="logout_confirm_positive">Skaczę!</string>
-    <string name="logout_confirm_negative">Zostaję</string>
-
-    <!-- Tile Customization & Edit Mode -->
-    <string name="dialog_add_edit_tile_title_new">Nowa łata na żagiel</string>
-    <string name="dialog_add_edit_tile_title_edit">Zmień łatę</string>
-    <string name="dialog_add_edit_tile_label_title">Nazwa</string>
-    <string name="dialog_add_edit_tile_hint_title">Np. Mapa</string>
-    <string name="dialog_add_edit_tile_label_desc">O co chodzi</string>
-    <string name="dialog_add_edit_tile_hint_desc">Krótko</string>
-    <string name="dialog_add_edit_tile_label_action">Co robić</string>
-    <string name="dialog_add_edit_tile_label_url_section">Gdzie płynąć (URL)</string>
-    <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
-    <string name="dialog_add_edit_tile_label_saved_search">Wybierz zakopaną mapę</string>
-    <string name="dialog_add_edit_tile_label_color">Kolor</string>
-    <string name="dialog_add_edit_tile_color_default">Domyślny (Bandera)</string>
-    <string name="dialog_add_edit_tile_color_hue">Odcień</string>
-    <string name="dialog_add_edit_tile_color_sat">Nasycenie</string>
-    <string name="dialog_add_edit_tile_color_val">Jasność</string>
-    <string name="dialog_add_edit_tile_btn_save">Zaklep</string>
-    <string name="dialog_add_edit_tile_btn_cancel">Wrrróć</string>
-    <string name="dialog_add_edit_tile_toast_no_saved_searches">Brak zakopanych map!</string>
-    <string name="dialog_add_edit_tile_spinner_empty">(Pusto)</string>
-
-    <string name="tile_action_plan">Plan Rejsu</string>
-    <string name="tile_action_grades">Złoto</string>
-    <string name="tile_action_info">Papiery</string>
-    <string name="tile_action_news">Plotki</string>
-    <string name="tile_action_news_latest">Najświeższa Plotka</string>
-    <string name="tile_action_plan_search">Zapisana Mapa</string>
-    <string name="tile_action_useful">Przydatne</string>
-    <string name="tile_action_about">O łajbie</string>
-    <string name="tile_action_url">Własny Kurs</string>
-
-    <string name="menu_home_edit">Przemebluj pokład</string>
-    <string name="menu_home_save">Zapisz ustawienie</string>
-    <string name="menu_home_add">Dodaj coś</string>
-    <string name="menu_home_cancel">Anuluj</string>
-    <string name="menu_home_reset">Jak było na początku</string>
-
-    <string name="home_edit_mode_toast">Remont! Kliknij, żeby zmienić, przytrzymaj, żeby rozciągnąć.</string>
-    <string name="home_save_toast">Zapisano!</string>
-    <string name="home_cancel_toast">Anulowano!</string>
-    <string name="home_reset_toast">Przywrócono porządek.</string>
-    <string name="home_reset_dialog_title">Zrobić jak było?</string>
-    <string name="home_reset_dialog_message">Na pewno chcesz zresetować układ? Twoje zmiany pójdą na dno.</string>
-    <string name="home_reset_dialog_yes">Tak!</string>
-    <string name="home_reset_dialog_no">Nie!</string>
-    <string name="home_open_url_error">Zły adres!</string>
-    <string name="home_open_error">Błąd: %1$s</string>
-
-    <string name="settings_theme_label">Malowanie Okrętu</string>
-    <string name="settings_widget_refresh_label">Częstość zwiadu (Widget)</string>
-    <string name="settings_widget_refresh_saved">Rozkazy dla zwiadowców zapisane!</string>
-    <string name="settings_theme_changed">Okręt przemalowany!</string>
-
-    <string name="theme_deep_blue">Głębia Oceanu</string>
-    <string name="theme_high_contrast">Wysoki kontrast (Dla ślepców)</string>
-    <string name="theme_lime">Limonkowy Sztorm</string>
-    <string name="offline_mode_label">Bez wiatru (Offline)</string>
-    <string name="online_mode_label">Na pełnym morzu (Online)</string>
-    <string name="grades_grouping_toggle">Grupuj łupy</string>
-    <string name="grades_final_grade_label">Wyrok (Ocena końcowa)</string>
-    <string name="grades_final_grade_missing">Brak wyroku</string>
-    <string name="grades_group_items_count">Zostało: %d</string>
-    <string name="plan_type_label">Rodzaj tortury</string>
-
-    <!-- Attendance -->
-    <string name="attendance_title">Obecność na pokładzie</string>
-    <string name="attendance_summary_label">Frekwencja</string>
-    <string name="attendance_subtitle">Całkowita frekwencja</string>
-    <string name="attendance_summary_detail">Godzin: %1$d | Dezerter: %2$d</string>
-    <string name="attendance_hours_format">Godzin: %1$d</string>
-    <string name="attendance_empty_state">Brak roboty w planie.\nOdśwież mapę, żeby załadować zadania.</string>
-    <string name="attendance_refreshing">Przeglądam listę załogi...</string>
-    <string name="attendance_increase">Dodaj dezercję</string>
-    <string name="attendance_decrease">Odejmij dezercję</string>
-    <string name="attendance_edit_hours_title">Ustaw wachty</string>
-    <string name="attendance_edit_hours_message">Wpisz łączną liczbę godzin orki:\n%1$s</string>
-    <string name="attendance_hours_tap_to_set">Kliknij, by ustawić godziny</string>
-    <string name="attendance_summary_title">Łącznie dezerterowałeś</string>
-    <string name="attendance_no_absences">Wzorowy majtek!</string>
-    <string name="attendance_one_absence">1 dezercja</string>
-    <string name="attendance_absences_count">%1$d dezercji</string>
-    <string name="attendance_subject_placeholder">Zadanie</string>
-    <string name="attendance_subject_type_placeholder">Wybuchy</string>
-
-    <!-- Custom Plan Events -->
-    <string name="plan_custom_add_event">Dorysuj na mapie</string>
-    <string name="plan_custom_type_exam">Walka z Bossem</string>
-    <string name="plan_custom_type_pass">Walka</string>
-    <string name="plan_custom_type_test">Popisówka</string>
-    <string name="plan_custom_type_exam_short">BOSS!</string>
-    <string name="plan_custom_type_pass_short">WALKA!</string>
-    <string name="plan_custom_type_test_short">POPIS!</string>
-    <string name="plan_custom_saved_toast">Mapa zaktualizowana!</string>
-    <string name="plan_custom_updated_toast">Poprawki naniesione</string>
-    <string name="plan_custom_deleted_toast">Wymazano z mapy</string>
-    <string name="plan_custom_delete_confirm">Wymazać to?</string>
-    <string name="plan_custom_remove_marker">Usuń znak</string>
-    <string name="plan_custom_removed_toast">Znak usunięty</string>
-
-    <!-- Quick Add -->
-    <string name="plan_quick_dialog_title_add">Dodaj zadanie</string>
-    <string name="plan_quick_dialog_title_mark">Oznacz cel</string>
-    <string name="plan_quick_subject_label">Co robić</string>
-    <string name="plan_quick_subject_hint">Nazwa zadania</string>
-    <string name="plan_quick_type_label">Typ</string>
-    <string name="plan_quick_date_label">Kiedy</string>
-    <string name="plan_quick_time_label">O której</string>
-    <string name="plan_quick_notes_label">Gryzmoły (opcjonalnie)</string>
-    <string name="plan_quick_notes_hint">Gdzie, z kim, po co</string>
-    <string name="plan_quick_details_title">Szczegóły</string>
-    <string name="plan_quick_btn_save">Zaklep</string>
-    <string name="plan_quick_btn_cancel">Anuluj</string>
-    <string name="plan_quick_error_subject">Napisz co robić!</string>
-    <string name="plan_quick_error_type">Wybierz typ!</string>
-    <string name="plan_quick_time_range">%1$s - %2$s</string>
-
-    <string name="common_zero">0</string>
-    <string name="common_dash">-</string>
-    <string name="common_percent_zero">0%</string>
-    <string name="common_percent_placeholder">--%</string>
-    <string name="common_percent_format">%1$d%%</string>
-    <string name="grades_placeholder_value">4.5</string>
-    <string name="grades_ects_format">%1$.1f złota</string>
-    <string name="nav_watch_info_auto_sync_value">%1$s (%2$s)</string>
-    <string name="nav_watch_info_label_bluetooth">Błękitny Kieł</string>
-    <string name="nav_watch_info_label_last_sync">Ostatni kontakt</string>
-    <string name="nav_watch_info_label_auto_sync">Automatyczny zwiad</string>
-    <string name="nav_watch_info_label_tile">Płytka</string>
-    <string name="nav_watch_info_label_battery">Beczka prochu</string>
-    <string name="nav_watch_info_last_sync_none">Brak wieści</string>
-    <string name="nav_watch_info_tile_active">Aktywna (%1$s)</string>
-    <string name="nav_watch_info_tile_missing">Brak (dodaj w Galaxy Wearable)</string>
-    <string name="wear_sync_success_msg">100% Kompas nastawiony!</string>
-    <string name="wear_sync_request_msg">Kompas %1$s prosi o dane. Wysłać?</string>
-    <string name="nav_watch_label">Kompas (Zegarek)</string>
-    <string name="nav_watch_not_found_title">Kompas zgubiony</string>
-    <string name="nav_watch_not_found_msg">Sprawdź czy jest sparowany i połączony.</string>
-    <string name="nav_watch_error_title">Sztorm na łączach</string>
-    <string name="nav_watch_error_msg">Nie mogę połączyć się z kompasem.</string>
-    <string name="nav_watch_found_title">Kompas odnaleziony</string>
-    <string name="nav_watch_found_msg">Widzę: %1$s\nWysyłam mapy.</string>
-    <string name="nav_watch_paired_title">Kompas sparowany</string>
-    <string name="nav_watch_paired_msg">Sparowano: %1$s\nPołącz, żeby zobaczyć dane.</string>
-    <string name="nav_watch_status_connected">Status: połączony</string>
-    <string name="nav_watch_status_connected_unresponsive">Status: połączony (milczy)</string>
-    <string name="nav_watch_status_paired">Status: sparowany (rozłączony)</string>
-    <string name="nav_watch_status_name">Kompas: %1$s</string>
-    <string name="nav_watch_status_bluetooth">Błękitny Kieł: %1$s</string>
-    <string name="nav_watch_status_bt_on">Włączony</string>
-    <string name="nav_watch_status_bt_off">Wyłączony</string>
-    <string name="nav_watch_status_battery">Proch: %1$d%%</string>
-    <string name="nav_watch_status_last_sync">Ostatni kontakt: %1$s</string>
-    <string name="nav_watch_status_auto_sync">Auto zwiad: %1$s (%2$s)</string>
-    <string name="nav_watch_status_auto_on">tak</string>
-    <string name="nav_watch_status_auto_off">nie</string>
-    <string name="nav_watch_status_interval_h">co %1$d h</string>
-    <string name="nav_watch_status_interval_m">co %1$d min</string>
-    <string name="nav_watch_status_tile_seen">Płytka: jest (%1$s)</string>
-    <string name="nav_watch_status_tile_missing">Płytka: brak (dodaj w Galaxy Wearable)</string>
-
-    <string name="session_start_label">Wypłynięcie (Sesja start)</string>
-    <string name="session_end_label">Zawinięcie (Sesja koniec)</string>
-    <string name="session_winter">zimowa</string>
-    <string name="session_summer">letnia</string>
-    <string name="session_retake">poprawkowa</string>
-    <string name="useful_links_header_desc">Zbiór najprzydatniejszych map i portowych wieści.</string>
-    <string name="useful_links_badge_recommended">Polecane łupy</string>
-    <string name="about_version_prefix">v</string>
-    <string name="about_section_support_project">Wsparcie i Bractwo</string>
-    <string name="about_footer_made_with">Zbudowane z ❤️ przez Kejlo</string>
-    <string name="about_github_title">Plany okrętu</string>
-    <string name="about_github_desc">Sprawdź szkielet w porcie GitHub</string>
-    <string name="about_section_info_contact">Papiery i Sygnały</string>
-    <string name="error_no_email_app">Nie znaleziono gołębia!</string>
-    <string name="about_stats_format_full">Reputacja: %1$s ★  •  Najemnicy: %2$s</string>
-    <string name="about_stats_format_rating_only">Reputacja: %1$s ★</string>
-    <string name="about_link_title_project">Strona łajby</string>
-    <string name="about_link_title_author">Port szkutnika</string>
-    <string name="about_link_title_privacy">Sekrety (Prywatność)</string>
-
-    <!-- Missing Strings -->
-    <string name="nav_watch_searching">Szukam kompasu…</string>
-    <string name="wear_sync_status_prepare">Szykuję mapy…</string>
-    <string name="wear_sync_status_sending">Wysyłam gołębia…</string>
-    <string name="wear_sync_status_waiting_watch">Czekam na sygnał…</string>
-    <string name="wear_sync_status_no_data">Puste kieszenie…</string>
-    <string name="wear_sync_status_error">Błąd w sztuce!</string>
-    <string name="wear_sync_status_watch_received">Kompas odebrał!</string>
-    <string name="wear_main_status_syncing">Przeładowuję mapy...</string>
-    <string name="common_ok">Aye, kapitanie!</string>
-    <string name="plan_custom_events_title">Moje Bitwy</string>
-    <string name="plan_custom_wizard_step">Krok %1$d z %2$d</string>
-    <string name="plan_custom_step_subject">Wybierz Cel</string>
-    <string name="plan_custom_step_type">Typ Walki</string>
-    <string name="plan_custom_step_date">Kiedy?</string>
-    <string name="plan_custom_step_time">O której?</string>
-    <string name="plan_custom_step_summary">Raport</string>
-    <string name="plan_custom_subject_hint">Gdzie uderzamy?</string>
-    <string name="plan_custom_subject_from_plan">Z mapy</string>
-    <string name="plan_custom_no_subjects">Pusto...</string>
-    <string name="plan_custom_time_auto">Standard (90 min)</string>
-    <string name="plan_custom_time_manual">Inny czas</string>
-    <string name="plan_custom_time_no_classes">Wolne!</string>
-    <string name="plan_custom_notes_label">Notatki</string>
-    <string name="plan_custom_notes_hint">Beczka prochu, szable...</string>
-    <string name="plan_custom_summary_subject">Cel</string>
-    <string name="plan_custom_summary_type">Typ</string>
-    <string name="plan_custom_summary_date">Data</string>
-    <string name="plan_custom_summary_time">Czas</string>
-    <string name="plan_custom_btn_next">Dalej!</string>
-    <string name="plan_custom_btn_back">Wróć!</string>
-    <string name="plan_custom_btn_save">Zaklep</string>
-    <string name="plan_custom_btn_cancel">Anuluj</string>
-    <string name="plan_custom_duplicate_warning">Już masz bitwę o tej porze!</string>
-    <string name="plan_custom_list_empty">Brak bitew. Nuda...</string>
-    <string name="plan_custom_list_title">Nadchodzące Bitwy</string>
-    <string name="wear_sync_request_title">Zwiad woła o mapy</string>
-    <string name="wear_sync_request_positive">Wyślij!</string>
-    <string name="wear_sync_request_negative">Nie teraz</string>
-    <string name="wear_install_dialog_title">Zainstaluj Kompas</string>
-    <string name="wear_install_dialog_message">Potrzebujesz apki na zegarku (kompasie), szczurze! Otworzyć sklep na zegarku?</string>
-    <string name="wear_install_dialog_open_store">Otwórz Kram</string>
-    <string name="wear_install_dialog_dont_ask">Nie truj</string>
-    <string name="wear_install_sent_toast">Posłano gołębia na zegarek</string>
-    <string name="web_link_title">Mapa w sieci</string>
-    <string name="web_link_open_external">Otwórz iluminator</string>
-    <string name="web_link_no_url">Brak współrzędnych</string>
-    <string name="web_link_open_external_error">Zablokowany iluminator</string>
-    <string name="dialog_add_edit_tile_hex_label">Barwy (HEX):</string>
-    <string name="dialog_add_edit_tile_hex_hint">#RRGGBB</string>
-    <!-- Widget -->
-    <string name="plan_widget_subtitle_next_in_format">Najbliższy abordaż za %1$s</string>
-    <string name="plan_widget_time_hours_minutes">%1$d h %2$d min</string>
-    <string name="plan_widget_time_hours">%1$d h</string>
-    <string name="plan_widget_time_minutes">%1$d min</string>
-    <string name="plan_widget_subtitle_no_classes_until">%1$s  cisza na morzu do %2$s</string>
-
-    <!-- Ustawienia: wyglad i widget -->
-    <string name="settings_section_appearance">Barwy pokładu i gadka załogi</string>
-    <string name="settings_section_widget">Widget pokładowy</string>
-    <string name="settings_language_german">Niemiecki (Port Hanzy)</string>
-    <string name="settings_language_pirate">Polski (Piracki, ARRR!)</string>
-    <string name="settings_theme_default">Domyślny (bandera)</string>
-    <string name="settings_theme_description">Wybierz malowanie i kolory tej łajby.</string>
-    <string name="settings_widget_refresh_description">Ustal, jak często zwiadowca ma meldować dane z tła.</string>
-    <string name="settings_widget_refresh_entry_15m">15 min</string>
-    <string name="settings_widget_refresh_entry_30m_default">30 min (domyślnie)</string>
-    <string name="settings_widget_refresh_entry_45m">45 min</string>
-    <string name="settings_widget_refresh_entry_1h">1 godz.</string>
-    <string name="settings_widget_refresh_entry_2h">2 godz.</string>
-    <string name="settings_widget_refresh_entry_3h">3 godz.</string>
-    <string name="settings_widget_refresh_entry_4h">4 godz.</string>
-    <string name="settings_widget_refresh_entry_manual">Nigdy (ręcznie)</string>
-
-    <!-- Ustawienia: powiadomienia -->
-    <string name="settings_section_notifications">Powiadomienia pokładowe</string>
-    <string name="settings_notifications_master_label">Odpal sygnały pokładowe</string>
-    <string name="settings_notifications_master_desc">Wieści o łupach i zmianach kursu planu.</string>
-    <string name="settings_notifications_grades_label">Powiadomienia o ocenach</string>
-    <string name="settings_notifications_grades_desc">Wyczekuj nowych łupów (ocen) co 30 min.</string>
-    <string name="settings_notifications_plan_label">Powiadomienia o zmianach kursu</string>
-    <string name="settings_notifications_plan_desc">Wypatruj zmian planu aż 2 tygodnie naprzód.</string>
-    <string name="settings_notifications_plan_categories">Kategorie zmian planu</string>
-    <string name="settings_notifications_plan_moved">Przeniesienie zajęć</string>
-    <string name="settings_notifications_plan_cancelled">Odwołanie zajęć</string>
-    <string name="settings_notifications_plan_added">Nowe zajęcia</string>
-    <string name="settings_notifications_plan_removed">Usunięte zajęcia</string>
-    <string name="settings_notifications_saved">Rozkazy zapisane, kapitanie!</string>
-    <string name="settings_notifications_permission_denied">Bez zgody na powiadomienia armata milknie.</string>
-    <string name="settings_notifications_permission_required">Daj zgodę na powiadomienia, by odpalić armatę.</string>
-
-    <!-- Sesja i kanaly -->
-    <string name="session_expired_toast">Sesja poszła na dno. Trza znów się zalogować.</string>
-    <string name="session_expired_notification_title">Wróć na pokład</string>
-    <string name="session_expired_notification_text">Sesja wygasła. Otwórz apkę i zaloguj się ponownie, majtku.</string>
-    <string name="notif_channel_grades_name">Łupy (oceny)</string>
-    <string name="notif_channel_grades_desc">Sygnały o nowych łupach.</string>
-    <string name="notif_channel_plan_name">Kurs i rozkład</string>
-    <string name="notif_channel_plan_desc">Sygnały o zmianach kursu.</string>
-    <string name="notif_channel_auth_name">Bezpieczeństwo sesji</string>
-    <string name="notif_channel_auth_desc">Alarmy, gdy sesja idzie na dno</string>
-
-    <!-- Tresci powiadomien -->
-    <string name="notif_grades_title">Nowe łupy na pokładzie</string>
-    <string name="notif_grades_summary">Przybyło łupów: %1$d</string>
-    <string name="notif_plan_title">Zmiany kursu</string>
-    <string name="notif_plan_summary">Zmiany: %1$d</string>
-    <string name="notif_plan_line_moved">%1$s: %2$s %3$s -&gt; %4$s %5$s</string>
-    <string name="notif_plan_line_cancelled">%1$s: odwołane (%2$s %3$s)</string>
-    <string name="notif_plan_line_added">%1$s: nowe (%2$s %3$s)</string>
-    <string name="notif_plan_line_removed">%1$s: usunięte (%2$s %3$s)</string>
-    <string name="notif_plan_refreshed_title">Nowy kurs na mapie</string>
-    <string name="notif_plan_refreshed_text">Wykryto sporo zmian. Mamy nowy albo odświeżony plan rejsu.</string>
-
-    <!-- Okresy kalendarza -->
-    <string name="calendar_period_start_label">Początek</string>
-    <string name="calendar_period_end_label">Koniec</string>
-    <string name="period_break_winter_semester">przerwy dydaktycznej (semestr zimowy)</string>
-    <string name="period_break_summer_semester">przerwy dydaktycznej (semestr letni)</string>
-    <string name="period_break_generic">przerwy dydaktycznej</string>
-    <string name="period_holiday_winter">wakacji zimowych</string>
-    <string name="period_holiday_summer">wakacji letnich</string>
+  <string name="logout_confirm_title">Uciekasz?</string>
+  <string name="logout_confirm_message">Chcesz opuścić okręt?</string>
+  <string name="logout_confirm_positive">Skaczę!</string>
+  <string name="logout_confirm_negative">Zostaję</string>
+  <!-- Tile Customization & Edit Mode -->
+  <string name="dialog_add_edit_tile_title_new">Nowa łata na żagiel</string>
+  <string name="dialog_add_edit_tile_title_edit">Zmień łatę</string>
+  <string name="dialog_add_edit_tile_label_title">Nazwa</string>
+  <string name="dialog_add_edit_tile_hint_title">Np. Mapa</string>
+  <string name="dialog_add_edit_tile_label_desc">O co chodzi</string>
+  <string name="dialog_add_edit_tile_hint_desc">Krótko</string>
+  <string name="dialog_add_edit_tile_label_action">Co robić</string>
+  <string name="dialog_add_edit_tile_label_url_section">Gdzie płynąć (URL)</string>
+  <string name="dialog_add_edit_tile_hint_url">https://google.com</string>
+  <string name="dialog_add_edit_tile_label_saved_search">Wybierz zakopaną mapę</string>
+  <string name="dialog_add_edit_tile_label_color">Kolor</string>
+  <string name="dialog_add_edit_tile_color_default">Domyślny (Bandera)</string>
+  <string name="dialog_add_edit_tile_color_hue">Odcień</string>
+  <string name="dialog_add_edit_tile_color_sat">Nasycenie</string>
+  <string name="dialog_add_edit_tile_color_val">Jasność</string>
+  <string name="dialog_add_edit_tile_btn_save">Zaklep</string>
+  <string name="dialog_add_edit_tile_btn_cancel">Wrrróć</string>
+  <string name="dialog_add_edit_tile_toast_no_saved_searches">Brak zakopanych map!</string>
+  <string name="dialog_add_edit_tile_spinner_empty">(Pusto)</string>
+  <string name="tile_action_plan">Plan Rejsu</string>
+  <string name="tile_action_grades">Złoto</string>
+  <string name="tile_action_info">Papiery</string>
+  <string name="tile_action_news">Plotki</string>
+  <string name="tile_action_news_latest">Najświeższa Plotka</string>
+  <string name="tile_action_plan_search">Zapisana Mapa</string>
+  <string name="tile_action_useful">Przydatne</string>
+  <string name="tile_action_about">O łajbie</string>
+  <string name="tile_action_url">Własny Kurs</string>
+  <string name="menu_home_edit">Przemebluj pokład</string>
+  <string name="menu_home_save">Zapisz ustawienie</string>
+  <string name="menu_home_add">Dodaj coś</string>
+  <string name="menu_home_cancel">Anuluj</string>
+  <string name="menu_home_reset">Jak było na początku</string>
+  <string name="home_cancel_toast">Anulowano!</string>
+  <string name="home_reset_dialog_title">Zrobić jak było?</string>
+  <string name="home_reset_dialog_message">Na pewno chcesz zresetować układ? Twoje zmiany pójdą na dno.</string>
+  <string name="home_reset_dialog_yes">Tak!</string>
+  <string name="home_reset_dialog_no">Nie!</string>
+  <string name="home_open_url_error">Zły adres!</string>
+  <string name="home_open_error">Błąd: %1$s</string>
+  <string name="settings_theme_label">Malowanie Okrętu</string>
+  <string name="settings_widget_refresh_label">Częstość zwiadu (Widget)</string>
+  <string name="settings_widget_refresh_saved">Rozkazy dla zwiadowców zapisane!</string>
+  <string name="settings_theme_changed">Okręt przemalowany!</string>
+  <string name="theme_deep_blue">Głębia Oceanu</string>
+  <string name="theme_high_contrast">Wysoki kontrast (Dla ślepców)</string>
+  <string name="theme_lime">Limonkowy Sztorm</string>
+  <string name="offline_mode_label">Bez wiatru (Offline)</string>
+  <string name="online_mode_label">Na pełnym morzu (Online)</string>
+  <string name="grades_grouping_toggle">Grupuj łupy</string>
+  <string name="grades_final_grade_label">Wyrok (Ocena końcowa)</string>
+  <string name="grades_final_grade_missing">Brak wyroku</string>
+  <string name="grades_group_items_count">Zostało: %d</string>
+  <string name="plan_type_label">Rodzaj tortury</string>
+  <!-- Attendance -->
+  <string name="attendance_title">Obecność na pokładzie</string>
+  <string name="attendance_hours_format">Godzin: %1$d</string>
+  <string name="attendance_empty_state">Brak roboty w planie.\nOdśwież mapę, żeby załadować zadania.</string>
+  <string name="attendance_refreshing">Przeglądam listę załogi…</string>
+  <string name="attendance_increase">Dodaj dezercję</string>
+  <string name="attendance_decrease">Odejmij dezercję</string>
+  <string name="attendance_edit_hours_title">Ustaw wachty</string>
+  <string name="attendance_edit_hours_message">Wpisz łączną liczbę godzin orki:\n%1$s</string>
+  <string name="attendance_hours_tap_to_set">Kliknij, by ustawić godziny</string>
+  <string name="attendance_summary_title">Łącznie dezerterowałeś</string>
+  <string name="attendance_no_absences">Wzorowy majtek!</string>
+  <string name="attendance_one_absence">1 dezercja</string>
+  <string name="attendance_absences_count">%1$d dezercji</string>
+  <string name="attendance_subject_placeholder">Zadanie</string>
+  <string name="attendance_subject_type_placeholder">Wybuchy</string>
+  <!-- Custom Plan Events -->
+  <string name="plan_custom_add_event">Dorysuj na mapie</string>
+  <string name="plan_custom_type_exam">Walka z Bossem</string>
+  <string name="plan_custom_type_pass">Walka</string>
+  <string name="plan_custom_type_test">Popisówka</string>
+  <string name="plan_custom_type_exam_short">BOSS!</string>
+  <string name="plan_custom_type_pass_short">WALKA!</string>
+  <string name="plan_custom_type_test_short">POPIS!</string>
+  <string name="plan_custom_saved_toast">Mapa zaktualizowana!</string>
+  <string name="plan_custom_updated_toast">Poprawki naniesione</string>
+  <string name="plan_custom_deleted_toast">Wymazano z mapy</string>
+  <string name="plan_custom_delete_confirm">Wymazać to?</string>
+  <string name="plan_custom_remove_marker">Usuń znak</string>
+  <string name="plan_custom_removed_toast">Znak usunięty</string>
+  <!-- Quick Add -->
+  <string name="plan_quick_dialog_title_add">Dodaj zadanie</string>
+  <string name="plan_quick_dialog_title_mark">Oznacz cel</string>
+  <string name="plan_quick_subject_label">Co robić</string>
+  <string name="plan_quick_subject_hint">Nazwa zadania</string>
+  <string name="plan_quick_type_label">Typ</string>
+  <string name="plan_quick_date_label">Kiedy</string>
+  <string name="plan_quick_time_label">O której</string>
+  <string name="plan_quick_notes_label">Gryzmoły (opcjonalnie)</string>
+  <string name="plan_quick_notes_hint">Gdzie, z kim, po co</string>
+  <string name="plan_quick_details_title">Szczegóły</string>
+  <string name="plan_quick_btn_save">Zaklep</string>
+  <string name="plan_quick_btn_cancel">Anuluj</string>
+  <string name="plan_quick_error_subject">Napisz co robić!</string>
+  <string name="plan_quick_error_type">Wybierz typ!</string>
+  <string name="plan_quick_time_range">%1$s - %2$s</string>
+  <string name="common_zero">0</string>
+  <string name="common_dash">-</string>
+  <string name="common_percent_zero">0%</string>
+  <string name="common_percent_placeholder">--%</string>
+  <string name="common_percent_format">%1$d%%</string>
+  <string name="grades_placeholder_value">4.5</string>
+  <string name="grades_ects_format">%1$.1f złota</string>
+  <string name="nav_watch_info_auto_sync_value">%1$s (%2$s)</string>
+  <string name="nav_watch_info_label_bluetooth">Błękitny Kieł</string>
+  <string name="nav_watch_info_label_last_sync">Ostatni kontakt</string>
+  <string name="nav_watch_info_label_auto_sync">Automatyczny zwiad</string>
+  <string name="nav_watch_info_label_tile">Płytka</string>
+  <string name="nav_watch_info_label_battery">Beczka prochu</string>
+  <string name="nav_watch_info_last_sync_none">Brak wieści</string>
+  <string name="nav_watch_info_tile_active">Aktywna (%1$s)</string>
+  <string name="nav_watch_info_tile_missing">Brak (dodaj w Galaxy Wearable)</string>
+  <string name="nav_watch_label">Kompas (Zegarek)</string>
+  <string name="nav_watch_not_found_title">Kompas zgubiony</string>
+  <string name="nav_watch_not_found_msg">Sprawdź czy jest sparowany i połączony.</string>
+  <string name="nav_watch_found_title">Kompas odnaleziony</string>
+  <string name="nav_watch_paired_title">Kompas sparowany</string>
+  <string name="nav_watch_paired_msg">Sparowano: %1$s\nPołącz, żeby zobaczyć dane.</string>
+  <string name="nav_watch_status_connected">Status: połączony</string>
+  <string name="nav_watch_status_connected_unresponsive">Status: połączony (milczy)</string>
+  <string name="nav_watch_status_paired">Status: sparowany (rozłączony)</string>
+  <string name="nav_watch_status_name">Kompas: %1$s</string>
+  <string name="nav_watch_status_bt_on">Włączony</string>
+  <string name="nav_watch_status_bt_off">Wyłączony</string>
+  <string name="nav_watch_status_battery">Proch: %1$d%%</string>
+  <string name="nav_watch_status_auto_on">tak</string>
+  <string name="nav_watch_status_auto_off">nie</string>
+  <string name="nav_watch_status_interval_h">co %1$d h</string>
+  <string name="nav_watch_status_interval_m">co %1$d min</string>
+  <string name="session_start_label">Wypłynięcie (Sesja start)</string>
+  <string name="session_end_label">Zawinięcie (Sesja koniec)</string>
+  <string name="session_winter">zimowa</string>
+  <string name="session_summer">letnia</string>
+  <string name="session_retake">poprawkowa</string>
+  <string name="useful_links_badge_recommended">Polecane łupy</string>
+  <string name="about_version_prefix">v</string>
+  <string name="about_section_support_project">Wsparcie i Bractwo</string>
+  <string name="about_footer_made_with">Zbudowane z ❤️ przez Kejlo</string>
+  <string name="about_github_title">Plany okrętu</string>
+  <string name="about_github_desc">Sprawdź szkielet w porcie GitHub</string>
+  <string name="about_section_info_contact">Papiery i Sygnały</string>
+  <string name="error_no_email_app">Nie znaleziono gołębia!</string>
+  <string name="about_stats_format_full">Reputacja: %1$s ★  •  Najemnicy: %2$s</string>
+  <string name="about_stats_format_rating_only">Reputacja: %1$s ★</string>
+  <string name="about_link_title_project">Strona łajby</string>
+  <string name="about_link_title_author">Port szkutnika</string>
+  <string name="about_link_title_privacy">Sekrety (Prywatność)</string>
+  <!-- Missing Strings -->
+  <string name="nav_watch_searching">Szukam kompasu…</string>
+  <string name="wear_sync_status_prepare">Szykuję mapy…</string>
+  <string name="wear_sync_status_sending">Wysyłam gołębia…</string>
+  <string name="wear_sync_status_waiting_watch">Czekam na sygnał…</string>
+  <string name="wear_sync_status_no_data">Puste kieszenie…</string>
+  <string name="wear_sync_status_error">Błąd w sztuce!</string>
+  <string name="wear_sync_status_watch_received">Kompas odebrał!</string>
+  <string name="wear_main_status_syncing">Przeładowuję mapy…</string>
+  <string name="common_ok">Aye, kapitanie!</string>
+  <string name="wear_sync_request_title">Zwiad woła o mapy</string>
+  <string name="wear_install_dialog_open_store">Otwórz Kram</string>
+  <string name="wear_install_sent_toast">Posłano gołębia na zegarek</string>
+  <string name="web_link_title">Mapa w sieci</string>
+  <string name="web_link_open_external">Otwórz iluminator</string>
+  <string name="web_link_no_url">Brak współrzędnych</string>
+  <string name="web_link_open_external_error">Zablokowany iluminator</string>
+  <!-- Widget -->
+  <string name="plan_widget_subtitle_next_in_format">Najbliższy abordaż za %1$s</string>
+  <string name="plan_widget_time_hours_minutes">%1$d h %2$d min</string>
+  <string name="plan_widget_time_hours">%1$d h</string>
+  <string name="plan_widget_time_minutes">%1$d min</string>
+  <string name="plan_widget_subtitle_no_classes_until">%1$s  cisza na morzu do %2$s</string>
+  <!-- Ustawienia: wyglad i widget -->
+  <string name="settings_section_appearance">Barwy pokładu i gadka załogi</string>
+  <string name="settings_section_widget">Widget pokładowy</string>
+  <string name="settings_language_german">Niemiecki (Port Hanzy)</string>
+  <string name="settings_language_pirate">Polski (Piracki, ARRR!)</string>
+  <string name="settings_theme_default">Domyślny (bandera)</string>
+  <string name="settings_theme_description">Wybierz malowanie i kolory tej łajby.</string>
+  <string name="settings_widget_refresh_description">Ustal, jak często zwiadowca ma meldować dane z tła.</string>
+  <string name="settings_widget_refresh_entry_15m">15 min</string>
+  <string name="settings_widget_refresh_entry_30m_default">30 min (domyślnie)</string>
+  <string name="settings_widget_refresh_entry_45m">45 min</string>
+  <string name="settings_widget_refresh_entry_1h">1 godz.</string>
+  <string name="settings_widget_refresh_entry_2h">2 godz.</string>
+  <string name="settings_widget_refresh_entry_3h">3 godz.</string>
+  <string name="settings_widget_refresh_entry_4h">4 godz.</string>
+  <string name="settings_widget_refresh_entry_manual">Nigdy (ręcznie)</string>
+  <!-- Ustawienia: powiadomienia -->
+  <string name="settings_section_notifications">Powiadomienia pokładowe</string>
+  <string name="settings_notifications_master_label">Odpal sygnały pokładowe</string>
+  <string name="settings_notifications_master_desc">Wieści o łupach i zmianach kursu planu.</string>
+  <string name="settings_notifications_grades_label">Powiadomienia o ocenach</string>
+  <string name="settings_notifications_grades_desc">Wyczekuj nowych łupów (ocen) co 30 min.</string>
+  <string name="settings_notifications_plan_label">Powiadomienia o zmianach kursu</string>
+  <string name="settings_notifications_plan_desc">Wypatruj zmian planu aż 2 tygodnie naprzód.</string>
+  <string name="settings_notifications_plan_categories">Kategorie zmian planu</string>
+  <string name="settings_notifications_plan_moved">Przeniesienie zajęć</string>
+  <string name="settings_notifications_plan_cancelled">Odwołanie zajęć</string>
+  <string name="settings_notifications_plan_added">Nowe zajęcia</string>
+  <string name="settings_notifications_plan_removed">Usunięte zajęcia</string>
+  <string name="settings_notifications_saved">Rozkazy zapisane, kapitanie!</string>
+  <string name="settings_notifications_permission_denied">Bez zgody na powiadomienia armata milknie.</string>
+  <string name="settings_notifications_permission_required">Daj zgodę na powiadomienia, by odpalić armatę.</string>
+  <!-- Sesja i kanaly -->
+  <string name="session_expired_toast">Sesja poszła na dno. Trza znów się zalogować.</string>
+  <string name="session_expired_notification_title">Wróć na pokład</string>
+  <string name="session_expired_notification_text">Sesja wygasła. Otwórz apkę i zaloguj się ponownie, majtku.</string>
+  <string name="notif_channel_grades_name">Łupy (oceny)</string>
+  <string name="notif_channel_grades_desc">Sygnały o nowych łupach.</string>
+  <string name="notif_channel_plan_name">Kurs i rozkład</string>
+  <string name="notif_channel_plan_desc">Sygnały o zmianach kursu.</string>
+  <string name="notif_channel_auth_name">Bezpieczeństwo sesji</string>
+  <string name="notif_channel_auth_desc">Alarmy, gdy sesja idzie na dno</string>
+  <!-- Tresci powiadomien -->
+  <string name="notif_grades_title">Nowe łupy na pokładzie</string>
+  <string name="notif_grades_summary">Przybyło łupów: %1$d</string>
+  <string name="notif_plan_title">Zmiany kursu</string>
+  <string name="notif_plan_summary">Zmiany: %1$d</string>
+  <string name="notif_plan_line_moved">%1$s: %2$s %3$s -&gt; %4$s %5$s</string>
+  <string name="notif_plan_line_cancelled">%1$s: odwołane (%2$s %3$s)</string>
+  <string name="notif_plan_line_added">%1$s: nowe (%2$s %3$s)</string>
+  <string name="notif_plan_line_removed">%1$s: usunięte (%2$s %3$s)</string>
+  <string name="notif_plan_refreshed_title">Nowy kurs na mapie</string>
+  <string name="notif_plan_refreshed_text">Wykryto sporo zmian. Mamy nowy albo odświeżony plan rejsu.</string>
+  <!-- Okresy kalendarza -->
+  <string name="calendar_period_start_label">Początek</string>
+  <string name="calendar_period_end_label">Koniec</string>
+  <string name="period_break_winter_semester">przerwy dydaktycznej (semestr zimowy)</string>
+  <string name="period_break_summer_semester">przerwy dydaktycznej (semestr letni)</string>
+  <string name="period_break_generic">przerwy dydaktycznej</string>
+  <string name="period_holiday_winter">wakacji zimowych</string>
+  <string name="period_holiday_summer">wakacji letnich</string>
 </resources>
-
-

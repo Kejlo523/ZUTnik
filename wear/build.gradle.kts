@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace = "pl.kejlo.mzutv2.wear"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "pl.kejlo.mzutv2"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 145
         versionName = "1.6"
     }
@@ -29,10 +29,9 @@ android {
 dependencies {
     implementation(libs.wear.tiles)
     implementation(libs.wear.protolayout)
-    implementation(libs.wear.watchface)
     implementation(libs.wear.watchface.complications.data)
     implementation(libs.wear.watchface.complications.data.source)
     implementation(libs.play.services.wearable)
     implementation(libs.concurrent.futures)
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation(libs.recyclerview)
 }
