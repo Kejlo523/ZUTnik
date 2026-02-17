@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2.wear.tile;
 
+import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -22,6 +23,7 @@ import java.time.ZonedDateTime;
 import pl.kejlo.mzutv2.wear.model.WearPlanSnapshot;
 import pl.kejlo.mzutv2.wear.sync.WearSnapshotStore;
 import pl.kejlo.mzutv2.wear.R;
+import pl.kejlo.mzutv2.wear.util.WearLocaleManager;
 import pl.kejlo.mzutv2.wear.util.WearScheduleUtils;
 
 /**
@@ -41,7 +43,7 @@ public class PlanTileService extends TileService {
     private static final long TILE_SEEN_THROTTLE_MS = 30 * 60 * 1000L;
 
     // Modern dark theme
-    private static final int COLOR_BG = 0xFF0A0E1A;
+    private static final int COLOR_BG = 0xFF000000;
     private static final int COLOR_CARD = 0xFF161B2E;
     private static final int COLOR_CARD_HIGHLIGHT = 0xFF1E2642;
     private static final int COLOR_TEXT = 0xFFFFFFFF;
@@ -59,6 +61,11 @@ public class PlanTileService extends TileService {
     private int themeSubtle = COLOR_SUBTLE;
     private int themeAccent = COLOR_ACCENT;
     private int themeAccentLight = COLOR_ACCENT_LIGHT;
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(WearLocaleManager.wrap(newBase));
+    }
 
     @NonNull
     @Override
@@ -113,7 +120,7 @@ public class PlanTileService extends TileService {
 
     private void applyTheme(WearPlanSnapshot snap) {
         if (snap == null) return;
-        if (snap.colorBg != 0) themeBg = snap.colorBg;
+        themeBg = COLOR_BG;
         if (snap.colorCard != 0) themeCard = snap.colorCard;
         if (snap.colorCardAlt != 0) themeCardHighlight = snap.colorCardAlt;
         if (snap.colorText != 0) themeText = snap.colorText;
@@ -227,7 +234,7 @@ public class PlanTileService extends TileService {
                                 .setHeight(DimensionBuilders.dp(20))
                                 .build())
                         .addContent(spacer(6))
-                        .addContent(text("MZUT", 14, themeAccentLight)) // Slightly larger?
+                        .addContent(text(getString(R.string.app_name_wear), 14, themeAccentLight))
                         .build())
                 .build();
     }
@@ -286,7 +293,7 @@ public class PlanTileService extends TileService {
                 .setHeight(DimensionBuilders.wrap())
                 .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER);
         
-        headerRow.addContent(text("NASTĘPNE", 9, accent));
+        headerRow.addContent(text(getString(R.string.complication_preview_title), 9, accent));
         
         headerRow.addContent(new LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.expand())

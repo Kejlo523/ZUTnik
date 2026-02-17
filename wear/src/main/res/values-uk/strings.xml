@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name_wear">mZUT v2</string>
+    <string name="tile_title">Розклад занять</string>
+    <string name="tile_no_data">Немає даних</string>
+    <string name="tile_description">Показує найближчі заняття з розкладу</string>
+    <string name="tile_no_events">Немає занять</string>
+    <string name="tile_login_required">Увійдіть у застосунок на телефоні</string>
+    <string name="tile_wait_sync">Після входу зачекайте на синхронізацію</string>
+    <string name="complication_label">Розклад занять</string>
+    <string name="complication_no_data">Немає даних</string>
+    <string name="complication_preview_title">Наступне</string>
+    <string name="complication_preview_eta_short">за 2 год</string>
+    <string name="complication_preview_long">Лекція\nза 2 год 10 хв &#183; 08:00-09:30</string>
+    <string name="watch_face_label">mZUT Розклад</string>
+    <string name="watch_face_login_required">Увійдіть на телефоні</string>
+
+    <string name="wear_main_title">Синхронізація з телефоном</string>
+    <string name="wear_main_desc">Увійдіть у застосунок на телефоні, потім натисніть нижче.</string>
+    <string name="wear_main_sync">Синхронізувати</string>
+    <string name="wear_main_sync_sent">Запит синхронізації надіслано</string>
+    <string name="wear_main_sync_failed">Не вдалося надіслати запит</string>
+    <string name="wear_main_no_phone">Немає зєднання з телефоном</string>
+    <string name="wear_main_status_waiting">Очікування даних...</string>
+    <string name="wear_main_status_syncing">Синхронізація...</string>
+    <string name="wear_main_status_idle">Натисніть синхронізувати, щоб завантажити дані</string>
+    <string name="wear_main_status_phone_found">Телефон знайдено. Завантажую дані...</string>
+    <string name="wear_main_status_received">Дані оновлено</string>
+    <string name="wear_main_status_login_required">Увійдіть на телефоні та спробуйте ще раз</string>
+    <string name="wear_main_status_waiting_approval">Чекаю підтвердження на телефоні...</string>
+    <string name="wear_main_status_approved">Підтверджено. Очікую дані...</string>
+    <string name="wear_main_status_declined">Підтвердження відхилено</string>
+    <string name="wear_main_status_receiving">Отримую дані...</string>
+    <string name="wear_main_status_checksum_error">Помилка даних, спробуйте ще раз</string>
+    <string name="watch_face_next_label">Наступні заняття</string>
+    <string name="watch_face_no_next">Немає занять</string>
+    <string name="wear_main_week_label">Найближчі заняття</string>
+    <string name="tile_next_label">Наступні заняття</string>
+
+    <string name="common_percent_zero">0%</string>
+    <string name="common_percent_format">%1$d%%</string>
+    <string name="wear_device_default_name">Wear</string>
+
+    <string name="wear_eta_now">зараз</string>
+    <string name="wear_eta_minutes">за %1$dхв</string>
+    <string name="wear_eta_hours">за %1$dгод</string>
+    <string name="wear_eta_hours_minutes">за %1$dгод %2$dхв</string>
+
+    <string name="wear_prev_day">Попередній день</string>
+    <string name="wear_next_day">Наступний день</string>
+    <string name="wear_back_to_schedule">&lt;- Назад до розкладу</string>
+    <string name="wear_swipe_hint">Проведіть вгору, щоб повернутися</string>
+    <string name="wear_day_prev_short">Назад</string>
+    <string name="wear_day_next_short">Далі</string>
+    <string name="wear_sync_open_short">Sync</string>
+    <string name="wear_sync_close_short">Закрити</string>
+    <string name="wear_day_counter_format">%1$d/%2$d</string>
+    <string name="wear_sync_counter_format">%1$d/%2$d</string>
+</resources>

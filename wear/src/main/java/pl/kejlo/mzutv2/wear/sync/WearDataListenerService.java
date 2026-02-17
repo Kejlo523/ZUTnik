@@ -1,6 +1,7 @@
 package pl.kejlo.mzutv2.wear.sync;
 
 import android.content.Intent;
+import android.content.Context;
 import android.util.Log;
 
 import com.google.android.gms.tasks.Tasks;
@@ -17,7 +18,9 @@ import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUp
 import androidx.wear.tiles.TileService;
 
 import pl.kejlo.mzutv2.wear.complications.PlanComplicationService;
+import pl.kejlo.mzutv2.wear.model.WearPlanSnapshot;
 import pl.kejlo.mzutv2.wear.tile.PlanTileService;
+import pl.kejlo.mzutv2.wear.util.WearLocaleManager;
 import pl.kejlo.mzutv2.wear.R;
 
 /**
@@ -29,6 +32,11 @@ import pl.kejlo.mzutv2.wear.R;
 public class WearDataListenerService extends WearableListenerService {
 
     private static final String TAG = "MZUTWearSync/WEAR";
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(WearLocaleManager.wrap(newBase));
+    }
 
     @Override
     public void onCreate() {
@@ -54,6 +62,8 @@ public class WearDataListenerService extends WearableListenerService {
                             : 0;
                     Log.d(TAG, "onDataChanged: snapshot received, bytes=" + bytes);
 
+                    WearPlanSnapshot snapshot = WearPlanSnapshot.fromJson(payload);
+                    WearLocaleManager.updateOverrideFromSnapshot(this, snapshot);
                     WearSnapshotStore.save(this, payload);
                     WearSnapshotStore.setProgress(this, 100,
                             getString(R.string.wear_main_status_received));
@@ -86,6 +96,8 @@ public class WearDataListenerService extends WearableListenerService {
                 Log.d(TAG, "onMessageReceived: snapshot received, bytes=" +
                         (payload != null ? payload.length() : 0));
 
+                WearPlanSnapshot snapshot = WearPlanSnapshot.fromJson(payload);
+                WearLocaleManager.updateOverrideFromSnapshot(this, snapshot);
                 WearSnapshotStore.save(this, payload);
                 WearSnapshotStore.setProgress(this, 100,
                         getString(R.string.wear_main_status_received));

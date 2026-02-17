@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2.wear.complications;
 
+import android.content.Context;
 import android.graphics.drawable.Icon;
 
 import androidx.annotation.NonNull;
@@ -19,9 +20,15 @@ import java.time.ZonedDateTime;
 import pl.kejlo.mzutv2.wear.R;
 import pl.kejlo.mzutv2.wear.model.WearPlanSnapshot;
 import pl.kejlo.mzutv2.wear.sync.WearSnapshotStore;
+import pl.kejlo.mzutv2.wear.util.WearLocaleManager;
 import pl.kejlo.mzutv2.wear.util.WearScheduleUtils;
 
 public class PlanComplicationService extends ComplicationDataSourceService {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(WearLocaleManager.wrap(newBase));
+    }
 
     @Override
     public void onComplicationRequest(@NonNull ComplicationRequest request,

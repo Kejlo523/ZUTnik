@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2.wear.watchface;
 
+import android.content.Context;
 import android.view.SurfaceHolder;
 
 import androidx.annotation.NonNull;
@@ -15,8 +16,14 @@ import androidx.wear.watchface.style.UserStyleSchema;
 import java.util.Collections;
 
 import kotlin.coroutines.Continuation;
+import pl.kejlo.mzutv2.wear.util.WearLocaleManager;
 
 public class MzutWatchFaceService extends WatchFaceService {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(WearLocaleManager.wrap(newBase));
+    }
 
     @NonNull
     @Override

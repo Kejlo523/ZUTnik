@@ -12,6 +12,7 @@ public class WearPlanSnapshot {
     public String dateLabel;
     public String subtitle;
     public String refreshedLabel;
+    public String languageTag;
     public boolean loginRequired;
     public String theme;
     public int colorBg;
@@ -45,6 +46,7 @@ public class WearPlanSnapshot {
             root.put("dateLabel", dateLabel != null ? dateLabel : "");
             root.put("subtitle", subtitle != null ? subtitle : "");
             root.put("refreshedLabel", refreshedLabel != null ? refreshedLabel : "");
+            root.put("languageTag", languageTag != null ? languageTag : "");
             root.put("loginRequired", loginRequired);
             root.put("theme", theme != null ? theme : "");
             root.put("colorBg", colorBg);
