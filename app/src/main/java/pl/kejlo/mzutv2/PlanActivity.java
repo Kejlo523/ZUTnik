@@ -1689,7 +1689,7 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     private List<PlanRepository.SubjectFilterItem> loadFilterCache() {
-        long ts = prefs.getLong(KEY_FILTER_CACHE_TS, 0L);
+        long ts = prefs.getLong(getFilterCacheTsKey(), 0L);
         if (ts == 0L)
             return null;
 
@@ -1697,7 +1697,7 @@ public class PlanActivity extends MzutBaseActivity {
         if (now - ts > FILTER_CACHE_TTL_MS)
             return null;
 
-        String json = prefs.getString(KEY_FILTER_CACHE_JSON, null);
+        String json = prefs.getString(getFilterCacheJsonKey(), null);
         if (json == null || json.isEmpty())
             return null;
 
@@ -1729,11 +1729,48 @@ public class PlanActivity extends MzutBaseActivity {
                 arr.put(obj);
             }
             prefs.edit()
-                    .putString(KEY_FILTER_CACHE_JSON, arr.toString())
-                    .putLong(KEY_FILTER_CACHE_TS, System.currentTimeMillis())
+                    .putString(getFilterCacheJsonKey(), arr.toString())
+                    .putLong(getFilterCacheTsKey(), System.currentTimeMillis())
                     .apply();
         } catch (org.json.JSONException ignored) {
         }
+    }
+
+    private String getFilterCacheJsonKey() {
+        return KEY_FILTER_CACHE_JSON + "_" + getFilterCacheScopeKey();
+    }
+
+    private String getFilterCacheTsKey() {
+        return KEY_FILTER_CACHE_TS + "_" + getFilterCacheScopeKey();
+    }
+
+    private String getFilterCacheScopeKey() {
+        MzutSession session = MzutSession.getInstance();
+        String userId = session.getUserId();
+        if (userId == null || userId.trim().isEmpty()) {
+            userId = "unknown";
+        }
+
+        String studyId = "default";
+        List<Study> studies = session.getStudies();
+        int idx = session.getActiveStudyIndex();
+        if (studies != null && !studies.isEmpty()) {
+            if (idx < 0 || idx >= studies.size()) {
+                idx = 0;
+            }
+            Study active = studies.get(idx);
+            if (active != null && active.przynaleznoscId != null && !active.przynaleznoscId.trim().isEmpty()) {
+                studyId = active.przynaleznoscId.trim();
+            }
+        }
+
+        LocalDate now = LocalDate.now();
+        int month = now.getMonthValue();
+        int academicYearStart = (month >= 10) ? now.getYear() : (now.getYear() - 1);
+        int academicYearEnd = academicYearStart + 1;
+        String term = (month >= 10 || month <= 2) ? "winter" : "summer";
+
+        return userId + "_" + studyId + "_" + academicYearStart + "_" + academicYearEnd + "_" + term;
     }
 
     private void addHourLines(FrameLayoutWithChildren dayBody) {
