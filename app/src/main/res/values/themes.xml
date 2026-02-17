@@ -3,13 +3,9 @@
     <!-- Base Application Theme -->
     <style name="Base.Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimaryDark">?attr/mzBg</item>
-        <!-- Status Bar -->
-        <item name="android:statusBarColor">?attr/mzBg</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">?attr/mzBg</item>
 
-        <!-- Navigation Bar -->
-        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">true</item>
 
         <!-- No Title -->
@@ -95,7 +91,6 @@
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#F0F8FF</item>
         
-        <item name="android:statusBarColor">#F0F8FF</item> 
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
 
@@ -139,7 +134,6 @@
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#F4FFF6</item>
 
-        <item name="android:statusBarColor">#F4FFF6</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
 
@@ -181,7 +175,6 @@
         <item name="mzToolbarGradStart">#FFFFFF</item>
         <item name="mzToolbarGradEnd">#FFFFFF</item>
 
-        <item name="android:statusBarColor">#FFFFFF</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
 

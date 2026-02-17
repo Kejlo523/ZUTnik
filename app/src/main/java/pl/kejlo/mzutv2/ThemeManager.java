@@ -3,6 +3,8 @@ package pl.kejlo.mzutv2;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
+import android.view.WindowManager;
 
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.WindowCompat;
@@ -45,6 +47,15 @@ public class ThemeManager {
         int bg = resolveColor(activity, R.attr.mzBg);
         android.view.Window window = activity.getWindow();
         WindowCompat.setDecorFitsSystemWindows(window, false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowManager.LayoutParams attrs = window.getAttributes();
+            if (attrs.layoutInDisplayCutoutMode
+                    != WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS) {
+                attrs.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+                window.setAttributes(attrs);
+            }
+        }
 
         boolean light = ColorUtils.calculateLuminance(bg) > 0.5;
         WindowInsetsControllerCompat controller =
