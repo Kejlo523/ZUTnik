@@ -31,6 +31,7 @@
     <string name="login_success">Angemeldet als %1$s</string>
 
     <string name="home_title">Startbildschirm</string>
+    <string name="home_toolbar_title">Startseite</string>
 
     <string name="home_welcome_message">Willkommen, %1$s</string>
     <string name="home_welcome_subtitle">

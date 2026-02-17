@@ -68,6 +68,7 @@
     <string name="login_success">Zalogowano jako %1$s</string>
 
     <string name="home_title">Pulpit główny</string>
+    <string name="home_toolbar_title">Strona główna</string>
 
     <string name="home_welcome_message">Witaj, %1$s</string>
     <string name="home_welcome_subtitle">

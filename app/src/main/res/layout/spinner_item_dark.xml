@@ -3,16 +3,13 @@
     android:id="@android:id/text1"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-
     android:background="@drawable/bg_spinner_dark"
-
     android:gravity="center_vertical"
     android:minHeight="48dp"
-    android:paddingStart="4dp"
-    android:paddingEnd="12dp"
+    android:paddingStart="14dp"
+    android:paddingEnd="36dp"
     android:ellipsize="end"
     android:maxLines="1"
-
     android:textColor="?attr/mzText"
     android:textSize="15sp"
     android:fontFamily="sans-serif-medium" />

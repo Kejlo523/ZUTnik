@@ -16,7 +16,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -108,16 +107,24 @@ public class NewsDetailActivity extends AppCompatActivity {
         String descriptionText = intent.getStringExtra("descriptionText");
 
         tvTitle.setText(!TextUtils.isEmpty(title) ? title : "");
-        tvDate.setText(!TextUtils.isEmpty(date) ? date : "");
+        if (!TextUtils.isEmpty(date)) {
+            tvDate.setText(date);
+            tvDate.setVisibility(View.VISIBLE);
+        } else {
+            tvDate.setVisibility(View.GONE);
+        }
 
         if (!TextUtils.isEmpty(link)) {
             tvSource.setText(R.string.news_detail_source_label);
+            tvSource.setVisibility(View.VISIBLE);
             tvSource.setOnClickListener(v -> {
                 Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
                 startActivity(browser);
             });
         } else {
             tvSource.setText("");
+            tvSource.setVisibility(View.GONE);
+            tvSource.setOnClickListener(null);
         }
 
         if (!TextUtils.isEmpty(contentHtml)) {
@@ -288,26 +295,24 @@ public class NewsDetailActivity extends AppCompatActivity {
                 .append("<meta charset=\"utf-8\"/>")
                 .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>")
                 .append("<style>")
-                // base
-                .append("body{margin:0;padding:0 0 16px 0;")
+                .append("body{margin:0;padding:10px 10px 20px 10px;")
                 .append("background:").append(bgHex).append(";")
                 .append("color:").append(textHex).append(";")
-                .append("font-family:sans-serif;font-size:13px;line-height:1.5;}")
-                .append("p{margin:6px 0;}")
-                .append("a{color:").append(linkHex).append(";text-decoration:none;}")
+                .append("font-family:sans-serif;font-size:15px;line-height:1.62;word-wrap:break-word;}")
+                .append("p{margin:0 0 12px 0;}")
+                .append("a{color:").append(linkHex).append(";text-decoration:none;font-weight:600;}")
                 .append("a:hover{text-decoration:underline;}")
-                // images
-                .append("img{max-width:100%;height:auto;border-radius:12px;")
-                .append("border:1px solid ").append(borderHex).append(";margin:8px 0;}")
-                // lists
-                .append("ul,ol{margin:6px 0 6px 20px;}")
-                // tables
-                .append("table{border-collapse:collapse;width:100%;margin:6px 0;")
+                .append("img{max-width:100%;height:auto;border-radius:14px;")
+                .append("border:1px solid ").append(borderHex).append(";margin:10px 0;}")
+                .append("ul,ol{margin:0 0 12px 22px;padding:0;}")
+                .append("li{margin-bottom:6px;}")
+                .append("table{border-collapse:collapse;width:100%;margin:10px 0;")
                 .append("border:1px solid ").append(borderHex).append(";}")
                 .append("td,th{border:1px solid ").append(borderHex)
-                .append(";padding:4px;font-size:12px;}")
-                // headings
-                .append("h1,h2,h3,h4{margin:8px 0;font-weight:600;color:")
+                .append(";padding:6px;font-size:13px;}")
+                .append("blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid ")
+                .append(linkHex).append(";}")
+                .append("h1,h2,h3,h4{margin:0 0 10px 0;font-weight:700;line-height:1.28;color:")
                 .append(textHex).append(";}")
                 .append("</style>")
                 .append("</head><body>")

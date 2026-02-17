@@ -12,26 +12,27 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:clipChildren="false"
-        android:clipToPadding="false">
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="18dp">
 
         <LinearLayout
             android:id="@+id/headerContainer"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="0.44"
+            android:layout_marginEnd="14dp"
             android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_tablet_surface"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="18dp">
 
             <ImageView
                 android:id="@+id/appIcon"
-                android:layout_width="180dp"
-                android:layout_height="180dp"
-                android:layout_marginBottom="8dp"
+                android:layout_width="170dp"
+                android:layout_height="170dp"
                 android:adjustViewBounds="true"
                 android:contentDescription="@string/app_name"
                 android:scaleType="fitCenter"
@@ -41,35 +42,42 @@
                 android:id="@+id/appTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.05"
+                android:layout_marginTop="10dp"
+                android:letterSpacing="0.04"
                 android:text="@string/app_name"
                 android:textColor="?attr/mzText"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/login_card_title"
+                android:textColor="?attr/mzMuted"
+                android:textSize="13sp" />
         </LinearLayout>
 
         <androidx.cardview.widget.CardView
             android:id="@+id/loginCard"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="?attr/mzBgSoft"
+            android:layout_weight="0.56"
+            app:cardBackgroundColor="?attr/mzBgSurface"
             app:cardCornerRadius="24dp"
-            app:cardElevation="8dp">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="32dp"
-                android:clipChildren="false"
-                android:clipToPadding="false">
+                android:padding="26dp">
 
                 <TextView
                     android:id="@+id/loginCardTitle"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="18dp"
                     android:text="@string/login_card_title"
                     android:textColor="?attr/mzText"
                     android:textSize="20sp"
@@ -81,12 +89,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:layout_marginHorizontal="4dp"
                     android:hint="@string/login_hint"
                     app:boxBackgroundColor="?attr/mzBg"
                     app:boxStrokeColor="?attr/mzPrimary"
-                    app:boxStrokeWidth="1dp"
-                    app:boxStrokeWidthFocused="2dp"
                     app:hintTextColor="?attr/mzPrimary"
                     app:startIconDrawable="@drawable/ic_person"
                     app:startIconTint="?attr/mzMuted">
@@ -108,16 +113,13 @@
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_marginBottom="18dp"
                     android:hint="@string/login_password_hint"
                     app:boxBackgroundColor="?attr/mzBg"
                     app:boxStrokeColor="?attr/mzPrimary"
-                    app:boxStrokeWidth="1dp"
-                    app:boxStrokeWidthFocused="2dp"
+                    app:hintTextColor="?attr/mzPrimary"
                     app:passwordToggleEnabled="true"
                     app:passwordToggleTint="?attr/mzMuted"
-                    app:hintTextColor="?attr/mzPrimary"
                     app:startIconDrawable="@drawable/ic_lock"
                     app:startIconTint="?attr/mzMuted">
 
@@ -136,25 +138,14 @@
                 <Button
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="52dp"
                     android:backgroundTint="?attr/mzPrimary"
-                    android:elevation="4dp"
+                    android:elevation="0dp"
                     android:text="@string/login_button"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     app:cornerRadius="12dp" />
-
-                <TextView
-                    android:id="@+id/loginInfoText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:gravity="center"
-                    android:text="@string/login_info_text"
-                    android:textColor="?attr/mzMuted"
-                    android:textSize="12sp" />
-
             </LinearLayout>
         </androidx.cardview.widget.CardView>
     </LinearLayout>

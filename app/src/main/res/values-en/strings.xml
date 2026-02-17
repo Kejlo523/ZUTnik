@@ -30,6 +30,7 @@
     <string name="login_success">Logged in as %1$s</string>
 
     <string name="home_title">Main dashboard</string>
+    <string name="home_toolbar_title">Home page</string>
 
     <string name="home_welcome_message">Hello, %1$s</string>
     <string name="home_welcome_subtitle">

@@ -30,6 +30,7 @@
     <string name="login_success">Увійшли як %1$s</string>
 
     <string name="home_title">Головна панель</string>
+    <string name="home_toolbar_title">Головна сторінка</string>
 
     <string name="home_welcome_message">Вітаємо, %1$s</string>
     <string name="home_welcome_subtitle">

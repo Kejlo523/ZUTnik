@@ -19,7 +19,12 @@
             android:id="@+id/etTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/dialog_add_edit_tile_hint_title" />
+            android:hint="@string/dialog_add_edit_tile_hint_title"
+            android:minHeight="48dp"
+            android:paddingStart="12dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="10dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -32,7 +37,12 @@
             android:id="@+id/etDesc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/dialog_add_edit_tile_hint_desc" />
+            android:hint="@string/dialog_add_edit_tile_hint_desc"
+            android:minHeight="48dp"
+            android:paddingStart="12dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="10dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -45,7 +55,10 @@
             android:id="@+id/spinnerAction"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_spinner_dark"
+            android:popupBackground="?attr/mzCard"
+            android:spinnerMode="dropdown" />
 
         <LinearLayout
             android:id="@+id/containerUrl"
@@ -66,7 +79,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textUri"
-                android:hint="@string/dialog_add_edit_tile_hint_url" />
+                android:hint="@string/dialog_add_edit_tile_hint_url"
+                android:minHeight="48dp"
+                android:paddingStart="12dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="10dp" />
         </LinearLayout>
 
         <LinearLayout
@@ -87,7 +105,10 @@
                 android:id="@+id/spinnerSavedParams"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_spinner_dark"
+                android:popupBackground="?attr/mzCard"
+                android:spinnerMode="dropdown" />
         </LinearLayout>
 
         <TextView

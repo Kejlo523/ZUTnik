@@ -10,8 +10,11 @@ import android.os.Build;
 
 import androidx.core.content.ContextCompat;
 import androidx.work.Constraints;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
@@ -23,8 +26,11 @@ public final class NotificationSyncManager {
     }
 
     public static final String UNIQUE_WORK_NAME = "mzut_background_sync";
+    public static final String UNIQUE_BOOTSTRAP_WORK_NAME = "mzut_background_sync_bootstrap";
     public static final long SYNC_INTERVAL_MINUTES = 30L;
     private static final long SYNC_FLEX_MINUTES = 10L;
+    private static final String PREFS_RUNTIME = "mzut_sync_runtime";
+    private static final String KEY_BOOTSTRAP_SYNC_USER = "bootstrap_sync_user_v1";
 
     public static final String CHANNEL_GRADES = "mzut_grades_changes";
     public static final String CHANNEL_PLAN = "mzut_plan_changes";
@@ -149,6 +155,49 @@ public final class NotificationSyncManager {
                 UNIQUE_WORK_NAME,
                 ExistingPeriodicWorkPolicy.UPDATE,
                 request);
+
+        enqueueBootstrapSyncIfNeeded(appContext);
+    }
+
+    public static void enqueueBootstrapSyncIfNeeded(Context context) {
+        Context appContext = context.getApplicationContext();
+
+        MzutSession.initializeFromPreferences(appContext);
+        MzutSession session = MzutSession.getInstance();
+        String userId = session.getUserId();
+        String authKey = session.getAuthKey();
+
+        if (userId == null || authKey == null) {
+            return;
+        }
+        if (!hasNotificationPermission(appContext) || !isAnyFeatureEnabled(appContext)) {
+            return;
+        }
+
+        SharedPreferences runtimePrefs = appContext.getSharedPreferences(PREFS_RUNTIME, Context.MODE_PRIVATE);
+        String syncedUser = runtimePrefs.getString(KEY_BOOTSTRAP_SYNC_USER, "");
+        if (userId.equals(syncedUser)) {
+            return;
+        }
+
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
+                .build();
+
+        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(BackgroundSyncWorker.class)
+                .setInputData(new Data.Builder()
+                        .putBoolean(BackgroundSyncWorker.INPUT_BOOTSTRAP_PREFETCH, true)
+                        .build())
+                .setConstraints(constraints)
+                .build();
+
+        WorkManager.getInstance(appContext).enqueueUniqueWork(
+                UNIQUE_BOOTSTRAP_WORK_NAME,
+                ExistingWorkPolicy.KEEP,
+                request);
+
+        runtimePrefs.edit().putString(KEY_BOOTSTRAP_SYNC_USER, userId).apply();
     }
 
     public static void cancelWorker(Context context) {
