@@ -189,7 +189,7 @@
     </string>
   <string name="plan_widget_refreshed_prefix">Оновлено: </string>
   <string name="plan_widget_label_today">Сьогодні</string>
-  <string name="plan_widget_refreshed_placeholder">Оновлено: --:--</string>
+  <string name="plan_widget_refreshed_placeholder">Оновлено: —:—</string>
   <string name="plan_widget_item_title_placeholder">Предмет</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Аудиторія 123</string>

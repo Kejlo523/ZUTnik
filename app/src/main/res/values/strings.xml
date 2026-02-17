@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pl">
   <string name="battery_opt_dialog_title">Wymagane uprawnienia</string>
   <string name="battery_opt_dialog_message">Aplikacja potrzebuje działać w tle, aby widgety działały poprawnie. Proszę wyłączyć optymalizację baterii dla tej aplikacji.</string>
   <string name="battery_opt_button_settings">Ustawienia</string>
@@ -225,7 +225,7 @@
     </string>
   <string name="plan_widget_refreshed_prefix">Odświeżono: </string>
   <string name="plan_widget_label_today">Dzisiaj</string>
-  <string name="plan_widget_refreshed_placeholder">Odświeżono: --:--</string>
+  <string name="plan_widget_refreshed_placeholder">Odświeżono: —:—</string>
   <string name="plan_widget_item_title_placeholder">Przedmiot</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Sala 123</string>

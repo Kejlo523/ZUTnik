@@ -189,7 +189,7 @@
     </string>
   <string name="plan_widget_refreshed_prefix">Refreshed: </string>
   <string name="plan_widget_label_today">Today</string>
-  <string name="plan_widget_refreshed_placeholder">Refreshed: --:--</string>
+  <string name="plan_widget_refreshed_placeholder">Refreshed: —:—</string>
   <string name="plan_widget_item_title_placeholder">Subject</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Room 123</string>
