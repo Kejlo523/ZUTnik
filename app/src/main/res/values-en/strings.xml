@@ -32,11 +32,11 @@
     <string name="home_title">Main dashboard</string>
     <string name="home_toolbar_title">Home page</string>
 
-    <string name="home_welcome_message">Hello, %1$s</string>
+    <string name="home_welcome_message">Hello %1$s</string>
     <string name="home_welcome_subtitle">
         Quick access to timetable, grades, study info and ZUT news – in one place.
     </string>
-    <string name="home_welcome_fallback">Hello, Student 👋</string>
+    <string name="home_welcome_fallback">Hello Student 👋</string>
 
     <string name="home_grades_not_available">Grades screen is not connected yet.</string>
     <string name="home_news_not_available">News screen is not connected yet.</string>

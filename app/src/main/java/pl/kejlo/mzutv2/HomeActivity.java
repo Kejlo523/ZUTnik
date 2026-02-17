@@ -252,9 +252,25 @@ public class HomeActivity extends MzutBaseActivity {
         if (username == null || username.trim().isEmpty()) {
             username = getString(R.string.nav_header_default_username);
         }
+        username = extractFirstName(username);
 
         textWelcome.setText(getString(R.string.home_welcome_message, username));
         textWelcomeSub.setText(R.string.home_welcome_subtitle);
+    }
+
+    private String extractFirstName(String rawName) {
+        if (rawName == null) {
+            return "";
+        }
+        String normalized = rawName.trim().replaceAll("\\s+", " ");
+        if (normalized.isEmpty()) {
+            return "";
+        }
+        int firstSpace = normalized.indexOf(' ');
+        if (firstSpace > 0) {
+            return normalized.substring(0, firstSpace);
+        }
+        return normalized;
     }
 
     private void setupClicks() {

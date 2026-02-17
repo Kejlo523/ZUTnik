@@ -1,6 +1,7 @@
 package pl.kejlo.mzutv2;
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,10 +96,12 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         if (pos < 0) {
             return;
         }
+
         int childCount = g.others != null ? g.others.size() : 0;
         if (childCount == 0) {
             return;
         }
+
         if (g.expanded) {
             g.expanded = false;
             int from = pos + 1;
@@ -156,7 +159,12 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
     private void bindGroup(GroupViewHolder h, GradeGroup g) {
         Context ctx = h.itemView.getContext();
 
-        h.subject.setText(g.subject);
+        String subject = extractBaseSubject(g != null ? g.subject : "");
+        if (subject.isEmpty()) {
+            subject = safe(g != null ? g.subject : "");
+        }
+        h.subject.setText(subject);
+
         float target = g.expanded ? 90f : 0f;
         if (h.expandIcon.getRotation() != target) {
             h.expandIcon.animate().rotation(target).setDuration(180).start();
@@ -164,24 +172,29 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             h.expandIcon.setRotation(target);
         }
 
+        String finalLabel;
         if (g.finalMissing || g.finalGrade == null) {
-            h.finalLabel.setText(R.string.grades_final_grade_missing);
+            finalLabel = ctx.getString(R.string.grades_final_grade_missing);
             String dash = ctx.getString(R.string.common_dash);
             h.finalPill.setText(dash);
             styleGradePill(ctx, h.finalPill, dash, true);
         } else {
-            h.finalLabel.setText(R.string.grades_final_grade_label);
-            String raw = g.finalGrade.grade != null ? g.finalGrade.grade : "";
-            h.finalPill.setText(raw);
-            styleGradePill(ctx, h.finalPill, raw, false);
+            finalLabel = ctx.getString(R.string.grades_final_grade_label);
+            String raw = safe(g.finalGrade.grade);
+            h.finalPill.setText(raw.isEmpty() ? ctx.getString(R.string.common_dash) : raw);
+            styleGradePill(ctx, h.finalPill, raw, raw.isEmpty());
+        }
+
+        int othersCount = g.others != null ? g.others.size() : 0;
+        if (othersCount > 0) {
+            finalLabel = finalLabel + " | " + ctx.getString(R.string.grades_group_items_count, othersCount);
         }
 
         double ects = resolveGroupEcts(g);
         if (ects > 0.0) {
-            String base = h.finalLabel.getText() != null ? h.finalLabel.getText().toString() : "";
-            String ectsLine = ctx.getString(R.string.grades_ects_format, ects);
-            h.finalLabel.setText(base + "\n" + ectsLine);
+            finalLabel = finalLabel + "\n" + ctx.getString(R.string.grades_ects_format, ects);
         }
+        h.finalLabel.setText(finalLabel);
 
         bindPreview(ctx, h.previewRow, g);
 
@@ -191,34 +204,38 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private void bindGrade(GradeViewHolder h, Grade g) {
         Context ctx = h.itemView.getContext();
-        String raw = g != null ? g.grade : "";
-        h.gradePill.setText(raw);
-        styleGradePill(ctx, h.gradePill, raw, false);
 
-        String type = g != null ? g.type : "";
-        if (type != null && !type.trim().isEmpty()) {
-            h.type.setText(formatTypeDisplay(type));
+        String rawGrade = safe(g != null ? g.grade : "");
+        if (rawGrade.isEmpty()) {
+            rawGrade = ctx.getString(R.string.common_dash);
+            styleGradePill(ctx, h.gradePill, "", true);
+        } else {
+            styleGradePill(ctx, h.gradePill, rawGrade, false);
+        }
+        h.gradePill.setText(rawGrade);
+
+        String type = safe(g != null ? g.type : "");
+        if (type.isEmpty()) {
+            type = extractTypeFromSubject(g != null ? g.subjectName : "");
+        }
+        String typeDisplay = formatTypeDisplay(ctx, type);
+        if (!typeDisplay.isEmpty()) {
+            h.type.setText(typeDisplay);
             h.type.setVisibility(View.VISIBLE);
         } else {
-            String fallback = extractTypeFromSubject(g != null ? g.subjectName : "");
-            if (fallback != null && !fallback.trim().isEmpty()) {
-                h.type.setText(formatTypeDisplay(fallback));
-                h.type.setVisibility(View.VISIBLE);
-            } else {
-                h.type.setVisibility(View.GONE);
-            }
+            h.type.setVisibility(View.GONE);
         }
 
-        String date = g != null ? g.date : "";
-        if (date != null && !date.trim().isEmpty()) {
+        String date = safe(g != null ? g.date : "");
+        if (!date.isEmpty()) {
             h.date.setText(date);
             h.date.setVisibility(View.VISIBLE);
         } else {
             h.date.setVisibility(View.GONE);
         }
 
-        String teacher = g != null ? g.teacher : "";
-        if (teacher != null && !teacher.trim().isEmpty()) {
+        String teacher = safe(g != null ? g.teacher : "");
+        if (!teacher.isEmpty()) {
             h.teacher.setText(teacher);
             h.teacher.setVisibility(View.VISIBLE);
         } else {
@@ -238,11 +255,12 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
 
         for (int i = 0; i < show; i++) {
             Grade g = group.others.get(i);
-            String label = getTypeLabel(g);
+            String raw = safe(g != null ? g.grade : "");
+            boolean missing = raw.isEmpty();
+            String label = missing ? ctx.getString(R.string.common_dash) : raw;
+
             TextView pill = createPreviewPill(ctx, label, false);
-            String rawGrade = g != null ? g.grade : "";
-            styleGradePill(ctx, pill, rawGrade, false);
-            pill.setText(label);
+            styleGradePill(ctx, pill, raw, missing);
             container.addView(pill);
         }
 
@@ -256,11 +274,11 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
     private TextView createPreviewPill(Context ctx, String text, boolean isCount) {
         TextView pill = new TextView(ctx);
         pill.setText(text);
-        pill.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
-        pill.setTypeface(null, android.graphics.Typeface.BOLD);
+        pill.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isCount ? 10f : 11f);
+        pill.setTypeface(null, Typeface.BOLD);
         pill.setGravity(android.view.Gravity.CENTER);
 
-        int size = dp(ctx, 36);
+        int size = dp(ctx, isCount ? 30 : 34);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
         lp.setMarginEnd(dp(ctx, 6));
         pill.setLayoutParams(lp);
@@ -281,15 +299,20 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             return;
         }
 
-        String lower = raw.trim().toLowerCase();
-        boolean isFail = "2".equals(raw.trim()) || "2.0".equals(raw.trim())
-                || "nk".equalsIgnoreCase(lower) || "nzal".equalsIgnoreCase(lower);
+        String normalizedRaw = raw.trim();
+        String lower = normalizedRaw.toLowerCase(Locale.ROOT);
+
+        boolean isFail = "2".equals(normalizedRaw)
+                || "2.0".equals(normalizedRaw)
+                || "2,0".equals(normalizedRaw)
+                || "nk".equalsIgnoreCase(lower)
+                || "nzal".equalsIgnoreCase(lower);
         boolean isPass = false;
 
         if (!isFail) {
-            String normalized = raw.trim().replace(",", ".");
+            String numeric = normalizedRaw.replace(",", ".");
             try {
-                double val = Double.parseDouble(normalized);
+                double val = Double.parseDouble(numeric);
                 if (val > 2.0) {
                     isPass = true;
                 }
@@ -316,20 +339,6 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         return Math.round(dp * ctx.getResources().getDisplayMetrics().density);
     }
 
-    private String getTypeLabel(Grade g) {
-        if (g == null) {
-            return "-";
-        }
-        String type = g.type;
-        if (type == null || type.trim().isEmpty()) {
-            type = extractTypeFromSubject(g.subjectName);
-        }
-        if (type == null || type.trim().isEmpty()) {
-            return "-";
-        }
-        return shortenType(type.trim());
-    }
-
     private String extractTypeFromSubject(String subject) {
         if (subject == null) {
             return "";
@@ -342,54 +351,52 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         return "";
     }
 
-    private String shortenType(String type) {
-        String normalized = normalize(type);
-        if (normalized.contains("wyklad")) return "W";
-        if (normalized.contains("audytoryjne")) return "A";
-        if (normalized.contains("konwersatorium")) return "K";
-        if (normalized.contains("laboratorium")) return "L";
-        if (normalized.contains("cwiczen")) return "Ć";
-        if (normalized.contains("projekt")) return "P";
-        if (normalized.contains("semin")) return "S";
-        if (normalized.contains("egzamin")) return "E";
-        if (normalized.contains("zaliczen")) return "Z";
-        if (normalized.contains("lektora")) return "L";
-        if (normalized.contains("praktyk")) return "P";
-
-        String trimmed = type.trim();
-        if (trimmed.isEmpty()) {
-            return "-";
+    private String extractBaseSubject(String label) {
+        if (label == null) {
+            return "";
         }
-        return trimmed.substring(0, 1).toUpperCase(Locale.ROOT);
+        String name = label.trim();
+        int parenIdx = name.lastIndexOf(" (");
+        if (parenIdx > 0 && name.endsWith(")")) {
+            name = name.substring(0, parenIdx);
+        }
+        return name.trim();
     }
 
-    private String normalize(String value) {
+    private String formatTypeDisplay(Context ctx, String value) {
+        String raw = safe(value);
+        if (raw.isEmpty()) {
+            return "";
+        }
+
+        String normalized = normalize(raw);
+        if (normalized.contains("wyklad")) {
+            return ctx.getString(R.string.plan_type_lecture);
+        }
+        if (normalized.contains("laboratorium")) {
+            return ctx.getString(R.string.plan_type_lab);
+        }
+        if (normalized.contains("audytoryjne")) {
+            return ctx.getString(R.string.plan_type_auditory);
+        }
+        if (normalized.contains("egzamin")) {
+            return ctx.getString(R.string.plan_type_exam);
+        }
+        if (normalized.contains("zaliczen")) {
+            return ctx.getString(R.string.plan_type_pass);
+        }
+        return toTitleCase(raw);
+    }
+
+    private String toTitleCase(String value) {
         if (value == null) {
             return "";
         }
-        String lower = value.trim().toLowerCase(Locale.ROOT);
-        String n = Normalizer.normalize(lower, Normalizer.Form.NFD);
-        return n.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    }
-
-    private String formatTypeDisplay(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
             return "";
         }
-        String normalized = normalize(value);
-        if (normalized.contains("wyklad")) return "Wykład";
-        if (normalized.contains("audytoryjne")) return "Audytoryjne";
-        if (normalized.contains("konwersatorium")) return "Konwersatorium";
-        if (normalized.contains("laboratorium")) return "Laboratorium";
-        if (normalized.contains("cwiczen")) return "Ćwiczenia";
-        if (normalized.contains("projekt")) return "Projekt";
-        if (normalized.contains("semin")) return "Seminarium";
-        if (normalized.contains("egzamin")) return "Egzamin";
-        if (normalized.contains("zaliczen")) return "Zaliczenie";
-        if (normalized.contains("lektora")) return "Lektorat";
-        if (normalized.contains("praktyk")) return "Praktyka";
-
-        String[] parts = value.trim().toLowerCase(Locale.ROOT).split("\\s+");
+        String[] parts = trimmed.toLowerCase(Locale.getDefault()).split("\\s+");
         StringBuilder sb = new StringBuilder();
         for (String p : parts) {
             if (p.isEmpty()) {
@@ -398,9 +405,55 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             if (sb.length() > 0) {
                 sb.append(" ");
             }
-            sb.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1));
+            sb.append(Character.toUpperCase(p.charAt(0)));
+            if (p.length() > 1) {
+                sb.append(p.substring(1));
+            }
         }
         return sb.toString();
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        String lower = repairMojibake(value).trim().toLowerCase(Locale.ROOT);
+        String n = Normalizer.normalize(lower, Normalizer.Form.NFD);
+        return n.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+    }
+
+    private String safe(String value) {
+        if (value == null) {
+            return "";
+        }
+        return repairMojibake(value).trim();
+    }
+
+    private String repairMojibake(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        return value
+                .replace("Ä…", "ą")
+                .replace("Ä‡", "ć")
+                .replace("Ä™", "ę")
+                .replace("Å‚", "ł")
+                .replace("Å„", "ń")
+                .replace("Ã³", "ó")
+                .replace("Å›", "ś")
+                .replace("Å¼", "ż")
+                .replace("Åº", "ź")
+                .replace("Ä„", "Ą")
+                .replace("Ä†", "Ć")
+                .replace("Ä˜", "Ę")
+                .replace("Å�", "Ł")
+                .replace("Åƒ", "Ń")
+                .replace("Ã“", "Ó")
+                .replace("Åš", "Ś")
+                .replace("Å»", "Ż")
+                .replace("Å¹", "Ź")
+                .replace("Ĺ‚", "ł")
+                .replace("Ĺ„", "ń");
     }
 
     private double resolveGroupEcts(GradeGroup group) {

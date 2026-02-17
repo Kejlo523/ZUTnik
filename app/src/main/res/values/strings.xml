@@ -70,11 +70,11 @@
     <string name="home_title">Pulpit główny</string>
     <string name="home_toolbar_title">Strona główna</string>
 
-    <string name="home_welcome_message">Witaj, %1$s</string>
+    <string name="home_welcome_message">Witaj %1$s</string>
     <string name="home_welcome_subtitle">
         Szybki dostęp do planu, ocen, informacji o studiach i aktualności z ZUT – w jednym miejscu.
     </string>
-    <string name="home_welcome_fallback">Witaj, Student 👋</string>
+    <string name="home_welcome_fallback">Witaj Student 👋</string>
 
     <string name="home_grades_not_available">Ekran ocen nie jest jeszcze podpięty.</string>
     <string name="home_news_not_available">Ekran aktualności nie jest jeszcze podpięty.</string>

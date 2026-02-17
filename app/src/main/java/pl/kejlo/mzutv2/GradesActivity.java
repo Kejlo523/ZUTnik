@@ -612,14 +612,21 @@ public class GradesActivity extends MzutBaseActivity {
             return false;
         }
         String type = normalizeKey(g.type);
-        if (type.contains("ocena koncowa") || type.equals("koncowa")) {
+        if (type.contains("ocena koncowa")
+                || type.equals("koncowa")
+                || type.contains("koncowa")
+                || type.contains("final")
+                || type.contains("abschluss")) {
             return true;
         }
         if (type.isEmpty()) {
             String subject = normalizeKey(g.subjectName);
-            return subject.contains("ocena koncowa");
+            return subject.contains("ocena koncowa")
+                    || subject.contains("koncowa")
+                    || subject.contains("final")
+                    || subject.contains("abschluss");
         }
-        return type.contains("koncowa");
+        return false;
     }
 
     private String extractBaseSubject(String label) {
@@ -638,9 +645,36 @@ public class GradesActivity extends MzutBaseActivity {
         if (value == null) {
             return "";
         }
-        String lower = value.trim().toLowerCase(Locale.ROOT);
+        String lower = repairMojibake(value).trim().toLowerCase(Locale.ROOT);
         String normalized = Normalizer.normalize(lower, Normalizer.Form.NFD);
         return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+    }
+
+    private static String repairMojibake(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        return value
+                .replace("Ä…", "ą")
+                .replace("Ä‡", "ć")
+                .replace("Ä™", "ę")
+                .replace("Å‚", "ł")
+                .replace("Å„", "ń")
+                .replace("Ã³", "ó")
+                .replace("Å›", "ś")
+                .replace("Å¼", "ż")
+                .replace("Åº", "ź")
+                .replace("Ä„", "Ą")
+                .replace("Ä†", "Ć")
+                .replace("Ä˜", "Ę")
+                .replace("Å�", "Ł")
+                .replace("Åƒ", "Ń")
+                .replace("Ã“", "Ó")
+                .replace("Åš", "Ś")
+                .replace("Å»", "Ż")
+                .replace("Å¹", "Ź")
+                .replace("Ĺ‚", "ł")
+                .replace("Ĺ„", "ń");
     }
 
     private void reloadGrades(Semester semester, boolean forceNetwork) {
