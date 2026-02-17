@@ -29,7 +29,6 @@ android {
 dependencies {
     implementation(libs.wear.tiles)
     implementation(libs.wear.protolayout)
-    implementation(libs.wear.watchface)
     implementation(libs.wear.watchface.complications.data)
     implementation(libs.wear.watchface.complications.data.source)
     implementation(libs.play.services.wearable)

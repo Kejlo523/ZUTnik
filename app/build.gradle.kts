@@ -38,7 +38,6 @@ android {
 dependencies {
     implementation(libs.activity)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.work:work-runtime:2.9.1")
     implementation(libs.appcompat)
     implementation(libs.material)
