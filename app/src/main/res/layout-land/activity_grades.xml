@@ -127,6 +127,38 @@
                                 android:textColor="?attr/mzText"
                                 android:textSize="32sp"
                                 android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:background="@drawable/bg_grades_metric_card"
+                                android:orientation="vertical"
+                                android:paddingStart="8dp"
+                                android:paddingTop="5dp"
+                                android:paddingEnd="8dp"
+                                android:paddingBottom="5dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/grades_summary_ects_total_label"
+                                    android:textAllCaps="true"
+                                    android:textColor="?attr/mzMuted"
+                                    android:textSize="9sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvEctsTotalValue"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="1dp"
+                                    android:contentDescription="@string/grades_summary_ects_total_label"
+                                    android:text="@string/common_zero"
+                                    android:textColor="?attr/mzText"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
                 </FrameLayout>
