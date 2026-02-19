@@ -149,14 +149,15 @@ public class PlanDayWidgetService extends RemoteViewsService {
             rv.setTextColor(R.id.itemTime, textColorSecondary);
             rv.setTextColor(R.id.itemRoom, textColorSecondary);
 
-            String timeStr = ev.startStr + " – " + ev.endStr;
-            rv.setTextViewText(R.id.itemTime, timeStr);
+            String start = ev.startStr != null ? ev.startStr : "";
+            String end = ev.endStr != null ? ev.endStr : "";
+            rv.setTextViewText(R.id.itemTime, start + " - " + end);
 
             String roomStr = "";
             if (ev.room != null && !ev.room.isEmpty())
                 roomStr = ev.room;
             if (ev.group != null && !ev.group.isEmpty())
-                roomStr += (roomStr.isEmpty() ? "" : " · ") + ev.group;
+                roomStr += (roomStr.isEmpty() ? "" : " | ") + ev.group;
 
             rv.setTextViewText(R.id.itemRoom, roomStr);
 

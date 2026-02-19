@@ -193,6 +193,7 @@
   <string name="plan_widget_item_title_placeholder">Предмет</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Аудиторія 123</string>
+  <string name="plan_widget_empty_state">Немає занять для відображення</string>
   <string name="about_title">Про застосунок</string>
   <string name="about_project_description_1">
         mZUT v2 створено як неофіційну, легку альтернативу для швидкого перегляду розкладу, оцінок та інформації про навчання в ZUT без необхідності переходити через важкі веб-панелі.
@@ -382,11 +383,11 @@
   <string name="session_retake">перескладання</string>
   <string name="calendar_period_start_label">Початок</string>
   <string name="calendar_period_end_label">Кінець</string>
-  <string name="period_break_winter_semester">перерви від занять (зимовий семестр)</string>
-  <string name="period_break_summer_semester">перерви від занять (літній семестр)</string>
-  <string name="period_break_generic">перерви від занять</string>
-  <string name="period_holiday_winter">зимових канікул</string>
-  <string name="period_holiday_summer">літніх канікул</string>
+  <string name="period_break_winter_semester">перерва від занять (зимовий семестр)</string>
+  <string name="period_break_summer_semester">перерва від занять (літній семестр)</string>
+  <string name="period_break_generic">перерва від занять</string>
+  <string name="period_holiday_winter">зимові канікули</string>
+  <string name="period_holiday_summer">літні канікули</string>
   <!-- Extracted Strings -->
   <string name="useful_links_badge_recommended">Рекомендовано</string>
   <string name="about_version_prefix">v</string>

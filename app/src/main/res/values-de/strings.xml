@@ -189,6 +189,7 @@
   <string name="plan_widget_item_title_placeholder">Fach</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Raum 123</string>
+  <string name="plan_widget_empty_state">Keine Veranstaltungen zum Anzeigen</string>
   <string name="about_title">Über die App</string>
   <string name="about_project_description_1">
         mZUT v2 wurde als inoffizielle, leichte Alternative erstellt, um Stundenplan, Noten und Studieninformationen schnell einzusehen.
@@ -452,9 +453,9 @@
   <!-- Okresy kalendarza -->
   <string name="calendar_period_start_label">Beginn</string>
   <string name="calendar_period_end_label">Ende</string>
-  <string name="period_break_winter_semester">didaktische Pause (Wintersemester)</string>
-  <string name="period_break_summer_semester">didaktische Pause (Sommersemester)</string>
-  <string name="period_break_generic">didaktische Pause</string>
+  <string name="period_break_winter_semester">Didaktische Pause (Wintersemester)</string>
+  <string name="period_break_summer_semester">Didaktische Pause (Sommersemester)</string>
+  <string name="period_break_generic">Didaktische Pause</string>
   <string name="period_holiday_winter">Winterferien</string>
   <string name="period_holiday_summer">Sommerferien</string>
 </resources>

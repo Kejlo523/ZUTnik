@@ -113,7 +113,10 @@ public class PlanActivity extends MzutBaseActivity {
 
     private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
     private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
-    private static final long FILTER_CACHE_TTL_MS = 30L * 24L * 60L * 60L * 1000L;
+    private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
+    private static final String FILTER_CACHE_JSON_PREFIX = KEY_FILTER_CACHE_JSON + "_";
+    private static final String FILTER_CACHE_TS_PREFIX = KEY_FILTER_CACHE_TS + "_";
+    private static final long FILTER_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
 
     private static final int START_HOUR = 6;
     private static final int END_HOUR = 22;
@@ -324,6 +327,7 @@ public class PlanActivity extends MzutBaseActivity {
         planRepository = new PlanRepository(getApplicationContext());
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         hiddenSubjectKeys = new HashSet<>(prefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>()));
+        purgeExpiredFilterCaches();
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -1599,12 +1603,22 @@ public class PlanActivity extends MzutBaseActivity {
         executor.execute(() -> {
             List<PlanRepository.SubjectFilterItem> result = null;
             Exception error = null;
+            boolean fetchedFromNetwork = false;
+            boolean pendingForcedRefresh = false;
             try {
-                if (!forceRefresh) {
+                purgeExpiredFilterCaches();
+                pendingForcedRefresh = isFilterCacheForcedRefreshPending();
+                boolean effectiveForceRefresh = forceRefresh || pendingForcedRefresh;
+
+                if (effectiveForceRefresh) {
+                    clearAllFilterCaches();
+                } else {
                     result = loadFilterCache();
                 }
+
                 if (result == null) {
-                    result = planRepository.loadSubjectsForFilter();
+                    fetchedFromNetwork = true;
+                    result = planRepository.loadSubjectsForFilter(effectiveForceRefresh);
                     if (result != null && !result.isEmpty()) {
                         saveFilterCache(result);
                     }
@@ -1615,6 +1629,8 @@ public class PlanActivity extends MzutBaseActivity {
 
             final List<PlanRepository.SubjectFilterItem> finalRes = result;
             final Exception finalErr = error;
+            final boolean finalFetchedFromNetwork = fetchedFromNetwork;
+            final boolean finalPendingForcedRefresh = pendingForcedRefresh;
             runOnUiThread(() -> {
                 if (isDestroyed() || isFinishing())
                     return;
@@ -1645,6 +1661,16 @@ public class PlanActivity extends MzutBaseActivity {
                     }
                     return;
                 }
+
+                if (finalPendingForcedRefresh && finalFetchedFromNetwork) {
+                    markFilterCacheForcedRefreshHandled();
+                }
+
+                if (syncHiddenFiltersWithAvailable(finalRes)) {
+                    planCache.clear();
+                    loadPlanForCurrentMode();
+                }
+
                 showFiltersDialog(finalRes);
             });
         });
@@ -1674,7 +1700,7 @@ public class PlanActivity extends MzutBaseActivity {
                             hiddenSubjectKeys.add(items.get(i).filterKey);
                         }
                     }
-                    prefs.edit().putStringSet(KEY_FILTER_HIDDEN, hiddenSubjectKeys).apply();
+                    prefs.edit().putStringSet(KEY_FILTER_HIDDEN, new HashSet<>(hiddenSubjectKeys)).apply();
                     planCache.clear();
                     loadPlanForCurrentMode();
                 })
@@ -1686,6 +1712,103 @@ public class PlanActivity extends MzutBaseActivity {
                 })
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .show();
+    }
+
+    private boolean isFilterCacheForcedRefreshPending() {
+        return prefs.getBoolean(KEY_FILTER_CACHE_FORCE_REFRESH, false);
+    }
+
+    private void markFilterCacheForcedRefreshHandled() {
+        prefs.edit().putBoolean(KEY_FILTER_CACHE_FORCE_REFRESH, false).apply();
+    }
+
+    private void clearAllFilterCaches() {
+        Map<String, ?> all = prefs.getAll();
+        SharedPreferences.Editor editor = prefs.edit();
+        boolean changed = false;
+        for (String key : all.keySet()) {
+            if (key.startsWith(FILTER_CACHE_JSON_PREFIX) || key.startsWith(FILTER_CACHE_TS_PREFIX)) {
+                editor.remove(key);
+                changed = true;
+            }
+        }
+        if (changed) {
+            editor.apply();
+        }
+    }
+
+    private void purgeExpiredFilterCaches() {
+        long now = System.currentTimeMillis();
+        Map<String, ?> all = prefs.getAll();
+        SharedPreferences.Editor editor = null;
+
+        for (Map.Entry<String, ?> entry : all.entrySet()) {
+            String key = entry.getKey();
+            if (!key.startsWith(FILTER_CACHE_TS_PREFIX)) {
+                continue;
+            }
+
+            long ts;
+            Object value = entry.getValue();
+            if (value instanceof Number) {
+                ts = ((Number) value).longValue();
+            } else {
+                ts = 0L;
+            }
+
+            if (ts > 0L && (now - ts) <= FILTER_CACHE_TTL_MS) {
+                continue;
+            }
+
+            if (editor == null) {
+                editor = prefs.edit();
+            }
+
+            String scope = key.substring(FILTER_CACHE_TS_PREFIX.length());
+            editor.remove(key);
+            editor.remove(FILTER_CACHE_JSON_PREFIX + scope);
+        }
+
+        if (editor != null) {
+            editor.apply();
+        }
+    }
+
+    private boolean syncHiddenFiltersWithAvailable(List<PlanRepository.SubjectFilterItem> availableItems) {
+        if (availableItems == null || availableItems.isEmpty()) {
+            return false;
+        }
+
+        Set<String> availableKeys = new HashSet<>();
+        for (PlanRepository.SubjectFilterItem item : availableItems) {
+            if (item == null || item.filterKey == null) {
+                continue;
+            }
+            String key = item.filterKey.trim();
+            if (!key.isEmpty()) {
+                availableKeys.add(key);
+            }
+        }
+
+        if (availableKeys.isEmpty() || hiddenSubjectKeys.isEmpty()) {
+            return false;
+        }
+
+        Set<String> pruned = new HashSet<>();
+        for (String selected : hiddenSubjectKeys) {
+            if (availableKeys.contains(selected)) {
+                pruned.add(selected);
+            }
+        }
+
+        if (pruned.size() == hiddenSubjectKeys.size()) {
+            return false;
+        }
+
+        hiddenSubjectKeys.clear();
+        hiddenSubjectKeys.addAll(pruned);
+        prefs.edit().putStringSet(KEY_FILTER_HIDDEN, new HashSet<>(hiddenSubjectKeys)).apply();
+        return true;
     }
 
     private List<PlanRepository.SubjectFilterItem> loadFilterCache() {

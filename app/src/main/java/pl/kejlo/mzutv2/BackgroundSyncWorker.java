@@ -35,10 +35,14 @@ public class BackgroundSyncWorker extends Worker {
     public static final String INPUT_BOOTSTRAP_PREFETCH = "input_bootstrap_prefetch";
 
     private static final String PREFS_BG = "mzut_background_sync_cache";
+    private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
     private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v1";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
     private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v1";
+    private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
+    private static final String FILTER_CACHE_JSON_PREFIX = "plan_filters_cache_json_";
+    private static final String FILTER_CACHE_TS_PREFIX = "plan_filters_cache_ts_";
     private static final String KEY_LAST_GRADES_ALERT_HASH = "grades_last_alert_hash_v1";
     private static final String KEY_LAST_GRADES_ALERT_TS = "grades_last_alert_ts_v1";
     private static final String KEY_LAST_PLAN_ALERT_HASH = "plan_last_alert_hash_v1";
@@ -146,10 +150,12 @@ public class BackgroundSyncWorker extends Worker {
         }
 
         Map<String, String> current = new LinkedHashMap<>();
+        int fetchedSemesters = 0;
         for (Semester semester : semesters) {
             if (semester == null || semester.listaSemestrowId == null || semester.listaSemestrowId.trim().isEmpty()) {
                 continue;
             }
+            fetchedSemesters++;
             List<Grade> grades = repo.loadGradesForSemester(semester.listaSemestrowId);
             if (grades == null) {
                 continue;
@@ -169,6 +175,10 @@ public class BackgroundSyncWorker extends Worker {
         Set<String> previous = readStringSetJson(prefs.getString(KEY_GRADES_BASELINE_JSON, "[]"));
 
         if (!baselineReady || previous.isEmpty()) {
+            if (fetchedSemesters == 0) {
+                Log.d(TAG, "Skipping grades baseline init: no semesters loaded yet.");
+                return;
+            }
             saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
             prefs.edit().putBoolean(KEY_GRADES_BASELINE_READY, true).apply();
             return;
@@ -261,6 +271,7 @@ public class BackgroundSyncWorker extends Worker {
                 + diff.added.size();
 
         if (totalChanges > PLAN_REFRESH_THRESHOLD) {
+            markFilterCacheRefreshNeeded(context);
             savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
             String signature = "refresh_" + totalChanges + "_" + current.size();
             if (!isDuplicateAlert(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
@@ -674,6 +685,20 @@ public class BackgroundSyncWorker extends Worker {
                 .putString(hashKey, signature)
                 .putLong(tsKey, System.currentTimeMillis())
                 .apply();
+    }
+
+    private void markFilterCacheRefreshNeeded(Context context) {
+        SharedPreferences planPrefs = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
+        Map<String, ?> all = planPrefs.getAll();
+        SharedPreferences.Editor editor = planPrefs.edit();
+
+        for (String key : all.keySet()) {
+            if (key.startsWith(FILTER_CACHE_JSON_PREFIX) || key.startsWith(FILTER_CACHE_TS_PREFIX)) {
+                editor.remove(key);
+            }
+        }
+        editor.putBoolean(KEY_FILTER_CACHE_FORCE_REFRESH, true);
+        editor.apply();
     }
 
     private static class PlanDiff {

@@ -39,7 +39,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
-    private static final long NO_CLASSES_WIDGET_REFRESH_MINUTES = 12L * 60L;
+    private static final long NO_CLASSES_WIDGET_REFRESH_MINUTES = 3L * 60L;
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -78,14 +78,6 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             int[] ids = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
             if (ids == null || ids.length == 0) {
                 ids = mgr.getAppWidgetIds(new ComponentName(context, PlanDayWidgetProvider.class));
-            }
-
-            // Show loading state immediately
-            for (int appWidgetId : ids) {
-                RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_glass);
-                views.setViewVisibility(R.id.widgetRefresh, android.view.View.GONE);
-                views.setViewVisibility(R.id.widgetLoading, android.view.View.VISIBLE);
-                mgr.updateAppWidget(appWidgetId, views);
             }
 
             final PendingResult result = goAsync();
@@ -136,6 +128,8 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         LocalDate targetDate = today;
         String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
         boolean hideList = false;
+        boolean listHasItems = false;
+        String emptyStateText = context.getString(R.string.plan_widget_empty_state);
 
         boolean hasSession = ensureSessionFromPrefs(context);
 
@@ -155,6 +149,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                             nextClassesDate.format(SHORT_DATE_LABEL));
                     targetDate = nextClassesDate;
                     hideList = true;
+                    emptyStateText = subtitleText;
                 } else {
                     Set<String> hiddenSubjectKeys = context
                             .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
@@ -182,17 +177,18 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                     }
 
                     targetDate = findBestDateToShow(weekResult, today, nowMin, hiddenSubjectKeys);
+                    List<PlanRepository.PlanEventUi> targetEvents = getEventsForDate(weekResult, targetDate, hiddenSubjectKeys);
                     LocalDate tomorrow = today.plusDays(1);
                     boolean tomorrowHasClasses = !getEventsForDate(weekResult, tomorrow, hiddenSubjectKeys).isEmpty();
 
                     if (targetDate.equals(today)) {
-                        List<PlanRepository.PlanEventUi> eventsToday = getEventsForDate(weekResult, today, hiddenSubjectKeys);
                         List<PlanRepository.PlanEventUi> upcoming = new ArrayList<>();
-                        for (PlanRepository.PlanEventUi ev : eventsToday) {
+                        for (PlanRepository.PlanEventUi ev : targetEvents) {
                             if (ev.endMin > nowMin) {
                                 upcoming.add(ev);
                             }
                         }
+                        listHasItems = !upcoming.isEmpty();
 
                         if (!upcoming.isEmpty()) {
                             PlanRepository.PlanEventUi next = upcoming.get(0);
@@ -205,10 +201,13 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                             subtitleText = context.getString(R.string.plan_widget_subtitle_today);
                         }
                     } else if (!tomorrowHasClasses) {
+                        listHasItems = !targetEvents.isEmpty();
                         subtitleText = context.getString(R.string.plan_widget_subtitle_no_classes_tomorrow);
                     } else if (targetDate.equals(tomorrow)) {
+                        listHasItems = !targetEvents.isEmpty();
                         subtitleText = context.getString(R.string.plan_widget_subtitle_tomorrow);
                     } else {
+                        listHasItems = !targetEvents.isEmpty();
                         String dayName = targetDate.format(DAY_OF_WEEK_LABEL);
                         dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1);
                         subtitleText = dayName;
@@ -216,15 +215,28 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                hideList = true;
+                subtitleText = context.getString(R.string.plan_widget_subtitle_today);
+                emptyStateText = context.getString(R.string.plan_widget_empty_state);
             }
         } else {
             subtitleText = context.getString(R.string.plan_widget_subtitle_login_required);
+            hideList = true;
+            emptyStateText = subtitleText;
         }
 
         String dateLabel = hideList ? today.format(DATE_LABEL) : targetDate.format(DATE_LABEL);
         views.setTextViewText(R.id.widgetDate, dateLabel);
         views.setTextViewText(R.id.widgetSubtitle, subtitleText);
-        views.setViewVisibility(R.id.widgetList, hideList ? android.view.View.GONE : android.view.View.VISIBLE);
+        boolean showList = !hideList && listHasItems;
+        boolean showSubtitle = !hideList;
+        if (!showList && emptyStateText != null && emptyStateText.equals(subtitleText)) {
+            showSubtitle = false;
+        }
+        views.setViewVisibility(R.id.widgetSubtitle, showSubtitle ? android.view.View.VISIBLE : android.view.View.GONE);
+        views.setViewVisibility(R.id.widgetList, showList ? android.view.View.VISIBLE : android.view.View.GONE);
+        views.setViewVisibility(R.id.widgetEmptyState, showList ? android.view.View.GONE : android.view.View.VISIBLE);
+        views.setTextViewText(R.id.widgetEmptyState, emptyStateText);
 
         String refreshedLabel = context.getString(R.string.plan_widget_refreshed_prefix)
                 + " " + LocalTime.now().format(TIME_LABEL);

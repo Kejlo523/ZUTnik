@@ -229,6 +229,7 @@
   <string name="plan_widget_item_title_placeholder">Przedmiot</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Sala 123</string>
+  <string name="plan_widget_empty_state">Brak zajęć do wyświetlenia</string>
   <string name="about_title">O aplikacji</string>
   <string name="about_rate_title">Oceń aplikację</string>
   <string name="about_rate_desc">Twoja opinia pomaga nam rozwijać mZUT!</string>
@@ -429,11 +430,11 @@
   <string name="session_retake">poprawkowej</string>
   <string name="calendar_period_start_label">Początek</string>
   <string name="calendar_period_end_label">Koniec</string>
-  <string name="period_break_winter_semester">przerwy dydaktycznej (semestr zimowy)</string>
-  <string name="period_break_summer_semester">przerwy dydaktycznej (semestr letni)</string>
-  <string name="period_break_generic">przerwy dydaktycznej</string>
-  <string name="period_holiday_winter">wakacji zimowych</string>
-  <string name="period_holiday_summer">wakacji letnich</string>
+  <string name="period_break_winter_semester">przerwa dydaktyczna (semestr zimowy)</string>
+  <string name="period_break_summer_semester">przerwa dydaktyczna (semestr letni)</string>
+  <string name="period_break_generic">przerwa dydaktyczna</string>
+  <string name="period_holiday_winter">wakacje zimowe</string>
+  <string name="period_holiday_summer">wakacje letnie</string>
   <!-- Extracted Strings -->
   <string name="useful_links_badge_recommended">Polecane</string>
   <string name="about_version_prefix">v</string>

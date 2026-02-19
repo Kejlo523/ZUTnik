@@ -1468,6 +1468,10 @@ public class PlanRepository {
     }
 
     public List<SubjectFilterItem> loadSubjectsForFilter() throws IOException, JSONException {
+        return loadSubjectsForFilter(false);
+    }
+
+    public List<SubjectFilterItem> loadSubjectsForFilter(boolean forceRefresh) throws IOException, JSONException {
         String album = resolveAlbumNumber();
         if (album == null) {
             return Collections.emptyList();
@@ -1479,7 +1483,7 @@ public class PlanRepository {
                 range.start,
                 range.end,
                 "filter_current",
-                false,
+                forceRefresh,
                 new PlanDebug());
 
         if (byDate == null || byDate.isEmpty()) {

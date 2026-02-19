@@ -185,11 +185,6 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             styleGradePill(ctx, h.finalPill, raw, raw.isEmpty());
         }
 
-        int othersCount = g.others != null ? g.others.size() : 0;
-        if (othersCount > 0) {
-            finalLabel = finalLabel + " | " + ctx.getString(R.string.grades_group_items_count, othersCount);
-        }
-
         double ects = resolveGroupEcts(g);
         if (ects > 0.0) {
             finalLabel = finalLabel + "\n" + ctx.getString(R.string.grades_ects_format, ects);
