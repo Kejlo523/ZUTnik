@@ -6,18 +6,15 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -46,15 +43,10 @@ public class GradesActivity extends MzutBaseActivity {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
 
-    // Grades cache – valid for 7 days
+    // Grades cache - valid for 7 days
     private static final long GRADES_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L; // 7 days
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
     private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
-
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private Toolbar toolbar;
-    private LinearLayout drawerContentRoot;
 
     private Spinner spinnerStudies;
     private Spinner spinnerSemesters;
@@ -65,9 +57,6 @@ public class GradesActivity extends MzutBaseActivity {
     // Summary tiles
     private TextView tvAverageValue;
     private TextView tvEctsValue;
-
-    // Refresh button (icon)
-    private View btnGradesRefresh;
 
     private GradesAdapter flatAdapter;
     private GroupedGradesAdapter groupedAdapter;
@@ -98,10 +87,10 @@ public class GradesActivity extends MzutBaseActivity {
         setContentView(R.layout.activity_grades);
         ThemeManager.applySystemBars(this);
 
-        drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
-        toolbar = findViewById(R.id.toolbar);
+        View drawerContentRoot = findViewById(R.id.drawerContentRoot);
+        DrawerLayout drawerLayout = findViewById(R.id.drawerLayout);
+        NavigationView navigationView = findViewById(R.id.navigationView);
+        Toolbar toolbar = findViewById(R.id.toolbar);
 
         ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -118,7 +107,7 @@ public class GradesActivity extends MzutBaseActivity {
         tvAverageValue = findViewById(R.id.tvAverageValue);
         tvEctsValue = findViewById(R.id.tvEctsValue);
 
-        btnGradesRefresh = findViewById(R.id.btnGradesRefresh);
+        View btnGradesRefresh = findViewById(R.id.btnGradesRefresh);
 
         // Toolbar / title
         setSupportActionBar(toolbar);
@@ -145,7 +134,7 @@ public class GradesActivity extends MzutBaseActivity {
         // Semesters spinner has a fixed configuration
         setupSemestersSpinner();
 
-        // Grades refresh button – ALWAYS hits the network, ignores cache TTL
+        // Grades refresh button - ALWAYS hits the network, ignores cache TTL
         if (btnGradesRefresh != null) {
             btnGradesRefresh.setOnClickListener(v -> {
                 Toast.makeText(
@@ -156,10 +145,10 @@ public class GradesActivity extends MzutBaseActivity {
                 int pos = spinnerSemesters.getSelectedItemPosition();
                 if (pos >= 0 && pos < semesters.size()) {
                     Semester selected = semesters.get(pos);
-                    // Hard refresh – bypass cache, always request from network
+                    // Hard refresh - bypass cache, always request from network
                     reloadGrades(selected, true);
                 } else {
-                    // If for some reason there are no semesters – reload everything
+                    // If for some reason there are no semesters - reload everything
                     reloadSemesters();
                 }
             });
@@ -223,7 +212,7 @@ public class GradesActivity extends MzutBaseActivity {
                 }
             }
 
-            if (result == null || result.isEmpty()) {
+            if (result == null) {
                 try {
                     GradesRepository repo = new GradesRepository();
                     result = repo.loadSemesters();
@@ -232,8 +221,8 @@ public class GradesActivity extends MzutBaseActivity {
                 }
             }
 
-            // Fallback: If network failed (result is null or empty), try disk cache
-            if (result == null || result.isEmpty()) {
+            // Fallback: If network failed, try disk cache
+            if (result == null) {
                 MzutSession s = MzutSession.getInstance();
                 List<Study> all = s.getStudies();
                 int idx = s.getActiveStudyIndex();
@@ -304,13 +293,10 @@ public class GradesActivity extends MzutBaseActivity {
                 // 2) Studies spinner based on MzutSession
                 setupStudiesSpinner();
 
-                // 3) If we have semesters – select the last one and load grades (from cache if
+                // 3) If we have semesters - select the last one and load grades (from cache if
                 // fresh)
                 if (!semesters.isEmpty()) {
                     int indexCurrent = semesters.size() - 1;
-                    if (indexCurrent < 0) {
-                        indexCurrent = 0;
-                    }
                     spinnerSemesters.setSelection(indexCurrent);
 
                     Semester selected = semesters.get(indexCurrent);
@@ -344,7 +330,7 @@ public class GradesActivity extends MzutBaseActivity {
         }
 
         if (!studiesSpinnerInitialized) {
-            // First time – create adapter and listener
+            // First time - create adapter and listener
             studiesAdapter = new ArrayAdapter<>(
                     this,
                     R.layout.spinner_item_dark,
@@ -378,7 +364,7 @@ public class GradesActivity extends MzutBaseActivity {
                 }
             });
         } else {
-            // Subsequent calls – refresh contents / selection
+            // Subsequent calls - refresh contents / selection
             studiesAdapter.clear();
             studiesAdapter.addAll(labels);
             studiesAdapter.notifyDataSetChanged();
@@ -409,7 +395,7 @@ public class GradesActivity extends MzutBaseActivity {
                     long id) {
                 if (position >= 0 && position < semesters.size()) {
                     Semester selected = semesters.get(position);
-                    // Normal semester switch – use cache if it is still fresh
+                    // Normal semester switch - use cache if it is still fresh
                     reloadGrades(selected, false);
                 }
             }
@@ -449,7 +435,7 @@ public class GradesActivity extends MzutBaseActivity {
                 }
             }
 
-            if (result == null || result.isEmpty()) {
+            if (result == null) {
                 try {
                     GradesRepository repo = new GradesRepository();
                     result = repo.loadSemesters();
@@ -465,7 +451,7 @@ public class GradesActivity extends MzutBaseActivity {
                 int idx = s.getActiveStudyIndex();
                 if (all != null && idx >= 0 && idx < all.size()) {
                     result = loadSemestersFromCache(all.get(idx));
-                    if (result != null && !result.isEmpty()) {
+                    if (result != null) {
                         // Found in cache -> clear error, we are good offline
                         error = null;
                         fromCache = true;
@@ -537,9 +523,6 @@ public class GradesActivity extends MzutBaseActivity {
 
                 // By default select the last (most recent) semester
                 int indexCurrent = semesters.size() - 1;
-                if (indexCurrent < 0) {
-                    indexCurrent = 0;
-                }
                 spinnerSemesters.setSelection(indexCurrent);
 
                 // Immediately load grades (here: using cache if available)
@@ -550,16 +533,6 @@ public class GradesActivity extends MzutBaseActivity {
     }
 
     // Loading grades
-    private void reloadGrades(Semester semester) {
-        reloadGrades(semester, false);
-    }
-
-    /**
-     * @param forceNetwork true -> REFRESH BUTTON – always hits the network (ignores
-     *                     TTL)
-     *                     false -> regular semester switching / initial load – uses
-     *                     7-day cache
-     */
     // Grade grouping for expandable subject view
     private List<GroupedGradesAdapter.GradeGroup> buildGradeGroups(List<Grade> source) {
         if (source == null || source.isEmpty()) {
@@ -570,7 +543,7 @@ public class GradesActivity extends MzutBaseActivity {
 
         for (Grade g : source) {
             String subject = extractBaseSubject(g.subjectName);
-            if (subject == null || subject.trim().isEmpty()) {
+            if (subject.trim().isEmpty()) {
                 continue;
             }
 
@@ -625,7 +598,10 @@ public class GradesActivity extends MzutBaseActivity {
             if (listGrades.getAdapter() != flatAdapter) {
                 listGrades.setAdapter(flatAdapter);
             }
-            flatAdapter.notifyDataSetChanged();
+            int itemCount = flatAdapter.getItemCount();
+            if (itemCount > 0) {
+                flatAdapter.notifyItemRangeChanged(0, itemCount);
+            }
             showEmptyState(currentGradesRaw.isEmpty());
         }
     }
@@ -636,7 +612,6 @@ public class GradesActivity extends MzutBaseActivity {
         }
         String type = normalizeKey(g.type);
         if (type.contains("ocena koncowa")
-                || type.equals("koncowa")
                 || type.contains("koncowa")
                 || type.contains("final")
                 || type.contains("abschluss")) {
@@ -672,32 +647,31 @@ public class GradesActivity extends MzutBaseActivity {
         String normalized = Normalizer.normalize(lower, Normalizer.Form.NFD);
         return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
-
     private static String repairMojibake(String value) {
         if (value == null || value.isEmpty()) {
             return "";
         }
         return value
-                .replace("Ä…", "ą")
-                .replace("Ä‡", "ć")
-                .replace("Ä™", "ę")
-                .replace("Å‚", "ł")
-                .replace("Å„", "ń")
-                .replace("Ã³", "ó")
-                .replace("Å›", "ś")
-                .replace("Å¼", "ż")
-                .replace("Åº", "ź")
-                .replace("Ä„", "Ą")
-                .replace("Ä†", "Ć")
-                .replace("Ä˜", "Ę")
-                .replace("Å�", "Ł")
-                .replace("Åƒ", "Ń")
-                .replace("Ã“", "Ó")
-                .replace("Åš", "Ś")
-                .replace("Å»", "Ż")
-                .replace("Å¹", "Ź")
-                .replace("Ĺ‚", "ł")
-                .replace("Ĺ„", "ń");
+                .replace("\u00C4\u2026", "\u0105")
+                .replace("\u00C4\u2021", "\u0107")
+                .replace("\u00C4\u2122", "\u0119")
+                .replace("\u00C5\u201A", "\u0142")
+                .replace("\u00C5\u201E", "\u0144")
+                .replace("\u00C3\u00B3", "\u00F3")
+                .replace("\u00C5\u203A", "\u015B")
+                .replace("\u00C5\u00BC", "\u017C")
+                .replace("\u00C5\u00BA", "\u017A")
+                .replace("\u00C4\u201E", "\u0104")
+                .replace("\u00C4\u2020", "\u0106")
+                .replace("\u00C4\u02DC", "\u0118")
+                .replace("\u00C5\u0081", "\u0141")
+                .replace("\u00C5\u0192", "\u0143")
+                .replace("\u00C3\u201C", "\u00D3")
+                .replace("\u00C5\u0160", "\u015A")
+                .replace("\u00C5\u00BB", "\u017B")
+                .replace("\u00C5\u00B9", "\u0179")
+                .replace("\u0139\u201A", "\u0142")
+                .replace("\u0139\u201E", "\u0144");
     }
 
     private void reloadGrades(Semester semester, boolean forceNetwork) {
@@ -705,7 +679,7 @@ public class GradesActivity extends MzutBaseActivity {
             return;
         }
 
-        // 1) Normal mode (no force) – try cache first. If it is fresh -> do NOT hit the
+        // 1) Normal mode (no force) - try cache first. If it is fresh -> do NOT hit the
         // network.
         if (!forceNetwork) {
             List<Grade> cached = loadGradesFromCache(semester, false);
@@ -828,7 +802,7 @@ public class GradesActivity extends MzutBaseActivity {
             try {
                 value = Double.parseDouble(normalized);
             } catch (NumberFormatException nfe) {
-                // e.g. "ZAL", "NZAL" – excluded from the average
+                // e.g. "ZAL", "NZAL" - excluded from the average
                 continue;
             }
 
@@ -886,7 +860,7 @@ public class GradesActivity extends MzutBaseActivity {
 
         if (tvAverageValue != null) {
             if (sumWeights > 0.0) {
-                tvAverageValue.setText(String.format("%.2f", avg));
+                tvAverageValue.setText(String.format(Locale.getDefault(), "%.2f", avg));
             } else {
                 tvAverageValue.setText(R.string.grades_average_placeholder);
             }
@@ -971,12 +945,12 @@ public class GradesActivity extends MzutBaseActivity {
                     .remove(buildLegacyCacheKey(semester))
                     .apply();
         } catch (JSONException e) {
-            // Ignore – cache is optional
+            // Ignore - cache is optional
         }
     }
 
     /**
-     * @param ignoreTtl if true – ignore 7-day TTL (used as fallback on network
+     * @param ignoreTtl if true - ignore 7-day TTL (used as fallback on network
      *                  error).
      */
     private List<Grade> loadGradesFromCache(Semester semester, boolean ignoreTtl) {
