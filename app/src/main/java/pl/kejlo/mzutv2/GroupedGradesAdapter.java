@@ -58,19 +58,26 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
     private final List<ListItem> items = new ArrayList<>();
 
     public void setGroups(List<GradeGroup> newGroups) {
+        int oldCount = items.size();
         groups.clear();
         if (newGroups != null) {
             groups.addAll(newGroups);
         }
         rebuildItems();
-        notifyDataSetChanged();
+        int newCount = items.size();
+        if (oldCount > 0) {
+            notifyItemRangeRemoved(0, oldCount);
+        }
+        if (newCount > 0) {
+            notifyItemRangeInserted(0, newCount);
+        }
     }
 
     private void rebuildItems() {
         items.clear();
         for (GradeGroup g : groups) {
             items.add(ListItem.group(g));
-            if (g.expanded && g.others != null) {
+            if (g.expanded) {
                 for (Grade child : g.others) {
                     items.add(ListItem.grade(g, child));
                 }
@@ -97,7 +104,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             return;
         }
 
-        int childCount = g.others != null ? g.others.size() : 0;
+        int childCount = g.others.size();
         if (childCount == 0) {
             return;
         }
@@ -158,10 +165,18 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private void bindGroup(GroupViewHolder h, GradeGroup g) {
         Context ctx = h.itemView.getContext();
+        if (g == null) {
+            h.subject.setText("");
+            h.finalPill.setText(ctx.getString(R.string.common_dash));
+            h.finalLabel.setText(R.string.grades_final_grade_missing);
+            h.previewRow.removeAllViews();
+            h.expandIcon.setRotation(0f);
+            return;
+        }
 
-        String subject = extractBaseSubject(g != null ? g.subject : "");
+        String subject = extractBaseSubject(g.subject);
         if (subject.isEmpty()) {
-            subject = safe(g != null ? g.subject : "");
+            subject = safe(g.subject);
         }
         h.subject.setText(subject);
 
@@ -183,11 +198,6 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             String raw = safe(g.finalGrade.grade);
             h.finalPill.setText(raw.isEmpty() ? ctx.getString(R.string.common_dash) : raw);
             styleGradePill(ctx, h.finalPill, raw, raw.isEmpty());
-        }
-
-        int othersCount = g.others != null ? g.others.size() : 0;
-        if (othersCount > 0) {
-            finalLabel = finalLabel + " | " + ctx.getString(R.string.grades_group_items_count, othersCount);
         }
 
         double ects = resolveGroupEcts(g);
@@ -245,7 +255,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private void bindPreview(Context ctx, LinearLayout container, GradeGroup group) {
         container.removeAllViews();
-        if (group == null || group.others == null || group.others.isEmpty()) {
+        if (group == null || group.others.isEmpty()) {
             return;
         }
 
@@ -463,11 +473,9 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         if (group.finalGrade != null && group.finalGrade.weight > 0) {
             return group.finalGrade.weight;
         }
-        if (group.others != null) {
-            for (Grade g : group.others) {
-                if (g != null && g.weight > 0) {
-                    return g.weight;
-                }
+        for (Grade g : group.others) {
+            if (g != null && g.weight > 0) {
+                return g.weight;
             }
         }
         return 0.0;

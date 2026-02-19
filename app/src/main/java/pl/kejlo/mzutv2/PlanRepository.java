@@ -16,10 +16,8 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -57,10 +55,6 @@ public class PlanRepository {
         if (context != null) {
             appContext = context.getApplicationContext();
         }
-    }
-
-    public PlanRepository() {
-        // Disk cache disabled
     }
 
     // Data models
@@ -1468,6 +1462,10 @@ public class PlanRepository {
     }
 
     public List<SubjectFilterItem> loadSubjectsForFilter() throws IOException, JSONException {
+        return loadSubjectsForFilter(false);
+    }
+
+    public List<SubjectFilterItem> loadSubjectsForFilter(boolean forceRefresh) throws IOException, JSONException {
         String album = resolveAlbumNumber();
         if (album == null) {
             return Collections.emptyList();
@@ -1479,7 +1477,7 @@ public class PlanRepository {
                 range.start,
                 range.end,
                 "filter_current",
-                false,
+                forceRefresh,
                 new PlanDebug());
 
         if (byDate == null || byDate.isEmpty()) {
@@ -1706,16 +1704,18 @@ public class PlanRepository {
 
         for (CustomPlanEvent customEvent : customEvents) {
             boolean foundMatch = false;
-            String subjectLower = customEvent.subjectName != null ? customEvent.subjectName.toLowerCase() : "";
+            String subjectLower = customEvent.subjectName != null
+                    ? customEvent.subjectName.toLowerCase(Locale.ROOT)
+                    : "";
 
             // Check if any official event matches this custom event (by subject name AND
             // type)
             // Exam (egzamin) matches only lectures (W), Pass/Test matches labs/exercises
             for (PlanEventUi event : result) {
-                if (event.title != null && event.title.toLowerCase().contains(subjectLower)) {
+                if (event.title != null && event.title.toLowerCase(Locale.ROOT).contains(subjectLower)) {
                     // Check if type matches
                     boolean typeMatches = false;
-                    String typeClass = event.typeClass != null ? event.typeClass.toLowerCase() : "";
+                    String typeClass = event.typeClass != null ? event.typeClass.toLowerCase(Locale.ROOT) : "";
 
                     if (CustomPlanEvent.TYPE_EXAM.equals(customEvent.eventType)) {
                         // Exam only matches lectures: typeClass contains "lec" or title ends with "(W)"

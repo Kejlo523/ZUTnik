@@ -1,8 +1,6 @@
 package pl.kejlo.mzutv2;
 
-import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,9 +16,6 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
-import android.provider.Settings;
-import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -68,9 +63,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.lang.ref.WeakReference;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import androidx.core.content.ContextCompat;
 
@@ -113,7 +105,10 @@ public class PlanActivity extends MzutBaseActivity {
 
     private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
     private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
-    private static final long FILTER_CACHE_TTL_MS = 30L * 24L * 60L * 60L * 1000L;
+    private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
+    private static final String FILTER_CACHE_JSON_PREFIX = KEY_FILTER_CACHE_JSON + "_";
+    private static final String FILTER_CACHE_TS_PREFIX = KEY_FILTER_CACHE_TS + "_";
+    private static final long FILTER_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
 
     private static final int START_HOUR = 6;
     private static final int END_HOUR = 22;
@@ -122,11 +117,6 @@ public class PlanActivity extends MzutBaseActivity {
     private static final float MONTH_CELL_HEIGHT_DP = 70f;
 
     private static final int VP_START_POSITION = 5000;
-
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private Toolbar toolbar;
-    private LinearLayout drawerContentRoot;
 
     private Button btnViewDay;
     private Button btnViewWeek;
@@ -195,7 +185,7 @@ public class PlanActivity extends MzutBaseActivity {
         }
     }
 
-    private final LinkedHashMap<PlanKey, PlanRepository.PlanResult> planCache = new LinkedHashMap<PlanKey, PlanRepository.PlanResult>(
+    private final LinkedHashMap<PlanKey, PlanRepository.PlanResult> planCache = new LinkedHashMap<>(
             20, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<PlanKey, PlanRepository.PlanResult> eldest) {
@@ -216,12 +206,9 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
-    private final Runnable nowLineRunnable = new Runnable() {
-        @Override
-        public void run() {
-            updateNowLineInVisiblePage();
-            scheduleNextNowLineUpdate();
-        }
+    private final Runnable nowLineRunnable = () -> {
+        updateNowLineInVisiblePage();
+        scheduleNextNowLineUpdate();
     };
 
     private List<PlanRepository.DayColumn> getVisibleColumns(List<PlanRepository.DayColumn> allColumns) {
@@ -324,11 +311,12 @@ public class PlanActivity extends MzutBaseActivity {
         planRepository = new PlanRepository(getApplicationContext());
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         hiddenSubjectKeys = new HashSet<>(prefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>()));
+        purgeExpiredFilterCaches();
 
-        drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
-        toolbar = findViewById(R.id.toolbar);
+        LinearLayout drawerContentRoot = findViewById(R.id.drawerContentRoot);
+        DrawerLayout drawerLayout = findViewById(R.id.drawerLayout);
+        NavigationView navigationView = findViewById(R.id.navigationView);
+        Toolbar toolbar = findViewById(R.id.toolbar);
 
         ScrollView scrollPlan = findViewById(R.id.scrollPlan);
         scrollPlan.setClipToPadding(false);
@@ -363,7 +351,6 @@ public class PlanActivity extends MzutBaseActivity {
         btnRefresh = findViewById(R.id.btnRefresh);
         btnMenu = findViewById(R.id.btnMenu);
 
-        tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
         tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
 
         layoutTimeColumn = findViewById(R.id.layoutTimeColumn);
@@ -404,11 +391,11 @@ public class PlanActivity extends MzutBaseActivity {
                             if (cached.headerLabel != null)
                                 tvHeaderLabel.setText(cached.headerLabel);
                         } else {
-                            updateFixedWeekHeaders(cached.dayColumns, currentDate);
+                            updateFixedWeekHeaders(cached.dayColumns);
                         }
                     } else {
                         if (!isMonthMode()) {
-                            updateFixedWeekHeaders(Collections.emptyList(), currentDate);
+                            updateFixedWeekHeaders(Collections.emptyList());
                         }
                     }
                 }
@@ -462,11 +449,7 @@ public class PlanActivity extends MzutBaseActivity {
             if (sessions != null && !sessions.isEmpty()) {
                 sessionDates = sessions;
                 // Refresh displayed pages so session markers appear
-                handler.post(() -> {
-                    if (pagerAdapter != null) {
-                        pagerAdapter.notifyDataSetChanged();
-                    }
-                });
+                handler.post(this::notifyAllPlanPagesChanged);
             }
         });
 
@@ -630,7 +613,7 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString("viewMode", viewModeId);
         outState.putString("currentDate", currentDate.format(YMD));
@@ -695,8 +678,7 @@ public class PlanActivity extends MzutBaseActivity {
 
         setupHeightForViewPager();
 
-        if (pagerAdapter != null)
-            pagerAdapter.notifyDataSetChanged();
+        notifyAllPlanPagesChanged();
 
         if (viewPager != null) {
             int pos = viewPager.getCurrentItem();
@@ -710,12 +692,12 @@ public class PlanActivity extends MzutBaseActivity {
             PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, currentDate);
             if (cached != null) {
                 if (!isMonthMode())
-                    updateFixedWeekHeaders(cached.dayColumns, currentDate);
+                    updateFixedWeekHeaders(cached.dayColumns);
                 if (cached.headerLabel != null)
                     tvHeaderLabel.setText(cached.headerLabel);
             } else {
                 if (!isMonthMode())
-                    updateFixedWeekHeaders(Collections.emptyList(), currentDate);
+                    updateFixedWeekHeaders(Collections.emptyList());
             }
         }
     }
@@ -767,7 +749,7 @@ public class PlanActivity extends MzutBaseActivity {
                             goToToday();
                             return true;
                         case 3:
-                            loadSubjectsForFilterAsync(false);
+                            loadSubjectsForFilterAsync();
                             return true;
                         default:
                             return false;
@@ -798,8 +780,7 @@ public class PlanActivity extends MzutBaseActivity {
         if (viewPager != null) {
             viewPager.setCurrentItem(VP_START_POSITION, true);
         }
-        if (pagerAdapter != null)
-            pagerAdapter.notifyDataSetChanged();
+        notifyAllPlanPagesChanged();
     }
 
     private void setupRefreshButton() {
@@ -852,9 +833,10 @@ public class PlanActivity extends MzutBaseActivity {
                 "group"
         };
 
-        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<String>(this, R.layout.item_dropdown_category,
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this, R.layout.item_dropdown_category,
                 displayCategories) {
             @Override
+            @NonNull
             public android.widget.Filter getFilter() {
                 return new android.widget.Filter() {
                     @Override
@@ -882,8 +864,7 @@ public class PlanActivity extends MzutBaseActivity {
         categoryView.setClickable(true);
 
         final int[] selectedCategory = { 0 };
-        categoryView.setDropDownBackgroundDrawable(
-                androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_list));
+        categoryView.setDropDownBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dialog_list));
         categoryView.setOnClickListener(v -> categoryView.showDropDown());
         if (inputCategoryLayout != null) {
             inputCategoryLayout.setEndIconOnClickListener(v -> categoryView.showDropDown());
@@ -905,7 +886,7 @@ public class PlanActivity extends MzutBaseActivity {
 
         final List<String> suggestionsList = new ArrayList<>();
 
-        final RecyclerView.Adapter<RecyclerView.ViewHolder> suggestionsAdapter = new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        final RecyclerView.Adapter<RecyclerView.ViewHolder> suggestionsAdapter = new RecyclerView.Adapter<>() {
             @NonNull
             @Override
             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -944,16 +925,16 @@ public class PlanActivity extends MzutBaseActivity {
 
         Runnable refreshPlaceholder = () -> {
             int pos = selectedCategory[0];
-            suggestionsList.clear();
+            List<String> nextItems = new ArrayList<>();
             if (pos == 0) {
-                suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
+                nextItems.add(getString(R.string.plan_search_album_no_autocomplete));
             } else {
                 String currentText = input.getText() != null ? input.getText().toString().trim() : "";
                 if (currentText.isEmpty()) {
-                    suggestionsList.add(getString(R.string.plan_search_type_to_search));
+                    nextItems.add(getString(R.string.plan_search_type_to_search));
                 }
             }
-            suggestionsAdapter.notifyDataSetChanged();
+            replaceSuggestionItems(suggestionsList, nextItems, suggestionsAdapter);
         };
 
         categoryView.setOnItemClickListener((parent, view, position, id) -> {
@@ -964,12 +945,6 @@ public class PlanActivity extends MzutBaseActivity {
         if (inputCategoryLayout != null) {
             inputCategoryLayout.setEndIconOnClickListener(v -> categoryView.showDropDown());
         }
-        categoryView.setOnTouchListener((v, event) -> {
-            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
-                categoryView.showDropDown();
-            }
-            return false;
-        });
 
         refreshPlaceholder.run();
 
@@ -996,54 +971,58 @@ public class PlanActivity extends MzutBaseActivity {
                 int pos = selectedCategory[0];
 
                 if (pos == 0) {
-                    loadingIndicator.setVisibility(View.GONE);
-                    suggestionsList.clear();
-                    suggestionsList.add(getString(R.string.plan_search_album_no_autocomplete));
-                    suggestionsAdapter.notifyDataSetChanged();
+                    if (loadingIndicator != null) {
+                        loadingIndicator.setVisibility(View.GONE);
+                    }
+                    List<String> nextItems = new ArrayList<>();
+                    nextItems.add(getString(R.string.plan_search_album_no_autocomplete));
+                    replaceSuggestionItems(suggestionsList, nextItems, suggestionsAdapter);
                     return;
                 }
 
-                if (query.length() < 1) {
-                    loadingIndicator.setVisibility(View.GONE);
-                    suggestionsList.clear();
-                    suggestionsList.add(getString(R.string.plan_search_type_to_search));
-                    suggestionsAdapter.notifyDataSetChanged();
+                if (query.isEmpty()) {
+                    if (loadingIndicator != null) {
+                        loadingIndicator.setVisibility(View.GONE);
+                    }
+                    List<String> nextItems = new ArrayList<>();
+                    nextItems.add(getString(R.string.plan_search_type_to_search));
+                    replaceSuggestionItems(suggestionsList, nextItems, suggestionsAdapter);
                     return;
                 }
 
                 String kind = categoryKeys[pos];
-                if (kind.isEmpty()) {
-                    loadingIndicator.setVisibility(View.GONE);
-                    return;
+                if (loadingIndicator != null) {
+                    loadingIndicator.setVisibility(View.VISIBLE);
                 }
 
-                loadingIndicator.setVisibility(View.VISIBLE);
+                fetchRunnable[0] = () -> executor.execute(() -> {
+                    try {
+                        List<String> suggestions = planRepository.fetchSearchSuggestions(kind, query);
+                        handler.post(() -> {
+                            if (isDialogDismissed[0]) {
+                                return;
+                            }
 
-                fetchRunnable[0] = () -> {
-                    executor.execute(() -> {
-                        try {
-                            List<String> suggestions = planRepository.fetchSearchSuggestions(kind, query);
-                            handler.post(() -> {
-                                if (isDialogDismissed[0]) {
-                                    return;
-                                }
-
+                            if (loadingIndicator != null) {
                                 loadingIndicator.setVisibility(View.GONE);
-                                suggestionsList.clear();
-
-                                if (suggestions.isEmpty()) {
-                                    suggestionsList.add(getString(R.string.plan_search_no_suggestions));
-                                } else {
-                                    suggestionsList.addAll(suggestions);
-                                }
-                                suggestionsAdapter.notifyDataSetChanged();
-                            });
-                        } catch (Exception e) {
-                            handler.post(() -> loadingIndicator.setVisibility(View.GONE));
-                            e.printStackTrace();
-                        }
-                    });
-                };
+                            }
+                            List<String> nextItems = new ArrayList<>();
+                            if (suggestions.isEmpty()) {
+                                nextItems.add(getString(R.string.plan_search_no_suggestions));
+                            } else {
+                                nextItems.addAll(suggestions);
+                            }
+                            replaceSuggestionItems(suggestionsList, nextItems, suggestionsAdapter);
+                        });
+                    } catch (Exception e) {
+                        handler.post(() -> {
+                            if (loadingIndicator != null) {
+                                loadingIndicator.setVisibility(View.GONE);
+                            }
+                        });
+                        android.util.Log.w("PlanActivity", "Failed to fetch search suggestions", e);
+                    }
+                });
                 debounceHandler.postDelayed(fetchRunnable[0], 300);
             }
         });
@@ -1068,7 +1047,7 @@ public class PlanActivity extends MzutBaseActivity {
         // Set background BEFORE show() to avoid visual flash
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(
-                    androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded_dark));
+                    ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded_dark));
         }
 
         dialog.setOnDismissListener(d -> {
@@ -1099,25 +1078,6 @@ public class PlanActivity extends MzutBaseActivity {
         });
 
         dialog.show();
-    }
-
-    private int resolveCategoryIndex(CharSequence text, String[] displayCategories) {
-        if (displayCategories == null || displayCategories.length == 0) {
-            return 0;
-        }
-        if (text == null) {
-            return 0;
-        }
-        String value = text.toString().trim();
-        if (value.isEmpty()) {
-            return 0;
-        }
-        for (int i = 0; i < displayCategories.length; i++) {
-            if (displayCategories[i] != null && displayCategories[i].equalsIgnoreCase(value)) {
-                return i;
-            }
-        }
-        return 0;
     }
 
     private void showSaveQueryDialog(String catKey, String catLabel, String query) {
@@ -1189,24 +1149,6 @@ public class PlanActivity extends MzutBaseActivity {
 
         String msg = getString(R.string.plan_toast_search_prefix, categoryLabel, query);
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-    }
-
-    /**
-     * Maps legacy category labels to schedule.php "kind" parameter.
-     */
-    private String getKindFromCategory(String apiCategory) {
-        if (apiCategory == null)
-            return "";
-        String normalized = apiCategory.trim().toLowerCase(java.util.Locale.ROOT);
-        if (normalized.contains("wyk") || normalized.equals("teacher"))
-            return "teacher";
-        if (normalized.contains("sal") || normalized.equals("room"))
-            return "room";
-        if (normalized.contains("przedm") || normalized.equals("subject"))
-            return "subject";
-        if (normalized.contains("grup") || normalized.equals("group"))
-            return "group";
-        return "";
     }
 
     private void startRefreshAnimation() {
@@ -1315,7 +1257,7 @@ public class PlanActivity extends MzutBaseActivity {
                 if (isMonthMode()) {
                     renderMonthPage(holder, cached);
                 } else {
-                    renderWeekPage(holder, cached, pageDate);
+                    renderWeekPage(holder, cached);
                 }
             } else {
                 showLoadingState(holder);
@@ -1338,8 +1280,7 @@ public class PlanActivity extends MzutBaseActivity {
         }
 
         private void renderWeekPage(PlanPageViewHolder holder,
-                PlanRepository.PlanResult result,
-                LocalDate pageDate) {
+                PlanRepository.PlanResult result) {
 
             LinearLayout columnsContainer = new LinearLayout(context);
             columnsContainer.setOrientation(LinearLayout.HORIZONTAL);
@@ -1414,7 +1355,7 @@ public class PlanActivity extends MzutBaseActivity {
                     int w = dayBody.getWidth();
                     if (w <= 0)
                         return;
-                    layoutEventsInDayBody(dayBody, renderedEvents, w);
+                    layoutEventsInDayBody(renderedEvents, w);
                     if (colDate != null && colDate.equals(today)) {
                         dayBody.setTag("TODAY_BODY");
                         updateNowLineInVisiblePage();
@@ -1583,7 +1524,7 @@ public class PlanActivity extends MzutBaseActivity {
                             tvHeaderLabel.setText(finalRes.headerLabel);
                         }
                         if (!isMonthMode()) {
-                            updateFixedWeekHeaders(finalRes.dayColumns, date);
+                            updateFixedWeekHeaders(finalRes.dayColumns);
                         }
                     }
                 }
@@ -1592,19 +1533,27 @@ public class PlanActivity extends MzutBaseActivity {
         });
     }
 
-    private void loadSubjectsForFilterAsync(boolean forceRefresh) {
+    private void loadSubjectsForFilterAsync() {
         if (progress != null) {
             progress.setVisibility(View.VISIBLE);
         }
         executor.execute(() -> {
             List<PlanRepository.SubjectFilterItem> result = null;
             Exception error = null;
+            boolean pendingForcedRefresh = false;
             try {
-                if (!forceRefresh) {
+                purgeExpiredFilterCaches();
+                pendingForcedRefresh = isFilterCacheForcedRefreshPending();
+                boolean effectiveForceRefresh = pendingForcedRefresh;
+
+                if (effectiveForceRefresh) {
+                    clearAllFilterCaches();
+                } else {
                     result = loadFilterCache();
                 }
+
                 if (result == null) {
-                    result = planRepository.loadSubjectsForFilter();
+                    result = planRepository.loadSubjectsForFilter(effectiveForceRefresh);
                     if (result != null && !result.isEmpty()) {
                         saveFilterCache(result);
                     }
@@ -1615,6 +1564,7 @@ public class PlanActivity extends MzutBaseActivity {
 
             final List<PlanRepository.SubjectFilterItem> finalRes = result;
             final Exception finalErr = error;
+            final boolean finalPendingForcedRefresh = pendingForcedRefresh;
             runOnUiThread(() -> {
                 if (isDestroyed() || isFinishing())
                     return;
@@ -1645,6 +1595,16 @@ public class PlanActivity extends MzutBaseActivity {
                     }
                     return;
                 }
+
+                if (finalPendingForcedRefresh) {
+                    markFilterCacheForcedRefreshHandled();
+                }
+
+                if (syncHiddenFiltersWithAvailable(finalRes)) {
+                    planCache.clear();
+                    loadPlanForCurrentMode();
+                }
+
                 showFiltersDialog(finalRes);
             });
         });
@@ -1664,9 +1624,7 @@ public class PlanActivity extends MzutBaseActivity {
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.plan_filters_dialog_title)
-                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
-                    checked[which] = isChecked;
-                })
+                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> checked[which] = isChecked)
                 .setPositiveButton(R.string.plan_filters_apply, (dialog, which) -> {
                     hiddenSubjectKeys.clear();
                     for (int i = 0; i < items.size(); i++) {
@@ -1674,7 +1632,7 @@ public class PlanActivity extends MzutBaseActivity {
                             hiddenSubjectKeys.add(items.get(i).filterKey);
                         }
                     }
-                    prefs.edit().putStringSet(KEY_FILTER_HIDDEN, hiddenSubjectKeys).apply();
+                    prefs.edit().putStringSet(KEY_FILTER_HIDDEN, new HashSet<>(hiddenSubjectKeys)).apply();
                     planCache.clear();
                     loadPlanForCurrentMode();
                 })
@@ -1686,6 +1644,103 @@ public class PlanActivity extends MzutBaseActivity {
                 })
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .show();
+    }
+
+    private boolean isFilterCacheForcedRefreshPending() {
+        return prefs.getBoolean(KEY_FILTER_CACHE_FORCE_REFRESH, false);
+    }
+
+    private void markFilterCacheForcedRefreshHandled() {
+        prefs.edit().putBoolean(KEY_FILTER_CACHE_FORCE_REFRESH, false).apply();
+    }
+
+    private void clearAllFilterCaches() {
+        Map<String, ?> all = prefs.getAll();
+        SharedPreferences.Editor editor = prefs.edit();
+        boolean changed = false;
+        for (String key : all.keySet()) {
+            if (key.startsWith(FILTER_CACHE_JSON_PREFIX) || key.startsWith(FILTER_CACHE_TS_PREFIX)) {
+                editor.remove(key);
+                changed = true;
+            }
+        }
+        if (changed) {
+            editor.apply();
+        }
+    }
+
+    private void purgeExpiredFilterCaches() {
+        long now = System.currentTimeMillis();
+        Map<String, ?> all = prefs.getAll();
+        SharedPreferences.Editor editor = null;
+
+        for (Map.Entry<String, ?> entry : all.entrySet()) {
+            String key = entry.getKey();
+            if (!key.startsWith(FILTER_CACHE_TS_PREFIX)) {
+                continue;
+            }
+
+            long ts;
+            Object value = entry.getValue();
+            if (value instanceof Number) {
+                ts = ((Number) value).longValue();
+            } else {
+                ts = 0L;
+            }
+
+            if (ts > 0L && (now - ts) <= FILTER_CACHE_TTL_MS) {
+                continue;
+            }
+
+            if (editor == null) {
+                editor = prefs.edit();
+            }
+
+            String scope = key.substring(FILTER_CACHE_TS_PREFIX.length());
+            editor.remove(key);
+            editor.remove(FILTER_CACHE_JSON_PREFIX + scope);
+        }
+
+        if (editor != null) {
+            editor.apply();
+        }
+    }
+
+    private boolean syncHiddenFiltersWithAvailable(List<PlanRepository.SubjectFilterItem> availableItems) {
+        if (availableItems == null || availableItems.isEmpty()) {
+            return false;
+        }
+
+        Set<String> availableKeys = new HashSet<>();
+        for (PlanRepository.SubjectFilterItem item : availableItems) {
+            if (item == null || item.filterKey == null) {
+                continue;
+            }
+            String key = item.filterKey.trim();
+            if (!key.isEmpty()) {
+                availableKeys.add(key);
+            }
+        }
+
+        if (availableKeys.isEmpty() || hiddenSubjectKeys.isEmpty()) {
+            return false;
+        }
+
+        Set<String> pruned = new HashSet<>();
+        for (String selected : hiddenSubjectKeys) {
+            if (availableKeys.contains(selected)) {
+                pruned.add(selected);
+            }
+        }
+
+        if (pruned.size() == hiddenSubjectKeys.size()) {
+            return false;
+        }
+
+        hiddenSubjectKeys.clear();
+        hiddenSubjectKeys.addAll(pruned);
+        prefs.edit().putStringSet(KEY_FILTER_HIDDEN, new HashSet<>(hiddenSubjectKeys)).apply();
+        return true;
     }
 
     private List<PlanRepository.SubjectFilterItem> loadFilterCache() {
@@ -1863,8 +1918,7 @@ public class PlanActivity extends MzutBaseActivity {
         }
     }
 
-    private void layoutEventsInDayBody(FrameLayoutWithChildren dayBody,
-            List<RenderedEvent> renderedEvents,
+    private void layoutEventsInDayBody(List<RenderedEvent> renderedEvents,
             int widthPx) {
         int calStart = START_HOUR * 60;
         int calEnd = END_HOUR * 60;
@@ -1931,7 +1985,6 @@ public class PlanActivity extends MzutBaseActivity {
                 int availableWidth = widthPx - 2 * marginPx - maxOffset;
                 if (availableWidth < dpToPx(40)) {
                     availableWidth = widthPx - 2 * marginPx;
-                    maxOffset = 0;
                 }
 
                 for (int i = 0; i < clusterSize; i++) {
@@ -2024,8 +2077,35 @@ public class PlanActivity extends MzutBaseActivity {
 
     private void refreshAfterCustomEvent() {
         planCache.clear();
-        if (pagerAdapter != null) {
-            pagerAdapter.notifyDataSetChanged();
+        notifyAllPlanPagesChanged();
+    }
+
+    private void notifyAllPlanPagesChanged() {
+        if (pagerAdapter == null) {
+            return;
+        }
+        int count = pagerAdapter.getItemCount();
+        if (count > 0) {
+            pagerAdapter.notifyItemRangeChanged(0, count);
+        }
+    }
+
+    private void replaceSuggestionItems(
+            List<String> target,
+            List<String> nextItems,
+            RecyclerView.Adapter<?> adapter) {
+        if (target == null || nextItems == null || adapter == null) {
+            return;
+        }
+        int oldSize = target.size();
+        target.clear();
+        target.addAll(nextItems);
+        int newSize = target.size();
+        if (oldSize > 0) {
+            adapter.notifyItemRangeRemoved(0, oldSize);
+        }
+        if (newSize > 0) {
+            adapter.notifyItemRangeInserted(0, newSize);
         }
     }
 
@@ -2038,7 +2118,7 @@ public class PlanActivity extends MzutBaseActivity {
     private int clampAndRoundStart(int minutes) {
         int minStart = START_HOUR * 60;
         int minEnd = END_HOUR * 60;
-        int rounded = roundToStep(minutes, 15);
+        int rounded = roundToQuarterHour(minutes);
         if (rounded < minStart)
             rounded = minStart;
         if (rounded > minEnd)
@@ -2046,8 +2126,8 @@ public class PlanActivity extends MzutBaseActivity {
         return rounded;
     }
 
-    private int roundToStep(int minutes, int step) {
-        return Math.round(minutes / (float) step) * step;
+    private int roundToQuarterHour(int minutes) {
+        return Math.round(minutes / 15f) * 15;
     }
 
     private int[] buildDefaultRange(int startMin) {
@@ -2090,11 +2170,12 @@ public class PlanActivity extends MzutBaseActivity {
                     float dx = Math.abs(event.getX() - down[0]);
                     float dy = Math.abs(event.getY() - down[1]);
                     if (dx <= touchSlop && dy <= touchSlop) {
+                        v.performClick();
                         int startMin = getStartMinFromTouch(event.getY());
                         int[] range = buildDefaultRange(startMin);
 
                         // Show highlight at clicked slot
-                        View highlight = addSlotHighlight(dayBody, range[0], range[1]);
+                        addSlotHighlight(dayBody, range[0], range[1]);
 
                         AddCustomEventDialog dialog = AddCustomEventDialog.newForSlot(date, range[0], range[1]);
                         dialog.setListener(ev -> refreshAfterCustomEvent());
@@ -2125,7 +2206,7 @@ public class PlanActivity extends MzutBaseActivity {
         });
     }
 
-    private View addSlotHighlight(FrameLayoutWithChildren dayBody, int startMin, int endMin) {
+    private void addSlotHighlight(FrameLayoutWithChildren dayBody, int startMin, int endMin) {
         removeSlotHighlight(dayBody); // Remove any existing
 
         int calStart = START_HOUR * 60;
@@ -2157,7 +2238,6 @@ public class PlanActivity extends MzutBaseActivity {
 
         dayBody.addView(highlight);
         highlight.bringToFront();
-        return highlight;
     }
 
     private void removeSlotHighlight(FrameLayoutWithChildren dayBody) {
@@ -2332,26 +2412,26 @@ public class PlanActivity extends MzutBaseActivity {
         separator.addView(line);
 
         int count = markers.size();
+        int badgeLayoutHeight = separatorWidth;
         for (int i = 0; i < count; i++) {
             MarkerSpec marker = markers.get(i);
             int badgeTextWidth = (int) Math.ceil(paint.measureText(marker.label)) + padH;
-            TextView badge = buildMarkerBadge(marker, badgeTextWidth, separatorWidth, padH, padV);
+            TextView badge = buildMarkerBadge(marker, badgeTextWidth, badgeLayoutHeight, padH, padV);
 
             FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
-                    badgeTextWidth, separatorWidth);
+                    badgeTextWidth, badgeLayoutHeight);
             badgeLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
 
-            int badgeVisualHeight = badgeTextWidth;
             int centerY;
             if (count == 1) {
                 centerY = columnHeight / 2;
             } else if (count == 2) {
                 centerY = (i == 0)
-                        ? (badgeVisualHeight / 2 + markerEdgePadding)
-                        : (columnHeight - badgeVisualHeight / 2 - markerEdgePadding);
+                        ? (badgeTextWidth / 2 + markerEdgePadding)
+                        : (columnHeight - badgeTextWidth / 2 - markerEdgePadding);
             } else {
-                int safeTop = badgeVisualHeight / 2 + markerEdgePadding;
-                int safeBottom = columnHeight - badgeVisualHeight / 2 - markerEdgePadding;
+                int safeTop = badgeTextWidth / 2 + markerEdgePadding;
+                int safeBottom = columnHeight - badgeTextWidth / 2 - markerEdgePadding;
                 if (safeBottom <= safeTop) {
                     centerY = columnHeight / 2;
                 } else {
@@ -2360,8 +2440,8 @@ public class PlanActivity extends MzutBaseActivity {
                 }
             }
 
-            int top = centerY - (separatorWidth / 2);
-            int maxTop = Math.max(0, columnHeight - separatorWidth);
+            int top = centerY - (badgeLayoutHeight / 2);
+            int maxTop = Math.max(0, columnHeight - badgeLayoutHeight);
             badgeLp.topMargin = Math.max(0, Math.min(top, maxTop));
             badge.setLayoutParams(badgeLp);
             separator.addView(badge);
@@ -2373,7 +2453,7 @@ public class PlanActivity extends MzutBaseActivity {
     private TextView buildMarkerBadge(
             MarkerSpec marker,
             int badgeTextWidth,
-            int separatorWidth,
+            int badgeLayoutHeight,
             int padH,
             int padV) {
         TextView badge = new TextView(this);
@@ -2390,7 +2470,7 @@ public class PlanActivity extends MzutBaseActivity {
         badgeBg.setCornerRadius(dpToPx(4));
         badgeBg.setStroke(dpToPx(1), ColorUtils.blendARGB(marker.color, 0xFF000000, 0.22f));
         badge.setBackground(badgeBg);
-        badge.setLayoutParams(new FrameLayout.LayoutParams(badgeTextWidth, separatorWidth));
+        badge.setLayoutParams(new FrameLayout.LayoutParams(badgeTextWidth, badgeLayoutHeight));
         return badge;
     }
 
@@ -2405,14 +2485,14 @@ public class PlanActivity extends MzutBaseActivity {
         }
         return colors;
     }
-    private void updateFixedWeekHeaders(List<PlanRepository.DayColumn> rawCols, LocalDate pageDate) {
+    private void updateFixedWeekHeaders(List<PlanRepository.DayColumn> rawCols) {
         if (layoutWeekHeadersRow == null || layoutWeekHeadersFixed == null)
             return;
 
         List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
         layoutWeekHeadersRow.removeAllViews();
 
-        if (cols == null || cols.isEmpty()) {
+        if (cols.isEmpty()) {
             layoutWeekHeadersFixed.setVisibility(View.GONE);
             return;
         }
@@ -2435,10 +2515,7 @@ public class PlanActivity extends MzutBaseActivity {
             tv.setGravity(Gravity.CENTER);
             tv.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
 
-            boolean isToday = col.date != null && col.date.equals(today);
-            boolean highlight = isToday;
-
-            if (highlight) {
+            if (col.date != null && col.date.equals(today)) {
                 tv.setBackgroundResource(R.drawable.bg_week_header_selected);
             }
 
@@ -2464,10 +2541,10 @@ public class PlanActivity extends MzutBaseActivity {
         sb.append("\n");
         sb.append(time);
         if (ev.room != null && !ev.room.isEmpty()) {
-            sb.append(" \u00B7 ").append(ev.room);
+            sb.append(" - ").append(ev.room);
         }
         if (ev.group != null && !ev.group.isEmpty()) {
-            sb.append(" \u00B7 ").append(ev.group);
+            sb.append(" - ").append(ev.group);
         }
 
         tv.setText(sb.toString());
@@ -2521,57 +2598,6 @@ public class PlanActivity extends MzutBaseActivity {
         AddCustomEventDialog dialog = AddCustomEventDialog.newForEvent(targetDate, ev);
         dialog.setListener(event -> refreshAfterCustomEvent());
         dialog.show(getSupportFragmentManager(), "mark_custom_event");
-    }
-
-    @ColorRes
-    private int colorResForType(String typeClass) {
-        if (typeClass == null)
-            typeClass = "";
-        switch (typeClass) {
-            case "week-event-type-lecture":
-                return R.color.plan_event_lecture_bg;
-            case "week-event-type-lab":
-                return R.color.plan_event_lab_bg;
-            case "week-event-type-auditory":
-                return R.color.plan_event_auditory_bg;
-            case "week-event-type-project":
-                return R.color.plan_event_project_bg;
-            case "week-event-type-seminar":
-                return R.color.plan_event_seminar_bg;
-            case "week-event-type-diploma-seminar":
-                return R.color.plan_event_diploma_seminar_bg;
-            case "week-event-type-diploma":
-                return R.color.plan_event_diploma_bg;
-            case "week-event-type-lectorate":
-                return R.color.plan_event_lectorate_bg;
-            case "week-event-type-conservatory":
-                return R.color.plan_event_conservatory_bg;
-            case "week-event-type-consultation":
-                return R.color.plan_event_consultation_bg;
-            case "week-event-type-field":
-                return R.color.plan_event_field_bg;
-            case "week-event-type-class":
-                return R.color.plan_event_class_bg;
-            case "week-event-type-exam":
-                return R.color.plan_event_exam_bg;
-            case "week-event-type-exam-remote":
-                return R.color.plan_event_exam_remote_bg;
-            case "week-event-type-cancelled":
-                return R.color.plan_event_cancelled_bg;
-            case "week-event-type-rector":
-                return R.color.plan_event_rector_bg;
-            case "week-event-type-dean":
-                return R.color.plan_event_dean_bg;
-            case "week-event-type-remote":
-                return R.color.plan_event_remote_bg;
-            case "week-event-type-pass":
-            case "week-event-type-pass-retake":
-            case "week-event-type-pass-remote":
-            case "week-event-type-pass-remote-retake":
-                return R.color.plan_event_pass_bg;
-            default:
-                return R.color.plan_event_default_bg;
-        }
     }
 
     private String formatDayHeader(LocalDate date) {
@@ -2644,6 +2670,11 @@ public class PlanActivity extends MzutBaseActivity {
         @Override
         protected LayoutParams generateDefaultLayoutParams() {
             return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        }
+
+        @Override
+        public boolean performClick() {
+            return super.performClick();
         }
 
         public static class LayoutParams extends android.widget.FrameLayout.LayoutParams {

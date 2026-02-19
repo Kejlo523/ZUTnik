@@ -188,11 +188,13 @@
         Log in to the mZUT app
     </string>
   <string name="plan_widget_refreshed_prefix">Refreshed: </string>
+  <string name="plan_widget_refresh_desc">Refresh widget</string>
   <string name="plan_widget_label_today">Today</string>
   <string name="plan_widget_refreshed_placeholder">Refreshed: —:—</string>
   <string name="plan_widget_item_title_placeholder">Subject</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Room 123</string>
+  <string name="plan_widget_empty_state">No classes to display</string>
   <string name="about_title">About the app</string>
   <string name="about_project_description_1">
         mZUT v2 was created as an unofficial, lightweight alternative for quickly viewing timetable, grades and study information at ZUT, without having to click through heavy web panels.
@@ -416,11 +418,11 @@
   <string name="session_retake">retake</string>
   <string name="calendar_period_start_label">Start</string>
   <string name="calendar_period_end_label">End</string>
-  <string name="period_break_winter_semester">didactic break (winter semester)</string>
-  <string name="period_break_summer_semester">didactic break (summer semester)</string>
-  <string name="period_break_generic">didactic break</string>
-  <string name="period_holiday_winter">winter holidays</string>
-  <string name="period_holiday_summer">summer holidays</string>
+  <string name="period_break_winter_semester">Didactic break (winter semester)</string>
+  <string name="period_break_summer_semester">Didactic break (summer semester)</string>
+  <string name="period_break_generic">Didactic break</string>
+  <string name="period_holiday_winter">Winter holidays</string>
+  <string name="period_holiday_summer">Summer holidays</string>
   <!-- Extracted Strings -->
   <string name="useful_links_badge_recommended">Recommended</string>
   <string name="about_version_prefix">v</string>

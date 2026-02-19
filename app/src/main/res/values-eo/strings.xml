@@ -183,11 +183,13 @@
         Pokaż przepustkę w apce!
     </string>
   <string name="plan_widget_refreshed_prefix">Sprawdzono: </string>
+  <string name="plan_widget_refresh_desc">Odśwież widget</string>
   <string name="plan_widget_label_today">Dziś</string>
   <string name="plan_widget_refreshed_placeholder">Sprawdzono: —:—</string>
   <string name="plan_widget_item_title_placeholder">Robota</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Kajuta 123</string>
+  <string name="plan_widget_empty_state">Brak zajęć do pokazania</string>
   <string name="about_title">O tej łajbie</string>
   <string name="about_project_description_1">
         mZUT v2 powstał, bo oryginalne mapy były do niczego. Szybko i bez zbędnego balastu.
@@ -447,9 +449,9 @@
   <!-- Okresy kalendarza -->
   <string name="calendar_period_start_label">Początek</string>
   <string name="calendar_period_end_label">Koniec</string>
-  <string name="period_break_winter_semester">przerwy dydaktycznej (semestr zimowy)</string>
-  <string name="period_break_summer_semester">przerwy dydaktycznej (semestr letni)</string>
-  <string name="period_break_generic">przerwy dydaktycznej</string>
-  <string name="period_holiday_winter">wakacji zimowych</string>
-  <string name="period_holiday_summer">wakacji letnich</string>
+  <string name="period_break_winter_semester">przerwa dydaktyczna (semestr zimowy)</string>
+  <string name="period_break_summer_semester">przerwa dydaktyczna (semestr letni)</string>
+  <string name="period_break_generic">przerwa dydaktyczna</string>
+  <string name="period_holiday_winter">wakacje zimowe</string>
+  <string name="period_holiday_summer">wakacje letnie</string>
 </resources>

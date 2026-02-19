@@ -1,14 +1,18 @@
 package pl.kejlo.mzutv2;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
@@ -35,10 +39,14 @@ public class BackgroundSyncWorker extends Worker {
     public static final String INPUT_BOOTSTRAP_PREFETCH = "input_bootstrap_prefetch";
 
     private static final String PREFS_BG = "mzut_background_sync_cache";
+    private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
     private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v1";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
     private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v1";
+    private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
+    private static final String FILTER_CACHE_JSON_PREFIX = "plan_filters_cache_json_";
+    private static final String FILTER_CACHE_TS_PREFIX = "plan_filters_cache_ts_";
     private static final String KEY_LAST_GRADES_ALERT_HASH = "grades_last_alert_hash_v1";
     private static final String KEY_LAST_GRADES_ALERT_TS = "grades_last_alert_ts_v1";
     private static final String KEY_LAST_PLAN_ALERT_HASH = "plan_last_alert_hash_v1";
@@ -49,7 +57,11 @@ public class BackgroundSyncWorker extends Worker {
     private static final int PLAN_REFRESH_THRESHOLD = 10;
     private static final long ALERT_DEDUP_WINDOW_MS = 24L * 60L * 60L * 1000L;
 
-    private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault());
+    private static final String DATE_SHORT_PATTERN = "dd.MM";
+
+    private static DateTimeFormatter dateShortFormatter() {
+        return DateTimeFormatter.ofPattern(DATE_SHORT_PATTERN, Locale.getDefault());
+    }
 
     public BackgroundSyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -146,10 +158,12 @@ public class BackgroundSyncWorker extends Worker {
         }
 
         Map<String, String> current = new LinkedHashMap<>();
+        int fetchedSemesters = 0;
         for (Semester semester : semesters) {
             if (semester == null || semester.listaSemestrowId == null || semester.listaSemestrowId.trim().isEmpty()) {
                 continue;
             }
+            fetchedSemesters++;
             List<Grade> grades = repo.loadGradesForSemester(semester.listaSemestrowId);
             if (grades == null) {
                 continue;
@@ -169,7 +183,11 @@ public class BackgroundSyncWorker extends Worker {
         Set<String> previous = readStringSetJson(prefs.getString(KEY_GRADES_BASELINE_JSON, "[]"));
 
         if (!baselineReady || previous.isEmpty()) {
-            saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
+            if (fetchedSemesters == 0) {
+                Log.d(TAG, "Skipping grades baseline init: no semesters loaded yet.");
+                return;
+            }
+            saveGradesBaselineSet(prefs, current.keySet());
             prefs.edit().putBoolean(KEY_GRADES_BASELINE_READY, true).apply();
             return;
         }
@@ -190,17 +208,17 @@ public class BackgroundSyncWorker extends Worker {
                 }
             }
             Collections.sort(lines);
-            saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
+            saveGradesBaselineSet(prefs, current.keySet());
 
             String signature = buildAlertSignatureFromList(addedKeys);
-            if (!isDuplicateAlert(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature)) {
                 notifyGrades(context, addedKeys.size(), lines);
                 rememberAlertSignature(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature);
             }
             return;
         }
 
-        saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
+        saveGradesBaselineSet(prefs, current.keySet());
     }
 
     private void notifyGrades(Context context, int count, List<String> lines) {
@@ -230,6 +248,10 @@ public class BackgroundSyncWorker extends Worker {
                 .setContentIntent(pi)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
         NotificationManagerCompat.from(context).notify(NOTIF_ID_GRADES, builder.build());
     }
 
@@ -249,7 +271,7 @@ public class BackgroundSyncWorker extends Worker {
         List<PlanSnapshotEvent> previous = readPlanSnapshot(prefs.getString(KEY_PLAN_BASELINE_JSON, "[]"));
 
         if (!baselineReady || previous.isEmpty()) {
-            savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+            savePlanBaselineSnapshot(prefs, current);
             prefs.edit().putBoolean(KEY_PLAN_BASELINE_READY, true).apply();
             return;
         }
@@ -261,9 +283,10 @@ public class BackgroundSyncWorker extends Worker {
                 + diff.added.size();
 
         if (totalChanges > PLAN_REFRESH_THRESHOLD) {
-            savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+            markFilterCacheRefreshNeeded(context);
+            savePlanBaselineSnapshot(prefs, current);
             String signature = "refresh_" + totalChanges + "_" + current.size();
-            if (!isDuplicateAlert(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
                 notifyPlanRefreshed(context);
                 rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
             }
@@ -310,10 +333,10 @@ public class BackgroundSyncWorker extends Worker {
             }
         }
 
-        savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+        savePlanBaselineSnapshot(prefs, current);
         if (!lines.isEmpty()) {
             String signature = buildAlertSignatureFromList(lines);
-            if (!isDuplicateAlert(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
                 notifyPlanChanges(context, lines);
                 rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
             }
@@ -341,6 +364,10 @@ public class BackgroundSyncWorker extends Worker {
                 .setContentIntent(pi)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
         NotificationManagerCompat.from(context).notify(NOTIF_ID_PLAN, builder.build());
     }
 
@@ -363,6 +390,10 @@ public class BackgroundSyncWorker extends Worker {
                 .setContentIntent(pi)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
         NotificationManagerCompat.from(context).notify(NOTIF_ID_PLAN, builder.build());
     }
 
@@ -562,7 +593,7 @@ public class BackgroundSyncWorker extends Worker {
     }
 
     private String formatDate(LocalDate date) {
-        return date != null ? date.format(DATE_SHORT) : "--.--";
+        return date != null ? date.format(dateShortFormatter()) : "--.--";
     }
 
     private String formatTime(int minutes) {
@@ -600,12 +631,12 @@ public class BackgroundSyncWorker extends Worker {
         return out;
     }
 
-    private void saveStringSet(SharedPreferences prefs, String key, Set<String> values) {
+    private void saveGradesBaselineSet(SharedPreferences prefs, Set<String> values) {
         JSONArray arr = new JSONArray();
         for (String value : values) {
             arr.put(value);
         }
-        prefs.edit().putString(key, arr.toString()).commit();
+        prefs.edit().putString(KEY_GRADES_BASELINE_JSON, arr.toString()).apply();
     }
 
     private List<PlanSnapshotEvent> readPlanSnapshot(String json) {
@@ -630,12 +661,12 @@ public class BackgroundSyncWorker extends Worker {
         return out;
     }
 
-    private void savePlanSnapshot(SharedPreferences prefs, String key, List<PlanSnapshotEvent> events) {
+    private void savePlanBaselineSnapshot(SharedPreferences prefs, List<PlanSnapshotEvent> events) {
         JSONArray arr = new JSONArray();
         for (PlanSnapshotEvent ev : events) {
             arr.put(ev.toJson());
         }
-        prefs.edit().putString(key, arr.toString()).commit();
+        prefs.edit().putString(KEY_PLAN_BASELINE_JSON, arr.toString()).apply();
     }
 
     private String buildAlertSignatureFromList(List<String> values) {
@@ -654,16 +685,16 @@ public class BackgroundSyncWorker extends Worker {
         return Integer.toHexString(sb.toString().hashCode());
     }
 
-    private boolean isDuplicateAlert(SharedPreferences prefs, String hashKey, String tsKey, String signature) {
+    private boolean shouldNotifyForSignature(SharedPreferences prefs, String hashKey, String tsKey, String signature) {
         if (signature == null || signature.isEmpty()) {
             return false;
         }
         String prev = prefs.getString(hashKey, "");
         if (!signature.equals(prev)) {
-            return false;
+            return true;
         }
         long lastTs = prefs.getLong(tsKey, 0L);
-        return (System.currentTimeMillis() - lastTs) < ALERT_DEDUP_WINDOW_MS;
+        return (System.currentTimeMillis() - lastTs) >= ALERT_DEDUP_WINDOW_MS;
     }
 
     private void rememberAlertSignature(SharedPreferences prefs, String hashKey, String tsKey, String signature) {
@@ -674,6 +705,20 @@ public class BackgroundSyncWorker extends Worker {
                 .putString(hashKey, signature)
                 .putLong(tsKey, System.currentTimeMillis())
                 .apply();
+    }
+
+    private void markFilterCacheRefreshNeeded(Context context) {
+        SharedPreferences planPrefs = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
+        Map<String, ?> all = planPrefs.getAll();
+        SharedPreferences.Editor editor = planPrefs.edit();
+
+        for (String key : all.keySet()) {
+            if (key.startsWith(FILTER_CACHE_JSON_PREFIX) || key.startsWith(FILTER_CACHE_TS_PREFIX)) {
+                editor.remove(key);
+            }
+        }
+        editor.putBoolean(KEY_FILTER_CACHE_FORCE_REFRESH, true);
+        editor.apply();
     }
 
     private static class PlanDiff {

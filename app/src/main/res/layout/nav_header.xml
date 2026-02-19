@@ -7,7 +7,7 @@
     android:background="?attr/mzBg"
     android:orientation="vertical"
     android:paddingStart="16dp"
-    android:paddingTop="36dp"
+    android:paddingTop="52dp"
     android:paddingEnd="16dp"
     android:paddingBottom="20dp">
 
@@ -291,9 +291,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_nav_logout"
         android:clickable="true"
-        android:drawableStart="@drawable/ic_logout_24"
         android:drawablePadding="10dp"
-        android:drawableTint="?attr/mzDanger"
         android:focusable="true"
         android:fontFamily="sans-serif-medium"
         android:foreground="?attr/selectableItemBackground"
@@ -304,6 +302,8 @@
         android:paddingBottom="12dp"
         android:text="@string/nav_logout_label"
         android:textColor="?attr/mzDanger"
-        android:textSize="15sp" />
+        android:textSize="15sp"
+        app:drawableStartCompat="@drawable/ic_logout_24"
+        app:drawableTint="?attr/mzDanger" />
 
 </LinearLayout>

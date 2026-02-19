@@ -31,6 +31,9 @@ public final class NotificationSyncManager {
     private static final long SYNC_FLEX_MINUTES = 10L;
     private static final String PREFS_RUNTIME = "mzut_sync_runtime";
     private static final String KEY_BOOTSTRAP_SYNC_USER = "bootstrap_sync_user_v1";
+    private static final String PREFS_BG = "mzut_background_sync_cache";
+    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
+    private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
 
     public static final String CHANNEL_GRADES = "mzut_grades_changes";
     public static final String CHANNEL_PLAN = "mzut_plan_changes";
@@ -176,7 +179,14 @@ public final class NotificationSyncManager {
 
         SharedPreferences runtimePrefs = appContext.getSharedPreferences(PREFS_RUNTIME, Context.MODE_PRIVATE);
         String syncedUser = runtimePrefs.getString(KEY_BOOTSTRAP_SYNC_USER, "");
-        if (userId.equals(syncedUser)) {
+        SharedPreferences bgPrefs = appContext.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
+        boolean gradesBaselineReady = bgPrefs.getBoolean(KEY_GRADES_BASELINE_READY, false);
+        boolean requiresPlanBaseline = isPlanEnabled(appContext) && isAnyPlanCategoryEnabled(appContext);
+        boolean planBaselineReady = bgPrefs.getBoolean(KEY_PLAN_BASELINE_READY, false);
+
+        if (userId.equals(syncedUser)
+                && gradesBaselineReady
+                && (!requiresPlanBaseline || planBaselineReady)) {
             return;
         }
 
@@ -205,10 +215,6 @@ public final class NotificationSyncManager {
     }
 
     public static void ensureChannels(Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            return;
-        }
-
         NotificationManager nm = context.getSystemService(NotificationManager.class);
         if (nm == null) {
             return;

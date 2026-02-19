@@ -4,21 +4,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Binder;
+import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
-
-import androidx.core.content.ContextCompat;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class PlanDayWidgetService extends RemoteViewsService {
 
+    private static final String TAG = "mZUTv2-PlanWidgetSvc";
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
@@ -95,7 +95,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
                 if (events.isEmpty())
                     return;
 
-                Collections.sort(events, (a, b) -> Integer.compare(a.startMin, b.startMin));
+                events.sort(Comparator.comparingInt(ev -> ev.startMin));
 
                 LocalDate today = LocalDate.now();
                 if (targetDate.equals(today)) {
@@ -114,7 +114,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
             } catch (Exception e) {
                 events.clear();
-                e.printStackTrace();
+                Log.w(TAG, "Widget list refresh failed", e);
             } finally {
                 Binder.restoreCallingIdentity(token);
             }
@@ -141,7 +141,6 @@ public class PlanDayWidgetService extends RemoteViewsService {
             rv.setTextViewText(R.id.itemTitle, ev.title != null ? ev.title : "");
 
             // Apply Theme Text Color
-            String theme = ThemeManager.getTheme(context);
             int textColorPrimary = context.getColor(R.color.glass_text_primary); // Default White
             int textColorSecondary = context.getColor(R.color.glass_text_secondary);
 
@@ -149,14 +148,15 @@ public class PlanDayWidgetService extends RemoteViewsService {
             rv.setTextColor(R.id.itemTime, textColorSecondary);
             rv.setTextColor(R.id.itemRoom, textColorSecondary);
 
-            String timeStr = ev.startStr + " – " + ev.endStr;
-            rv.setTextViewText(R.id.itemTime, timeStr);
+            String start = ev.startStr != null ? ev.startStr : "";
+            String end = ev.endStr != null ? ev.endStr : "";
+            rv.setTextViewText(R.id.itemTime, start + " - " + end);
 
             String roomStr = "";
             if (ev.room != null && !ev.room.isEmpty())
                 roomStr = ev.room;
             if (ev.group != null && !ev.group.isEmpty())
-                roomStr += (roomStr.isEmpty() ? "" : " · ") + ev.group;
+                roomStr += (roomStr.isEmpty() ? "" : " | ") + ev.group;
 
             rv.setTextViewText(R.id.itemRoom, roomStr);
 
@@ -187,78 +187,6 @@ public class PlanDayWidgetService extends RemoteViewsService {
         @Override
         public boolean hasStableIds() {
             return true;
-        }
-
-        private int colorForType(String typeClass) {
-            if (typeClass == null)
-                typeClass = "";
-            int resId;
-            switch (typeClass) {
-                case "week-event-type-lecture":
-                    resId = R.color.plan_event_lecture_bg;
-                    break;
-                case "week-event-type-lab":
-                    resId = R.color.plan_event_lab_bg;
-                    break;
-                case "week-event-type-auditory":
-                    resId = R.color.plan_event_auditory_bg;
-                    break;
-                case "week-event-type-project":
-                    resId = R.color.plan_event_project_bg;
-                    break;
-                case "week-event-type-seminar":
-                    resId = R.color.plan_event_seminar_bg;
-                    break;
-                case "week-event-type-diploma-seminar":
-                    resId = R.color.plan_event_diploma_seminar_bg;
-                    break;
-                case "week-event-type-diploma":
-                    resId = R.color.plan_event_diploma_bg;
-                    break;
-                case "week-event-type-lectorate":
-                    resId = R.color.plan_event_lectorate_bg;
-                    break;
-                case "week-event-type-conservatory":
-                    resId = R.color.plan_event_conservatory_bg;
-                    break;
-                case "week-event-type-consultation":
-                    resId = R.color.plan_event_consultation_bg;
-                    break;
-                case "week-event-type-field":
-                    resId = R.color.plan_event_field_bg;
-                    break;
-                case "week-event-type-class":
-                    resId = R.color.plan_event_class_bg;
-                    break;
-                case "week-event-type-exam":
-                    resId = R.color.plan_event_exam_bg;
-                    break;
-                case "week-event-type-exam-remote":
-                    resId = R.color.plan_event_exam_remote_bg;
-                    break;
-                case "week-event-type-cancelled":
-                    resId = R.color.plan_event_cancelled_bg;
-                    break;
-                case "week-event-type-rector":
-                    resId = R.color.plan_event_rector_bg;
-                    break;
-                case "week-event-type-dean":
-                    resId = R.color.plan_event_dean_bg;
-                    break;
-                case "week-event-type-remote":
-                    resId = R.color.plan_event_remote_bg;
-                    break;
-                case "week-event-type-pass":
-                case "week-event-type-pass-retake":
-                case "week-event-type-pass-remote":
-                case "week-event-type-pass-remote-retake":
-                    resId = R.color.plan_event_pass_bg;
-                    break;
-                default:
-                    resId = R.color.plan_event_default_bg;
-                    break;
-            }
-            return ContextCompat.getColor(context, resId);
         }
     }
 }

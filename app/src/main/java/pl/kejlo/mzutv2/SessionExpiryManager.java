@@ -2,16 +2,19 @@ package pl.kejlo.mzutv2;
 
 import android.app.ActivityManager;
 import android.app.PendingIntent;
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONObject;
 
@@ -31,7 +34,7 @@ public final class SessionExpiryManager {
     }
 
     public static boolean isSessionExpiredResponse(JSONObject response) {
-        if (response == null || !hasActiveSession()) {
+        if (response == null || isSessionMissing()) {
             return false;
         }
 
@@ -81,7 +84,7 @@ public final class SessionExpiryManager {
         }
         Context appContext = context.getApplicationContext();
 
-        if (!hasActiveSession()) {
+        if (isSessionMissing()) {
             return;
         }
         if (!HANDLING_EXPIRE.compareAndSet(false, true)) {
@@ -89,11 +92,11 @@ public final class SessionExpiryManager {
         }
 
         try {
-            markNoticePending(appContext, true);
+            markNoticePending(appContext);
             NotificationSyncManager.cancelWorker(appContext);
             MzutSession.clearSessionData(appContext);
 
-            if (isAppInForeground(appContext)) {
+            if (isAppInForeground()) {
                 showToastAndOpenLogin(appContext);
             } else {
                 postSessionExpiredNotification(appContext);
@@ -130,10 +133,10 @@ public final class SessionExpiryManager {
                 .apply();
     }
 
-    private static void markNoticePending(Context context, boolean pending) {
+    private static void markNoticePending(Context context) {
         context.getSharedPreferences(PREFS_RUNTIME, Context.MODE_PRIVATE)
                 .edit()
-                .putBoolean(KEY_NOTICE_PENDING, pending)
+                .putBoolean(KEY_NOTICE_PENDING, true)
                 .apply();
     }
 
@@ -176,15 +179,19 @@ public final class SessionExpiryManager {
                 .setContentIntent(contentIntent)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
         NotificationManagerCompat.from(context).notify(8801, builder.build());
     }
 
-    private static boolean hasActiveSession() {
+    private static boolean isSessionMissing() {
         MzutSession session = MzutSession.getInstance();
-        return session.getUserId() != null && session.getAuthKey() != null;
+        return session.getUserId() == null || session.getAuthKey() == null;
     }
 
-    private static boolean isAppInForeground(Context context) {
+    private static boolean isAppInForeground() {
         ActivityManager.RunningAppProcessInfo proc = new ActivityManager.RunningAppProcessInfo();
         ActivityManager.getMyMemoryState(proc);
         return proc.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
@@ -212,10 +219,7 @@ public final class SessionExpiryManager {
                         || n.contains("bled"))) {
             return true;
         }
-        if (n.contains("autoryz") && (n.contains("brak") || n.contains("niepopraw"))) {
-            return true;
-        }
-        return false;
+        return n.contains("autoryz") && (n.contains("brak") || n.contains("niepopraw"));
     }
 
     private static String normalize(String input) {
