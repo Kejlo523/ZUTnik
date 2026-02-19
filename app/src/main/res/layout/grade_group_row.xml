@@ -37,6 +37,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:contentDescription="@null"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_school"
                     app:tint="?attr/mzMuted" />
             </FrameLayout>
@@ -94,6 +95,7 @@
                 android:layout_height="20dp"
                 android:layout_marginStart="8dp"
                 android:contentDescription="@null"
+                android:importantForAccessibility="no"
                 android:src="@drawable/ic_chevron_right"
                 app:tint="?attr/mzMuted" />
         </LinearLayout>

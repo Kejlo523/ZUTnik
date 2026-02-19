@@ -57,7 +57,11 @@ public class BackgroundSyncWorker extends Worker {
     private static final int PLAN_REFRESH_THRESHOLD = 10;
     private static final long ALERT_DEDUP_WINDOW_MS = 24L * 60L * 60L * 1000L;
 
-    private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault());
+    private static final String DATE_SHORT_PATTERN = "dd.MM";
+
+    private static DateTimeFormatter dateShortFormatter() {
+        return DateTimeFormatter.ofPattern(DATE_SHORT_PATTERN, Locale.getDefault());
+    }
 
     public BackgroundSyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -589,7 +593,7 @@ public class BackgroundSyncWorker extends Worker {
     }
 
     private String formatDate(LocalDate date) {
-        return date != null ? date.format(DATE_SHORT) : "--.--";
+        return date != null ? date.format(dateShortFormatter()) : "--.--";
     }
 
     private String formatTime(int minutes) {
@@ -632,7 +636,7 @@ public class BackgroundSyncWorker extends Worker {
         for (String value : values) {
             arr.put(value);
         }
-        prefs.edit().putString(key, arr.toString()).commit();
+        prefs.edit().putString(key, arr.toString()).apply();
     }
 
     private List<PlanSnapshotEvent> readPlanSnapshot(String json) {
@@ -662,7 +666,7 @@ public class BackgroundSyncWorker extends Worker {
         for (PlanSnapshotEvent ev : events) {
             arr.put(ev.toJson());
         }
-        prefs.edit().putString(key, arr.toString()).commit();
+        prefs.edit().putString(key, arr.toString()).apply();
     }
 
     private String buildAlertSignatureFromList(List<String> values) {

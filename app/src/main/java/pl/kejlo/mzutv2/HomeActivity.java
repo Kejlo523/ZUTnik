@@ -1,6 +1,5 @@
 package pl.kejlo.mzutv2;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -10,6 +9,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
@@ -22,9 +22,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.List;
-import java.util.ArrayList;
 
 public class HomeActivity extends MzutBaseActivity {
+
+    private static final String TAG = "mZUTv2-Home";
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -43,7 +44,6 @@ public class HomeActivity extends MzutBaseActivity {
     private LinearLayout homeSection;
 
     private androidx.cardview.widget.CardView indicatorOverlay;
-    private android.widget.ImageView indicatorIcon;
 
     // New Grid
     private TileGridLayout tileGrid;
@@ -77,7 +77,6 @@ public class HomeActivity extends MzutBaseActivity {
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
         indicatorOverlay = findViewById(R.id.indicatorOverlay);
-        indicatorIcon = findViewById(R.id.indicatorIcon);
 
         ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -110,7 +109,6 @@ public class HomeActivity extends MzutBaseActivity {
 
         setupSyncIndicator();
         setupWelcomeText();
-        setupClicks();
         setupGrid();
         prepareIntroAnimations();
         scheduleIntroAnimations();
@@ -122,7 +120,7 @@ public class HomeActivity extends MzutBaseActivity {
         homeRepository = new HomeRepository(this);
         List<Tile> tiles = homeRepository.loadTiles();
 
-        tileGrid.setGap(dpToPx(8));
+        tileGrid.setGap((int) (8f * getResources().getDisplayMetrics().density));
         tileGrid.setTiles(tiles);
 
         // Removed auto-save. Save is manual via menu.
@@ -205,13 +203,11 @@ public class HomeActivity extends MzutBaseActivity {
                 .alpha(1f)
                 .setDuration(200)
                 .withEndAction(() -> {
-                    indicatorOverlay.postDelayed(() -> {
-                        indicatorOverlay.animate()
-                                .alpha(0f)
-                                .setDuration(200)
-                                .withEndAction(() -> indicatorOverlay.setVisibility(View.GONE))
-                                .start();
-                    }, 1000);
+                    indicatorOverlay.postDelayed(() -> indicatorOverlay.animate()
+                            .alpha(0f)
+                            .setDuration(200)
+                            .withEndAction(() -> indicatorOverlay.setVisibility(View.GONE))
+                            .start(), 1000);
                 })
                 .start();
     }
@@ -272,19 +268,6 @@ public class HomeActivity extends MzutBaseActivity {
             return normalized.substring(0, firstSpace);
         }
         return normalized;
-    }
-
-    private void setupClicks() {
-        View.OnClickListener openPlan = v -> startActivity(new Intent(HomeActivity.this, PlanActivity.class));
-        View.OnClickListener openGrades = v -> {
-            try {
-                startActivity(new Intent(HomeActivity.this, GradesActivity.class));
-            } catch (Exception e) {
-                Toast.makeText(this, R.string.home_grades_not_available, Toast.LENGTH_SHORT).show();
-            }
-        };
-
-        // Buttons removed from layout
     }
 
     private void runIntroAnimations() {
@@ -348,10 +331,6 @@ public class HomeActivity extends MzutBaseActivity {
         });
     }
 
-    private int dpToPx(int dp) {
-        return (int) (dp * getResources().getDisplayMetrics().density);
-    }
-
     public void onTileClicked(Tile tile) {
         if (tileGrid.isEditMode()) {
             showAddEditDialog(tile);
@@ -403,7 +382,7 @@ public class HomeActivity extends MzutBaseActivity {
                             intent = new Intent(this, cls);
                         }
                     } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                        Log.w(TAG, "Failed to open activity: " + tile.actionData, e);
                     }
                     break;
             }
@@ -466,14 +445,6 @@ public class HomeActivity extends MzutBaseActivity {
         // Register for global broadcast from WearSyncManager
         android.content.IntentFilter filter = new android.content.IntentFilter(pl.kejlo.mzutv2.wear.WearSyncConstants.ACTION_WEAR_SYNC_PROGRESS);
         ContextCompat.registerReceiver(this, syncReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
-    }
-
-    // Helper for API < 17 compatibility if needed, though minSdk is 26 so not strictly needed but good practice
-    private boolean generated_isDestroyed() {
-        if (android.os.Build.VERSION.SDK_INT >= 17) {
-            return isDestroyed();
-        }
-        return false;
     }
 
     @Override

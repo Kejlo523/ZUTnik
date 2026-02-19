@@ -215,10 +215,6 @@ public final class NotificationSyncManager {
     }
 
     public static void ensureChannels(Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            return;
-        }
-
         NotificationManager nm = context.getSystemService(NotificationManager.class);
         if (nm == null) {
             return;

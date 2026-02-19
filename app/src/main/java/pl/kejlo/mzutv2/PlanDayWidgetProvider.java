@@ -8,6 +8,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import java.time.LocalDate;
@@ -25,14 +26,12 @@ import java.util.concurrent.Executors;
 
 public class PlanDayWidgetProvider extends AppWidgetProvider {
 
+    private static final String TAG = "mZUTv2-PlanWidget";
     public static final String ACTION_REFRESH = "pl.kejlo.mzutv2.PLAN_WIDGET_REFRESH";
     public static final String EXTRA_DATE_ISO = "pl.kejlo.mzutv2.PLAN_WIDGET_DATE_ISO";
 
-    private static final DateTimeFormatter DATE_LABEL = DateTimeFormatter.ofPattern("d MMMM yyyy",
-            Locale.getDefault());
-
-    private static final DateTimeFormatter DAY_OF_WEEK_LABEL = DateTimeFormatter.ofPattern("EEEE",
-            Locale.getDefault());
+    private static final String DATE_LABEL_PATTERN = "d MMMM yyyy";
+    private static final String DAY_OF_WEEK_LABEL_PATTERN = "EEEE";
 
     private static final DateTimeFormatter TIME_LABEL = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter SHORT_DATE_LABEL = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -42,6 +41,14 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     private static final long NO_CLASSES_WIDGET_REFRESH_MINUTES = 3L * 60L;
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private static DateTimeFormatter dateLabelFormatter() {
+        return DateTimeFormatter.ofPattern(DATE_LABEL_PATTERN, Locale.getDefault());
+    }
+
+    private static DateTimeFormatter dayOfWeekFormatter() {
+        return DateTimeFormatter.ofPattern(DAY_OF_WEEK_LABEL_PATTERN, Locale.getDefault());
+    }
 
     @Override
     public void onEnabled(Context context) {
@@ -126,7 +133,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         int nowMin = now.getHour() * 60 + now.getMinute();
 
         LocalDate targetDate = today;
-        String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
+        String subtitleText = "";
         boolean hideList = false;
         boolean listHasItems = false;
         String emptyStateText = context.getString(R.string.plan_widget_empty_state);
@@ -208,13 +215,13 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         subtitleText = context.getString(R.string.plan_widget_subtitle_tomorrow);
                     } else {
                         listHasItems = !targetEvents.isEmpty();
-                        String dayName = targetDate.format(DAY_OF_WEEK_LABEL);
-                        dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1);
+                        String dayName = targetDate.format(dayOfWeekFormatter());
+                        dayName = dayName.substring(0, 1).toUpperCase(Locale.getDefault()) + dayName.substring(1);
                         subtitleText = dayName;
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.w(TAG, "Widget refresh failed", e);
                 hideList = true;
                 subtitleText = context.getString(R.string.plan_widget_subtitle_today);
                 emptyStateText = context.getString(R.string.plan_widget_empty_state);
@@ -225,12 +232,12 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             emptyStateText = subtitleText;
         }
 
-        String dateLabel = hideList ? today.format(DATE_LABEL) : targetDate.format(DATE_LABEL);
+        String dateLabel = hideList ? today.format(dateLabelFormatter()) : targetDate.format(dateLabelFormatter());
         views.setTextViewText(R.id.widgetDate, dateLabel);
         views.setTextViewText(R.id.widgetSubtitle, subtitleText);
         boolean showList = !hideList && listHasItems;
         boolean showSubtitle = !hideList;
-        if (!showList && emptyStateText != null && emptyStateText.equals(subtitleText)) {
+        if (!showList && emptyStateText.equals(subtitleText)) {
             showSubtitle = false;
         }
         views.setViewVisibility(R.id.widgetSubtitle, showSubtitle ? android.view.View.VISIBLE : android.view.View.GONE);
@@ -335,7 +342,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         continue;
                     out.add(ev);
                 }
-                Collections.sort(out, (a, b) -> Integer.compare(a.startMin, b.startMin));
+                out.sort((a, b) -> Integer.compare(a.startMin, b.startMin));
                 return out;
             }
         }
@@ -355,7 +362,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                 .getString(
                         SettingsPrefs.KEY_WIDGET_REFRESH_INTERVAL,
                         SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL);
-        long intervalMin = 30;
+        long intervalMin;
         try {
             intervalMin = Long.parseLong(intervalStr);
         } catch (NumberFormatException e) {

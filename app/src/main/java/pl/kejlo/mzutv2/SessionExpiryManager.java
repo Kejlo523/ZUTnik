@@ -11,7 +11,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -93,11 +92,11 @@ public final class SessionExpiryManager {
         }
 
         try {
-            markNoticePending(appContext, true);
+            markNoticePending(appContext);
             NotificationSyncManager.cancelWorker(appContext);
             MzutSession.clearSessionData(appContext);
 
-            if (isAppInForeground(appContext)) {
+            if (isAppInForeground()) {
                 showToastAndOpenLogin(appContext);
             } else {
                 postSessionExpiredNotification(appContext);
@@ -134,10 +133,10 @@ public final class SessionExpiryManager {
                 .apply();
     }
 
-    private static void markNoticePending(Context context, boolean pending) {
+    private static void markNoticePending(Context context) {
         context.getSharedPreferences(PREFS_RUNTIME, Context.MODE_PRIVATE)
                 .edit()
-                .putBoolean(KEY_NOTICE_PENDING, pending)
+                .putBoolean(KEY_NOTICE_PENDING, true)
                 .apply();
     }
 
@@ -192,7 +191,7 @@ public final class SessionExpiryManager {
         return session.getUserId() != null && session.getAuthKey() != null;
     }
 
-    private static boolean isAppInForeground(Context context) {
+    private static boolean isAppInForeground() {
         ActivityManager.RunningAppProcessInfo proc = new ActivityManager.RunningAppProcessInfo();
         ActivityManager.getMyMemoryState(proc);
         return proc.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND

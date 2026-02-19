@@ -1,5 +1,7 @@
 package pl.kejlo.mzutv2;
 
+import android.annotation.SuppressLint;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.activity.OnBackPressedCallback;
@@ -126,6 +128,7 @@ public class WebLinkActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         WebSettings ws = webView.getSettings();
         ws.setJavaScriptEnabled(true);
