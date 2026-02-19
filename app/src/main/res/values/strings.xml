@@ -224,6 +224,7 @@
         Zaloguj się w aplikacji mZUT
     </string>
   <string name="plan_widget_refreshed_prefix">Odświeżono: </string>
+  <string name="plan_widget_refresh_desc">Odśwież widget</string>
   <string name="plan_widget_label_today">Dzisiaj</string>
   <string name="plan_widget_refreshed_placeholder">Odświeżono: —:—</string>
   <string name="plan_widget_item_title_placeholder">Przedmiot</string>

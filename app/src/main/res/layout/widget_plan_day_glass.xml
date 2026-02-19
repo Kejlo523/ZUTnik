@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/widgetRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -38,9 +39,10 @@
                 android:id="@+id/widgetRefresh"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
+                android:contentDescription="@string/plan_widget_refresh_desc"
                 android:padding="4dp"
                 android:src="@android:drawable/ic_popup_sync"
-                android:tint="@color/glass_text_secondary" />
+                app:tint="@color/glass_text_secondary" />
 
             <ProgressBar
                 android:id="@+id/widgetLoading"
@@ -95,6 +97,6 @@
         android:gravity="end"
         android:text="@string/plan_widget_refreshed_placeholder"
         android:textColor="@color/glass_text_secondary"
-        android:textSize="9sp" />
+        android:textSize="11sp" />
 
 </LinearLayout>

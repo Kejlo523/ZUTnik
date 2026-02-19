@@ -184,6 +184,7 @@
         Bitte in mZUT App anmelden
     </string>
   <string name="plan_widget_refreshed_prefix">Aktualisiert: </string>
+  <string name="plan_widget_refresh_desc">Widget aktualisieren</string>
   <string name="plan_widget_label_today">Heute</string>
   <string name="plan_widget_refreshed_placeholder">Aktualisiert: —:—</string>
   <string name="plan_widget_item_title_placeholder">Fach</string>

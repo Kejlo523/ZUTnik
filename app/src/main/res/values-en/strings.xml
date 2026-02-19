@@ -188,6 +188,7 @@
         Log in to the mZUT app
     </string>
   <string name="plan_widget_refreshed_prefix">Refreshed: </string>
+  <string name="plan_widget_refresh_desc">Refresh widget</string>
   <string name="plan_widget_label_today">Today</string>
   <string name="plan_widget_refreshed_placeholder">Refreshed: —:—</string>
   <string name="plan_widget_item_title_placeholder">Subject</string>

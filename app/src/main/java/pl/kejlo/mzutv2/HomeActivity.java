@@ -2,6 +2,7 @@ package pl.kejlo.mzutv2;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -464,11 +465,7 @@ public class HomeActivity extends MzutBaseActivity {
         super.onResume();
         // Register for global broadcast from WearSyncManager
         android.content.IntentFilter filter = new android.content.IntentFilter(pl.kejlo.mzutv2.wear.WearSyncConstants.ACTION_WEAR_SYNC_PROGRESS);
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(syncReceiver, filter, 0x4);
-        } else {
-            registerReceiver(syncReceiver, filter);
-        }
+        ContextCompat.registerReceiver(this, syncReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     // Helper for API < 17 compatibility if needed, though minSdk is 26 so not strictly needed but good practice

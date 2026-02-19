@@ -183,6 +183,7 @@
         Pokaż przepustkę w apce!
     </string>
   <string name="plan_widget_refreshed_prefix">Sprawdzono: </string>
+  <string name="plan_widget_refresh_desc">Odśwież widget</string>
   <string name="plan_widget_label_today">Dziś</string>
   <string name="plan_widget_refreshed_placeholder">Sprawdzono: —:—</string>
   <string name="plan_widget_item_title_placeholder">Robota</string>
