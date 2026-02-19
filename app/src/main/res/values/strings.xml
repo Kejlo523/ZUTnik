@@ -188,6 +188,7 @@
   <string name="grades_average_placeholder">–</string>
   <string name="grades_summary_average_label">Średnia z ocen</string>
   <string name="grades_summary_ects_label">Suma ECTS</string>
+  <string name="grades_summary_ects_total_label">Łącznie na kierunku</string>
   <string name="grades_grouping_toggle">Grupuj oceny</string>
   <string name="grades_final_grade_label">Ocena końcowa</string>
   <string name="grades_final_grade_missing">Brak oceny końcowej</string>

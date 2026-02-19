@@ -157,6 +157,7 @@
   <string name="grades_average_placeholder">\?</string>
   <string name="grades_summary_average_label">Jakość łupu (Średnia)</string>
   <string name="grades_summary_ects_label">Suma Złota (ECTS)</string>
+  <string name="grades_summary_ects_total_label">Total in program</string>
   <string name="grades_empty_state">Pusta skrzynia. Do roboty!</string>
   <string name="news_title">Wieści z Portu</string>
   <string name="news_refresh_toast">Nasłuchuję mew…</string>

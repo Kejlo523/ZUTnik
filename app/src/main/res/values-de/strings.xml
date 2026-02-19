@@ -158,6 +158,7 @@
   <string name="grades_average_placeholder">–</string>
   <string name="grades_summary_average_label">Durchschnitt</string>
   <string name="grades_summary_ects_label">ECTS Summe</string>
+  <string name="grades_summary_ects_total_label">Total in program</string>
   <string name="grades_empty_state">Keine Noten für das ausgewählte Semester.</string>
   <string name="news_title">ZUT Neuigkeiten</string>
   <string name="news_refresh_toast">Lade neueste Daten…</string>
