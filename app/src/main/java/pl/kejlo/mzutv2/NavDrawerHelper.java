@@ -17,7 +17,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.view.WindowCallbackWrapper;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
@@ -30,10 +29,7 @@ import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.Wearable;
 
-import java.util.List;
 import java.lang.reflect.Field;
 
 public class NavDrawerHelper {
@@ -62,6 +58,7 @@ public class NavDrawerHelper {
             return id;
         }
 
+        @SuppressWarnings("unused")
         public static Screen fromId(String id) {
             if (id == null) {
                 return null;
@@ -211,7 +208,7 @@ public class NavDrawerHelper {
                 return;
             }
 
-            if (targetActivity == null || targetScreen == null) {
+            if (targetActivity == null) {
                 return;
             }
 
@@ -307,7 +304,8 @@ public class NavDrawerHelper {
         activity.getWindow().setCallback(new DrawerGestureWindowCallback(original, drawerLayout, activity));
     }
 
-    private static final class DrawerGestureWindowCallback extends WindowCallbackWrapper {
+    private static final class DrawerGestureWindowCallback implements android.view.Window.Callback {
+        private final android.view.Window.Callback wrapped;
         private final DrawerLayout drawerLayout;
         private final int touchSlop;
         private final float syntheticEdgeX;
@@ -322,7 +320,7 @@ public class NavDrawerHelper {
                 android.view.Window.Callback wrapped,
                 DrawerLayout drawerLayout,
                 Context context) {
-            super(wrapped);
+            this.wrapped = wrapped;
             this.drawerLayout = drawerLayout;
             this.touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
             float density = context.getResources().getDisplayMetrics().density;
@@ -333,7 +331,7 @@ public class NavDrawerHelper {
         @Override
         public boolean dispatchTouchEvent(MotionEvent event) {
             if (event == null) {
-                return super.dispatchTouchEvent(event);
+                return wrapped.dispatchTouchEvent(event);
             }
 
             int action = event.getActionMasked();
@@ -392,7 +390,7 @@ public class NavDrawerHelper {
                     }
                     break;
             }
-            return super.dispatchTouchEvent(event);
+            return wrapped.dispatchTouchEvent(event);
         }
 
         private boolean canStartDrag() {
@@ -417,6 +415,118 @@ public class NavDrawerHelper {
             MotionEvent synthetic = MotionEvent.obtain(downTime, eventTime, action, x, y, 0);
             drawerLayout.dispatchTouchEvent(synthetic);
             synthetic.recycle();
+        }
+
+        @Override
+        public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+            return wrapped.dispatchKeyEvent(event);
+        }
+
+        @Override
+        public boolean dispatchKeyShortcutEvent(android.view.KeyEvent event) {
+            return wrapped.dispatchKeyShortcutEvent(event);
+        }
+
+        @Override
+        public boolean dispatchTrackballEvent(android.view.MotionEvent event) {
+            return wrapped.dispatchTrackballEvent(event);
+        }
+
+        @Override
+        public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
+            return wrapped.dispatchGenericMotionEvent(event);
+        }
+
+        @Override
+        public boolean dispatchPopulateAccessibilityEvent(android.view.accessibility.AccessibilityEvent event) {
+            return wrapped.dispatchPopulateAccessibilityEvent(event);
+        }
+
+        @Override
+        public android.view.View onCreatePanelView(int featureId) {
+            return wrapped.onCreatePanelView(featureId);
+        }
+
+        @Override
+        public boolean onCreatePanelMenu(int featureId, android.view.Menu menu) {
+            return wrapped.onCreatePanelMenu(featureId, menu);
+        }
+
+        @Override
+        public boolean onPreparePanel(int featureId, android.view.View view, android.view.Menu menu) {
+            return wrapped.onPreparePanel(featureId, view, menu);
+        }
+
+        @Override
+        public boolean onMenuOpened(int featureId, android.view.Menu menu) {
+            return wrapped.onMenuOpened(featureId, menu);
+        }
+
+        @Override
+        public boolean onMenuItemSelected(int featureId, android.view.MenuItem item) {
+            return wrapped.onMenuItemSelected(featureId, item);
+        }
+
+        @Override
+        public void onWindowAttributesChanged(android.view.WindowManager.LayoutParams attrs) {
+            wrapped.onWindowAttributesChanged(attrs);
+        }
+
+        @Override
+        public void onContentChanged() {
+            wrapped.onContentChanged();
+        }
+
+        @Override
+        public void onWindowFocusChanged(boolean hasFocus) {
+            wrapped.onWindowFocusChanged(hasFocus);
+        }
+
+        @Override
+        public void onAttachedToWindow() {
+            wrapped.onAttachedToWindow();
+        }
+
+        @Override
+        public void onDetachedFromWindow() {
+            wrapped.onDetachedFromWindow();
+        }
+
+        @Override
+        public void onPanelClosed(int featureId, android.view.Menu menu) {
+            wrapped.onPanelClosed(featureId, menu);
+        }
+
+        @Override
+        public boolean onSearchRequested() {
+            return wrapped.onSearchRequested();
+        }
+
+        @Override
+        public boolean onSearchRequested(android.view.SearchEvent searchEvent) {
+            return wrapped.onSearchRequested(searchEvent);
+        }
+
+        @Override
+        public android.view.ActionMode onWindowStartingActionMode(android.view.ActionMode.Callback callback) {
+            return wrapped.onWindowStartingActionMode(callback);
+        }
+
+        @Override
+        public android.view.ActionMode onWindowStartingActionMode(
+                android.view.ActionMode.Callback callback,
+                int type) {
+            return wrapped.onWindowStartingActionMode(callback, type);
+        }
+
+        @Override
+        public void onActionModeStarted(android.view.ActionMode mode) {
+            wrapped.onActionModeStarted(mode);
+        }
+
+        @Override
+        public void onActionModeFinished(android.view.ActionMode mode) {
+            wrapped.onActionModeFinished(mode);
         }
     }
 

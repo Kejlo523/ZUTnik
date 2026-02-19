@@ -348,11 +348,8 @@ public class PlanRepository {
             return null;
         }
 
-        String album = resp.optString("album", null);
-        if (album != null) {
-            album = album.trim();
-        }
-        if (album == null || album.isEmpty()) {
+        String album = resp.optString("album", "").trim();
+        if (album.isEmpty()) {
             return null;
         }
 
@@ -364,8 +361,7 @@ public class PlanRepository {
     }
     // Search functionality
 
-    public PlanResult searchPlan(String viewMode, LocalDate currentDate, SearchParams search)
-            throws IOException, JSONException {
+    public PlanResult searchPlan(String viewMode, LocalDate currentDate, SearchParams search) {
         if (currentDate == null)
             currentDate = LocalDate.now();
         if (viewMode == null)
@@ -404,22 +400,21 @@ public class PlanRepository {
 
         String url = buildSearchUrl(search, rangeStart, rangeEnd);
 
-        JSONArray arr = null;
+        JSONArray arr;
         try {
             arr = httpGetJsonArray(url, r.debug);
         } catch (Exception e) {
             Log.w(TAG, "Search error: " + e.getMessage());
+            arr = new JSONArray();
         }
 
         List<PlanEventRaw> rawEvents = new ArrayList<>();
-        if (arr != null) {
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.optJSONObject(i);
-                if (obj != null) {
-                    PlanEventRaw ev = parsePlanEventRaw(obj);
-                    if (ev != null)
-                        rawEvents.add(ev);
-                }
+        for (int i = 0; i < arr.length(); i++) {
+            JSONObject obj = arr.optJSONObject(i);
+            if (obj != null) {
+                PlanEventRaw ev = parsePlanEventRaw(obj);
+                if (ev != null)
+                    rawEvents.add(ev);
             }
         }
 
@@ -479,19 +474,19 @@ public class PlanRepository {
         String cat = params.category != null ? params.category.trim() : "";
         String norm = cat.toLowerCase(java.util.Locale.ROOT);
 
-        if (norm.equals("teacher") || norm.contains("wyk")) {
+        if (norm.contains("teacher") || norm.contains("wyk")) {
             return baseUrl + "teacher=" + queryEncoded + commonParams;
         }
-        if (norm.equals("room") || norm.contains("sal")) {
+        if (norm.contains("room") || norm.contains("sal")) {
             return baseUrl + "room=" + queryEncoded + commonParams;
         }
-        if (norm.equals("group") || norm.contains("grup")) {
+        if (norm.contains("group") || norm.contains("grup")) {
             return baseUrl + "group=" + queryEncoded + commonParams;
         }
-        if (norm.equals("subject") || norm.contains("przedm")) {
+        if (norm.contains("subject") || norm.contains("przedm")) {
             return baseUrl + "subject=" + queryEncoded + commonParams;
         }
-        if (norm.equals("number") || norm.contains("numer") || norm.contains("album")) {
+        if (norm.contains("number") || norm.contains("numer") || norm.contains("album")) {
             return baseUrl + "number=" + queryEncoded + commonParams;
         }
         return baseUrl + "number=" + queryEncoded + commonParams;
@@ -639,9 +634,9 @@ public class PlanRepository {
     private PlanEventRaw parsePlanEventRaw(JSONObject e) {
         if (e == null)
             return null;
-        String start = e.optString("start", null);
-        String end = e.optString("end", null);
-        if (start == null || end == null || start.isEmpty() || end.isEmpty())
+        String start = e.optString("start", "");
+        String end = e.optString("end", "");
+        if (start.isEmpty() || end.isEmpty())
             return null;
 
         PlanEventRaw r = new PlanEventRaw();
@@ -839,7 +834,7 @@ public class PlanRepository {
 
     private static String encodeUtf8(String value) {
         try {
-            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+            return URLEncoder.encode(value != null ? value : "", "UTF-8");
         } catch (Exception e) {
             return value != null ? value : "";
         }
@@ -1676,10 +1671,10 @@ public class PlanRepository {
         String normalized = java.text.Normalizer.normalize(lower, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "");
         return normalized
-                .replace('\u0142', 'l')
-                .replace('\u0141', 'l')
-                .replace('\u0111', 'd')
-                .replace('\u0110', 'd');
+                .replace('ł', 'l')
+                .replace('Ł', 'l')
+                .replace('đ', 'd')
+                .replace('Đ', 'd');
     }
     /**
      * Merges custom events (exams, tests) with official plan events for a given
@@ -1714,7 +1709,7 @@ public class PlanRepository {
             for (PlanEventUi event : result) {
                 if (event.title != null && event.title.toLowerCase(Locale.ROOT).contains(subjectLower)) {
                     // Check if type matches
-                    boolean typeMatches = false;
+                    boolean typeMatches;
                     String typeClass = event.typeClass != null ? event.typeClass.toLowerCase(Locale.ROOT) : "";
 
                     if (CustomPlanEvent.TYPE_EXAM.equals(customEvent.eventType)) {
@@ -1847,7 +1842,7 @@ public class PlanRepository {
                 String json = sp.getString(KEY_SESSION_CACHE_JSON, null);
                 if (json != null) {
                     List<SessionPeriod> cached = parseSessionJson(json);
-                    if (cached != null && !cached.isEmpty()) {
+                    if (!cached.isEmpty()) {
                         sCachedSessions = cached;
                         sCachedSessionsTs = now;
                         return cached;
@@ -1857,7 +1852,7 @@ public class PlanRepository {
         }
 
         List<SessionPeriod> sessions = scrapeSessionDates();
-        if (sessions != null && !sessions.isEmpty()) {
+        if (!sessions.isEmpty()) {
             sCachedSessions = sessions;
             sCachedSessionsTs = now;
             if (appContext != null) {
@@ -1868,7 +1863,7 @@ public class PlanRepository {
                         .apply();
             }
         }
-        return sessions != null ? sessions : new ArrayList<>();
+        return sessions;
     }
 
     public static List<SessionPeriod> getCachedSessionDates(Context context) {
@@ -1976,13 +1971,13 @@ public class PlanRepository {
                     if (!response.isSuccessful()) {
                         continue;
                     }
-                    String html = response.body() != null ? response.body().string() : "";
+                    String html = response.body().string();
                     if (html.isEmpty()) {
                         continue;
                     }
 
                     List<SessionPeriod> sessions = parseSessionHtml(html);
-                    if (sessions != null && !sessions.isEmpty()) {
+                    if (!sessions.isEmpty()) {
                         return sessions;
                     }
                 }
@@ -2021,7 +2016,7 @@ public class PlanRepository {
                 if (!response.isSuccessful()) {
                     return links;
                 }
-                String html = response.body() != null ? response.body().string() : "";
+                String html = response.body().string();
                 if (html.isEmpty()) {
                     return links;
                 }
@@ -2122,10 +2117,10 @@ public class PlanRepository {
         String normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "");
         return normalized
-                .replace('\u0142', 'l')
-                .replace('\u0141', 'l')
-                .replace('\u0111', 'd')
-                .replace('\u0110', 'd');
+                .replace('ł', 'l')
+                .replace('Ł', 'l')
+                .replace('đ', 'd')
+                .replace('Đ', 'd');
     }
 
     private void collectPeriods(
