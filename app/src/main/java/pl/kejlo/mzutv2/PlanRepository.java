@@ -13,7 +13,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -218,7 +217,7 @@ public class PlanRepository {
                     break;
             }
         } else {
-            String[] dniPl = { "Nd", "Pn", "Wt", "\u015Ar", "Cz", "Pt", "So" };
+            String[] dniPl = { "Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So" };
             int dow = date.getDayOfWeek().getValue() % 7;
             dz = dniPl[dow];
         }
@@ -268,7 +267,7 @@ public class PlanRepository {
                 throw new IOException("HTTP " + code + " from plan.zut");
             }
 
-            String body = response.body() != null ? response.body().string() : "";
+            String body = response.body().string();
             JSONArray arr = new JSONArray(body);
 
             rd.jsonOk = true;
@@ -462,9 +461,8 @@ public class PlanRepository {
         return r;
     }
 
-    private String buildSearchUrl(SearchParams params, LocalDate start, LocalDate end)
-            throws UnsupportedEncodingException {
-        String queryEncoded = URLEncoder.encode(params.query, "UTF-8");
+    private String buildSearchUrl(SearchParams params, LocalDate start, LocalDate end) {
+        String queryEncoded = encodeUtf8(params.query);
 
         String startStr = start.atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();
         // End date should be inclusive of the day, so use end of day or start of next
@@ -472,8 +470,8 @@ public class PlanRepository {
         String endStr = end.plusDays(1).atStartOfDay().minusSeconds(1).atZone(ZoneId.systemDefault()).toOffsetDateTime()
                 .toString();
 
-        startStr = URLEncoder.encode(startStr, "UTF-8");
-        endStr = URLEncoder.encode(endStr, "UTF-8");
+        startStr = encodeUtf8(startStr);
+        endStr = encodeUtf8(endStr);
 
         String baseUrl = "https://plan.zut.edu.pl/schedule_student.php?";
         String commonParams = "&start=" + startStr + "&end=" + endStr;
@@ -493,7 +491,7 @@ public class PlanRepository {
         if (norm.equals("subject") || norm.contains("przedm")) {
             return baseUrl + "subject=" + queryEncoded + commonParams;
         }
-        if (norm.equals("album") || norm.equals("number") || norm.contains("numer") || norm.contains("album")) {
+        if (norm.equals("number") || norm.contains("numer") || norm.contains("album")) {
             return baseUrl + "number=" + queryEncoded + commonParams;
         }
         return baseUrl + "number=" + queryEncoded + commonParams;
@@ -513,8 +511,8 @@ public class PlanRepository {
         }
 
         String url = "https://plan.zut.edu.pl/schedule.php?kind="
-                + URLEncoder.encode(kind, "UTF-8")
-                + "&query=" + URLEncoder.encode(query, "UTF-8");
+                + encodeUtf8(kind)
+                + "&query=" + encodeUtf8(query);
 
         Request request = new Request.Builder()
                 .url(url)
@@ -526,7 +524,7 @@ public class PlanRepository {
                 return suggestions;
             }
 
-            String body = response.body() != null ? response.body().string() : "";
+            String body = response.body().string();
             JSONArray arr = new JSONArray(body);
 
             for (int i = 0; i < arr.length(); i++) {
@@ -550,9 +548,6 @@ public class PlanRepository {
             LocalDate rangeEnd,
             PlanDebug debug) throws IOException, JSONException {
 
-        LocalDate filterStart = rangeStart;
-        LocalDate filterEnd = rangeEnd;
-
         // Expand fetch range slightly to ensure timezone overlap is covered
         LocalDate apiFetchStart = rangeStart.minusDays(1);
         LocalDate apiFetchEnd = rangeEnd.plusDays(1);
@@ -562,15 +557,15 @@ public class PlanRepository {
         String endIso = apiFetchEnd.atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();
 
         // Use encoded strings
-        String startEnc = URLEncoder.encode(startIso, "UTF-8");
-        String endEnc = URLEncoder.encode(endIso, "UTF-8");
+        String startEnc = encodeUtf8(startIso);
+        String endEnc = encodeUtf8(endIso);
 
         // Optimized: Single URL call. Standard schedule_student.php works best with ISO
         // dates.
         String url = "https://plan.zut.edu.pl/schedule_student.php?number=" + album + "&start=" + startEnc + "&end="
                 + endEnc;
 
-        JSONArray arr = null;
+        JSONArray arr;
         try {
             arr = httpGetJsonArray(url, debug);
         } catch (Exception e) {
@@ -588,12 +583,8 @@ public class PlanRepository {
         }
 
         List<PlanEventRaw> out = new ArrayList<>();
-        if (arr == null) {
-            return out;
-        }
-
-        String filterStartStr = filterStart.format(YMD);
-        String filterEndStr = filterEnd.format(YMD);
+        String filterStartStr = rangeStart.format(YMD);
+        String filterEndStr = rangeEnd.format(YMD);
 
         for (int i = 0; i < arr.length(); i++) {
             JSONObject e = arr.optJSONObject(i);
@@ -625,16 +616,13 @@ public class PlanRepository {
     private List<PlanEventRaw> fetchFullPlanByAlbum(String album, PlanDebug debug) throws IOException, JSONException {
         // Warning: This returns thousands of events.
         String base = "https://plan.zut.edu.pl/schedule_student.php?number=" + album;
-        JSONArray arr = null;
+        JSONArray arr;
         try {
             arr = httpGetJsonArray(base, debug);
         } catch (Exception e) {
             Log.w(TAG, "Error fetching full plan (" + base + "): " + e.getMessage());
             throw e;
         }
-
-        if (arr == null)
-            return new ArrayList<>();
 
         List<PlanEventRaw> out = new ArrayList<>();
         for (int i = 0; i < arr.length(); i++) {
@@ -653,7 +641,7 @@ public class PlanRepository {
             return null;
         String start = e.optString("start", null);
         String end = e.optString("end", null);
-        if (start == null || end == null)
+        if (start == null || end == null || start.isEmpty() || end.isEmpty())
             return null;
 
         PlanEventRaw r = new PlanEventRaw();
@@ -683,18 +671,22 @@ public class PlanRepository {
         String formShort = lower(e.lessonFormShort);
         String subject = lower(e.subject != null && !e.subject.isEmpty() ? e.subject : e.title);
 
-        if ("e".equals(statusShort))
-            return "week-event-type-exam";
-        if ("ez".equals(statusShort))
-            return "week-event-type-exam-remote";
-        if ("o".equals(statusShort))
-            return "week-event-type-cancelled";
-        if ("r".equals(statusShort))
-            return "week-event-type-rector";
-        if ("dz".equals(statusShort))
-            return "week-event-type-dean";
-        if ("zz".equals(statusShort))
-            return "week-event-type-remote";
+        switch (statusShort) {
+            case "e":
+                return "week-event-type-exam";
+            case "ez":
+                return "week-event-type-exam-remote";
+            case "o":
+                return "week-event-type-cancelled";
+            case "r":
+                return "week-event-type-rector";
+            case "dz":
+                return "week-event-type-dean";
+            case "zz":
+                return "week-event-type-remote";
+            default:
+                break;
+        }
 
         String hay = formFull + " " + subject;
 
@@ -702,13 +694,13 @@ public class PlanRepository {
             return "week-event-type-exam-remote";
         if (hay.contains("egzamin"))
             return "week-event-type-exam";
-        if (hay.contains("odwo\u0142ane"))
+        if (hay.contains("odwołane"))
             return "week-event-type-cancelled";
         if (hay.contains("rektorskie"))
             return "week-event-type-rector";
-        if (hay.contains("dzieka\u0144skie") || hay.contains("godziny dzieka\u0144skie"))
+        if (hay.contains("dziekańskie") || hay.contains("godziny dziekańskie"))
             return "week-event-type-dean";
-        if (hay.contains("zaj\u0119cia zdalne") || hay.contains("zdalne"))
+        if (hay.contains("zajęcia zdalne") || hay.contains("zdalne"))
             return "week-event-type-remote";
 
         // Pass types
@@ -742,7 +734,7 @@ public class PlanRepository {
             return "week-event-type-lab";
         if (hay.contains("audytoryjne") || "a".equals(formShort))
             return "week-event-type-auditory";
-        if (hay.contains("wyk\u0142ad") || "w".equals(formShort))
+        if (hay.contains("wykład") || "w".equals(formShort))
             return "week-event-type-lecture";
 
         if ("z".equals(formShort))
@@ -845,6 +837,24 @@ public class PlanRepository {
         return (s == null) ? "" : s.toLowerCase(Locale.ROOT);
     }
 
+    private static String encodeUtf8(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            return value != null ? value : "";
+        }
+    }
+
+    private static int mapInt(Map<String, Object> values, String key) {
+        Object raw = values.get(key);
+        return raw instanceof Number ? ((Number) raw).intValue() : 0;
+    }
+
+    private static float mapFloat(Map<String, Object> values, String key) {
+        Object raw = values.get(key);
+        return raw instanceof Number ? ((Number) raw).floatValue() : 0f;
+    }
+
     // Data Structuring
 
     private static final int START_HOUR = 6;
@@ -928,12 +938,19 @@ public class PlanRepository {
 
             String formShortLower = lower(formShort);
             String typeKey = null;
-            if ("l".equals(formShortLower))
-                typeKey = "lab";
-            else if ("a".equals(formShortLower))
-                typeKey = "aud";
-            else if ("w".equals(formShortLower))
-                typeKey = "lec";
+            switch (formShortLower) {
+                case "l":
+                    typeKey = "lab";
+                    break;
+                case "a":
+                    typeKey = "aud";
+                    break;
+                case "w":
+                    typeKey = "lec";
+                    break;
+                default:
+                    break;
+            }
 
             String subjectKey = "";
             if (!subjectName.isEmpty() && typeKey != null)
@@ -959,10 +976,10 @@ public class PlanRepository {
         }
 
         events.sort((a, b) -> {
-            int sA = (int) a.get("startMin");
-            int sB = (int) b.get("startMin");
+            int sA = mapInt(a, "startMin");
+            int sB = mapInt(b, "startMin");
             if (sA == sB) {
-                return Integer.compare((int) a.get("endMin"), (int) b.get("endMin"));
+                return Integer.compare(mapInt(a, "endMin"), mapInt(b, "endMin"));
             }
             return Integer.compare(sA, sB);
         });
@@ -970,11 +987,11 @@ public class PlanRepository {
         // Layout algorithm (simple greedy with clusters)
         List<List<Map<String, Object>>> clusters = new ArrayList<>();
         List<Map<String, Object>> currentCluster = new ArrayList<>();
-        Integer clusterEnd = null;
+        int clusterEnd = Integer.MIN_VALUE;
 
         for (Map<String, Object> ev : events) {
-            int startMin = (int) ev.get("startMin");
-            int endMin = (int) ev.get("endMin");
+            int startMin = mapInt(ev, "startMin");
+            int endMin = mapInt(ev, "endMin");
 
             if (currentCluster.isEmpty()) {
                 currentCluster.add(ev);
@@ -1000,8 +1017,8 @@ public class PlanRepository {
         for (List<Map<String, Object>> cluster : clusters) {
             List<Integer> lanes = new ArrayList<>();
             for (Map<String, Object> ev : cluster) {
-                int startMin = (int) ev.get("startMin");
-                int endMin = (int) ev.get("endMin");
+                int startMin = mapInt(ev, "startMin");
+                int endMin = mapInt(ev, "endMin");
                 boolean assigned = false;
                 for (int laneIdx = 0; laneIdx < lanes.size(); laneIdx++) {
                     if (startMin >= lanes.get(laneIdx)) {
@@ -1019,7 +1036,7 @@ public class PlanRepository {
             int laneCount = Math.max(1, lanes.size());
             float laneWidth = 100f / laneCount;
             for (Map<String, Object> ev : cluster) {
-                int laneIdx = (int) ev.get("lane");
+                int laneIdx = mapInt(ev, "lane");
                 ev.put("leftPct", laneIdx * laneWidth);
                 ev.put("widthPct", laneWidth);
                 ev.remove("lane");
@@ -1029,12 +1046,12 @@ public class PlanRepository {
 
         for (Map<String, Object> ev : finalEvents) {
             PlanEventUi ui = new PlanEventUi();
-            ui.startMin = (int) ev.get("startMin");
-            ui.endMin = (int) ev.get("endMin");
-            ui.topPx = (float) ev.get("topPx");
-            ui.heightPx = (float) ev.get("heightPx");
-            ui.leftPct = (float) ev.get("leftPct");
-            ui.widthPct = (float) ev.get("widthPct");
+            ui.startMin = mapInt(ev, "startMin");
+            ui.endMin = mapInt(ev, "endMin");
+            ui.topPx = mapFloat(ev, "topPx");
+            ui.heightPx = mapFloat(ev, "heightPx");
+            ui.leftPct = mapFloat(ev, "leftPct");
+            ui.widthPct = mapFloat(ev, "widthPct");
             ui.title = (String) ev.get("title");
             ui.room = (String) ev.get("room");
             ui.group = (String) ev.get("group");
@@ -1073,8 +1090,10 @@ public class PlanRepository {
         }
         boolean any = false;
         for (MonthCell c : week)
-            if (c != null)
+            if (c != null) {
                 any = true;
+                break;
+            }
         if (any)
             grid.add(new ArrayList<>(week));
         return grid;
@@ -1082,7 +1101,7 @@ public class PlanRepository {
 
     // Cache management
 
-    private String buildScopeKey(String viewMode, LocalDate rangeStart, LocalDate rangeEnd) {
+    private String buildScopeKey(String viewMode, LocalDate rangeStart) {
         // Simple key: mode + start date
         return viewMode + ":" + rangeStart.format(YMD);
     }
@@ -1114,7 +1133,7 @@ public class PlanRepository {
             if (sFullPlanCache.byDate == null)
                 sFullPlanCache.byDate = new ConcurrentHashMap<>();
 
-            String scopeKey = buildScopeKey(viewMode, rangeStart, rangeEnd);
+            String scopeKey = buildScopeKey(viewMode, rangeStart);
             Long lastScopeMs = sFullPlanCache.scopeTimestamps.get(scopeKey);
 
             String userAlbum = resolveAlbumNumber();
@@ -1135,21 +1154,19 @@ public class PlanRepository {
                     // empty period.
                     // But if fresh is empty, we still update timestamp to avoid re-fetching
                     // immediately empty range.
-                    if (fresh != null) {
-                        Map<LocalDate, List<PlanEventRaw>> tmp = groupByDay(fresh);
-                        LocalDate d = rangeStart;
-                        while (!d.isAfter(rangeEnd)) {
-                            List<PlanEventRaw> list = tmp.get(d);
-                            if (list != null)
-                                sFullPlanCache.byDate.put(d, list);
-                            else
-                                sFullPlanCache.byDate.remove(d); // Clear empty days in range
-                            d = d.plusDays(1);
-                        }
-                        sFullPlanCache.scopeTimestamps.put(scopeKey, now);
-                        sFullPlanCache.timestampMs = now;
-                        writeCacheToDisk(sFullPlanCache);
+                    Map<LocalDate, List<PlanEventRaw>> tmp = groupByDay(fresh);
+                    LocalDate d = rangeStart;
+                    while (!d.isAfter(rangeEnd)) {
+                        List<PlanEventRaw> list = tmp.get(d);
+                        if (list != null)
+                            sFullPlanCache.byDate.put(d, list);
+                        else
+                            sFullPlanCache.byDate.remove(d); // Clear empty days in range
+                        d = d.plusDays(1);
                     }
+                    sFullPlanCache.scopeTimestamps.put(scopeKey, now);
+                    sFullPlanCache.timestampMs = now;
+                    writeCacheToDisk(sFullPlanCache);
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to refresh plan scope (offline?): " + e.getMessage());
                     // We suppress the error and return what we have in cache
@@ -1297,6 +1314,7 @@ public class PlanRepository {
         return loadPlanInternal(viewMode, currentDate, forceFullRefresh, false);
     }
 
+    @SuppressWarnings("unused")
     public PlanResult reloadScope(String viewMode, LocalDate currentDate) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, false, true);
     }
@@ -1423,42 +1441,19 @@ public class PlanRepository {
     }
 
     // Optimized loadUpcomingEvents for Widget
+    @SuppressWarnings("unused")
     public List<PlanEventUi> loadUpcomingEvents(int daysCount) throws IOException, JSONException {
         LocalDate today = LocalDate.now();
         LocalDate end = today.plusDays(daysCount);
-        // Reuse loadPlanInternal with a special "widget" view mode if we wanted, but
-        // "week" logic is fine or custom range.
-        // Actually loadPlanInternal uses fixed view modes. Let's just use
-        // ensureScopeData directly.
 
         String album = resolveAlbumNumber();
-        if (album == null)
+        if (album == null) {
             return Collections.emptyList();
-
-        // Ensure data for today+7 days is in cache
-        Map<LocalDate, List<PlanEventRaw>> data = ensureScopeData(album, today, end, "widget", false, new PlanDebug());
-
-        List<PlanEventUi> result = new ArrayList<>();
-        LocalDate iter = today;
-        while (!iter.isAfter(end)) {
-            List<PlanEventRaw> raw = data.get(iter);
-            if (raw != null && !raw.isEmpty()) {
-                // We must add Date to the event payload for the widget service to know which
-                // day it is,
-                // but PlanEventUi doesn't strictly have a "date" field (it's in DayColumn).
-                // However, the Widget Service iterates days.
-                // Or we can flatten it.
-                // The widget currently calls loadPlan("day", date) one by one.
-                // That's inefficient.
-                // But for now let's leave this API here for the Widget to use if we refactor
-                // the widget to bulk-load.
-                // If the widget calls loadPlan("day", date), it will hit the cache we just
-                // populated!
-                // So calling ensureScopeData here effectively pre-fetches the week.
-            }
-            iter = iter.plusDays(1);
         }
-        return result; // Not really used yet, but the side effect of ensureScopeData is what we want.
+
+        // Side effect only: prefetch upcoming days into cache for faster widget reads.
+        ensureScopeData(album, today, end, "widget", false, new PlanDebug());
+        return Collections.emptyList();
     }
 
     public List<SubjectFilterItem> loadSubjectsForFilter() throws IOException, JSONException {
@@ -1525,12 +1520,17 @@ public class PlanRepository {
         }
 
         List<String> normalizedKeys = new ArrayList<>(normalizedToSubject.keySet());
-        normalizedKeys.sort((a, b) -> normalizedToSubject.get(a).compareToIgnoreCase(normalizedToSubject.get(b)));
+        normalizedKeys.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(
+                normalizedToSubject.getOrDefault(a, ""),
+                normalizedToSubject.getOrDefault(b, "")));
 
         List<SubjectFilterItem> items = new ArrayList<>();
         for (String normalizedSubject : normalizedKeys) {
             String subject = normalizedToSubject.get(normalizedSubject);
             Set<String> types = normalizedToTypes.getOrDefault(normalizedSubject, Collections.emptySet());
+            if (subject == null || subject.isEmpty() || types == null || types.isEmpty()) {
+                continue;
+            }
 
             if (types.contains("lec")) {
                 SubjectFilterItem it = new SubjectFilterItem();
