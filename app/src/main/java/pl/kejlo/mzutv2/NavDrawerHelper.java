@@ -4,9 +4,12 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.text.format.DateUtils;
+import android.util.Log;
 
 import android.view.View;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,6 +17,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.WindowCallbackWrapper;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
@@ -30,6 +34,7 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.Wearable;
 
 import java.util.List;
+import java.lang.reflect.Field;
 
 public class NavDrawerHelper {
 
@@ -249,213 +254,169 @@ public class NavDrawerHelper {
 
         // Ensure drawer is unlocked
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
 
-        if (currentScreen != null && !currentScreen.equals(Screen.PLAN.getId())) {
-            enableFullScreenSwipe(activity, drawerLayout);
+        // Use native DrawerLayout drag (finger-synced), but extend edge size to full screen
+        // on screens without strong horizontal gestures.
+        if (currentScreen == null || !currentScreen.equals(Screen.PLAN.getId())) {
+            enableFullWidthDrawerDrag(drawerLayout);
+        }
+        enableInteractiveSwipe(activity, drawerLayout);
+    }
+
+    private static void enableFullWidthDrawerDrag(DrawerLayout drawerLayout) {
+        if (drawerLayout == null) {
+            return;
+        }
+        try {
+            int fullWidth = drawerLayout.getResources().getDisplayMetrics().widthPixels;
+            if (fullWidth <= 0) {
+                return;
+            }
+            setDrawerEdgeSize(drawerLayout, "mLeftDragger", fullWidth);
+            setDrawerEdgeSize(drawerLayout, "mRightDragger", fullWidth);
+        } catch (Throwable t) {
+            Log.w("mZUTv2-NavDrawer", "Could not extend drawer drag edge", t);
         }
     }
 
-    private static void enableFullScreenSwipe(AppCompatActivity activity, DrawerLayout drawerLayout) {
-        android.view.Window.Callback originalCallback = activity.getWindow().getCallback();
-        if (originalCallback instanceof SwipeWindowCallback) {
-            return; // Already wrapped
+    private static void setDrawerEdgeSize(DrawerLayout drawerLayout, String draggerFieldName, int edgeSizePx)
+            throws NoSuchFieldException, IllegalAccessException {
+        Field draggerField = DrawerLayout.class.getDeclaredField(draggerFieldName);
+        draggerField.setAccessible(true);
+        Object dragger = draggerField.get(drawerLayout);
+        if (dragger == null) {
+            return;
         }
-        activity.getWindow().setCallback(new SwipeWindowCallback(originalCallback, activity, drawerLayout));
+        Field edgeSizeField = dragger.getClass().getDeclaredField("mEdgeSize");
+        edgeSizeField.setAccessible(true);
+        int current = edgeSizeField.getInt(dragger);
+        if (edgeSizePx > current) {
+            edgeSizeField.setInt(dragger, edgeSizePx);
+        }
     }
 
-    private static class SwipeWindowCallback implements android.view.Window.Callback {
-        private final android.view.Window.Callback wrapped;
+    private static void enableInteractiveSwipe(AppCompatActivity activity, DrawerLayout drawerLayout) {
+        if (activity == null || drawerLayout == null) {
+            return;
+        }
+        android.view.Window.Callback original = activity.getWindow().getCallback();
+        if (original instanceof DrawerGestureWindowCallback) {
+            return;
+        }
+        activity.getWindow().setCallback(new DrawerGestureWindowCallback(original, drawerLayout, activity));
+    }
+
+    private static final class DrawerGestureWindowCallback extends WindowCallbackWrapper {
         private final DrawerLayout drawerLayout;
         private final int touchSlop;
-        private final float openSwipeThreshold;
+        private final float syntheticEdgeX;
+        private final int dragStartRegionPx;
         private float downX;
         private float downY;
-        private boolean trackingSwipe;
-        private boolean consumedBySwipe;
+        private long forwardingDownTime;
+        private boolean tracking;
+        private boolean forwardingToDrawer;
 
-        public SwipeWindowCallback(android.view.Window.Callback wrapped, android.content.Context context,
-                DrawerLayout drawerLayout) {
-            this.wrapped = wrapped;
+        DrawerGestureWindowCallback(
+                android.view.Window.Callback wrapped,
+                DrawerLayout drawerLayout,
+                Context context) {
+            super(wrapped);
             this.drawerLayout = drawerLayout;
-            android.view.ViewConfiguration config = android.view.ViewConfiguration.get(context);
-            this.touchSlop = config.getScaledTouchSlop();
-            this.openSwipeThreshold = Math.max(
-                    touchSlop * 2f,
-                    context.getResources().getDisplayMetrics().density * 56f);
+            this.touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+            float density = context.getResources().getDisplayMetrics().density;
+            this.syntheticEdgeX = Math.max(1f, density);
+            this.dragStartRegionPx = Math.max((int) (density * 112f), touchSlop * 3);
         }
 
         @Override
-        public boolean dispatchTouchEvent(android.view.MotionEvent event) {
+        public boolean dispatchTouchEvent(MotionEvent event) {
             if (event == null) {
-                return false;
+                return super.dispatchTouchEvent(event);
             }
 
             int action = event.getActionMasked();
-            if (consumedBySwipe && action != android.view.MotionEvent.ACTION_DOWN) {
-                if (action == android.view.MotionEvent.ACTION_UP
-                        || action == android.view.MotionEvent.ACTION_CANCEL) {
-                    consumedBySwipe = false;
-                    trackingSwipe = false;
-                }
-                return true;
-            }
-
             switch (action) {
-                case android.view.MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_DOWN:
                     downX = event.getX();
                     downY = event.getY();
-                    trackingSwipe = true;
-                    consumedBySwipe = false;
+                    tracking = canStartDrag() && downX <= dragStartRegionPx;
+                    forwardingToDrawer = false;
+                    forwardingDownTime = 0L;
                     break;
-                case android.view.MotionEvent.ACTION_MOVE:
-                    if (trackingSwipe && canOpenDrawer()) {
-                        float deltaX = event.getX() - downX;
-                        float deltaY = event.getY() - downY;
-                        float absDeltaY = Math.abs(deltaY);
+                case MotionEvent.ACTION_MOVE:
+                    if (tracking && !forwardingToDrawer) {
+                        float dx = event.getX() - downX;
+                        float dy = event.getY() - downY;
+                        float absDx = Math.abs(dx);
+                        float absDy = Math.abs(dy);
 
-                        // Vertical scroll should keep normal interaction flow.
-                        if (absDeltaY > touchSlop && absDeltaY > Math.abs(deltaX)) {
-                            trackingSwipe = false;
+                        if (absDy > touchSlop && absDy > absDx) {
+                            tracking = false;
                             break;
                         }
 
-                        // Distinct horizontal swipe-right opens drawer and consumes tap sequence.
-                        if (deltaX > openSwipeThreshold && Math.abs(deltaX) > absDeltaY * 1.15f) {
-                            drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
-                            consumedBySwipe = true;
-                            trackingSwipe = false;
+                        if (dx > touchSlop && absDx > absDy * 1.1f) {
+                            forwardingToDrawer = true;
+                            forwardingDownTime = event.getEventTime();
+                            dispatchSyntheticToDrawer(
+                                    MotionEvent.ACTION_DOWN,
+                                    syntheticEdgeX,
+                                    downY,
+                                    forwardingDownTime,
+                                    forwardingDownTime);
+                            dispatchSyntheticFromSource(event, MotionEvent.ACTION_MOVE);
                             return true;
                         }
-                    }
-                    break;
-                case android.view.MotionEvent.ACTION_UP:
-                case android.view.MotionEvent.ACTION_CANCEL:
-                    if (consumedBySwipe) {
-                        consumedBySwipe = false;
-                        trackingSwipe = false;
+                    } else if (forwardingToDrawer) {
+                        dispatchSyntheticFromSource(event, MotionEvent.ACTION_MOVE);
                         return true;
                     }
-                    trackingSwipe = false;
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    if (forwardingToDrawer) {
+                        dispatchSyntheticFromSource(event, action);
+                        forwardingToDrawer = false;
+                        tracking = false;
+                        forwardingDownTime = 0L;
+                        return true;
+                    }
+                    tracking = false;
                     break;
                 default:
+                    if (forwardingToDrawer) {
+                        dispatchSyntheticFromSource(event, action);
+                        return true;
+                    }
                     break;
             }
-            return wrapped.dispatchTouchEvent(event);
+            return super.dispatchTouchEvent(event);
         }
 
-        private boolean canOpenDrawer() {
-            return drawerLayout.getDrawerLockMode(androidx.core.view.GravityCompat.START) != DrawerLayout.LOCK_MODE_LOCKED_CLOSED
-                    && !drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START);
+        private boolean canStartDrag() {
+            int lockMode = drawerLayout.getDrawerLockMode(GravityCompat.START);
+            return lockMode != DrawerLayout.LOCK_MODE_LOCKED_CLOSED
+                    && !drawerLayout.isDrawerVisible(GravityCompat.START);
         }
 
-        @Override
-        public boolean dispatchKeyEvent(android.view.KeyEvent event) {
-            return wrapped.dispatchKeyEvent(event);
+        private void dispatchSyntheticFromSource(MotionEvent source, int action) {
+            float dx = source.getX() - downX;
+            float syntheticX = syntheticEdgeX + Math.max(0f, dx);
+            int width = drawerLayout.getWidth();
+            if (width > 2) {
+                syntheticX = Math.min(syntheticX, width - 1f);
+            }
+            float syntheticY = source.getY();
+            long downTime = forwardingDownTime > 0 ? forwardingDownTime : source.getDownTime();
+            dispatchSyntheticToDrawer(action, syntheticX, syntheticY, downTime, source.getEventTime());
         }
 
-        @Override
-        public boolean dispatchKeyShortcutEvent(android.view.KeyEvent event) {
-            return wrapped.dispatchKeyShortcutEvent(event);
-        }
-
-        @Override
-        public boolean dispatchTrackballEvent(android.view.MotionEvent event) {
-            return wrapped.dispatchTrackballEvent(event);
-        }
-
-        @Override
-        public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
-            return wrapped.dispatchGenericMotionEvent(event);
-        }
-
-        @Override
-        public boolean dispatchPopulateAccessibilityEvent(android.view.accessibility.AccessibilityEvent event) {
-            return wrapped.dispatchPopulateAccessibilityEvent(event);
-        }
-
-        @Override
-        public android.view.View onCreatePanelView(int featureId) {
-            return wrapped.onCreatePanelView(featureId);
-        }
-
-        @Override
-        public boolean onCreatePanelMenu(int featureId, android.view.Menu menu) {
-            return wrapped.onCreatePanelMenu(featureId, menu);
-        }
-
-        @Override
-        public boolean onPreparePanel(int featureId, android.view.View view, android.view.Menu menu) {
-            return wrapped.onPreparePanel(featureId, view, menu);
-        }
-
-        @Override
-        public boolean onMenuOpened(int featureId, android.view.Menu menu) {
-            return wrapped.onMenuOpened(featureId, menu);
-        }
-
-        @Override
-        public boolean onMenuItemSelected(int featureId, android.view.MenuItem item) {
-            return wrapped.onMenuItemSelected(featureId, item);
-        }
-
-        @Override
-        public void onWindowAttributesChanged(android.view.WindowManager.LayoutParams attrs) {
-            wrapped.onWindowAttributesChanged(attrs);
-        }
-
-        @Override
-        public void onContentChanged() {
-            wrapped.onContentChanged();
-        }
-
-        @Override
-        public void onWindowFocusChanged(boolean hasFocus) {
-            wrapped.onWindowFocusChanged(hasFocus);
-        }
-
-        @Override
-        public void onAttachedToWindow() {
-            wrapped.onAttachedToWindow();
-        }
-
-        @Override
-        public void onDetachedFromWindow() {
-            wrapped.onDetachedFromWindow();
-        }
-
-        @Override
-        public void onPanelClosed(int featureId, android.view.Menu menu) {
-            wrapped.onPanelClosed(featureId, menu);
-        }
-
-        @Override
-        public boolean onSearchRequested() {
-            return wrapped.onSearchRequested();
-        }
-
-        @Override
-        public boolean onSearchRequested(android.view.SearchEvent searchEvent) {
-            return wrapped.onSearchRequested(searchEvent);
-        }
-
-        @Override
-        public android.view.ActionMode onWindowStartingActionMode(android.view.ActionMode.Callback callback) {
-            return wrapped.onWindowStartingActionMode(callback);
-        }
-
-        @Override
-        public android.view.ActionMode onWindowStartingActionMode(android.view.ActionMode.Callback callback, int type) {
-            return wrapped.onWindowStartingActionMode(callback, type);
-        }
-
-        @Override
-        public void onActionModeStarted(android.view.ActionMode mode) {
-            wrapped.onActionModeStarted(mode);
-        }
-
-        @Override
-        public void onActionModeFinished(android.view.ActionMode mode) {
-            wrapped.onActionModeFinished(mode);
+        private void dispatchSyntheticToDrawer(int action, float x, float y, long downTime, long eventTime) {
+            MotionEvent synthetic = MotionEvent.obtain(downTime, eventTime, action, x, y, 0);
+            drawerLayout.dispatchTouchEvent(synthetic);
+            synthetic.recycle();
         }
     }
 

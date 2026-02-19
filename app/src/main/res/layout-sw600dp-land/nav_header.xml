@@ -12,14 +12,14 @@
     android:paddingEnd="16dp"
     android:paddingBottom="14dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/navTopBlock"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:layout_weight="1">
 
         <LinearLayout
+            android:id="@+id/navHeaderCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_tablet_surface"
@@ -27,7 +27,10 @@
             android:paddingStart="12dp"
             android:paddingTop="12dp"
             android:paddingEnd="12dp"
-            android:paddingBottom="12dp">
+            android:paddingBottom="12dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
                 android:id="@+id/navHeaderIcon"
@@ -66,6 +69,7 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/navSectionLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
@@ -75,17 +79,23 @@
             android:textAllCaps="true"
             android:textColor="?attr/mzPrimary"
             android:textSize="11sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/navHeaderCard" />
 
         <ScrollView
+            android:id="@+id/navLinksScroll"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
             android:clipToPadding="false"
             android:fadeScrollbars="true"
             android:overScrollMode="ifContentScrolls"
             android:paddingBottom="8dp"
-            android:scrollbars="vertical">
+            android:scrollbars="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/navSectionLabel">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -244,7 +254,7 @@
                     android:textStyle="bold" />
             </LinearLayout>
         </ScrollView>
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

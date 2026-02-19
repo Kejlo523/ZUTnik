@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GradesRepository {
 
@@ -47,7 +48,7 @@ public class GradesRepository {
         List<Semester> list;
     }
 
-    private static SemesterCacheEntry sSemCache = null;
+    private static final Map<String, SemesterCacheEntry> sSemCacheByStudy = new java.util.concurrent.ConcurrentHashMap<>();
 
     // Loading studies with cache
 
@@ -171,14 +172,16 @@ public class GradesRepository {
         }
 
         long now = System.currentTimeMillis();
+        String semesterCacheKey = userId + "_" + active.przynaleznoscId;
 
         // 2) Semester cache
-        if (sSemCache != null &&
-                sSemCache.przynaleznoscId != null &&
-                sSemCache.przynaleznoscId.equals(active.przynaleznoscId) &&
-                (now - sSemCache.ts) < SEMESTERS_TTL_MS) {
+        SemesterCacheEntry cachedSemesters = sSemCacheByStudy.get(semesterCacheKey);
+        if (cachedSemesters != null &&
+                cachedSemesters.przynaleznoscId != null &&
+                cachedSemesters.przynaleznoscId.equals(active.przynaleznoscId) &&
+                (now - cachedSemesters.ts) < SEMESTERS_TTL_MS) {
 
-            return sSemCache.list;
+            return cachedSemesters.list;
         }
 
         // 3) API – getStudies(oceny=true)
@@ -217,7 +220,7 @@ public class GradesRepository {
         ce2.ts = now;
         ce2.przynaleznoscId = active.przynaleznoscId;
         ce2.list = list;
-        sSemCache = ce2;
+        sSemCacheByStudy.put(semesterCacheKey, ce2);
 
         return list;
     }

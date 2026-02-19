@@ -134,7 +134,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         int nowMin = now.getHour() * 60 + now.getMinute();
 
         LocalDate targetDate = today;
-        String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
+        String subtitleText;
         boolean hideList = false;
         boolean listHasItems = false;
         String emptyStateText = context.getString(R.string.plan_widget_empty_state);

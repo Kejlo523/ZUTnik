@@ -2412,14 +2412,13 @@ public class PlanActivity extends MzutBaseActivity {
         separator.addView(line);
 
         int count = markers.size();
-        int badgeLayoutHeight = separatorWidth;
         for (int i = 0; i < count; i++) {
             MarkerSpec marker = markers.get(i);
             int badgeTextWidth = (int) Math.ceil(paint.measureText(marker.label)) + padH;
-            TextView badge = buildMarkerBadge(marker, badgeTextWidth, badgeLayoutHeight, padH, padV);
+            TextView badge = buildMarkerBadge(marker, badgeTextWidth, separatorWidth, padH, padV);
 
             FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
-                    badgeTextWidth, badgeLayoutHeight);
+                    badgeTextWidth, separatorWidth);
             badgeLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
 
             int centerY;
@@ -2440,8 +2439,8 @@ public class PlanActivity extends MzutBaseActivity {
                 }
             }
 
-            int top = centerY - (badgeLayoutHeight / 2);
-            int maxTop = Math.max(0, columnHeight - badgeLayoutHeight);
+            int top = centerY - (separatorWidth / 2);
+            int maxTop = Math.max(0, columnHeight - separatorWidth);
             badgeLp.topMargin = Math.max(0, Math.min(top, maxTop));
             badge.setLayoutParams(badgeLp);
             separator.addView(badge);
