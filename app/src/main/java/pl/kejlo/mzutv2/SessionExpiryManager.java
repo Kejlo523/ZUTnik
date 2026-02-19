@@ -34,7 +34,7 @@ public final class SessionExpiryManager {
     }
 
     public static boolean isSessionExpiredResponse(JSONObject response) {
-        if (response == null || !hasActiveSession()) {
+        if (response == null || isSessionMissing()) {
             return false;
         }
 
@@ -84,7 +84,7 @@ public final class SessionExpiryManager {
         }
         Context appContext = context.getApplicationContext();
 
-        if (!hasActiveSession()) {
+        if (isSessionMissing()) {
             return;
         }
         if (!HANDLING_EXPIRE.compareAndSet(false, true)) {
@@ -186,9 +186,9 @@ public final class SessionExpiryManager {
         NotificationManagerCompat.from(context).notify(8801, builder.build());
     }
 
-    private static boolean hasActiveSession() {
+    private static boolean isSessionMissing() {
         MzutSession session = MzutSession.getInstance();
-        return session.getUserId() != null && session.getAuthKey() != null;
+        return session.getUserId() == null || session.getAuthKey() == null;
     }
 
     private static boolean isAppInForeground() {
@@ -219,10 +219,7 @@ public final class SessionExpiryManager {
                         || n.contains("bled"))) {
             return true;
         }
-        if (n.contains("autoryz") && (n.contains("brak") || n.contains("niepopraw"))) {
-            return true;
-        }
-        return false;
+        return n.contains("autoryz") && (n.contains("brak") || n.contains("niepopraw"));
     }
 
     private static String normalize(String input) {

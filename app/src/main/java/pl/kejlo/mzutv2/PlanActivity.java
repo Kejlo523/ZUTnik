@@ -118,11 +118,6 @@ public class PlanActivity extends MzutBaseActivity {
 
     private static final int VP_START_POSITION = 5000;
 
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private Toolbar toolbar;
-    private LinearLayout drawerContentRoot;
-
     private Button btnViewDay;
     private Button btnViewWeek;
     private Button btnViewMonth;
@@ -318,10 +313,10 @@ public class PlanActivity extends MzutBaseActivity {
         hiddenSubjectKeys = new HashSet<>(prefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>()));
         purgeExpiredFilterCaches();
 
-        drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
-        toolbar = findViewById(R.id.toolbar);
+        LinearLayout drawerContentRoot = findViewById(R.id.drawerContentRoot);
+        DrawerLayout drawerLayout = findViewById(R.id.drawerLayout);
+        NavigationView navigationView = findViewById(R.id.navigationView);
+        Toolbar toolbar = findViewById(R.id.toolbar);
 
         ScrollView scrollPlan = findViewById(R.id.scrollPlan);
         scrollPlan.setClipToPadding(false);
@@ -356,7 +351,6 @@ public class PlanActivity extends MzutBaseActivity {
         btnRefresh = findViewById(R.id.btnRefresh);
         btnMenu = findViewById(R.id.btnMenu);
 
-        tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
         tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
 
         layoutTimeColumn = findViewById(R.id.layoutTimeColumn);
@@ -455,9 +449,7 @@ public class PlanActivity extends MzutBaseActivity {
             if (sessions != null && !sessions.isEmpty()) {
                 sessionDates = sessions;
                 // Refresh displayed pages so session markers appear
-                handler.post(() -> {
-                    notifyAllPlanPagesChanged();
-                });
+                handler.post(this::notifyAllPlanPagesChanged);
             }
         });
 
@@ -872,8 +864,7 @@ public class PlanActivity extends MzutBaseActivity {
         categoryView.setClickable(true);
 
         final int[] selectedCategory = { 0 };
-        categoryView.setDropDownBackgroundDrawable(
-                androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_list));
+        categoryView.setDropDownBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dialog_list));
         categoryView.setOnClickListener(v -> categoryView.showDropDown());
         if (inputCategoryLayout != null) {
             inputCategoryLayout.setEndIconOnClickListener(v -> categoryView.showDropDown());
@@ -1056,7 +1047,7 @@ public class PlanActivity extends MzutBaseActivity {
         // Set background BEFORE show() to avoid visual flash
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(
-                    androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded_dark));
+                    ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded_dark));
         }
 
         dialog.setOnDismissListener(d -> {
@@ -1549,7 +1540,6 @@ public class PlanActivity extends MzutBaseActivity {
         executor.execute(() -> {
             List<PlanRepository.SubjectFilterItem> result = null;
             Exception error = null;
-            boolean fetchedFromNetwork = false;
             boolean pendingForcedRefresh = false;
             try {
                 purgeExpiredFilterCaches();
@@ -1563,7 +1553,6 @@ public class PlanActivity extends MzutBaseActivity {
                 }
 
                 if (result == null) {
-                    fetchedFromNetwork = true;
                     result = planRepository.loadSubjectsForFilter(effectiveForceRefresh);
                     if (result != null && !result.isEmpty()) {
                         saveFilterCache(result);
@@ -1575,7 +1564,6 @@ public class PlanActivity extends MzutBaseActivity {
 
             final List<PlanRepository.SubjectFilterItem> finalRes = result;
             final Exception finalErr = error;
-            final boolean finalFetchedFromNetwork = fetchedFromNetwork;
             final boolean finalPendingForcedRefresh = pendingForcedRefresh;
             runOnUiThread(() -> {
                 if (isDestroyed() || isFinishing())
@@ -1608,7 +1596,7 @@ public class PlanActivity extends MzutBaseActivity {
                     return;
                 }
 
-                if (finalPendingForcedRefresh && finalFetchedFromNetwork) {
+                if (finalPendingForcedRefresh) {
                     markFilterCacheForcedRefreshHandled();
                 }
 
@@ -2218,7 +2206,7 @@ public class PlanActivity extends MzutBaseActivity {
         });
     }
 
-    private View addSlotHighlight(FrameLayoutWithChildren dayBody, int startMin, int endMin) {
+    private void addSlotHighlight(FrameLayoutWithChildren dayBody, int startMin, int endMin) {
         removeSlotHighlight(dayBody); // Remove any existing
 
         int calStart = START_HOUR * 60;
@@ -2250,7 +2238,6 @@ public class PlanActivity extends MzutBaseActivity {
 
         dayBody.addView(highlight);
         highlight.bringToFront();
-        return highlight;
     }
 
     private void removeSlotHighlight(FrameLayoutWithChildren dayBody) {
@@ -2425,26 +2412,26 @@ public class PlanActivity extends MzutBaseActivity {
         separator.addView(line);
 
         int count = markers.size();
+        int badgeLayoutHeight = separatorWidth;
         for (int i = 0; i < count; i++) {
             MarkerSpec marker = markers.get(i);
             int badgeTextWidth = (int) Math.ceil(paint.measureText(marker.label)) + padH;
-            TextView badge = buildMarkerBadge(marker, badgeTextWidth, separatorWidth, padH, padV);
+            TextView badge = buildMarkerBadge(marker, badgeTextWidth, badgeLayoutHeight, padH, padV);
 
             FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
-                    badgeTextWidth, separatorWidth);
+                    badgeTextWidth, badgeLayoutHeight);
             badgeLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
 
-            int badgeVisualHeight = badgeTextWidth;
             int centerY;
             if (count == 1) {
                 centerY = columnHeight / 2;
             } else if (count == 2) {
                 centerY = (i == 0)
-                        ? (badgeVisualHeight / 2 + markerEdgePadding)
-                        : (columnHeight - badgeVisualHeight / 2 - markerEdgePadding);
+                        ? (badgeTextWidth / 2 + markerEdgePadding)
+                        : (columnHeight - badgeTextWidth / 2 - markerEdgePadding);
             } else {
-                int safeTop = badgeVisualHeight / 2 + markerEdgePadding;
-                int safeBottom = columnHeight - badgeVisualHeight / 2 - markerEdgePadding;
+                int safeTop = badgeTextWidth / 2 + markerEdgePadding;
+                int safeBottom = columnHeight - badgeTextWidth / 2 - markerEdgePadding;
                 if (safeBottom <= safeTop) {
                     centerY = columnHeight / 2;
                 } else {
@@ -2453,8 +2440,8 @@ public class PlanActivity extends MzutBaseActivity {
                 }
             }
 
-            int top = centerY - (separatorWidth / 2);
-            int maxTop = Math.max(0, columnHeight - separatorWidth);
+            int top = centerY - (badgeLayoutHeight / 2);
+            int maxTop = Math.max(0, columnHeight - badgeLayoutHeight);
             badgeLp.topMargin = Math.max(0, Math.min(top, maxTop));
             badge.setLayoutParams(badgeLp);
             separator.addView(badge);
@@ -2466,7 +2453,7 @@ public class PlanActivity extends MzutBaseActivity {
     private TextView buildMarkerBadge(
             MarkerSpec marker,
             int badgeTextWidth,
-            int separatorWidth,
+            int badgeLayoutHeight,
             int padH,
             int padV) {
         TextView badge = new TextView(this);
@@ -2483,7 +2470,7 @@ public class PlanActivity extends MzutBaseActivity {
         badgeBg.setCornerRadius(dpToPx(4));
         badgeBg.setStroke(dpToPx(1), ColorUtils.blendARGB(marker.color, 0xFF000000, 0.22f));
         badge.setBackground(badgeBg);
-        badge.setLayoutParams(new FrameLayout.LayoutParams(badgeTextWidth, separatorWidth));
+        badge.setLayoutParams(new FrameLayout.LayoutParams(badgeTextWidth, badgeLayoutHeight));
         return badge;
     }
 

@@ -187,7 +187,7 @@ public class BackgroundSyncWorker extends Worker {
                 Log.d(TAG, "Skipping grades baseline init: no semesters loaded yet.");
                 return;
             }
-            saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
+            saveGradesBaselineSet(prefs, current.keySet());
             prefs.edit().putBoolean(KEY_GRADES_BASELINE_READY, true).apply();
             return;
         }
@@ -208,17 +208,17 @@ public class BackgroundSyncWorker extends Worker {
                 }
             }
             Collections.sort(lines);
-            saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
+            saveGradesBaselineSet(prefs, current.keySet());
 
             String signature = buildAlertSignatureFromList(addedKeys);
-            if (!isDuplicateAlert(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature)) {
                 notifyGrades(context, addedKeys.size(), lines);
                 rememberAlertSignature(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature);
             }
             return;
         }
 
-        saveStringSet(prefs, KEY_GRADES_BASELINE_JSON, current.keySet());
+        saveGradesBaselineSet(prefs, current.keySet());
     }
 
     private void notifyGrades(Context context, int count, List<String> lines) {
@@ -271,7 +271,7 @@ public class BackgroundSyncWorker extends Worker {
         List<PlanSnapshotEvent> previous = readPlanSnapshot(prefs.getString(KEY_PLAN_BASELINE_JSON, "[]"));
 
         if (!baselineReady || previous.isEmpty()) {
-            savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+            savePlanBaselineSnapshot(prefs, current);
             prefs.edit().putBoolean(KEY_PLAN_BASELINE_READY, true).apply();
             return;
         }
@@ -284,9 +284,9 @@ public class BackgroundSyncWorker extends Worker {
 
         if (totalChanges > PLAN_REFRESH_THRESHOLD) {
             markFilterCacheRefreshNeeded(context);
-            savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+            savePlanBaselineSnapshot(prefs, current);
             String signature = "refresh_" + totalChanges + "_" + current.size();
-            if (!isDuplicateAlert(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
                 notifyPlanRefreshed(context);
                 rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
             }
@@ -333,10 +333,10 @@ public class BackgroundSyncWorker extends Worker {
             }
         }
 
-        savePlanSnapshot(prefs, KEY_PLAN_BASELINE_JSON, current);
+        savePlanBaselineSnapshot(prefs, current);
         if (!lines.isEmpty()) {
             String signature = buildAlertSignatureFromList(lines);
-            if (!isDuplicateAlert(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
                 notifyPlanChanges(context, lines);
                 rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
             }
@@ -631,12 +631,12 @@ public class BackgroundSyncWorker extends Worker {
         return out;
     }
 
-    private void saveStringSet(SharedPreferences prefs, String key, Set<String> values) {
+    private void saveGradesBaselineSet(SharedPreferences prefs, Set<String> values) {
         JSONArray arr = new JSONArray();
         for (String value : values) {
             arr.put(value);
         }
-        prefs.edit().putString(key, arr.toString()).apply();
+        prefs.edit().putString(KEY_GRADES_BASELINE_JSON, arr.toString()).apply();
     }
 
     private List<PlanSnapshotEvent> readPlanSnapshot(String json) {
@@ -661,12 +661,12 @@ public class BackgroundSyncWorker extends Worker {
         return out;
     }
 
-    private void savePlanSnapshot(SharedPreferences prefs, String key, List<PlanSnapshotEvent> events) {
+    private void savePlanBaselineSnapshot(SharedPreferences prefs, List<PlanSnapshotEvent> events) {
         JSONArray arr = new JSONArray();
         for (PlanSnapshotEvent ev : events) {
             arr.put(ev.toJson());
         }
-        prefs.edit().putString(key, arr.toString()).apply();
+        prefs.edit().putString(KEY_PLAN_BASELINE_JSON, arr.toString()).apply();
     }
 
     private String buildAlertSignatureFromList(List<String> values) {
@@ -685,16 +685,16 @@ public class BackgroundSyncWorker extends Worker {
         return Integer.toHexString(sb.toString().hashCode());
     }
 
-    private boolean isDuplicateAlert(SharedPreferences prefs, String hashKey, String tsKey, String signature) {
+    private boolean shouldNotifyForSignature(SharedPreferences prefs, String hashKey, String tsKey, String signature) {
         if (signature == null || signature.isEmpty()) {
             return false;
         }
         String prev = prefs.getString(hashKey, "");
         if (!signature.equals(prev)) {
-            return false;
+            return true;
         }
         long lastTs = prefs.getLong(tsKey, 0L);
-        return (System.currentTimeMillis() - lastTs) < ALERT_DEDUP_WINDOW_MS;
+        return (System.currentTimeMillis() - lastTs) >= ALERT_DEDUP_WINDOW_MS;
     }
 
     private void rememberAlertSignature(SharedPreferences prefs, String hashKey, String tsKey, String signature) {

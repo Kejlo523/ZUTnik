@@ -11,6 +11,7 @@ import android.widget.RemoteViewsService;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -94,7 +95,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
                 if (events.isEmpty())
                     return;
 
-                events.sort((a, b) -> Integer.compare(a.startMin, b.startMin));
+                events.sort(Comparator.comparingInt(ev -> ev.startMin));
 
                 LocalDate today = LocalDate.now();
                 if (targetDate.equals(today)) {

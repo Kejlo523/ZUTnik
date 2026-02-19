@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -133,7 +134,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         int nowMin = now.getHour() * 60 + now.getMinute();
 
         LocalDate targetDate = today;
-        String subtitleText = "";
+        String subtitleText = context.getString(R.string.plan_widget_subtitle_today);
         boolean hideList = false;
         boolean listHasItems = false;
         String emptyStateText = context.getString(R.string.plan_widget_empty_state);
@@ -342,7 +343,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                         continue;
                     out.add(ev);
                 }
-                out.sort((a, b) -> Integer.compare(a.startMin, b.startMin));
+                out.sort(Comparator.comparingInt(ev -> ev.startMin));
                 return out;
             }
         }

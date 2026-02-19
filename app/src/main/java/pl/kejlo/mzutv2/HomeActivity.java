@@ -33,12 +33,6 @@ public class HomeActivity extends MzutBaseActivity {
     }
 
     private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private Toolbar toolbar;
-    private android.widget.FrameLayout drawerContentRoot;
-
-    private TextView textWelcome;
-    private TextView textWelcomeSub;
 
     private LinearLayout homeHero;
     private LinearLayout homeSection;
@@ -72,10 +66,10 @@ public class HomeActivity extends MzutBaseActivity {
         setContentView(R.layout.activity_home);
         ThemeManager.applySystemBars(this);
 
-        drawerContentRoot = findViewById(R.id.drawerContentRoot);
+        android.widget.FrameLayout drawerContentRoot = findViewById(R.id.drawerContentRoot);
         drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
-        toolbar = findViewById(R.id.toolbar);
+        NavigationView navigationView = findViewById(R.id.navigationView);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         indicatorOverlay = findViewById(R.id.indicatorOverlay);
 
         ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
@@ -100,18 +94,18 @@ public class HomeActivity extends MzutBaseActivity {
             toolbar.setTitle(R.string.home_toolbar_title);
         }
 
-        textWelcome = findViewById(R.id.textWelcome);
-        textWelcomeSub = findViewById(R.id.textWelcomeSub);
+        TextView textWelcome = findViewById(R.id.textWelcome);
+        TextView textWelcomeSub = findViewById(R.id.textWelcomeSub);
         homeHero = findViewById(R.id.homeHero);
         homeSection = findViewById(R.id.homeSection);
 
         tileGrid = findViewById(R.id.tileGrid);
 
         setupSyncIndicator();
-        setupWelcomeText();
+        setupWelcomeText(textWelcome, textWelcomeSub);
         setupGrid();
         prepareIntroAnimations();
-        scheduleIntroAnimations();
+        scheduleIntroAnimations(drawerContentRoot);
     }
 
 
@@ -202,13 +196,11 @@ public class HomeActivity extends MzutBaseActivity {
         indicatorOverlay.animate()
                 .alpha(1f)
                 .setDuration(200)
-                .withEndAction(() -> {
-                    indicatorOverlay.postDelayed(() -> indicatorOverlay.animate()
+                .withEndAction(() -> indicatorOverlay.postDelayed(() -> indicatorOverlay.animate()
                             .alpha(0f)
                             .setDuration(200)
                             .withEndAction(() -> indicatorOverlay.setVisibility(View.GONE))
-                            .start(), 1000);
-                })
+                            .start(), 1000))
                 .start();
     }
 
@@ -240,7 +232,7 @@ public class HomeActivity extends MzutBaseActivity {
         return super.onPrepareOptionsMenu(menu);
     }
 
-    private void setupWelcomeText() {
+    private void setupWelcomeText(TextView textWelcome, TextView textWelcomeSub) {
         MzutSession s = MzutSession.getInstance(this);
         String username = s.getUsername();
         if (username == null || username.trim().isEmpty()) {
@@ -311,7 +303,7 @@ public class HomeActivity extends MzutBaseActivity {
         }
     }
 
-    private void scheduleIntroAnimations() {
+    private void scheduleIntroAnimations(View drawerContentRoot) {
         if (introScheduled) {
             return;
         }
