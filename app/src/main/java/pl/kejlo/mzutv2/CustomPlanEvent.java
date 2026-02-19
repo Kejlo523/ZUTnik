@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -68,7 +69,7 @@ public class CustomPlanEvent {
      */
     public String getTypeShortLabel(android.content.Context context) {
         if (context == null) {
-            return eventType != null ? eventType.toUpperCase() : "";
+            return eventType != null ? eventType.toUpperCase(Locale.ROOT) : "";
         }
         switch (eventType) {
             case TYPE_EXAM:
@@ -78,7 +79,7 @@ public class CustomPlanEvent {
             case TYPE_TEST:
                 return context.getString(R.string.plan_custom_type_test_short);
             default:
-                return eventType.toUpperCase();
+                return eventType != null ? eventType.toUpperCase(Locale.ROOT) : "";
         }
     }
 

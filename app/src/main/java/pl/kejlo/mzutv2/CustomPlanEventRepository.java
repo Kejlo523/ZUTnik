@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -170,9 +171,9 @@ public class CustomPlanEventRepository {
     public List<CustomPlanEvent> getEventsForSubject(String subjectName) {
         List<CustomPlanEvent> all = loadAll();
         List<CustomPlanEvent> result = new ArrayList<>();
-        String lower = subjectName != null ? subjectName.toLowerCase().trim() : "";
+        String lower = subjectName != null ? subjectName.toLowerCase(Locale.ROOT).trim() : "";
         for (CustomPlanEvent e : all) {
-            if (e.subjectName != null && e.subjectName.toLowerCase().trim().equals(lower)) {
+            if (e.subjectName != null && e.subjectName.toLowerCase(Locale.ROOT).trim().equals(lower)) {
                 result.add(e);
             }
         }
@@ -183,9 +184,9 @@ public class CustomPlanEventRepository {
      * Check if there's a custom event for subject on date
      */
     public CustomPlanEvent findEventForSubjectOnDate(String subjectName, LocalDate date) {
-        String lower = subjectName != null ? subjectName.toLowerCase().trim() : "";
+        String lower = subjectName != null ? subjectName.toLowerCase(Locale.ROOT).trim() : "";
         for (CustomPlanEvent e : getEventsForDate(date)) {
-            if (e.subjectName != null && e.subjectName.toLowerCase().trim().equals(lower)) {
+            if (e.subjectName != null && e.subjectName.toLowerCase(Locale.ROOT).trim().equals(lower)) {
                 return e;
             }
         }

@@ -26,6 +26,50 @@ public class GradesRepository {
         return "";
     }
 
+    private double parseFlexibleDouble(Object raw) {
+        if (raw == null) {
+            return 0.0;
+        }
+        if (raw instanceof Number) {
+            return ((Number) raw).doubleValue();
+        }
+        if (raw instanceof String) {
+            String text = ((String) raw).trim();
+            if (text.isEmpty()) {
+                return 0.0;
+            }
+            // API can return ECTS as localized string, e.g. "4,5".
+            text = text.replace(",", ".");
+            try {
+                return Double.parseDouble(text);
+            } catch (NumberFormatException ignored) {
+                return 0.0;
+            }
+        }
+        return 0.0;
+    }
+
+    private double parseEcts(JSONObject row) {
+        if (row == null) {
+            return 0.0;
+        }
+
+        double value = parseFlexibleDouble(row.opt("ects"));
+        if (value > 0.0) {
+            return value;
+        }
+
+        // Defensive fallbacks for possible key variants from backend payloads.
+        String[] keys = { "ectsO", "ECTS", "punktyEcts", "punkty_ects", "punktyEctsO" };
+        for (String key : keys) {
+            value = parseFlexibleDouble(row.opt(key));
+            if (value > 0.0) {
+                return value;
+            }
+        }
+        return 0.0;
+    }
+
     // Cache for studies
 
     private static final long STUDIES_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
@@ -285,7 +329,7 @@ public class GradesRepository {
 
             g.subjectName = przedmiot;
             g.grade = row.optString("ocena", "");
-            g.weight = row.optDouble("ects", 0.0);
+            g.weight = parseEcts(row);
             g.type = forma;
             g.teacher = row.optString("pracownik", "");
 

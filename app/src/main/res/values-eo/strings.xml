@@ -269,6 +269,10 @@
   <string name="theme_lime">Limonkowy Sztorm</string>
   <string name="offline_mode_label">Bez wiatru (Offline)</string>
   <string name="online_mode_label">Na pełnym morzu (Online)</string>
+  <string name="data_status_online_now">Odświeżono przed chwilą</string>
+  <string name="data_status_cache">Brak informacji o odświeżeniu</string>
+  <string name="data_status_cache_since">Odświeżono %1$s</string>
+  <string name="data_status_syncing">Odświeżanie…</string>
   <string name="grades_grouping_toggle">Grupuj łupy</string>
   <string name="grades_final_grade_label">Wyrok (Ocena końcowa)</string>
   <string name="grades_final_grade_missing">Brak wyroku</string>
@@ -455,4 +459,6 @@
   <string name="period_break_generic">przerwa dydaktyczna</string>
   <string name="period_holiday_winter">wakacje zimowe</string>
   <string name="period_holiday_summer">wakacje letnie</string>
+  <string name="about_logo_desc">Godło mZUT v2</string>
+  <string name="common_close">Zamknij luk</string>
 </resources>

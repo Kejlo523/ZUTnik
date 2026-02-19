@@ -290,6 +290,10 @@
   <string name="home_open_error">Помилка відкриття: %1$s</string>
   <string name="offline_mode_label">Офлайн режим</string>
   <string name="online_mode_label">Онлайн режим</string>
+  <string name="data_status_online_now">Щойно оновлено</string>
+  <string name="data_status_cache">Немає даних про оновлення</string>
+  <string name="data_status_cache_since">Оновлено %1$s</string>
+  <string name="data_status_syncing">Оновлення…</string>
   <string name="grades_grouping_toggle">Групувати оцінки</string>
   <string name="grades_final_grade_label">Підсумкова оцінка</string>
   <string name="grades_final_grade_missing">Немає підсумкової оцінки</string>
@@ -453,4 +457,6 @@
   <string name="notif_plan_line_removed">%1$s: removed (%2$s %3$s)</string>
   <string name="notif_plan_refreshed_title">Timetable refreshed</string>
   <string name="notif_plan_refreshed_text">Large amount of changes detected. A new/refreshed timetable is available.</string>
+  <string name="about_logo_desc">Логотип mZUT v2</string>
+  <string name="common_close">Закрити</string>
 </resources>

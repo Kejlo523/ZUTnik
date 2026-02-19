@@ -38,6 +38,7 @@ import android.widget.Toast;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.TextUtils;
+import android.text.format.DateUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
@@ -106,6 +107,7 @@ public class PlanActivity extends MzutBaseActivity {
     private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
     private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
     private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
+    private static final String KEY_PLAN_LAST_NETWORK_SYNC_TS = "plan_last_network_sync_ts";
     private static final String FILTER_CACHE_JSON_PREFIX = KEY_FILTER_CACHE_JSON + "_";
     private static final String FILTER_CACHE_TS_PREFIX = KEY_FILTER_CACHE_TS + "_";
     private static final long FILTER_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
@@ -127,6 +129,7 @@ public class PlanActivity extends MzutBaseActivity {
     private ImageButton btnMenu;
 
     private TextView tvHeaderLabel;
+    private Toolbar toolbar;
 
     private LinearLayout layoutTimeColumn;
 
@@ -159,6 +162,10 @@ public class PlanActivity extends MzutBaseActivity {
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     private volatile List<PlanRepository.SessionPeriod> sessionDates = new ArrayList<>();
+    private final Object forceRefreshLock = new Object();
+    private boolean pendingForceRefresh = false;
+    private LocalDate pendingForceRefreshDate = null;
+    private String pendingForceRefreshMode = null;
 
     private static class PlanKey {
         final String viewModeId;
@@ -316,7 +323,7 @@ public class PlanActivity extends MzutBaseActivity {
         LinearLayout drawerContentRoot = findViewById(R.id.drawerContentRoot);
         DrawerLayout drawerLayout = findViewById(R.id.drawerLayout);
         NavigationView navigationView = findViewById(R.id.navigationView);
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
 
         ScrollView scrollPlan = findViewById(R.id.scrollPlan);
         scrollPlan.setClipToPadding(false);
@@ -352,6 +359,7 @@ public class PlanActivity extends MzutBaseActivity {
         btnMenu = findViewById(R.id.btnMenu);
 
         tvHeaderLabel = findViewById(R.id.tvHeaderLabel);
+        updatePlanDataFreshness(false);
 
         layoutTimeColumn = findViewById(R.id.layoutTimeColumn);
         progress = findViewById(R.id.planProgress);
@@ -393,6 +401,7 @@ public class PlanActivity extends MzutBaseActivity {
                         } else {
                             updateFixedWeekHeaders(cached.dayColumns);
                         }
+                        updatePlanDataFreshness(false);
                     } else {
                         if (!isMonthMode()) {
                             updateFixedWeekHeaders(Collections.emptyList());
@@ -659,6 +668,7 @@ public class PlanActivity extends MzutBaseActivity {
         PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, currentDate);
         if (cached != null && cached.headerLabel != null) {
             tvHeaderLabel.setText(cached.headerLabel);
+            updatePlanDataFreshness(false);
         } else {
             if (isMonthMode()) {
                 tvHeaderLabel.setText(currentDate.format(DateTimeFormatter.ofPattern("MM.yyyy")));
@@ -695,6 +705,7 @@ public class PlanActivity extends MzutBaseActivity {
                     updateFixedWeekHeaders(cached.dayColumns);
                 if (cached.headerLabel != null)
                     tvHeaderLabel.setText(cached.headerLabel);
+                updatePlanDataFreshness(false);
             } else {
                 if (!isMonthMode())
                     updateFixedWeekHeaders(Collections.emptyList());
@@ -787,15 +798,56 @@ public class PlanActivity extends MzutBaseActivity {
         if (btnRefresh != null) {
             btnRefresh.setOnClickListener(v -> {
                 startRefreshAnimation();
+                updatePlanDataFreshnessText(getString(R.string.data_status_syncing));
                 if (currentSearchQuery != null) {
                     currentSearchQuery = null;
                     Toast.makeText(this, R.string.plan_toast_resetting_search, Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, R.string.plan_toast_refreshed, Toast.LENGTH_SHORT).show();
                 }
+                synchronized (forceRefreshLock) {
+                    pendingForceRefresh = true;
+                    pendingForceRefreshDate = currentDate;
+                    pendingForceRefreshMode = viewModeId;
+                }
                 planCache.clear();
                 loadPlanForCurrentMode();
             });
+        }
+    }
+
+    private void updatePlanDataFreshness(boolean fetchedFromNetwork) {
+        if (prefs == null) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (fetchedFromNetwork) {
+            prefs.edit().putLong(KEY_PLAN_LAST_NETWORK_SYNC_TS, now).apply();
+            updatePlanDataFreshnessText(getString(R.string.data_status_online_now));
+            return;
+        }
+
+        long lastNetworkTs = prefs.getLong(KEY_PLAN_LAST_NETWORK_SYNC_TS, 0L);
+        if (lastNetworkTs > 0L) {
+            if ((now - lastNetworkTs) < DateUtils.MINUTE_IN_MILLIS) {
+                updatePlanDataFreshnessText(getString(R.string.data_status_online_now));
+                return;
+            }
+            CharSequence rel = DateUtils.getRelativeTimeSpanString(
+                    lastNetworkTs,
+                    now,
+                    DateUtils.MINUTE_IN_MILLIS,
+                    DateUtils.FORMAT_ABBREV_RELATIVE);
+            updatePlanDataFreshnessText(getString(R.string.data_status_cache_since, rel));
+        } else {
+            updatePlanDataFreshnessText(getString(R.string.data_status_cache));
+        }
+    }
+
+    private void updatePlanDataFreshnessText(String text) {
+        if (toolbar != null) {
+            toolbar.setSubtitle(text);
         }
     }
 
@@ -1497,13 +1549,14 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     private void loadPageAsync(int position, LocalDate date, String modeId) {
+        final boolean forceRefreshThisLoad = consumePendingForceRefresh(date, modeId);
         executor.execute(() -> {
             PlanRepository.PlanResult res = null;
             try {
                 if (currentSearchQuery != null) {
                     res = planRepository.searchPlan(modeId, date, currentSearchQuery);
                 } else {
-                    res = planRepository.loadPlan(modeId, date, false);
+                    res = planRepository.loadPlan(modeId, date, forceRefreshThisLoad);
                 }
             } catch (Exception ignored) {
             }
@@ -1526,11 +1579,35 @@ public class PlanActivity extends MzutBaseActivity {
                         if (!isMonthMode()) {
                             updateFixedWeekHeaders(finalRes.dayColumns);
                         }
+                        boolean fetchedFromNetwork = finalRes.debug != null
+                                && finalRes.debug.requests != null
+                                && !finalRes.debug.requests.isEmpty();
+                        updatePlanDataFreshness(fetchedFromNetwork);
                     }
                 }
                 stopRefreshAnimation();
             });
         });
+    }
+
+    private boolean consumePendingForceRefresh(LocalDate date, String modeId) {
+        synchronized (forceRefreshLock) {
+            if (!pendingForceRefresh) {
+                return false;
+            }
+            if (pendingForceRefreshDate != null && !pendingForceRefreshDate.equals(date)) {
+                return false;
+            }
+            if (pendingForceRefreshMode != null
+                    && modeId != null
+                    && !pendingForceRefreshMode.equals(modeId)) {
+                return false;
+            }
+            pendingForceRefresh = false;
+            pendingForceRefreshDate = null;
+            pendingForceRefreshMode = null;
+            return true;
+        }
     }
 
     private void loadSubjectsForFilterAsync() {

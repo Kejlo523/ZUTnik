@@ -324,6 +324,10 @@
   <string name="home_open_error">Error opening: %1$s</string>
   <string name="offline_mode_label">Offline mode</string>
   <string name="online_mode_label">Online mode</string>
+  <string name="data_status_online_now">Refreshed just now</string>
+  <string name="data_status_cache">No refresh info</string>
+  <string name="data_status_cache_since">Refreshed %1$s</string>
+  <string name="data_status_syncing">Refreshing…</string>
   <string name="grades_grouping_toggle">Group grades</string>
   <string name="grades_final_grade_label">Final grade</string>
   <string name="grades_final_grade_missing">No final grade</string>
@@ -440,6 +444,8 @@
   <string name="about_link_title_project">Project website</string>
   <string name="about_link_title_author">Author website</string>
   <string name="about_link_title_privacy">Privacy policy</string>
+  <string name="about_logo_desc">mZUT v2 logo</string>
+  <string name="common_close">Close</string>
   <!-- Missing Strings -->
   <string name="nav_watch_searching">Searching for watch…</string>
   <string name="wear_sync_status_prepare">Preparing data…</string>

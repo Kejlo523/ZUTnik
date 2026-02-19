@@ -123,7 +123,7 @@ public class WearPlanSnapshotBuilder {
                 subtitleText = localizedContext.getString(R.string.plan_widget_subtitle_tomorrow);
             } else {
                 String dayName = targetDate.format(dayOfWeekFormatter);
-                dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1);
+                dayName = dayName.substring(0, 1).toUpperCase(snapshotLocale) + dayName.substring(1);
                 subtitleText = dayName;
             }
 

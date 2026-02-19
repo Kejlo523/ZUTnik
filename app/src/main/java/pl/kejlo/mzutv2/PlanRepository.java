@@ -834,7 +834,7 @@ public class PlanRepository {
 
     private static String encodeUtf8(String value) {
         try {
-            return URLEncoder.encode(value != null ? value : "", "UTF-8");
+            return URLEncoder.encode(value != null ? value : "", StandardCharsets.UTF_8.name());
         } catch (Exception e) {
             return value != null ? value : "";
         }

@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.text.format.DateUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
@@ -43,11 +44,13 @@ public class GradesActivity extends MzutBaseActivity {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
 
-    // Grades cache - valid for 7 days
-    private static final long GRADES_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L; // 7 days
+    // Grades cache - valid for 1 day
+    private static final long GRADES_CACHE_TTL_MS = 1L * 24L * 60L * 60L * 1000L; // 1 day
+    private static final long SEMESTERS_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L; // 7 days
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
     private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
     private static final String KEY_TOTAL_ECTS_CACHE_PREFIX = "total_ects_";
+    private static final String KEY_GRADES_LAST_NETWORK_TS_PREFIX = "grades_last_network_ts_";
 
     private Spinner spinnerStudies;
     private Spinner spinnerSemesters;
@@ -59,6 +62,7 @@ public class GradesActivity extends MzutBaseActivity {
     private TextView tvAverageValue;
     private TextView tvEctsValue;
     private TextView tvEctsTotalValue;
+    private Toolbar toolbar;
 
     private GradesAdapter flatAdapter;
     private GroupedGradesAdapter groupedAdapter;
@@ -93,7 +97,7 @@ public class GradesActivity extends MzutBaseActivity {
         View drawerContentRoot = findViewById(R.id.drawerContentRoot);
         DrawerLayout drawerLayout = findViewById(R.id.drawerLayout);
         NavigationView navigationView = findViewById(R.id.navigationView);
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
 
         ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -110,6 +114,7 @@ public class GradesActivity extends MzutBaseActivity {
         tvAverageValue = findViewById(R.id.tvAverageValue);
         tvEctsValue = findViewById(R.id.tvEctsValue);
         tvEctsTotalValue = findViewById(R.id.tvEctsTotalValue);
+        updateGradesDataFreshness(false);
 
         View btnGradesRefresh = findViewById(R.id.btnGradesRefresh);
 
@@ -141,6 +146,7 @@ public class GradesActivity extends MzutBaseActivity {
         // Grades refresh button - ALWAYS hits the network, ignores cache TTL
         if (btnGradesRefresh != null) {
             btnGradesRefresh.setOnClickListener(v -> {
+                updateGradesDataFreshnessText(getString(R.string.data_status_syncing));
                 Toast.makeText(
                         GradesActivity.this,
                         R.string.grades_refresh_toast,
@@ -325,6 +331,7 @@ public class GradesActivity extends MzutBaseActivity {
         if (sessionStudies == null || sessionStudies.isEmpty()) {
             spinnerStudies.setVisibility(View.GONE);
             setTotalEctsValue(0.0);
+            updateGradesDataFreshness(false);
             return;
         }
 
@@ -364,6 +371,7 @@ public class GradesActivity extends MzutBaseActivity {
                     s.setActiveStudyIndex(position);
                     s.saveToPreferences(GradesActivity.this);
                     setTotalEctsValue(0.0);
+                    updateGradesDataFreshness(false);
                     // Study changed => reload semesters (repository itself will use getStudies
                     // cache)
                     reloadSemesters();
@@ -500,6 +508,7 @@ public class GradesActivity extends MzutBaseActivity {
                     currentGradesRaw.clear();
                     applyGradesView();
                     updateSummaryCards();
+                    updateGradesDataFreshness(false);
                     refreshTotalEctsForActiveStudyAsync();
                     return;
                 }
@@ -581,19 +590,19 @@ public class GradesActivity extends MzutBaseActivity {
 
         List<GroupedGradesAdapter.GradeGroup> result = new ArrayList<>();
         for (GroupedGradesAdapter.GradeGroup g : map.values()) {
-            boolean hasOthers = g.others != null && !g.others.isEmpty();
+            boolean hasOthers = !g.others.isEmpty();
             boolean hasFinal = g.finalGrade != null;
+            boolean finalHasValue = hasFinal
+                    && g.finalGrade.grade != null
+                    && !g.finalGrade.grade.trim().isEmpty();
 
-            // If only final grade exists and nothing else -> hide this subject
-            if (!hasOthers && hasFinal) {
-                continue;
-            }
-
-            if (!hasFinal && hasOthers) {
+            // Show subject even if there are no entered grades yet.
+            // Mark as missing when final grade is absent OR empty.
+            if (!hasFinal || !finalHasValue) {
                 g.finalMissing = true;
             }
 
-            if (hasOthers) {
+            if (hasOthers || hasFinal) {
                 result.add(g);
             }
         }
@@ -703,6 +712,7 @@ public class GradesActivity extends MzutBaseActivity {
                 currentGradesRaw.addAll(cached);
                 applyGradesView();
                 updateSummaryCards();
+                updateGradesDataFreshness(false);
                 // Fresh cache -> skip network request
                 return;
             }
@@ -742,6 +752,7 @@ public class GradesActivity extends MzutBaseActivity {
                         currentGradesRaw.addAll(cached);
                         applyGradesView();
                         updateSummaryCards();
+                        updateGradesDataFreshness(false);
 
                         int msgId = forceNetwork
                                 ? R.string.grades_refresh_network_failed_using_cache
@@ -767,6 +778,7 @@ public class GradesActivity extends MzutBaseActivity {
                                 Toast.LENGTH_LONG).show();
                     }
                     showEmptyState(true);
+                    updateGradesDataFreshness(false);
                     return;
                 }
                 currentGradesRaw.clear();
@@ -777,6 +789,7 @@ public class GradesActivity extends MzutBaseActivity {
                 }
                 applyGradesView();
                 updateSummaryCards();
+                updateGradesDataFreshness(true);
             });
         });
     }
@@ -916,6 +929,53 @@ public class GradesActivity extends MzutBaseActivity {
         if (tvEctsTotalValue != null) {
             int rounded = (int) Math.round(Math.max(0.0, totalEcts));
             tvEctsTotalValue.setText(String.valueOf(rounded));
+        }
+    }
+
+    private String buildGradesLastSyncKey(Study study) {
+        if (study == null || study.przynaleznoscId == null) {
+            return null;
+        }
+        MzutSession s = MzutSession.getInstance();
+        String userId = s.getUserId();
+        if (userId == null) {
+            userId = "unknown";
+        }
+        return KEY_GRADES_LAST_NETWORK_TS_PREFIX + userId + "_" + study.przynaleznoscId;
+    }
+
+    private void updateGradesDataFreshness(boolean fetchedFromNetwork) {
+        Study activeStudy = getActiveStudySnapshot();
+        String lastSyncKey = buildGradesLastSyncKey(activeStudy);
+        SharedPreferences cachePrefs = getGradesCachePrefs();
+        long now = System.currentTimeMillis();
+
+        if (fetchedFromNetwork && lastSyncKey != null) {
+            cachePrefs.edit().putLong(lastSyncKey, now).apply();
+            updateGradesDataFreshnessText(getString(R.string.data_status_online_now));
+            return;
+        }
+
+        long lastNetworkTs = lastSyncKey != null ? cachePrefs.getLong(lastSyncKey, 0L) : 0L;
+        if (lastNetworkTs > 0L) {
+            if ((now - lastNetworkTs) < DateUtils.MINUTE_IN_MILLIS) {
+                updateGradesDataFreshnessText(getString(R.string.data_status_online_now));
+                return;
+            }
+            CharSequence rel = DateUtils.getRelativeTimeSpanString(
+                    lastNetworkTs,
+                    now,
+                    DateUtils.MINUTE_IN_MILLIS,
+                    DateUtils.FORMAT_ABBREV_RELATIVE);
+            updateGradesDataFreshnessText(getString(R.string.data_status_cache_since, rel));
+        } else {
+            updateGradesDataFreshnessText(getString(R.string.data_status_cache));
+        }
+    }
+
+    private void updateGradesDataFreshnessText(String text) {
+        if (toolbar != null) {
+            toolbar.setSubtitle(text);
         }
     }
 
@@ -1280,12 +1340,8 @@ public class GradesActivity extends MzutBaseActivity {
 
         try {
             JSONObject wrapper = new JSONObject(json);
-            // We can treat semester list cache as "long lived" or check TTL.
-            // Since repo uses 7 days, we can match that or just use it as persistent
-            // fallback.
-            // Let's use same TTL logic.
             long ts = wrapper.optLong("ts", 0L);
-            if ((System.currentTimeMillis() - ts) > GRADES_CACHE_TTL_MS) {
+            if ((System.currentTimeMillis() - ts) > SEMESTERS_CACHE_TTL_MS) {
                 if (NetworkStatusHelper.isNetworkAvailable(this)) {
                     return null;
                 }
