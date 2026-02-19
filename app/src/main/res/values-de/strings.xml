@@ -274,6 +274,10 @@
   <string name="theme_lime">Limette</string>
   <string name="offline_mode_label">Offline-Modus</string>
   <string name="online_mode_label">Online-Modus</string>
+  <string name="data_status_online_now">Gerade aktualisiert</string>
+  <string name="data_status_cache">Keine Aktualisierungsinfo</string>
+  <string name="data_status_cache_since">Aktualisiert %1$s</string>
+  <string name="data_status_syncing">Aktualisierung…</string>
   <string name="grades_grouping_toggle">Noten gruppieren</string>
   <string name="grades_final_grade_label">Endnote</string>
   <string name="grades_final_grade_missing">Keine Endnote</string>
@@ -460,4 +464,6 @@
   <string name="period_break_generic">Didaktische Pause</string>
   <string name="period_holiday_winter">Winterferien</string>
   <string name="period_holiday_summer">Sommerferien</string>
+  <string name="about_logo_desc">mZUT v2-Logo</string>
+  <string name="common_close">Schließen</string>
 </resources>

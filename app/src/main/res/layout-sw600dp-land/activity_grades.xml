@@ -140,18 +140,18 @@
                                 android:text="@string/grades_summary_ects_total_label"
                                 android:textAllCaps="true"
                                 android:textColor="?attr/mzMuted"
-                                android:textSize="9sp"
+                                android:textSize="11sp"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/tvEctsTotalValue"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="1dp"
+                                android:layout_marginTop="2dp"
                                 android:contentDescription="@string/grades_summary_ects_total_label"
                                 android:text="@string/common_zero"
                                 android:textColor="?attr/mzText"
-                                android:textSize="18sp"
+                                android:textSize="36sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>

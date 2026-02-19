@@ -86,7 +86,7 @@
                             android:src="@drawable/ic_more_vert"
                             app:tint="?attr/mzText"
                             android:padding="6dp"
-                            android:scaleType="fitCenter" />
+                        android:scaleType="fitCenter" />
                     </LinearLayout>
                 </LinearLayout>
 

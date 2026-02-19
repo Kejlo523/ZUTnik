@@ -1,18 +1,15 @@
 package pl.kejlo.mzutv2;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.core.content.ContextCompat;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -183,12 +180,16 @@ public class InfoActivity extends MzutBaseActivity {
         if (btnInfoRefresh != null) {
             btnInfoRefresh.setOnClickListener(v -> startInfoLoad(true));
         }
+
     }
 
     // region Network loading
 
     private void startInfoLoad(boolean forceReload) {
-        // forceReload simply ignores TTL at the call site and always fetches
+        // Manual refresh should bypass local info cache for current study.
+        if (forceReload) {
+            clearInfoCacheForActiveStudy();
+        }
         Toast.makeText(this, R.string.info_sync_in_progress, Toast.LENGTH_SHORT).show();
 
         if (currentInfoFuture != null) {
@@ -384,6 +385,21 @@ public class InfoActivity extends MzutBaseActivity {
         } catch (JSONException e) {
             // Cache is optional, ignore errors
         }
+    }
+
+    private void clearInfoCacheForActiveStudy() {
+        MzutSession session = MzutSession.getInstance();
+        int index = session.getActiveStudyIndex();
+        if (index < 0) {
+            index = 0;
+        }
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
+        prefs.edit()
+                .remove(getCacheKey(KEY_INFO_DETAILS_JSON, index))
+                .remove(getCacheKey(KEY_INFO_HISTORY_JSON, index))
+                .remove(getCacheKey(KEY_INFO_TIMESTAMP, index))
+                .apply();
     }
 
     // Creates history views based on cached JSON.

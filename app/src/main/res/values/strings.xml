@@ -188,7 +188,7 @@
   <string name="grades_average_placeholder">–</string>
   <string name="grades_summary_average_label">Średnia z ocen</string>
   <string name="grades_summary_ects_label">Suma ECTS</string>
-  <string name="grades_summary_ects_total_label">Łącznie na kierunku</string>
+  <string name="grades_summary_ects_total_label">ECTS Łącznie</string>
   <string name="grades_grouping_toggle">Grupuj oceny</string>
   <string name="grades_final_grade_label">Ocena końcowa</string>
   <string name="grades_final_grade_missing">Brak oceny końcowej</string>
@@ -365,6 +365,10 @@
   <string name="theme_lime">Limonka</string>
   <string name="offline_mode_label">Tryb offline</string>
   <string name="online_mode_label">Tryb online</string>
+  <string name="data_status_online_now">Odświeżono przed chwilą</string>
+  <string name="data_status_cache">Brak informacji o odświeżeniu</string>
+  <string name="data_status_cache_since">Odświeżono %1$s</string>
+  <string name="data_status_syncing">Odświeżanie…</string>
   <!-- Attendance / Obecności -->
   <string name="attendance_title">Obecności</string>
   <string name="attendance_hours_format">Godzin: %1$d</string>
@@ -451,4 +455,6 @@
   <string name="about_link_title_project">Strona projektu</string>
   <string name="about_link_title_author">Strona autora</string>
   <string name="about_link_title_privacy">Polityka prywatności</string>
+  <string name="about_logo_desc">Logo mZUT v2</string>
+  <string name="common_close">Zamknij</string>
 </resources>

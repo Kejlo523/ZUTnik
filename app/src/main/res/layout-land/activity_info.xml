@@ -4,9 +4,9 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_landscape_canvas"
+    android:background="@drawable/bg_app"
     android:fitsSystemWindows="false"
-    app:statusBarBackground="?attr/mzBg">
+    app:statusBarBackground="@android:color/transparent">
 
     <LinearLayout
         android:id="@+id/drawerContentRoot"
@@ -24,405 +24,422 @@
             android:paddingEnd="16dp"
             android:titleTextColor="?attr/mzText" />
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:baselineAligned="false"
-            android:orientation="horizontal"
-            android:padding="16dp">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:overScrollMode="ifContentScrolls"
+            android:scrollbars="none">
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:id="@+id/infoContent"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.35"
-                android:layout_marginEnd="16dp"
-                android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:background="@drawable/bg_landscape_panel"
-                android:padding="16dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp">
-
-                    <ImageView
-                        android:id="@+id/btnInfoRefresh"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:padding="2dp"
-                        android:src="@android:drawable/ic_popup_sync"
-                        app:tint="?attr/mzMuted" />
-                </RelativeLayout>
-
-                <ImageView
-                    android:id="@+id/imageInfoAvatar"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:background="@drawable/bg_avatar_round"
-                    android:clipToOutline="true"
-                    android:padding="2dp"
-                    android:scaleType="centerCrop"
-                    android:src="@mipmap/ic_launcher_round" />
-
-                <TextView
-                    android:id="@+id/tvInfoName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center"
-                    android:text="@string/nav_header_default_username"
-                    android:textColor="?attr/mzText"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvInfoUserId"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="24dp"
-                    android:text="@string/info_user_id_placeholder"
-                    android:textColor="?attr/mzMuted"
-                    android:textSize="13sp" />
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="10dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/imageInfoAvatar"
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:background="@drawable/bg_avatar_round"
+                            android:clipToOutline="true"
+                            android:padding="2dp"
+                            android:scaleType="centerCrop"
+                            android:src="@mipmap/ic_launcher_round" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvInfoName"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:text="@string/nav_header_default_username"
+                                android:textColor="?attr/mzText"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvInfoUserId"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="@string/info_user_id_placeholder"
+                                android:textColor="?attr/mzMuted"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:id="@+id/btnInfoRefresh"
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_marginStart="8dp"
+                            android:alpha="0.8"
+                            android:background="@drawable/bg_circle_soft"
+                            android:contentDescription="@string/plan_button_refresh"
+                            android:padding="8dp"
+                            android:src="@android:drawable/ic_popup_sync"
+                            app:tint="?attr/mzMuted" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <Spinner
+                        android:id="@+id/spinnerStudies"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_spinner_dark"
+                        android:popupBackground="?attr/mzBg"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:layout_marginStart="4dp"
-                        android:text="@string/info_study_switch_label"
-                        android:textColor="?attr/mzMuted"
-                        android:textSize="12sp"
+                        android:layout_marginBottom="10dp"
+                        android:text="@string/info_current_studies_title"
+                        android:textColor="?attr/mzText"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_card_soft"
-                        android:paddingStart="4dp"
-                        android:paddingEnd="4dp">
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
 
-                        <Spinner
-                            android:id="@+id/spinnerStudies"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:background="@android:color/transparent"
-                            android:popupBackground="?attr/mzBg"
-                            android:spinnerMode="dropdown" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_album"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoAlbum"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-
-            <ScrollView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.65"
-                android:scrollbars="vertical"
-                android:background="@drawable/bg_landscape_panel"
-                android:padding="12dp">
-
-                <LinearLayout
-                    android:id="@+id/infoContent"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="20dp"
-                        android:background="@drawable/bg_card_soft"
-                        android:orientation="vertical"
-                        android:padding="20dp">
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_faculty"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoWydzial"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_field"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoKierunek"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_form"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoForma"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_level"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoPoziom"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_specialty"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoSpecjalnosc"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/containerSpecjalizacja"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_specialisation"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoSpecjalizacja"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_status"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoStatus"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="4dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:text="@string/info_current_studies_title"
+                            android:layout_marginEnd="4dp"
+                            android:text="@string/info_label_academic_year"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoRok"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="16dp"
+                            android:text="@string/common_dash"
                             android:textColor="?attr/mzText"
-                            android:textSize="16sp"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical">
+                            android:layout_marginEnd="4dp"
+                            android:text="@string/info_label_semester"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_album"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoAlbum"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_faculty"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoWydzial"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_field"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoKierunek"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_form"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoForma"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_level"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoPoziom"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_specialty"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoSpecjalnosc"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:id="@+id/containerSpecjalizacja"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_specialisation"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoSpecjalizacja"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/info_label_status"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp" />
-                                <TextView
-                                    android:id="@+id/tvInfoStatus"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1.3"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingVertical="6dp">
-
-                                <TextView
-                                    android:text="@string/info_label_academic_year"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginEnd="4dp"/>
-                                <TextView
-                                    android:id="@+id/tvInfoRok"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginEnd="16dp"/>
-
-                                <TextView
-                                    android:text="@string/info_label_semester"
-                                    android:textColor="?attr/mzMuted"
-                                    android:textSize="13sp"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginEnd="4dp"/>
-                                <TextView
-                                    android:id="@+id/tvInfoSemestr"
-                                    android:text="@string/common_dash"
-                                    android:textColor="?attr/mzText"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"/>
-                            </LinearLayout>
-                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/tvInfoSemestr"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:background="@drawable/bg_card_soft"
-                        android:orientation="vertical"
-                        android:padding="20dp">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:background="@drawable/bg_circle_soft"
+                            android:contentDescription="@null"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_calendar"
+                            app:tint="?attr/mzMuted" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
+                            android:layout_marginStart="10dp"
                             android:text="@string/info_history_title"
                             android:textColor="?attr/mzText"
                             android:textSize="16sp"
                             android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:id="@+id/infoHistoryContainer"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical" />
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/infoProgress"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:id="@+id/infoHistoryContainer"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_marginBottom="24dp"
-                        android:text="@string/info_sync_in_progress"
-                        android:textColor="?attr/mzMuted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
-
+                        android:layout_marginTop="10dp"
+                        android:orientation="vertical" />
                 </LinearLayout>
-            </ScrollView>
-        </LinearLayout>
+
+                <TextView
+                    android:id="@+id/infoProgress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/info_sync_in_progress"
+                    android:textColor="?attr/mzMuted"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </ScrollView>
     </LinearLayout>
 
     <com.google.android.material.navigation.NavigationView

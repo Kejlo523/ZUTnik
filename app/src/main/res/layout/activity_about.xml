@@ -44,9 +44,12 @@
                     android:paddingBottom="32dp">
 
                     <ImageView
+                        android:id="@+id/aboutLogo"
                         android:layout_width="96dp"
                         android:layout_height="96dp"
                         android:layout_marginBottom="16dp"
+                        android:contentDescription="@string/about_logo_desc"
+                        android:longClickable="true"
                         android:src="@mipmap/ic_zut_logo_round"
                         android:elevation="0dp"/>
                     <!-- Added bg_circle_soft to give it a rim if needed, though elevation handles shadow -->

@@ -20,6 +20,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.Locale;
+
 public class NewsDetailActivity extends AppCompatActivity {
 
     @Override
@@ -141,7 +143,7 @@ public class NewsDetailActivity extends AppCompatActivity {
                         return super.shouldInterceptRequest(view, request);
                     }
                     String url = request.getUrl().toString();
-                    String lower = url.toLowerCase();
+                    String lower = url.toLowerCase(Locale.ROOT);
 
                     // Intercept images to enforce resizing/compression/caching
                     if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")

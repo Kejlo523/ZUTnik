@@ -129,7 +129,7 @@
                             android:text="@string/grades_summary_ects_total_label"
                             android:textAllCaps="true"
                             android:textColor="?attr/mzMuted"
-                            android:textSize="10sp"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -140,7 +140,7 @@
                             android:contentDescription="@string/grades_summary_ects_total_label"
                             android:text="@string/common_zero"
                             android:textColor="?attr/mzText"
-                            android:textSize="14sp"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
