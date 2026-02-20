@@ -205,6 +205,7 @@
     </string>
   <string name="news_header_title">Kanał ogłoszeń dla studentów</string>
   <string name="news_header_source_info">Źródło RSS: studenci ZUT</string>
+  <string name="news_relative_just_now">przed chwilą</string>
   <string name="news_empty_state">
         Brak aktualności lub problem z pobraniem kanału RSS.
     </string>

@@ -169,6 +169,7 @@
     </string>
   <string name="news_header_title">Announcements channel for students</string>
   <string name="news_header_source_info">RSS source: ZUT students</string>
+  <string name="news_relative_just_now">just now</string>
   <string name="news_empty_state">
         No news or a problem occurred while fetching the RSS channel.
     </string>

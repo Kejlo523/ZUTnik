@@ -187,7 +187,7 @@ public class PlanRepository {
     private static String sCachedAlbum;
     private static long sCachedAlbumTs;
     private static String sCachedAlbumStudyId;
-    private static final long ALBUM_TTL_MS = 24L * 60L * 60L * 1000L; // 24h
+    private static final long ALBUM_TTL_MS = CachePolicy.PLAN_ALBUM_TTL_MS;
 
     private static String fmtPlDate(LocalDate date) {
         String dz;
@@ -302,11 +302,14 @@ public class PlanRepository {
             return null;
         }
 
-        int idx = session.getActiveStudyIndex();
-        if (idx < 0 || idx >= studies.size()) {
-            idx = 0;
+        Study active = session.getActiveStudy();
+        if (active == null && !studies.isEmpty()) {
+            session.setActiveStudyIndex(0);
+            active = session.getActiveStudy();
         }
-        Study active = studies.get(idx);
+        if (active == null) {
+            return null;
+        }
         if (active.przynaleznoscId == null) {
             return null;
         }
@@ -665,6 +668,7 @@ public class PlanRepository {
         String formFull = lower(e.lessonForm);
         String formShort = lower(e.lessonFormShort);
         String subject = lower(e.subject != null && !e.subject.isEmpty() ? e.subject : e.title);
+        String form = formFull != null ? formFull : "";
 
         switch (statusShort) {
             case "e":
@@ -685,51 +689,106 @@ public class PlanRepository {
 
         String hay = formFull + " " + subject;
 
-        if (hay.contains("egzamin zdalny"))
+        if (hay.contains("egzamin zdalny")
+                || form.contains("remote exam")
+                || form.contains("online exam")
+                || form.contains("distance exam"))
             return "week-event-type-exam-remote";
-        if (hay.contains("egzamin"))
+        if (hay.contains("egzamin")
+                || form.contains("exam")
+                || form.contains("examination"))
             return "week-event-type-exam";
-        if (hay.contains("odwołane"))
+        if (hay.contains("odwołane")
+                || hay.contains("odwolane")
+                || form.contains("cancelled")
+                || form.contains("canceled"))
             return "week-event-type-cancelled";
-        if (hay.contains("rektorskie"))
+        if (hay.contains("rektorskie") || form.contains("rector"))
             return "week-event-type-rector";
-        if (hay.contains("dziekańskie") || hay.contains("godziny dziekańskie"))
+        if (hay.contains("dziekańskie")
+                || hay.contains("godziny dziekańskie")
+                || form.contains("dean"))
             return "week-event-type-dean";
-        if (hay.contains("zajęcia zdalne") || hay.contains("zdalne"))
+        if (hay.contains("zajęcia zdalne")
+                || hay.contains("zdalne")
+                || form.contains("remote classes")
+                || form.contains("online classes")
+                || form.contains("distance classes")
+                || form.contains("distance learning"))
             return "week-event-type-remote";
 
         // Pass types
-        if (hay.contains("zaliczenie zdalne poprawkowe") || "zalzdp".equals(formShort))
+        if (hay.contains("zaliczenie zdalne poprawkowe")
+                || form.contains("remote retake pass")
+                || form.contains("remote retake credit")
+                || "zalzdp".equals(formShort))
             return "week-event-type-pass-remote-retake";
-        if (hay.contains("zaliczenie zdalne") || "zalzd".equals(formShort))
+        if (hay.contains("zaliczenie zdalne")
+                || form.contains("remote pass")
+                || form.contains("remote credit")
+                || "zalzd".equals(formShort))
             return "week-event-type-pass-remote";
-        if (hay.contains("zaliczenie poprawkow") || "zalp".equals(formShort))
+        if (hay.contains("zaliczenie poprawkow")
+                || form.contains("retake pass")
+                || form.contains("retake credit")
+                || "zalp".equals(formShort))
             return "week-event-type-pass-retake";
-        if (hay.contains("zaliczenie") || "zal".equals(formShort))
+        if (hay.contains("zaliczenie")
+                || form.contains("pass")
+                || form.contains("credit")
+                || "zal".equals(formShort))
             return "week-event-type-pass";
 
-        if (hay.contains("seminarium dyplomowe") || "sd".equals(formShort))
+        if (hay.contains("seminarium dyplomowe")
+                || form.contains("diploma seminar")
+                || "sd".equals(formShort))
             return "week-event-type-diploma-seminar";
-        if (hay.contains("seminarium") || "s".equals(formShort))
+        if (hay.contains("seminarium")
+                || form.contains("seminar")
+                || "s".equals(formShort))
             return "week-event-type-seminar";
-        if (hay.contains("praca dyplomowa") || "pd".equals(formShort))
+        if (hay.contains("praca dyplomowa")
+                || form.contains("diploma")
+                || form.contains("thesis")
+                || "pd".equals(formShort))
             return "week-event-type-diploma";
-        if (hay.contains("projekt") || "p".equals(formShort))
+        if (hay.contains("projekt")
+                || form.contains("project")
+                || "p".equals(formShort))
             return "week-event-type-project";
-        if (hay.contains("lektorat") || "lek".equals(formShort))
+        if (hay.contains("lektorat")
+                || form.contains("lectorate")
+                || form.contains("language course")
+                || "lek".equals(formShort))
             return "week-event-type-lectorate";
-        if (hay.contains("konserwatorium") || "k".equals(formShort))
+        if (hay.contains("konserwatorium")
+                || form.contains("conservatory")
+                || "k".equals(formShort))
             return "week-event-type-conservatory";
-        if (hay.contains("konsultacje") || "kons".equals(formShort))
+        if (hay.contains("konsultacje")
+                || form.contains("consultation")
+                || form.contains("consultations")
+                || "kons".equals(formShort))
             return "week-event-type-consultation";
-        if (hay.contains("terenowe") || "t".equals(formShort))
+        if (hay.contains("terenowe")
+                || form.contains("field")
+                || "t".equals(formShort))
             return "week-event-type-field";
 
-        if (hay.contains("laboratorium") || "l".equals(formShort))
+        if (hay.contains("laboratorium")
+                || form.contains("laboratory")
+                || form.contains(" lab")
+                || "l".equals(formShort))
             return "week-event-type-lab";
-        if (hay.contains("audytoryjne") || "a".equals(formShort))
+        if (hay.contains("audytoryjne")
+                || form.contains("auditory")
+                || form.contains("classroom")
+                || "a".equals(formShort))
             return "week-event-type-auditory";
-        if (hay.contains("wykład") || "w".equals(formShort))
+        if (hay.contains("wykład")
+                || hay.contains("wyklad")
+                || form.contains("lecture")
+                || "w".equals(formShort))
             return "week-event-type-lecture";
 
         if ("z".equals(formShort))
@@ -1133,7 +1192,7 @@ public class PlanRepository {
 
             String userAlbum = resolveAlbumNumber();
             boolean isUserPlan = (userAlbum != null && userAlbum.equals(album));
-            long ttl = isUserPlan ? 3_600_000L : 0L; // 1h cache
+            long ttl = isUserPlan ? CachePolicy.PLAN_USER_SCOPE_TTL_MS : 0L;
 
             boolean needRefresh = forceScopeRefresh || (lastScopeMs == null) || ((now - lastScopeMs) > ttl);
 
@@ -1474,11 +1533,54 @@ public class PlanRepository {
             return Collections.emptyList();
         }
 
+        return buildSubjectFilterItems(byDate, range.start, range.end);
+    }
+
+    public List<SubjectFilterItem> loadSubjectsForSemester(Semester semester)
+            throws IOException, JSONException {
+        return loadSubjectsForSemester(semester, false);
+    }
+
+    public List<SubjectFilterItem> loadSubjectsForSemester(Semester semester, boolean forceRefresh)
+            throws IOException, JSONException {
+        String album = resolveAlbumNumber();
+        if (album == null) {
+            return Collections.emptyList();
+        }
+
+        AcademicRange range = resolveAcademicRangeForSemester(semester);
+        if (range == null) {
+            return Collections.emptyList();
+        }
+
+        Map<LocalDate, List<PlanEventRaw>> byDate = ensureScopeData(
+                album,
+                range.start,
+                range.end,
+                "filter_semester",
+                forceRefresh,
+                new PlanDebug());
+
+        if (byDate == null || byDate.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return buildSubjectFilterItems(byDate, range.start, range.end);
+    }
+
+    private List<SubjectFilterItem> buildSubjectFilterItems(
+            Map<LocalDate, List<PlanEventRaw>> byDate,
+            LocalDate rangeStart,
+            LocalDate rangeEnd) {
+        if (byDate == null || byDate.isEmpty() || rangeStart == null || rangeEnd == null) {
+            return Collections.emptyList();
+        }
+
         Map<String, String> normalizedToSubject = new HashMap<>();
         Map<String, Set<String>> normalizedToTypes = new HashMap<>();
 
-        LocalDate iter = range.start;
-        while (!iter.isAfter(range.end)) {
+        LocalDate iter = rangeStart;
+        while (!iter.isAfter(rangeEnd)) {
             List<PlanEventRaw> events = byDate.get(iter);
             if (events != null) {
                 for (PlanEventRaw e : events) {
@@ -1554,6 +1656,114 @@ public class PlanRepository {
         }
 
         return items;
+    }
+
+    private AcademicRange resolveAcademicRangeForSemester(Semester semester) {
+        if (semester == null) {
+            return null;
+        }
+
+        Integer yearStart = null;
+        Integer yearEnd = null;
+        String yearRaw = semester.rokAkademicki != null ? semester.rokAkademicki.trim() : "";
+        if (!yearRaw.isEmpty()) {
+            String compact = yearRaw.replace(" ", "");
+            int slash = compact.indexOf('/');
+            if (slash > 0 && slash < compact.length() - 1) {
+                yearStart = parseAcademicYearValue(compact.substring(0, slash));
+                yearEnd = parseAcademicYearValue(compact.substring(slash + 1));
+            } else {
+                Integer single = parseAcademicYearValue(compact);
+                if (single != null) {
+                    yearStart = single;
+                    yearEnd = single + 1;
+                }
+            }
+        }
+
+        String term = normalizeFilterString(semester.pora);
+        boolean isWinter = term.contains("zim") || term.contains("winter");
+        boolean isSummer = term.contains("let") || term.contains("sum");
+
+        if (!isWinter && !isSummer) {
+            String nrRaw = semester.nrSemestru != null ? semester.nrSemestru : "";
+            String nrDigits = nrRaw.replaceAll("[^0-9]", "");
+            if (!nrDigits.isEmpty()) {
+                try {
+                    int nr = Integer.parseInt(nrDigits);
+                    if (nr > 0) {
+                        isWinter = (nr % 2) == 1;
+                        isSummer = !isWinter;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        if (isWinter) {
+            int startYear;
+            int endYear;
+            if (yearStart != null && yearEnd != null) {
+                startYear = yearStart;
+                endYear = yearEnd;
+            } else if (yearStart != null) {
+                startYear = yearStart;
+                endYear = yearStart + 1;
+            } else if (yearEnd != null) {
+                endYear = yearEnd;
+                startYear = yearEnd - 1;
+            } else {
+                AcademicRange current = resolveCurrentAcademicTermRange(LocalDate.now());
+                if (current == null) {
+                    return null;
+                }
+                return new AcademicRange(current.start, current.end);
+            }
+
+            LocalDate start = LocalDate.of(startYear, 10, 1);
+            LocalDate end = LocalDate.of(endYear, 2, LocalDate.of(endYear, 2, 1).lengthOfMonth());
+            return new AcademicRange(start, end);
+        }
+
+        if (isSummer) {
+            int year;
+            if (yearEnd != null) {
+                year = yearEnd;
+            } else if (yearStart != null) {
+                year = yearStart;
+            } else {
+                year = LocalDate.now().getYear();
+            }
+            LocalDate start = LocalDate.of(year, 3, 1);
+            LocalDate end = LocalDate.of(year, 9, 30);
+            return new AcademicRange(start, end);
+        }
+
+        AcademicRange current = resolveCurrentAcademicTermRange(LocalDate.now());
+        if (current == null) {
+            return null;
+        }
+        return new AcademicRange(current.start, current.end);
+    }
+
+    private Integer parseAcademicYearValue(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String digits = raw.replaceAll("[^0-9]", "");
+        if (digits.length() < 4) {
+            return null;
+        }
+        String yearRaw = digits.substring(0, 4);
+        try {
+            int year = Integer.parseInt(yearRaw);
+            if (year < 2000 || year > 2100) {
+                return null;
+            }
+            return year;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private static class AcademicRange {
@@ -1823,7 +2033,7 @@ public class PlanRepository {
 
     private static final String KEY_SESSION_CACHE_JSON = "session_dates_cache_json_v3";
     private static final String KEY_SESSION_CACHE_TS = "session_dates_cache_ts_v3";
-    private static final long SESSION_CACHE_TTL_MS = 24L * 60L * 60L * 1000L;
+    private static final long SESSION_CACHE_TTL_MS = CachePolicy.PLAN_SESSION_TTL_MS;
 
     private static List<SessionPeriod> sCachedSessions;
     private static long sCachedSessionsTs;
@@ -2185,3 +2395,4 @@ public class PlanRepository {
         return result;
     }
 }
+

@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebSettings;
@@ -108,7 +109,7 @@ public class NewsDetailActivity extends AppCompatActivity {
         String contentHtml = intent.getStringExtra("contentHtml");
         String descriptionText = intent.getStringExtra("descriptionText");
 
-        tvTitle.setText(!TextUtils.isEmpty(title) ? title : "");
+        applyCompactTitle(title);
         if (!TextUtils.isEmpty(date)) {
             tvDate.setText(date);
             tvDate.setVisibility(View.VISIBLE);
@@ -208,6 +209,44 @@ public class NewsDetailActivity extends AppCompatActivity {
             tvFallback.setVisibility(TextView.VISIBLE);
             tvFallback.setText(R.string.news_detail_no_content);
         }
+    }
+
+    private void applyCompactTitle(String rawTitle) {
+        String title = !TextUtils.isEmpty(rawTitle) ? rawTitle.trim() : "";
+        tvTitle.setText(title);
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, resolveTitleSizeSp(title));
+    }
+
+    private float resolveTitleSizeSp(String title) {
+        int chars = countNonWhitespaceChars(title);
+        boolean largeScreen = getResources().getConfiguration().smallestScreenWidthDp >= 600;
+
+        if (largeScreen) {
+            if (chars <= 45) return 22f;
+            if (chars <= 70) return 20f;
+            if (chars <= 95) return 19f;
+            if (chars <= 125) return 18f;
+            return 17f;
+        }
+
+        if (chars <= 40) return 18f;
+        if (chars <= 60) return 17f;
+        if (chars <= 80) return 16f;
+        if (chars <= 110) return 15f;
+        return 14f;
+    }
+
+    private int countNonWhitespaceChars(String value) {
+        if (TextUtils.isEmpty(value)) {
+            return 0;
+        }
+        int count = 0;
+        for (int i = 0; i < value.length(); i++) {
+            if (!Character.isWhitespace(value.charAt(i))) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Override

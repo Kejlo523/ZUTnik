@@ -53,13 +53,19 @@ public class StudiesInfoRepository {
             return null;
         }
 
-        int idx = session.getActiveStudyIndex();
-        if (idx < 0 || idx >= studies.size()) {
-            idx = 0;
+        Study active = session.getActiveStudy();
+        if (active == null && !studies.isEmpty()) {
+            session.setActiveStudyIndex(0);
+            active = session.getActiveStudy();
         }
-
-        Study active = studies.get(idx);
-        return active.przynaleznoscId;
+        if (active == null) {
+            return null;
+        }
+        if (active.przynaleznoscId == null) {
+            return null;
+        }
+        String id = active.przynaleznoscId.trim();
+        return id.isEmpty() ? null : id;
     }
 
     public StudyDetails loadCurrentStudyDetails() throws IOException, JSONException {

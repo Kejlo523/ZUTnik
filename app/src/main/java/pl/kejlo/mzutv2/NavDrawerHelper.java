@@ -249,16 +249,37 @@ public class NavDrawerHelper {
         }
         navLogout.setOnClickListener(listener);
 
-        // Ensure drawer is unlocked
-        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
+        boolean isPlanScreen = Screen.PLAN.getId().equals(currentScreen);
 
-        // Use native DrawerLayout drag (finger-synced), but extend edge size to full screen
-        // on screens without strong horizontal gestures.
-        if (currentScreen == null || !currentScreen.equals(Screen.PLAN.getId())) {
+        if (isPlanScreen) {
+            // Plan screen: disable swipe-to-open drawer gesture.
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START);
+
+            drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+                @Override
+                public void onDrawerClosed(View drawerView) {
+                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START);
+                }
+            });
+
+            if (toolbar != null) {
+                toolbar.setNavigationOnClickListener(v -> {
+                    if (drawerLayout.isDrawerVisible(GravityCompat.START)) {
+                        drawerLayout.closeDrawer(GravityCompat.START);
+                    } else {
+                        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
+                        drawerLayout.openDrawer(GravityCompat.START);
+                    }
+                });
+            }
+        } else {
+            // Other screens: keep interactive swipe drawer behavior.
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
             enableFullWidthDrawerDrag(drawerLayout);
+            enableInteractiveSwipe(activity, drawerLayout);
         }
-        enableInteractiveSwipe(activity, drawerLayout);
     }
 
     private static void enableFullWidthDrawerDrag(DrawerLayout drawerLayout) {

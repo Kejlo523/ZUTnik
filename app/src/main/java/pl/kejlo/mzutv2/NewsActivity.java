@@ -41,8 +41,7 @@ public class NewsActivity extends MzutBaseActivity {
     private static final String PREFS_NEWS_CACHE = "mzut_news_cache";
     private static final String KEY_NEWS_LIST_JSON = "news_list_json";
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
-    // Cache is valid for up to 2 days, then we refresh from network.
-    private static final long NEWS_CACHE_TTL_MS = 2L * 24L * 60L * 60L * 1000L;
+    private static final long NEWS_CACHE_TTL_MS = CachePolicy.NEWS_TTL_MS;
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -256,10 +255,16 @@ public class NewsActivity extends MzutBaseActivity {
             tvInfo.setText(baseInfo);
             return;
         }
-        CharSequence relative = DateUtils.getRelativeTimeSpanString(
-                timestamp,
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS);
+        long now = System.currentTimeMillis();
+        CharSequence relative;
+        if (Math.abs(now - timestamp) < DateUtils.MINUTE_IN_MILLIS) {
+            relative = getString(R.string.news_relative_just_now);
+        } else {
+            relative = DateUtils.getRelativeTimeSpanString(
+                    timestamp,
+                    now,
+                    DateUtils.MINUTE_IN_MILLIS);
+        }
         tvInfo.setText(baseInfo + " \u2022 " + relative);
     }
 

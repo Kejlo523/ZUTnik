@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.text.format.DateUtils;
+import android.text.style.RelativeSizeSpan;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
@@ -44,9 +47,9 @@ public class GradesActivity extends MzutBaseActivity {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
 
-    // Grades cache - valid for 1 day
-    private static final long GRADES_CACHE_TTL_MS = 1L * 24L * 60L * 60L * 1000L; // 1 day
-    private static final long SEMESTERS_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L; // 7 days
+    // Core student data uses short TTL to keep study/semester/grades in sync.
+    private static final long GRADES_CACHE_TTL_MS = CachePolicy.GRADES_TTL_MS;
+    private static final long SEMESTERS_CACHE_TTL_MS = CachePolicy.SEMESTERS_TTL_MS;
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
     private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
     private static final String KEY_TOTAL_ECTS_CACHE_PREFIX = "total_ects_";
@@ -74,6 +77,7 @@ public class GradesActivity extends MzutBaseActivity {
 
     private ArrayAdapter<String> studiesAdapter;
     private ArrayAdapter<String> semestersAdapter;
+    private AdapterView.OnItemSelectedListener studiesSpinnerListener;
 
     private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newCachedThreadPool();
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -143,7 +147,7 @@ public class GradesActivity extends MzutBaseActivity {
         // Semesters spinner has a fixed configuration
         setupSemestersSpinner();
 
-        // Grades refresh button - ALWAYS hits the network, ignores cache TTL
+        // Manual refresh re-syncs the whole chain: studies -> semesters -> grades.
         if (btnGradesRefresh != null) {
             btnGradesRefresh.setOnClickListener(v -> {
                 updateGradesDataFreshnessText(getString(R.string.data_status_syncing));
@@ -151,16 +155,7 @@ public class GradesActivity extends MzutBaseActivity {
                         GradesActivity.this,
                         R.string.grades_refresh_toast,
                         Toast.LENGTH_SHORT).show();
-
-                int pos = spinnerSemesters.getSelectedItemPosition();
-                if (pos >= 0 && pos < semesters.size()) {
-                    Semester selected = semesters.get(pos);
-                    // Hard refresh - bypass cache, always request from network
-                    reloadGrades(selected, true);
-                } else {
-                    // If for some reason there are no semesters - reload everything
-                    reloadSemesters();
-                }
+                reloadSemesters(true);
             });
         }
 
@@ -215,8 +210,11 @@ public class GradesActivity extends MzutBaseActivity {
             List<Semester> result = null;
             Exception error = null;
             boolean fromCache = false;
-
+            int expectedStudyIndex = MzutSession.getInstance().getActiveStudyIndex();
             Study activeStudyForCache = getActiveStudySnapshot();
+            String expectedStudyId = activeStudyForCache != null ? normalizeStudyId(activeStudyForCache.przynaleznoscId)
+                    : null;
+
             if (activeStudyForCache != null) {
                 List<Semester> cached = loadSemestersFromCache(activeStudyForCache);
                 if (cached != null && !cached.isEmpty()) {
@@ -228,7 +226,7 @@ public class GradesActivity extends MzutBaseActivity {
             if (result == null) {
                 try {
                     GradesRepository repo = new GradesRepository();
-                    result = repo.loadSemesters();
+                    result = repo.loadSemesters(false);
                 } catch (Exception e) {
                     error = e;
                 }
@@ -237,10 +235,8 @@ public class GradesActivity extends MzutBaseActivity {
             // Fallback: If network failed, try disk cache
             if (result == null) {
                 MzutSession s = MzutSession.getInstance();
-                List<Study> all = s.getStudies();
-                int idx = s.getActiveStudyIndex();
-                if (all != null && idx >= 0 && idx < all.size()) {
-                    List<Semester> cached = loadSemestersFromCache(all.get(idx));
+                if (activeStudyForCache != null) {
+                    List<Semester> cached = loadSemestersFromCache(activeStudyForCache);
                     if (cached != null && !cached.isEmpty()) {
                         result = cached;
                         fromCache = true;
@@ -255,6 +251,9 @@ public class GradesActivity extends MzutBaseActivity {
 
             handler.post(() -> {
                 showLoading(false);
+                if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
+                    return;
+                }
 
                 if (finalError != null) {
                     String message = finalError.getMessage() != null ? finalError.getMessage() : "";
@@ -277,10 +276,9 @@ public class GradesActivity extends MzutBaseActivity {
                 // If loaded successfully from network (not cache), persist it
                 if (!finalFromCache && finalResult != null && !finalResult.isEmpty()) {
                     MzutSession s = MzutSession.getInstance();
-                    List<Study> all = s.getStudies();
-                    int idx = s.getActiveStudyIndex();
-                    if (all != null && idx >= 0 && idx < all.size()) {
-                        saveSemestersToCache(all.get(idx), finalResult);
+                    Study active = s.getActiveStudy();
+                    if (active != null) {
+                        saveSemestersToCache(active, finalResult);
                     }
                 }
 
@@ -361,7 +359,7 @@ public class GradesActivity extends MzutBaseActivity {
             }
             spinnerStudies.setSelection(activeIndex);
 
-            spinnerStudies.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            studiesSpinnerListener = new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     MzutSession s = MzutSession.getInstance();
@@ -374,24 +372,30 @@ public class GradesActivity extends MzutBaseActivity {
                     updateGradesDataFreshness(false);
                     // Study changed => reload semesters (repository itself will use getStudies
                     // cache)
-                    reloadSemesters();
+                    reloadSemesters(false);
                 }
 
                 @Override
                 public void onNothingSelected(AdapterView<?> parent) {
                 }
-            });
+            };
+            spinnerStudies.setOnItemSelectedListener(studiesSpinnerListener);
         } else {
             // Subsequent calls - refresh contents / selection
-            studiesAdapter.clear();
-            studiesAdapter.addAll(labels);
-            studiesAdapter.notifyDataSetChanged();
-
             int activeIndex = session.getActiveStudyIndex();
             if (activeIndex < 0 || activeIndex >= labels.size()) {
                 activeIndex = 0;
             }
-            spinnerStudies.setSelection(activeIndex);
+
+            spinnerStudies.setOnItemSelectedListener(null);
+            try {
+                studiesAdapter.clear();
+                studiesAdapter.addAll(labels);
+                studiesAdapter.notifyDataSetChanged();
+                spinnerStudies.setSelection(activeIndex);
+            } finally {
+                spinnerStudies.setOnItemSelectedListener(studiesSpinnerListener);
+            }
         }
     }
 
@@ -427,6 +431,10 @@ public class GradesActivity extends MzutBaseActivity {
 
     // Loading semesters
     private void reloadSemesters() {
+        reloadSemesters(false);
+    }
+
+    private void reloadSemesters(boolean forceNetwork) {
         if (currentSemestersFuture != null) {
             currentSemestersFuture.cancel(true);
         }
@@ -437,18 +445,21 @@ public class GradesActivity extends MzutBaseActivity {
             currentTotalEctsFuture.cancel(true);
         }
 
-        executeLoadSemestersTask();
+        executeLoadSemestersTask(forceNetwork);
     }
 
-    private void executeLoadSemestersTask() {
+    private void executeLoadSemestersTask(boolean forceNetwork) {
         showLoading(true);
         currentSemestersFuture = executor.submit(() -> {
             List<Semester> result = null;
             Exception error = null;
             boolean fromCache = false;
-
+            int expectedStudyIndex = MzutSession.getInstance().getActiveStudyIndex();
             Study activeStudyForCache = getActiveStudySnapshot();
-            if (activeStudyForCache != null) {
+            String expectedStudyId = activeStudyForCache != null ? normalizeStudyId(activeStudyForCache.przynaleznoscId)
+                    : null;
+
+            if (!forceNetwork && activeStudyForCache != null) {
                 List<Semester> cached = loadSemestersFromCache(activeStudyForCache);
                 if (cached != null && !cached.isEmpty()) {
                     result = cached;
@@ -459,7 +470,7 @@ public class GradesActivity extends MzutBaseActivity {
             if (result == null) {
                 try {
                     GradesRepository repo = new GradesRepository();
-                    result = repo.loadSemesters();
+                    result = repo.loadSemesters(forceNetwork);
                 } catch (Exception e) {
                     error = e;
                 }
@@ -467,11 +478,8 @@ public class GradesActivity extends MzutBaseActivity {
 
             if (result == null) {
                 // Try to load from disk cache
-                MzutSession s = MzutSession.getInstance();
-                List<Study> all = s.getStudies();
-                int idx = s.getActiveStudyIndex();
-                if (all != null && idx >= 0 && idx < all.size()) {
-                    result = loadSemestersFromCache(all.get(idx));
+                if (activeStudyForCache != null) {
+                    result = loadSemestersFromCache(activeStudyForCache);
                     if (result != null) {
                         // Found in cache -> clear error, we are good offline
                         error = null;
@@ -486,6 +494,9 @@ public class GradesActivity extends MzutBaseActivity {
 
             handler.post(() -> {
                 showLoading(false);
+                if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
+                    return;
+                }
 
                 if (finalError != null) {
                     String message = finalError.getMessage() != null ? finalError.getMessage() : "";
@@ -516,10 +527,9 @@ public class GradesActivity extends MzutBaseActivity {
                 // If loaded successfully from network (not cache), persist it
                 if (!finalFromCache) {
                     MzutSession s = MzutSession.getInstance();
-                    List<Study> all = s.getStudies();
-                    int idx = s.getActiveStudyIndex();
-                    if (all != null && idx >= 0 && idx < all.size()) {
-                        saveSemestersToCache(all.get(idx), finalResult);
+                    Study active = s.getActiveStudy();
+                    if (active != null) {
+                        saveSemestersToCache(active, finalResult);
                     }
                 }
 
@@ -551,7 +561,7 @@ public class GradesActivity extends MzutBaseActivity {
 
                 // Immediately load grades (here: using cache if available)
                 Semester selected = semesters.get(indexCurrent);
-                reloadGrades(selected, false);
+                reloadGrades(selected, forceNetwork);
             });
         });
     }
@@ -702,11 +712,17 @@ public class GradesActivity extends MzutBaseActivity {
         if (semester == null) {
             return;
         }
+        int expectedStudyIndex = MzutSession.getInstance().getActiveStudyIndex();
+        Study activeStudy = getActiveStudySnapshot();
+        String expectedStudyId = activeStudy != null ? normalizeStudyId(activeStudy.przynaleznoscId) : null;
+        if (expectedStudyId == null) {
+            return;
+        }
 
         // 1) Normal mode (no force) - try cache first. If it is fresh -> do NOT hit the
         // network.
         if (!forceNetwork) {
-            List<Grade> cached = loadGradesFromCache(semester, false);
+            List<Grade> cached = loadGradesFromCache(expectedStudyId, semester, false);
             if (cached != null) {
                 currentGradesRaw.clear();
                 currentGradesRaw.addAll(cached);
@@ -723,10 +739,14 @@ public class GradesActivity extends MzutBaseActivity {
             currentGradesFuture.cancel(true);
         }
 
-        executeLoadGradesTask(semester, forceNetwork);
+        executeLoadGradesTask(expectedStudyIndex, expectedStudyId, semester, forceNetwork);
     }
 
-    private void executeLoadGradesTask(Semester semester, boolean forceNetwork) {
+    private void executeLoadGradesTask(
+            int expectedStudyIndex,
+            String expectedStudyId,
+            Semester semester,
+            boolean forceNetwork) {
         showLoading(true);
         currentGradesFuture = executor.submit(() -> {
             List<Grade> grades = null;
@@ -743,10 +763,13 @@ public class GradesActivity extends MzutBaseActivity {
 
             handler.post(() -> {
                 showLoading(false);
+                if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
+                    return;
+                }
 
                 if (finalError != null) {
                     // On error, try using cache even if it is expired
-                    List<Grade> cached = loadGradesFromCache(semester, true);
+                    List<Grade> cached = loadGradesFromCache(expectedStudyId, semester, true);
                     if (cached != null) {
                         currentGradesRaw.clear();
                         currentGradesRaw.addAll(cached);
@@ -784,8 +807,7 @@ public class GradesActivity extends MzutBaseActivity {
                 currentGradesRaw.clear();
                 if (finalGrades != null) {
                     currentGradesRaw.addAll(finalGrades);
-                    // Save to cache ??? only on successful load (RAW data)
-                    saveGradesToCache(semester, finalGrades);
+                    saveGradesToCache(expectedStudyId, semester, finalGrades);
                 }
                 applyGradesView();
                 updateSummaryCards();
@@ -975,7 +997,16 @@ public class GradesActivity extends MzutBaseActivity {
 
     private void updateGradesDataFreshnessText(String text) {
         if (toolbar != null) {
-            toolbar.setSubtitle(text);
+            String safe = text != null ? text : "";
+            SpannableString subtitle = new SpannableString(safe);
+            if (!safe.isEmpty()) {
+                subtitle.setSpan(
+                        new RelativeSizeSpan(0.78f),
+                        0,
+                        safe.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            toolbar.setSubtitle(subtitle);
         }
     }
 
@@ -1071,13 +1102,14 @@ public class GradesActivity extends MzutBaseActivity {
     private void refreshTotalEctsForActiveStudyAsync() {
         final Study activeStudy = getActiveStudySnapshot();
         final List<Semester> semSnapshot = new ArrayList<>(semesters);
+        final int expectedStudyIndex = MzutSession.getInstance().getActiveStudyIndex();
 
         if (activeStudy == null || activeStudy.przynaleznoscId == null || semSnapshot.isEmpty()) {
             setTotalEctsValue(0.0);
             return;
         }
 
-        final String expectedStudyId = activeStudy.przynaleznoscId;
+        final String expectedStudyId = normalizeStudyId(activeStudy.przynaleznoscId);
         final Double cachedTotal = loadTotalEctsFromCache(activeStudy, semSnapshot);
         if (cachedTotal != null) {
             setTotalEctsValue(cachedTotal);
@@ -1102,15 +1134,15 @@ public class GradesActivity extends MzutBaseActivity {
                     continue;
                 }
 
-                List<Grade> semGrades = loadGradesFromCache(sem, false);
+                List<Grade> semGrades = loadGradesFromCache(expectedStudyId, sem, false);
                 if (semGrades == null) {
                     try {
                         semGrades = repo.loadGradesForSemester(sem);
                         if (semGrades != null) {
-                            saveGradesToCache(sem, semGrades);
+                            saveGradesToCache(expectedStudyId, sem, semGrades);
                         }
                     } catch (Exception e) {
-                        semGrades = loadGradesFromCache(sem, true);
+                        semGrades = loadGradesFromCache(expectedStudyId, sem, true);
                     }
                 }
 
@@ -1124,9 +1156,7 @@ public class GradesActivity extends MzutBaseActivity {
             final double finalTotal = total;
             final boolean finalComplete = complete;
             handler.post(() -> {
-                Study currentStudy = getActiveStudySnapshot();
-                String currentStudyId = currentStudy != null ? currentStudy.przynaleznoscId : null;
-                if (currentStudyId == null || !currentStudyId.equals(expectedStudyId)) {
+                if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
                     return;
                 }
 
@@ -1147,34 +1177,50 @@ public class GradesActivity extends MzutBaseActivity {
         return getSharedPreferences(GRADES_CACHE_PREFS_NAME, MODE_PRIVATE);
     }
 
-    private Study getActiveStudySnapshot() {
-        MzutSession session = MzutSession.getInstance();
-        List<Study> all = session.getStudies();
-        int idx = session.getActiveStudyIndex();
-        if (all == null || idx < 0 || idx >= all.size()) {
+    private String normalizeStudyId(String rawId) {
+        if (rawId == null) {
             return null;
         }
-        return all.get(idx);
+        String normalized = rawId.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
-    private String buildCacheKey(Semester semester) {
+    private boolean isExpectedStudyContext(int expectedStudyIndex, String expectedStudyId) {
+        MzutSession session = MzutSession.getInstance();
+        int currentStudyIndex = session.getActiveStudyIndex();
+        if (expectedStudyIndex != currentStudyIndex) {
+            return false;
+        }
+
+        Study currentStudy = session.getActiveStudy();
+        String currentStudyId = currentStudy != null ? normalizeStudyId(currentStudy.przynaleznoscId) : null;
+        String expectedId = normalizeStudyId(expectedStudyId);
+
+        if (expectedId != null && currentStudyId != null) {
+            return expectedId.equals(currentStudyId);
+        }
+        return true;
+    }
+
+    private Study getActiveStudySnapshot() {
+        return MzutSession.getInstance().getActiveStudy();
+    }
+
+    private String buildCacheKey(String studyId, Semester semester) {
         MzutSession s = MzutSession.getInstance();
         String userId = s.getUserId();
         if (userId == null) {
             userId = "unknown";
         }
-        Study activeStudy = getActiveStudySnapshot();
-        String studyId = (activeStudy != null && activeStudy.przynaleznoscId != null)
-                ? activeStudy.przynaleznoscId
-                : "no_study";
+        String safeStudyId = (studyId != null && !studyId.trim().isEmpty()) ? studyId.trim() : "no_study";
         String semId = semester != null ? semester.listaSemestrowId : null;
         if (semId == null) {
             semId = "no_sem";
         }
-        return userId + "_" + studyId + "_" + semId;
+        return userId + "_" + safeStudyId + "_" + semId;
     }
 
-    private String buildLegacyCacheKey(Semester semester) {
+    private String buildLegacyCacheKey(String studyId, Semester semester) {
         MzutSession s = MzutSession.getInstance();
         String userId = s.getUserId();
         if (userId == null) {
@@ -1187,7 +1233,7 @@ public class GradesActivity extends MzutBaseActivity {
         return userId + "_" + semId;
     }
 
-    private void saveGradesToCache(Semester semester, List<Grade> grades) {
+    private void saveGradesToCache(String studyId, Semester semester, List<Grade> grades) {
         if (semester == null || grades == null) {
             return;
         }
@@ -1209,11 +1255,11 @@ public class GradesActivity extends MzutBaseActivity {
             wrapper.put("timestamp", System.currentTimeMillis());
             wrapper.put("grades", arr);
 
-            String key = buildCacheKey(semester);
+            String key = buildCacheKey(studyId, semester);
             getGradesCachePrefs()
                     .edit()
                     .putString(key, wrapper.toString())
-                    .remove(buildLegacyCacheKey(semester))
+                    .remove(buildLegacyCacheKey(studyId, semester))
                     .apply();
         } catch (JSONException e) {
             // Ignore - cache is optional
@@ -1221,19 +1267,19 @@ public class GradesActivity extends MzutBaseActivity {
     }
 
     /**
-     * @param ignoreTtl if true - ignore 7-day TTL (used as fallback on network
+     * @param ignoreTtl if true - ignore normal TTL (used as fallback on network
      *                  error).
      */
-    private List<Grade> loadGradesFromCache(Semester semester, boolean ignoreTtl) {
+    private List<Grade> loadGradesFromCache(String studyId, Semester semester, boolean ignoreTtl) {
         if (semester == null) {
             return null;
         }
 
-        String key = buildCacheKey(semester);
+        String key = buildCacheKey(studyId, semester);
         SharedPreferences prefs = getGradesCachePrefs();
         String json = prefs.getString(key, null);
         if (json == null) {
-            String legacyKey = buildLegacyCacheKey(semester);
+            String legacyKey = buildLegacyCacheKey(studyId, semester);
             json = prefs.getString(legacyKey, null);
             if (json != null) {
                 prefs.edit()

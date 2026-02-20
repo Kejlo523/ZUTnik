@@ -366,9 +366,17 @@ public class AddCustomEventDialog extends DialogFragment {
     }
 
     private String resolveTypeLabel(String label, String typeClass) {
+        String mapped = resolveTypeLabelFromClass(typeClass);
+        if (!mapped.isEmpty()) {
+            return mapped;
+        }
         if (label != null && !label.trim().isEmpty()) {
             return label;
         }
+        return "";
+    }
+
+    private String resolveTypeLabelFromClass(String typeClass) {
         if (typeClass == null) {
             return "";
         }
