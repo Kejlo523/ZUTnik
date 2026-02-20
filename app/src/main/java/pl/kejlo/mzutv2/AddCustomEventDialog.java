@@ -4,6 +4,12 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.text.style.ImageSpan;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -52,6 +58,9 @@ public class AddCustomEventDialog extends DialogFragment {
     private static final String ARG_TYPE_LABEL = "arg_type_label";
     private static final String ARG_TYPE_CLASS = "arg_type_class";
     private static final String ARG_IS_MARKER = "arg_is_marker";
+    private static final String SEARCH_CATEGORY_TEACHER = "teacher";
+    private static final String SEARCH_CATEGORY_ROOM = "room";
+    private static final String SEARCH_CATEGORY_GROUP = "group";
 
     private static final DateTimeFormatter DATE_DISPLAY_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final DateTimeFormatter TIME_DISPLAY_FMT = DateTimeFormatter.ofPattern("HH:mm");
@@ -96,10 +105,19 @@ public class AddCustomEventDialog extends DialogFragment {
         void onEventSaved(CustomPlanEvent event);
     }
 
+    public interface OnDetailsSearchClickListener {
+        void onDetailsSearchClick(String categoryKey, String query);
+    }
+
     private OnEventSavedListener listener;
+    private OnDetailsSearchClickListener detailsSearchClickListener;
 
     public void setListener(OnEventSavedListener listener) {
         this.listener = listener;
+    }
+
+    public void setDetailsSearchClickListener(OnDetailsSearchClickListener listener) {
+        this.detailsSearchClickListener = listener;
     }
 
     public static AddCustomEventDialog newForSlot(LocalDate date, int startMin, int endMin) {
@@ -322,23 +340,28 @@ public class AddCustomEventDialog extends DialogFragment {
     }
 
     private void setupDetailsSection() {
-        StringBuilder details = new StringBuilder();
-        if (detailsRoom != null && !detailsRoom.isEmpty()) {
-            details.append(getString(R.string.plan_event_room_prefix)).append(detailsRoom);
-        }
-        if (detailsGroup != null && !detailsGroup.isEmpty()) {
-            if (details.length() > 0)
-                details.append("\n");
-            details.append(getString(R.string.plan_event_group_prefix)).append(detailsGroup);
-        }
-        if (detailsTeacher != null && !detailsTeacher.isEmpty()) {
-            if (details.length() > 0)
-                details.append("\n");
-            details.append(getString(R.string.plan_event_teacher_prefix)).append(detailsTeacher);
-        }
+        SpannableStringBuilder details = new SpannableStringBuilder();
+        boolean hasDetails = false;
+        hasDetails |= appendDetailsLine(
+                details,
+                getString(R.string.plan_event_room_prefix),
+                detailsRoom,
+                SEARCH_CATEGORY_ROOM,
+                detailsRoom);
+        hasDetails |= appendDetailsLine(
+                details,
+                getString(R.string.plan_event_group_prefix),
+                detailsGroup,
+                SEARCH_CATEGORY_GROUP,
+                detailsGroup);
+        hasDetails |= appendDetailsLine(
+                details,
+                getString(R.string.plan_event_teacher_prefix),
+                detailsTeacher,
+                SEARCH_CATEGORY_TEACHER,
+                normalizeTeacherQuery(detailsTeacher));
 
         String typeLabel = resolveTypeLabel(detailsTypeLabel, detailsTypeClass);
-        boolean hasDetails = details.length() > 0;
         boolean hasType = typeLabel != null && !typeLabel.trim().isEmpty();
 
         if (!hasDetails && !hasType) {
@@ -353,7 +376,9 @@ public class AddCustomEventDialog extends DialogFragment {
         if (textDetails != null) {
             textDetails.setVisibility(hasDetails ? View.VISIBLE : View.GONE);
             if (hasDetails) {
-                textDetails.setText(details.toString());
+                textDetails.setText(details, TextView.BufferType.SPANNABLE);
+                textDetails.setMovementMethod(LinkMovementMethod.getInstance());
+                textDetails.setHighlightColor(android.graphics.Color.TRANSPARENT);
             }
         }
 
@@ -363,6 +388,145 @@ public class AddCustomEventDialog extends DialogFragment {
         if (hasType && textTypeChip != null) {
             textTypeChip.setText(typeLabel.trim());
         }
+    }
+
+    private boolean appendDetailsLine(
+            SpannableStringBuilder details,
+            String prefix,
+            String value,
+            String categoryKey,
+            String query) {
+        String lineValue = value != null ? value.trim() : "";
+        if (lineValue.isEmpty()) {
+            return false;
+        }
+
+        if (details.length() > 0) {
+            details.append('\n');
+        }
+        String safePrefix = ensureSpaceAfterColon(prefix);
+        details.append(safePrefix);
+        int clickableStart = details.length();
+        details.append(lineValue);
+        int clickableEnd = details.length();
+
+        String searchQuery = query != null ? query.trim() : "";
+        if (detailsSearchClickListener != null && !searchQuery.isEmpty()) {
+            details.append(' ');
+            int iconStart = details.length();
+            details.append('\uFFFC');
+            int iconEnd = details.length();
+            clickableEnd = iconEnd;
+
+            android.graphics.drawable.Drawable searchIcon = androidx.core.content.ContextCompat.getDrawable(
+                    requireContext(),
+                    R.drawable.ic_search);
+            if (searchIcon != null) {
+                int sizePx = Math.round(12f * getResources().getDisplayMetrics().density);
+                searchIcon.setBounds(0, 0, sizePx, sizePx);
+                details.setSpan(new ImageSpan(searchIcon, ImageSpan.ALIGN_BOTTOM),
+                        iconStart,
+                        iconEnd,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+
+            details.setSpan(new ClickableSpan() {
+                @Override
+                public void onClick(@NonNull View widget) {
+                    triggerDetailsSearch(categoryKey, searchQuery);
+                }
+
+                @Override
+                public void updateDrawState(@NonNull TextPaint ds) {
+                    super.updateDrawState(ds);
+                    if (textTypeChip != null) {
+                        ds.setColor(textTypeChip.getCurrentTextColor());
+                    }
+                    ds.setUnderlineText(false);
+                }
+            }, clickableStart, clickableEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
+        return true;
+    }
+
+    private String ensureSpaceAfterColon(String prefix) {
+        if (prefix == null || prefix.isEmpty()) {
+            return "";
+        }
+        int idx = prefix.lastIndexOf(':');
+        if (idx < 0) {
+            return prefix;
+        }
+        if (idx == prefix.length() - 1) {
+            return prefix + " ";
+        }
+        char after = prefix.charAt(idx + 1);
+        if (Character.isWhitespace(after)) {
+            return prefix;
+        }
+        return prefix.substring(0, idx + 1) + " " + prefix.substring(idx + 1);
+    }
+
+    private void triggerDetailsSearch(String categoryKey, String query) {
+        if (detailsSearchClickListener == null) {
+            return;
+        }
+        String normalizedCategory = categoryKey != null ? categoryKey.trim() : "";
+        String normalizedQuery = query != null ? query.trim() : "";
+        if (normalizedCategory.isEmpty() || normalizedQuery.isEmpty()) {
+            return;
+        }
+        detailsSearchClickListener.onDetailsSearchClick(normalizedCategory, normalizedQuery);
+        dismissAllowingStateLoss();
+    }
+
+    private String normalizeTeacherQuery(String teacherRaw) {
+        if (teacherRaw == null) {
+            return "";
+        }
+        String raw = teacherRaw.trim();
+        if (raw.isEmpty()) {
+            return "";
+        }
+
+        String[] tokens = raw.split("\\s+");
+        List<String> nameParts = new ArrayList<>();
+        for (String token : tokens) {
+            String cleaned = cleanTeacherToken(token);
+            if (startsWithUppercaseLetter(cleaned)) {
+                nameParts.add(cleaned);
+            }
+        }
+
+        if (nameParts.isEmpty()) {
+            return raw;
+        }
+        if (nameParts.size() == 1) {
+            return nameParts.get(0);
+        }
+
+        String surname = nameParts.get(nameParts.size() - 1);
+        StringBuilder query = new StringBuilder(surname);
+        for (int i = 0; i < nameParts.size() - 1; i++) {
+            query.append(' ').append(nameParts.get(i));
+        }
+        return query.toString().trim();
+    }
+
+    private String cleanTeacherToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return "";
+        }
+        return token.replaceAll("^[^\\p{L}]+|[^\\p{L}'-]+$", "");
+    }
+
+    private boolean startsWithUppercaseLetter(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        int codePoint = value.codePointAt(0);
+        return Character.isLetter(codePoint) && Character.isUpperCase(codePoint);
     }
 
     private String resolveTypeLabel(String label, String typeClass) {

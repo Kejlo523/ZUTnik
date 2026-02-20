@@ -1215,6 +1215,22 @@ public class PlanActivity extends MzutBaseActivity {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
+    private String resolveSearchCategoryLabel(String categoryKey) {
+        if ("teacher".equals(categoryKey)) {
+            return getString(R.string.plan_search_cat_teacher);
+        }
+        if ("room".equals(categoryKey)) {
+            return getString(R.string.plan_search_cat_room);
+        }
+        if ("subject".equals(categoryKey)) {
+            return getString(R.string.plan_search_cat_subject);
+        }
+        if ("group".equals(categoryKey)) {
+            return getString(R.string.plan_search_cat_group);
+        }
+        return getString(R.string.plan_search_cat_album);
+    }
+
     private void startRefreshAnimation() {
         if (btnRefresh == null)
             return;
@@ -2742,6 +2758,10 @@ public class PlanActivity extends MzutBaseActivity {
         LocalDate targetDate = eventDate != null ? eventDate : currentDate;
         AddCustomEventDialog dialog = AddCustomEventDialog.newForEvent(targetDate, ev);
         dialog.setListener(event -> refreshAfterCustomEvent());
+        dialog.setDetailsSearchClickListener((categoryKey, query) -> {
+            String categoryLabel = resolveSearchCategoryLabel(categoryKey);
+            performSearch(categoryKey, categoryLabel, query);
+        });
         dialog.show(getSupportFragmentManager(), "mark_custom_event");
     }
 
