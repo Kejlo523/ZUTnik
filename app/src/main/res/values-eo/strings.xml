@@ -169,6 +169,7 @@
     </string>
   <string name="news_header_title">Krzyki w Porcie</string>
   <string name="news_header_source_info">Źródło: Majtkowie ZUT</string>
+  <string name="news_relative_just_now">chwilę temu</string>
   <string name="news_empty_state">
         Cisza na morzu.
     </string>

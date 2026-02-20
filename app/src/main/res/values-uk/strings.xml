@@ -169,6 +169,7 @@
     </string>
   <string name="news_header_title">Канал оголошень для студентів</string>
   <string name="news_header_source_info">Джерело RSS: студенти ZUT</string>
+  <string name="news_relative_just_now">щойно</string>
   <string name="news_empty_state">
         Немає новин або сталася помилка під час отримання RSS-каналу.
     </string>

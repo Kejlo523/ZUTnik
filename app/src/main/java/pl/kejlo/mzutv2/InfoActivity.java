@@ -40,8 +40,7 @@ public class InfoActivity extends MzutBaseActivity {
     private static final String KEY_INFO_DETAILS_JSON = "info_details_json";
     private static final String KEY_INFO_HISTORY_JSON = "info_history_json";
     private static final String KEY_INFO_TIMESTAMP = "info_timestamp";
-    // 45 days
-    private static final long INFO_CACHE_TTL_MS = 45L * 24L * 60L * 60L * 1000L;
+    private static final long INFO_CACHE_TTL_MS = CachePolicy.INFO_TTL_MS;
 
     // History text appearance
     private static final float HISTORY_EMPTY_TEXT_SIZE_SP = 12f;
@@ -80,6 +79,8 @@ public class InfoActivity extends MzutBaseActivity {
     private View infoContentRoot;
     private Spinner spinnerStudies;
     private boolean spinnerInitialized = false;
+    private ArrayAdapter<String> studiesAdapter;
+    private AdapterView.OnItemSelectedListener studiesSpinnerListener;
 
     // endregion
 
@@ -164,15 +165,14 @@ public class InfoActivity extends MzutBaseActivity {
         }
 
         // 1) Try to load from cache and bind immediately if possible
-        MzutSession sessionObj = MzutSession.getInstance();
-        int currentIndex = sessionObj.getActiveStudyIndex();
-        loadInfoFromCacheIfAvailable(currentIndex);
+        String currentScopeKey = getActiveStudyCacheScopeKey();
+        loadInfoFromCacheIfAvailable(currentScopeKey);
 
         // 2) Setup studies spinner (may already be available from other screens)
         setupStudiesSpinner();
 
         // 3) If cache is missing or outdated, fetch from network
-        if (shouldFetchFromNetwork(currentIndex)) {
+        if (shouldFetchFromNetwork(currentScopeKey)) {
             startInfoLoad(false);
         }
 
@@ -189,18 +189,19 @@ public class InfoActivity extends MzutBaseActivity {
         // Manual refresh should bypass local info cache for current study.
         if (forceReload) {
             clearInfoCacheForActiveStudy();
+            Toast.makeText(this, R.string.info_sync_in_progress, Toast.LENGTH_SHORT).show();
         }
-        Toast.makeText(this, R.string.info_sync_in_progress, Toast.LENGTH_SHORT).show();
 
         if (currentInfoFuture != null) {
             currentInfoFuture.cancel(true);
         }
-        executeLoadInfoTask();
+        executeLoadInfoTask(forceReload);
     }
 
-    private void executeLoadInfoTask() {
+    private void executeLoadInfoTask(boolean forceRefreshStudies) {
         progress.setVisibility(View.VISIBLE);
         infoContentRoot.setAlpha(0.3f);
+        final String expectedScopeKey = getActiveStudyCacheScopeKey();
 
         currentInfoFuture = executor.submit(() -> {
             StudiesInfoRepository.StudyDetails details = null;
@@ -209,6 +210,8 @@ public class InfoActivity extends MzutBaseActivity {
             boolean success = false;
 
             try {
+                GradesRepository gradesRepository = new GradesRepository();
+                gradesRepository.loadStudies(forceRefreshStudies);
                 StudiesInfoRepository repo = new StudiesInfoRepository();
                 details = repo.loadCurrentStudyDetails();
                 history = repo.loadStudyHistory();
@@ -225,6 +228,9 @@ public class InfoActivity extends MzutBaseActivity {
             handler.post(() -> {
                 progress.setVisibility(View.GONE);
                 infoContentRoot.setAlpha(1f);
+                if (!expectedScopeKey.equals(getActiveStudyCacheScopeKey())) {
+                    return;
+                }
 
                 if (!finalSuccess) {
                     String message = finalError != null ? finalError.getMessage() : "";
@@ -252,7 +258,7 @@ public class InfoActivity extends MzutBaseActivity {
                 setupStudiesSpinner();
 
                 // Save to cache after successful refresh
-                saveInfoToCache(MzutSession.getInstance().getActiveStudyIndex(), finalDetails, finalHistory);
+                saveInfoToCache(getActiveStudyCacheScopeKey(), finalDetails, finalHistory);
             });
         });
     }
@@ -263,18 +269,46 @@ public class InfoActivity extends MzutBaseActivity {
 
     // region Cache logic
 
-    private String getCacheKey(String baseKey, int index) {
-        return baseKey + "_" + index;
+    private String getCacheKey(String baseKey, String scopeKey) {
+        String safeScope = (scopeKey == null || scopeKey.trim().isEmpty()) ? "default" : scopeKey.trim();
+        return baseKey + "_" + safeScope;
     }
 
-    // Returns true if data should be fetched from the network for the given index
+    private String getStudyCacheScopeKey(int index) {
+        MzutSession session = MzutSession.getInstance();
+        List<Study> studies = session.getStudies();
+        if (studies != null && index >= 0 && index < studies.size()) {
+            Study selected = studies.get(index);
+            if (selected != null && selected.przynaleznoscId != null && !selected.przynaleznoscId.trim().isEmpty()) {
+                return selected.przynaleznoscId.trim();
+            }
+        }
+        String activeId = session.getActiveStudyId();
+        if (activeId != null && !activeId.trim().isEmpty()) {
+            return activeId.trim();
+        }
+        return "idx_" + Math.max(0, index);
+    }
+
+    private String getActiveStudyCacheScopeKey() {
+        MzutSession session = MzutSession.getInstance();
+        String activeId = session.getActiveStudyId();
+        if (activeId != null && !activeId.trim().isEmpty()) {
+            return activeId.trim();
+        }
+        int idx = session.getActiveStudyIndex();
+        if (idx < 0) {
+            idx = 0;
+        }
+        return getStudyCacheScopeKey(idx);
+    }
+
+    // Returns true if data should be fetched from the network for the given study key
     // (cache is empty or older than TTL).
-    private boolean shouldFetchFromNetwork(int index) {
-        SharedPreferences prefs = getPreferences(MODE_PRIVATE); // Use default or specific? File is separate.
-        // Actually code uses specific file: PREFS_INFO_CACHE
+    private boolean shouldFetchFromNetwork(String scopeKey) {
         SharedPreferences cache = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
 
-        long ts = cache.getLong(getCacheKey(KEY_INFO_TIMESTAMP, index), 0L);
+        long ts = cache.getLong(getCacheKey(KEY_INFO_TIMESTAMP, scopeKey), 0L);
         if (ts == 0L) {
             return true;
         }
@@ -290,10 +324,10 @@ public class InfoActivity extends MzutBaseActivity {
 
     // Loads data from cache (if available) and binds it to the views.
     // Returns true if cache was successfully loaded and displayed.
-    private boolean loadInfoFromCacheIfAvailable(int index) {
+    private boolean loadInfoFromCacheIfAvailable(String scopeKey) {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
-        String keyDetails = getCacheKey(KEY_INFO_DETAILS_JSON, index);
-        String keyHistory = getCacheKey(KEY_INFO_HISTORY_JSON, index);
+        String keyDetails = getCacheKey(KEY_INFO_DETAILS_JSON, scopeKey);
+        String keyHistory = getCacheKey(KEY_INFO_HISTORY_JSON, scopeKey);
 
         String detailsJson = prefs.getString(keyDetails, null);
         String historyJson = prefs.getString(keyHistory, null);
@@ -343,7 +377,7 @@ public class InfoActivity extends MzutBaseActivity {
     }
 
     // Saves the data fetched from the API into cache.
-    private void saveInfoToCache(int index,
+    private void saveInfoToCache(String scopeKey,
             StudiesInfoRepository.StudyDetails d,
             List<StudiesInfoRepository.StudyHistoryItem> history) {
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
@@ -377,9 +411,9 @@ public class InfoActivity extends MzutBaseActivity {
             }
 
             prefs.edit()
-                    .putString(getCacheKey(KEY_INFO_DETAILS_JSON, index), detailsObj.toString())
-                    .putString(getCacheKey(KEY_INFO_HISTORY_JSON, index), historyArr.toString())
-                    .putLong(getCacheKey(KEY_INFO_TIMESTAMP, index), System.currentTimeMillis())
+                    .putString(getCacheKey(KEY_INFO_DETAILS_JSON, scopeKey), detailsObj.toString())
+                    .putString(getCacheKey(KEY_INFO_HISTORY_JSON, scopeKey), historyArr.toString())
+                    .putLong(getCacheKey(KEY_INFO_TIMESTAMP, scopeKey), System.currentTimeMillis())
                     .apply();
 
         } catch (JSONException e) {
@@ -388,17 +422,12 @@ public class InfoActivity extends MzutBaseActivity {
     }
 
     private void clearInfoCacheForActiveStudy() {
-        MzutSession session = MzutSession.getInstance();
-        int index = session.getActiveStudyIndex();
-        if (index < 0) {
-            index = 0;
-        }
-
+        String scopeKey = getActiveStudyCacheScopeKey();
         SharedPreferences prefs = getSharedPreferences(PREFS_INFO_CACHE, MODE_PRIVATE);
         prefs.edit()
-                .remove(getCacheKey(KEY_INFO_DETAILS_JSON, index))
-                .remove(getCacheKey(KEY_INFO_HISTORY_JSON, index))
-                .remove(getCacheKey(KEY_INFO_TIMESTAMP, index))
+                .remove(getCacheKey(KEY_INFO_DETAILS_JSON, scopeKey))
+                .remove(getCacheKey(KEY_INFO_HISTORY_JSON, scopeKey))
+                .remove(getCacheKey(KEY_INFO_TIMESTAMP, scopeKey))
                 .apply();
     }
 
@@ -444,12 +473,12 @@ public class InfoActivity extends MzutBaseActivity {
         }
 
         if (!spinnerInitialized) {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(
+            studiesAdapter = new ArrayAdapter<>(
                     this,
                     R.layout.spinner_item_dark,
                     labels);
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
-            spinnerStudies.setAdapter(adapter);
+            studiesAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
+            spinnerStudies.setAdapter(studiesAdapter);
             spinnerInitialized = true;
 
             int activeIndex = session.getActiveStudyIndex();
@@ -458,7 +487,7 @@ public class InfoActivity extends MzutBaseActivity {
             }
             spinnerStudies.setSelection(activeIndex);
 
-            spinnerStudies.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            studiesSpinnerListener = new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     MzutSession s = MzutSession.getInstance();
@@ -466,13 +495,16 @@ public class InfoActivity extends MzutBaseActivity {
                         return;
                     }
                     s.setActiveStudyIndex(position);
+                    s.saveToPreferences(InfoActivity.this);
+
+                    String studyScopeKey = getStudyCacheScopeKey(position);
 
                     // Smart switching:
                     // 1. Try to load cached data for this index
-                    boolean loaded = loadInfoFromCacheIfAvailable(position);
+                    boolean loaded = loadInfoFromCacheIfAvailable(studyScopeKey);
 
                     // 2. If no valid cache or expired, fetch from network
-                    if (!loaded || shouldFetchFromNetwork(position)) {
+                    if (!loaded || shouldFetchFromNetwork(studyScopeKey)) {
                         startInfoLoad(false);
                     }
                 }
@@ -481,13 +513,25 @@ public class InfoActivity extends MzutBaseActivity {
                 public void onNothingSelected(AdapterView<?> parent) {
                     // no-op
                 }
-            });
+            };
+            spinnerStudies.setOnItemSelectedListener(studiesSpinnerListener);
         } else {
             int activeIndex = session.getActiveStudyIndex();
             if (activeIndex < 0 || activeIndex >= labels.size()) {
                 activeIndex = 0;
             }
-            spinnerStudies.setSelection(activeIndex);
+
+            spinnerStudies.setOnItemSelectedListener(null);
+            try {
+                if (studiesAdapter != null) {
+                    studiesAdapter.clear();
+                    studiesAdapter.addAll(labels);
+                    studiesAdapter.notifyDataSetChanged();
+                }
+                spinnerStudies.setSelection(activeIndex);
+            } finally {
+                spinnerStudies.setOnItemSelectedListener(studiesSpinnerListener);
+            }
         }
     }
 

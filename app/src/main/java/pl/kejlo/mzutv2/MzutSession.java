@@ -21,6 +21,7 @@ import java.util.List;
  * - username
  * - imageUrl
  * - activeStudyIndex
+ * - activeStudyId
  *
  * Notes:
  * - In Activities / Services / Widgets prefer calling getInstance(context)
@@ -110,6 +111,7 @@ public final class MzutSession {
                 .remove(KEY_USERNAME)
                 .remove(KEY_IMAGE_URL)
                 .remove(KEY_ACTIVE_STUDY_INDEX)
+                .remove(KEY_ACTIVE_STUDY_ID)
                 .remove(KEY_STUDIES_JSON)
                 .apply();
     }
@@ -132,6 +134,7 @@ public final class MzutSession {
     private static final String KEY_USERNAME = "username";
     private static final String KEY_IMAGE_URL = "image_url";
     private static final String KEY_ACTIVE_STUDY_INDEX = "active_study_idx";
+    private static final String KEY_ACTIVE_STUDY_ID = "active_study_id";
     private static final String KEY_STUDIES_JSON = "studies_json";
 
     private Context appContext;
@@ -156,9 +159,10 @@ public final class MzutSession {
     private String imageUrl;
 
     // Studies data (similar to $_SESSION['STUDIES'], ACTIVE_STUDY_IDX)
-    // Not persisted in SharedPreferences – kept only in RAM.
+    // Persisted in SharedPreferences to keep the same active study across app restarts.
     private List<Study> studies;
     private int activeStudyIndex = 0;
+    private String activeStudyId;
 
     // endregion
 
@@ -184,6 +188,7 @@ public final class MzutSession {
         this.username = prefs.getString(KEY_USERNAME, null);
         this.imageUrl = prefs.getString(KEY_IMAGE_URL, null);
         this.activeStudyIndex = prefs.getInt(KEY_ACTIVE_STUDY_INDEX, 0);
+        this.activeStudyId = prefs.getString(KEY_ACTIVE_STUDY_ID, null);
 
         String studiesJson = prefs.getString(KEY_STUDIES_JSON, null);
         if (studiesJson != null) {
@@ -193,15 +198,22 @@ public final class MzutSession {
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject o = arr.getJSONObject(i);
                     Study s = new Study();
-                    s.przynaleznoscId = o.optString("id", null);
+                    s.przynaleznoscId = normalizeStudyId(o.optString("id", null));
                     s.label = o.optString("lbl", null);
                     list.add(s);
                 }
-                this.studies = list;
+                setStudies(list);
                 android.util.Log.d("MzutSession", "Loaded " + list.size() + " studies from prefs.");
             } catch (JSONException e) {
                 android.util.Log.e("MzutSession", "Error loading studies", e);
+                this.studies = null;
+                this.activeStudyIndex = 0;
+                this.activeStudyId = null;
             }
+        } else {
+            this.studies = null;
+            this.activeStudyIndex = 0;
+            this.activeStudyId = null;
         }
     }
 
@@ -229,14 +241,20 @@ public final class MzutSession {
         e.putString(KEY_AUTH_KEY, authKey);
         e.putString(KEY_USERNAME, username);
         e.putString(KEY_IMAGE_URL, imageUrl);
+        reconcileActiveStudySelection();
         e.putInt(KEY_ACTIVE_STUDY_INDEX, activeStudyIndex);
+        if (activeStudyId != null && !activeStudyId.trim().isEmpty()) {
+            e.putString(KEY_ACTIVE_STUDY_ID, activeStudyId.trim());
+        } else {
+            e.remove(KEY_ACTIVE_STUDY_ID);
+        }
 
         if (studies != null && !studies.isEmpty()) {
             JSONArray arr = new JSONArray();
             for (Study s : studies) {
                 JSONObject o = new JSONObject();
                 try {
-                    o.put("id", s.przynaleznoscId);
+                    o.put("id", normalizeStudyId(s.przynaleznoscId));
                     o.put("lbl", s.label);
                     arr.put(o);
                 } catch (JSONException ignored) {
@@ -259,6 +277,9 @@ public final class MzutSession {
         this.username = username;
         this.authKey = authKey;
         this.imageUrl = imageUrl;
+        this.studies = null;
+        this.activeStudyIndex = 0;
+        this.activeStudyId = null;
         this.loaded = true;
     }
 
@@ -303,7 +324,24 @@ public final class MzutSession {
     }
 
     public void setStudies(List<Study> studies) {
-        this.studies = studies;
+        if (studies == null) {
+            this.studies = null;
+            this.activeStudyIndex = 0;
+            this.activeStudyId = null;
+            return;
+        }
+        List<Study> copy = new ArrayList<>(studies.size());
+        for (Study src : studies) {
+            if (src == null) {
+                continue;
+            }
+            Study s = new Study();
+            s.przynaleznoscId = normalizeStudyId(src.przynaleznoscId);
+            s.label = src.label;
+            copy.add(s);
+        }
+        this.studies = copy;
+        reconcileActiveStudySelection();
     }
 
     public int getActiveStudyIndex() {
@@ -312,6 +350,72 @@ public final class MzutSession {
 
     public void setActiveStudyIndex(int activeStudyIndex) {
         this.activeStudyIndex = activeStudyIndex;
+        if (studies == null || studies.isEmpty()) {
+            this.activeStudyIndex = 0;
+            this.activeStudyId = null;
+            return;
+        }
+        if (this.activeStudyIndex < 0 || this.activeStudyIndex >= studies.size()) {
+            this.activeStudyIndex = 0;
+        }
+        Study active = studies.get(this.activeStudyIndex);
+        this.activeStudyId = active != null ? normalizeStudyId(active.przynaleznoscId) : null;
+    }
+
+    public String getActiveStudyId() {
+        return activeStudyId;
+    }
+
+    public void setActiveStudyId(String activeStudyId) {
+        this.activeStudyId = normalizeStudyId(activeStudyId);
+        reconcileActiveStudySelection();
+    }
+
+    public Study getActiveStudy() {
+        if (studies == null || studies.isEmpty()) {
+            return null;
+        }
+        int idx = activeStudyIndex;
+        if (idx < 0 || idx >= studies.size()) {
+            idx = 0;
+        }
+        return studies.get(idx);
+    }
+
+    private void reconcileActiveStudySelection() {
+        if (studies == null || studies.isEmpty()) {
+            activeStudyIndex = 0;
+            activeStudyId = null;
+            return;
+        }
+
+        String wantedId = normalizeStudyId(activeStudyId);
+        if (wantedId != null && !wantedId.isEmpty()) {
+            for (int i = 0; i < studies.size(); i++) {
+                Study s = studies.get(i);
+                String candidateId = s != null ? normalizeStudyId(s.przynaleznoscId) : null;
+                if (candidateId != null && wantedId.equals(candidateId)) {
+                    activeStudyIndex = i;
+                    activeStudyId = wantedId;
+                    return;
+                }
+            }
+        }
+
+        if (activeStudyIndex < 0 || activeStudyIndex >= studies.size()) {
+            activeStudyIndex = 0;
+        }
+
+        Study active = studies.get(activeStudyIndex);
+        activeStudyId = active != null ? normalizeStudyId(active.przynaleznoscId) : null;
+    }
+
+    private String normalizeStudyId(String rawId) {
+        if (rawId == null) {
+            return null;
+        }
+        String normalized = rawId.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     // endregion

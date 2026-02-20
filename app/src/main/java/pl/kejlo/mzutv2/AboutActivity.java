@@ -68,8 +68,7 @@ public class AboutActivity extends AppCompatActivity {
     private static final String KEY_RATING = "play_store_rating";
     private static final String KEY_DOWNLOADS = "play_store_downloads";
     private static final String KEY_TIMESTAMP = "play_store_timestamp";
-    // Cache for 24 hours
-    private static final long CACHE_TTL_MS = 24L * 60L * 60L * 1000L;
+    private static final long CACHE_TTL_MS = CachePolicy.ABOUT_STATS_TTL_MS;
     private static final long EASTER_HOLD_DURATION_MS = 5_000L;
     private static final float EASTER_HOLD_MAX_SCALE = 1.14f;
 

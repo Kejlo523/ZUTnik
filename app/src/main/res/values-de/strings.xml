@@ -170,6 +170,7 @@
     </string>
   <string name="news_header_title">Studenten-Nachrichtenkanal</string>
   <string name="news_header_source_info">RSS-Quelle: ZUT Studenten</string>
+  <string name="news_relative_just_now">gerade eben</string>
   <string name="news_empty_state">
         Keine Nachrichten oder Problem beim RSS-Download.
     </string>

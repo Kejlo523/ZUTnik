@@ -36,9 +36,12 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.text.Editable;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextWatcher;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
+import android.text.style.RelativeSizeSpan;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
@@ -110,7 +113,7 @@ public class PlanActivity extends MzutBaseActivity {
     private static final String KEY_PLAN_LAST_NETWORK_SYNC_TS = "plan_last_network_sync_ts";
     private static final String FILTER_CACHE_JSON_PREFIX = KEY_FILTER_CACHE_JSON + "_";
     private static final String FILTER_CACHE_TS_PREFIX = KEY_FILTER_CACHE_TS + "_";
-    private static final long FILTER_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1000L;
+    private static final long FILTER_CACHE_TTL_MS = CachePolicy.PLAN_FILTER_TTL_MS;
 
     private static final int START_HOUR = 6;
     private static final int END_HOUR = 22;
@@ -847,7 +850,16 @@ public class PlanActivity extends MzutBaseActivity {
 
     private void updatePlanDataFreshnessText(String text) {
         if (toolbar != null) {
-            toolbar.setSubtitle(text);
+            String safe = text != null ? text : "";
+            SpannableString subtitle = new SpannableString(safe);
+            if (!safe.isEmpty()) {
+                subtitle.setSpan(
+                        new RelativeSizeSpan(0.78f),
+                        0,
+                        safe.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            toolbar.setSubtitle(subtitle);
         }
     }
 
@@ -1694,7 +1706,7 @@ public class PlanActivity extends MzutBaseActivity {
         for (int i = 0; i < items.size(); i++) {
             PlanRepository.SubjectFilterItem it = items.get(i);
             String label = it.label != null ? it.label : "";
-            String typeLabel = it.typeLabel != null ? it.typeLabel : "";
+            String typeLabel = resolveLocalizedFilterTypeLabel(it);
             labels[i] = label + " (" + typeLabel + ")";
             checked[i] = hiddenSubjectKeys.contains(it.filterKey);
         }
@@ -1840,8 +1852,17 @@ public class PlanActivity extends MzutBaseActivity {
                 org.json.JSONObject obj = arr.getJSONObject(i);
                 PlanRepository.SubjectFilterItem it = new PlanRepository.SubjectFilterItem();
                 it.label = obj.optString("label", "");
-                it.typeLabel = obj.optString("typeLabel", "");
                 it.filterKey = obj.optString("filterKey", "");
+                it.typeKey = obj.optString("typeKey", "");
+                if (it.typeKey == null || it.typeKey.trim().isEmpty()) {
+                    it.typeKey = extractTypeKeyFromFilterKey(it.filterKey);
+                }
+                String localizedType = resolveTypeLabelByKey(it.typeKey);
+                if (!localizedType.isEmpty()) {
+                    it.typeLabel = localizedType;
+                } else {
+                    it.typeLabel = obj.optString("typeLabel", "");
+                }
                 items.add(it);
             }
             return items;
@@ -1858,6 +1879,7 @@ public class PlanActivity extends MzutBaseActivity {
                 obj.put("label", it.label != null ? it.label : "");
                 obj.put("typeLabel", it.typeLabel != null ? it.typeLabel : "");
                 obj.put("filterKey", it.filterKey != null ? it.filterKey : "");
+                obj.put("typeKey", it.typeKey != null ? it.typeKey : "");
                 arr.put(obj);
             }
             prefs.edit()
@@ -1884,16 +1906,9 @@ public class PlanActivity extends MzutBaseActivity {
         }
 
         String studyId = "default";
-        List<Study> studies = session.getStudies();
-        int idx = session.getActiveStudyIndex();
-        if (studies != null && !studies.isEmpty()) {
-            if (idx < 0 || idx >= studies.size()) {
-                idx = 0;
-            }
-            Study active = studies.get(idx);
-            if (active != null && active.przynaleznoscId != null && !active.przynaleznoscId.trim().isEmpty()) {
-                studyId = active.przynaleznoscId.trim();
-            }
+        Study active = session.getActiveStudy();
+        if (active != null && active.przynaleznoscId != null && !active.przynaleznoscId.trim().isEmpty()) {
+            studyId = active.przynaleznoscId.trim();
         }
 
         LocalDate now = LocalDate.now();
@@ -1901,8 +1916,62 @@ public class PlanActivity extends MzutBaseActivity {
         int academicYearStart = (month >= 10) ? now.getYear() : (now.getYear() - 1);
         int academicYearEnd = academicYearStart + 1;
         String term = (month >= 10 || month <= 2) ? "winter" : "summer";
+        String language = LocaleManager.getLanguage(this);
+        if (language == null || language.trim().isEmpty()) {
+            language = "default";
+        }
 
-        return userId + "_" + studyId + "_" + academicYearStart + "_" + academicYearEnd + "_" + term;
+        return userId + "_" + studyId + "_" + academicYearStart + "_" + academicYearEnd + "_" + term + "_" + language;
+    }
+
+    private String resolveLocalizedFilterTypeLabel(PlanRepository.SubjectFilterItem item) {
+        if (item == null) {
+            return "";
+        }
+
+        String typeKey = item.typeKey;
+        if (typeKey == null || typeKey.trim().isEmpty()) {
+            typeKey = extractTypeKeyFromFilterKey(item.filterKey);
+            item.typeKey = typeKey;
+        }
+
+        String localized = resolveTypeLabelByKey(typeKey);
+        if (!localized.isEmpty()) {
+            item.typeLabel = localized;
+            return localized;
+        }
+        return item.typeLabel != null ? item.typeLabel : "";
+    }
+
+    private String resolveTypeLabelByKey(String typeKey) {
+        if (typeKey == null) {
+            return "";
+        }
+        switch (typeKey.trim()) {
+            case "lec":
+                return getString(R.string.plan_type_lecture);
+            case "aud":
+                return getString(R.string.plan_type_auditory);
+            case "lab":
+                return getString(R.string.plan_type_lab);
+            default:
+                return "";
+        }
+    }
+
+    private String extractTypeKeyFromFilterKey(String filterKey) {
+        if (filterKey == null) {
+            return "";
+        }
+        int sep = filterKey.lastIndexOf("||");
+        if (sep < 0 || sep >= filterKey.length() - 2) {
+            return "";
+        }
+        String suffix = filterKey.substring(sep + 2).trim();
+        if ("lec".equals(suffix) || "aud".equals(suffix) || "lab".equals(suffix)) {
+            return suffix;
+        }
+        return "";
     }
 
     private void addHourLines(FrameLayoutWithChildren dayBody) {
