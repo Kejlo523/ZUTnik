@@ -179,16 +179,21 @@ public class BackgroundSyncWorker extends Worker {
         }
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
-        boolean baselineReady = prefs.getBoolean(KEY_GRADES_BASELINE_READY, false);
-        Set<String> previous = readStringSetJson(prefs.getString(KEY_GRADES_BASELINE_JSON, "[]"));
+        String scope = NotificationSyncManager.buildCurrentSyncScope(context);
+        String gradesBaselineReadyKey = NotificationSyncManager.scopedPrefKey(KEY_GRADES_BASELINE_READY, scope);
+        String gradesBaselineJsonKey = NotificationSyncManager.scopedPrefKey(KEY_GRADES_BASELINE_JSON, scope);
+        String gradesAlertHashKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_GRADES_ALERT_HASH, scope);
+        String gradesAlertTsKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_GRADES_ALERT_TS, scope);
+        boolean baselineReady = prefs.getBoolean(gradesBaselineReadyKey, false);
+        Set<String> previous = readStringSetJson(prefs.getString(gradesBaselineJsonKey, "[]"));
 
-        if (!baselineReady || previous.isEmpty()) {
+        if (!baselineReady) {
             if (fetchedSemesters == 0) {
                 Log.d(TAG, "Skipping grades baseline init: no semesters loaded yet.");
                 return;
             }
-            saveGradesBaselineSet(prefs, current.keySet());
-            prefs.edit().putBoolean(KEY_GRADES_BASELINE_READY, true).apply();
+            saveGradesBaselineSet(prefs, gradesBaselineJsonKey, current.keySet());
+            prefs.edit().putBoolean(gradesBaselineReadyKey, true).apply();
             return;
         }
 
@@ -208,17 +213,17 @@ public class BackgroundSyncWorker extends Worker {
                 }
             }
             Collections.sort(lines);
-            saveGradesBaselineSet(prefs, current.keySet());
+            saveGradesBaselineSet(prefs, gradesBaselineJsonKey, current.keySet());
 
             String signature = buildAlertSignatureFromList(addedKeys);
-            if (shouldNotifyForSignature(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, gradesAlertHashKey, gradesAlertTsKey, signature)) {
                 notifyGrades(context, addedKeys.size(), lines);
-                rememberAlertSignature(prefs, KEY_LAST_GRADES_ALERT_HASH, KEY_LAST_GRADES_ALERT_TS, signature);
+                rememberAlertSignature(prefs, gradesAlertHashKey, gradesAlertTsKey, signature);
             }
             return;
         }
 
-        saveGradesBaselineSet(prefs, current.keySet());
+        saveGradesBaselineSet(prefs, gradesBaselineJsonKey, current.keySet());
     }
 
     private void notifyGrades(Context context, int count, List<String> lines) {
@@ -267,12 +272,17 @@ public class BackgroundSyncWorker extends Worker {
         List<PlanSnapshotEvent> current = collectPlanSnapshot(context);
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
-        boolean baselineReady = prefs.getBoolean(KEY_PLAN_BASELINE_READY, false);
-        List<PlanSnapshotEvent> previous = readPlanSnapshot(prefs.getString(KEY_PLAN_BASELINE_JSON, "[]"));
+        String scope = NotificationSyncManager.buildCurrentSyncScope(context);
+        String planBaselineReadyKey = NotificationSyncManager.scopedPrefKey(KEY_PLAN_BASELINE_READY, scope);
+        String planBaselineJsonKey = NotificationSyncManager.scopedPrefKey(KEY_PLAN_BASELINE_JSON, scope);
+        String planAlertHashKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_PLAN_ALERT_HASH, scope);
+        String planAlertTsKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_PLAN_ALERT_TS, scope);
+        boolean baselineReady = prefs.getBoolean(planBaselineReadyKey, false);
+        List<PlanSnapshotEvent> previous = readPlanSnapshot(prefs.getString(planBaselineJsonKey, "[]"));
 
-        if (!baselineReady || previous.isEmpty()) {
-            savePlanBaselineSnapshot(prefs, current);
-            prefs.edit().putBoolean(KEY_PLAN_BASELINE_READY, true).apply();
+        if (!baselineReady) {
+            savePlanBaselineSnapshot(prefs, planBaselineJsonKey, current);
+            prefs.edit().putBoolean(planBaselineReadyKey, true).apply();
             return;
         }
 
@@ -284,11 +294,11 @@ public class BackgroundSyncWorker extends Worker {
 
         if (totalChanges > PLAN_REFRESH_THRESHOLD) {
             markFilterCacheRefreshNeeded(context);
-            savePlanBaselineSnapshot(prefs, current);
-            String signature = "refresh_" + totalChanges + "_" + current.size();
-            if (shouldNotifyForSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+            savePlanBaselineSnapshot(prefs, planBaselineJsonKey, current);
+            String signature = "refresh_" + totalChanges + "_" + buildPlanSnapshotSignature(current);
+            if (shouldNotifyForSignature(prefs, planAlertHashKey, planAlertTsKey, signature)) {
                 notifyPlanRefreshed(context);
-                rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
+                rememberAlertSignature(prefs, planAlertHashKey, planAlertTsKey, signature);
             }
             return;
         }
@@ -333,12 +343,12 @@ public class BackgroundSyncWorker extends Worker {
             }
         }
 
-        savePlanBaselineSnapshot(prefs, current);
+        savePlanBaselineSnapshot(prefs, planBaselineJsonKey, current);
         if (!lines.isEmpty()) {
             String signature = buildAlertSignatureFromList(lines);
-            if (shouldNotifyForSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature)) {
+            if (shouldNotifyForSignature(prefs, planAlertHashKey, planAlertTsKey, signature)) {
                 notifyPlanChanges(context, lines);
-                rememberAlertSignature(prefs, KEY_LAST_PLAN_ALERT_HASH, KEY_LAST_PLAN_ALERT_TS, signature);
+                rememberAlertSignature(prefs, planAlertHashKey, planAlertTsKey, signature);
             }
         }
     }
@@ -522,6 +532,42 @@ public class BackgroundSyncWorker extends Worker {
             added = remainingAdded;
         }
 
+        if (!removed.isEmpty() && !added.isEmpty()) {
+            Set<Integer> usedAddedForCancelled = new HashSet<>();
+            List<PlanSnapshotEvent> remainingRemoved = new ArrayList<>();
+
+            for (PlanSnapshotEvent oldEv : removed) {
+                int matchedIdx = -1;
+                for (int i = 0; i < added.size(); i++) {
+                    if (usedAddedForCancelled.contains(i)) {
+                        continue;
+                    }
+                    PlanSnapshotEvent newEv = added.get(i);
+                    if (!isCancellationTransition(oldEv, newEv)) {
+                        continue;
+                    }
+                    matchedIdx = i;
+                    break;
+                }
+
+                if (matchedIdx >= 0) {
+                    usedAddedForCancelled.add(matchedIdx);
+                    diff.cancelled.add(added.get(matchedIdx));
+                } else {
+                    remainingRemoved.add(oldEv);
+                }
+            }
+
+            List<PlanSnapshotEvent> remainingAdded = new ArrayList<>();
+            for (int i = 0; i < added.size(); i++) {
+                if (!usedAddedForCancelled.contains(i)) {
+                    remainingAdded.add(added.get(i));
+                }
+            }
+            removed = remainingRemoved;
+            added = remainingAdded;
+        }
+
         diff.removed.addAll(removed);
         for (PlanSnapshotEvent ev : added) {
             if (ev.cancelledType) {
@@ -544,6 +590,22 @@ public class BackgroundSyncWorker extends Worker {
                 .thenComparing(m -> m.to.title));
 
         return diff;
+    }
+
+    private boolean isCancellationTransition(PlanSnapshotEvent oldEv, PlanSnapshotEvent newEv) {
+        if (oldEv == null || newEv == null) {
+            return false;
+        }
+        if (oldEv.cancelledType || !newEv.cancelledType) {
+            return false;
+        }
+        if (oldEv.date == null || newEv.date == null || !oldEv.date.equals(newEv.date)) {
+            return false;
+        }
+        if (oldEv.startMin != newEv.startMin || oldEv.endMin != newEv.endMin) {
+            return false;
+        }
+        return oldEv.coreNoType.equals(newEv.coreNoType);
     }
 
     private String buildGradeKey(Semester semester, Grade grade) {
@@ -631,12 +693,12 @@ public class BackgroundSyncWorker extends Worker {
         return out;
     }
 
-    private void saveGradesBaselineSet(SharedPreferences prefs, Set<String> values) {
+    private void saveGradesBaselineSet(SharedPreferences prefs, String storageKey, Set<String> values) {
         JSONArray arr = new JSONArray();
         for (String value : values) {
             arr.put(value);
         }
-        prefs.edit().putString(KEY_GRADES_BASELINE_JSON, arr.toString()).apply();
+        prefs.edit().putString(storageKey, arr.toString()).apply();
     }
 
     private List<PlanSnapshotEvent> readPlanSnapshot(String json) {
@@ -661,12 +723,25 @@ public class BackgroundSyncWorker extends Worker {
         return out;
     }
 
-    private void savePlanBaselineSnapshot(SharedPreferences prefs, List<PlanSnapshotEvent> events) {
+    private void savePlanBaselineSnapshot(SharedPreferences prefs, String storageKey, List<PlanSnapshotEvent> events) {
         JSONArray arr = new JSONArray();
         for (PlanSnapshotEvent ev : events) {
             arr.put(ev.toJson());
         }
-        prefs.edit().putString(KEY_PLAN_BASELINE_JSON, arr.toString()).apply();
+        prefs.edit().putString(storageKey, arr.toString()).apply();
+    }
+
+    private String buildPlanSnapshotSignature(List<PlanSnapshotEvent> events) {
+        if (events == null || events.isEmpty()) {
+            return "empty";
+        }
+        List<String> ids = new ArrayList<>(events.size());
+        for (PlanSnapshotEvent ev : events) {
+            if (ev != null) {
+                ids.add(ev.id());
+            }
+        }
+        return buildAlertSignatureFromList(ids);
     }
 
     private String buildAlertSignatureFromList(List<String> values) {
@@ -740,14 +815,23 @@ public class BackgroundSyncWorker extends Worker {
 
     private static class PlanSnapshotEvent {
         final String core;
+        final String coreNoType;
         final String title;
         final LocalDate date;
         final int startMin;
         final int endMin;
         final boolean cancelledType;
 
-        PlanSnapshotEvent(String core, String title, LocalDate date, int startMin, int endMin, boolean cancelledType) {
+        PlanSnapshotEvent(
+                String core,
+                String coreNoType,
+                String title,
+                LocalDate date,
+                int startMin,
+                int endMin,
+                boolean cancelledType) {
             this.core = core;
+            this.coreNoType = coreNoType;
             this.title = title;
             this.date = date;
             this.startMin = startMin;
@@ -762,17 +846,21 @@ public class BackgroundSyncWorker extends Worker {
             String room = event.room != null ? event.room.trim() : "";
             String type = event.typeClass != null ? event.typeClass.trim() : "";
             int duration = Math.max(0, event.endMin - event.startMin);
+            String coreNoType = (title + "|" + teacher + "|" + group + "|" + room + "|" + duration)
+                    .trim()
+                    .toLowerCase(Locale.ROOT);
             String core = (title + "|" + teacher + "|" + group + "|" + room + "|" + type + "|" + duration)
                     .trim()
                     .toLowerCase(Locale.ROOT);
             boolean cancelledType = "week-event-type-cancelled".equalsIgnoreCase(type);
-            return new PlanSnapshotEvent(core, title, date, event.startMin, event.endMin, cancelledType);
+            return new PlanSnapshotEvent(core, coreNoType, title, date, event.startMin, event.endMin, cancelledType);
         }
 
         JSONObject toJson() {
             JSONObject obj = new JSONObject();
             try {
                 obj.put("c", core);
+                obj.put("b", coreNoType);
                 obj.put("t", title);
                 obj.put("d", date != null ? date.toString() : "");
                 obj.put("s", startMin);
@@ -786,13 +874,17 @@ public class BackgroundSyncWorker extends Worker {
         static PlanSnapshotEvent fromJson(JSONObject obj) {
             try {
                 String core = obj.optString("c", "");
+                String coreNoType = obj.optString("b", "");
+                if (coreNoType == null || coreNoType.isEmpty()) {
+                    coreNoType = core;
+                }
                 String title = obj.optString("t", "");
                 String dateStr = obj.optString("d", "");
                 LocalDate date = LocalDate.parse(dateStr);
                 int start = obj.optInt("s", 0);
                 int end = obj.optInt("e", start);
                 boolean cancelledType = obj.optBoolean("x", false);
-                return new PlanSnapshotEvent(core, title, date, start, end, cancelledType);
+                return new PlanSnapshotEvent(core, coreNoType, title, date, start, end, cancelledType);
             } catch (Exception e) {
                 return null;
             }
