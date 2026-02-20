@@ -1,5 +1,7 @@
 package pl.kejlo.mzutv2;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -7,7 +9,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,7 +22,6 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.content.Context;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
@@ -26,6 +31,7 @@ import java.util.List;
 public class HomeActivity extends MzutBaseActivity {
 
     private static final String TAG = "mZUTv2-Home";
+    public static final String EXTRA_REQUEST_NOTIF_PERMISSION = "extra_request_notif_permission";
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -43,12 +49,17 @@ public class HomeActivity extends MzutBaseActivity {
     private TileGridLayout tileGrid;
     private HomeRepository homeRepository;
     private boolean introScheduled = false;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
+
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                this::onNotificationPermissionResult);
 
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
@@ -60,8 +71,6 @@ public class HomeActivity extends MzutBaseActivity {
             finish();
             return;
         }
-
-        NotificationSyncManager.syncWorkerSchedule(getApplicationContext());
 
         setContentView(R.layout.activity_home);
         ThemeManager.applySystemBars(this);
@@ -106,6 +115,60 @@ public class HomeActivity extends MzutBaseActivity {
         setupGrid();
         prepareIntroAnimations();
         scheduleIntroAnimations(drawerContentRoot);
+        drawerContentRoot.post(this::handleNotificationPermissionFlow);
+    }
+
+    private void handleNotificationPermissionFlow() {
+        SharedPreferences settings = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+        boolean asked = settings.getBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, false);
+        boolean hasPermission = NotificationSyncManager.hasNotificationPermission(this);
+        boolean shouldRequestPrompt = getIntent().getBooleanExtra(EXTRA_REQUEST_NOTIF_PERMISSION, false);
+        if (shouldRequestPrompt) {
+            getIntent().removeExtra(EXTRA_REQUEST_NOTIF_PERMISSION);
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            if (!asked) {
+                settings.edit()
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
+                        .apply();
+            }
+            NotificationSyncManager.syncWorkerSchedule(getApplicationContext());
+            return;
+        }
+
+        if (hasPermission) {
+            if (!asked) {
+                settings.edit()
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
+                        .apply();
+            }
+            NotificationSyncManager.syncWorkerSchedule(getApplicationContext());
+            return;
+        }
+
+        if (shouldRequestPrompt && !asked) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            return;
+        }
+
+        NotificationSyncManager.syncWorkerSchedule(getApplicationContext());
+    }
+
+    private void onNotificationPermissionResult(boolean granted) {
+        SharedPreferences settings = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
+        settings.edit()
+                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, granted)
+                .apply();
+
+        if (!granted) {
+            Toast.makeText(this, R.string.settings_notifications_permission_denied, Toast.LENGTH_LONG).show();
+        }
+
+        NotificationSyncManager.syncWorkerSchedule(getApplicationContext());
     }
 
 
@@ -297,6 +360,9 @@ public class HomeActivity extends MzutBaseActivity {
             homeHero.setAlpha(0f);
             homeHero.setTranslationY(60f);
         }
+        if (tileGrid != null) {
+            tileGrid.prepareTilesForEntrance();
+        }
         if (homeSection != null) {
             homeSection.setAlpha(0f);
             homeSection.setTranslationY(40f);
@@ -317,7 +383,7 @@ public class HomeActivity extends MzutBaseActivity {
             @Override
             public boolean onPreDraw() {
                 root.getViewTreeObserver().removeOnPreDrawListener(this);
-                root.post(HomeActivity.this::runIntroAnimations);
+                runIntroAnimations();
                 return true;
             }
         });
