@@ -1,31 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="?attr/mzBg" />
-        </shape>
-    </item>
-
-    <item android:gravity="top">
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="270"
-                android:endColor="?attr/mzBg"
-                android:startColor="?attr/mzToolbarGradStart" />
-        </shape>
-    </item>
-
-    <item
-        android:bottom="-72dp"
-        android:gravity="bottom|start"
-        android:start="-64dp">
-        <shape android:shape="oval">
-            <solid android:color="?attr/mzBgSoft" />
-            <size
-                android:width="200dp"
-                android:height="200dp" />
-        </shape>
-    </item>
-
-</layer-list>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/mzBg" />
+</shape>

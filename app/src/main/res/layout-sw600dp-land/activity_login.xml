@@ -35,10 +35,10 @@
             android:paddingBottom="22dp">
 
             <FrameLayout
-                android:layout_width="114dp"
-                android:layout_height="114dp"
+                android:layout_width="152dp"
+                android:layout_height="152dp"
                 android:background="@drawable/bg_login_logo_plate"
-                android:padding="15dp">
+                android:padding="18dp">
 
                 <ImageView
                     android:id="@+id/appIcon"
@@ -61,15 +61,6 @@
                 android:textSize="32sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/appSubtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center"
-                android:text="@string/login_card_title"
-                android:textColor="?attr/mzMuted"
-                android:textSize="13sp" />
         </LinearLayout>
 
         <androidx.cardview.widget.CardView
