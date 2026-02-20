@@ -28,6 +28,7 @@ public class TileGridLayout extends ViewGroup {
 
     private List<Tile> tiles = new ArrayList<>();
     private boolean isEditMode = false;
+    private boolean entrancePrepared = false;
 
     private OnTilesChangedListener tilesChangedListener;
     private OnTileClickListener tileClickListener;
@@ -138,6 +139,25 @@ public class TileGridLayout extends ViewGroup {
     }
 
     /**
+     * Prepares children for entrance animation before first draw.
+     * Call before animateTilesEntrance to avoid visible flicker.
+     */
+    public void prepareTilesForEntrance() {
+        entrancePrepared = true;
+        float offsetY = 18f * getResources().getDisplayMetrics().density;
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof TileView) {
+                child.animate().cancel();
+                child.setAlpha(0f);
+                child.setScaleX(0.92f);
+                child.setScaleY(0.92f);
+                child.setTranslationY(offsetY);
+            }
+        }
+    }
+
+    /**
      * Animate tiles entrance with staggered delay.
      * Call this after layout is complete (e.g., via post or postDelayed).
      * 
@@ -147,11 +167,14 @@ public class TileGridLayout extends ViewGroup {
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
             if (child instanceof TileView) {
-                // Initial state
-                child.setAlpha(0f);
-                child.setScaleX(0.8f);
-                child.setScaleY(0.8f);
-                child.setTranslationY(40f);
+                child.animate().cancel();
+
+                if (!entrancePrepared) {
+                    child.setAlpha(1f);
+                    child.setScaleX(1f);
+                    child.setScaleY(1f);
+                    child.setTranslationY(0f);
+                }
 
                 // Animate with stagger
                 child.animate()
@@ -165,6 +188,7 @@ public class TileGridLayout extends ViewGroup {
                         .start();
             }
         }
+        entrancePrepared = false;
     }
 
     public List<Tile> getTiles() {

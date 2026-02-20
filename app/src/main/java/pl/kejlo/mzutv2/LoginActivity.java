@@ -1,29 +1,21 @@
 package pl.kejlo.mzutv2;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Rect;
 
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.WindowManager;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -66,11 +58,9 @@ public class LoginActivity extends AppCompatActivity {
     private int headerExpandedBottomMargin = 0;
     private int headerCollapsedBottomMargin = 0;
 
-    private static final long ANIM_DURATION_ENTER = 600;
-    private static final long ANIM_STAGGER_DELAY = 100;
+    private static final long ANIM_DURATION_ENTER = 480L;
+    private static final long ANIM_STAGGER_DELAY = 85L;
     private ObjectAnimator loadingAnimator;
-    private ActivityResultLauncher<String> notificationPermissionLauncher;
-    private boolean pendingHomeAfterPermission = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,15 +68,12 @@ public class LoginActivity extends AppCompatActivity {
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
 
-        notificationPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                this::onNotificationPermissionResult);
-
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
         if (session.getAuthKey() != null && session.getUserId() != null) {
             Intent i = new Intent(LoginActivity.this, HomeActivity.class);
+            i.putExtra(HomeActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
             startActivity(i);
             finish();
             return;
@@ -186,14 +173,14 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
             appIcon.animate()
-                    .scaleX(0.7f)
-                    .scaleY(0.7f)
-                    .setDuration(200)
+                    .scaleX(0.86f)
+                    .scaleY(0.86f)
+                    .setDuration(180)
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
             loginCard.animate()
-                    .translationY(-dpToPx(12))
-                    .setDuration(200)
+                    .translationY(-dpToPx(8))
+                    .setDuration(180)
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
         } else {
@@ -208,12 +195,12 @@ public class LoginActivity extends AppCompatActivity {
             appIcon.animate()
                     .scaleX(1f)
                     .scaleY(1f)
-                    .setDuration(200)
+                    .setDuration(180)
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
             loginCard.animate()
                     .translationY(0f)
-                    .setDuration(200)
+                    .setDuration(180)
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
         }
@@ -225,39 +212,52 @@ public class LoginActivity extends AppCompatActivity {
 
     private void prepareViewsForAnimation() {
         appIcon.setAlpha(0f);
-        appIcon.setTranslationY(-300f);
-        appIcon.setRotation(-180f);
-        appIcon.setScaleX(0.5f);
-        appIcon.setScaleY(0.5f);
+        appIcon.setTranslationY(-dpToPx(18));
+        appIcon.setScaleX(0.92f);
+        appIcon.setScaleY(0.92f);
 
         loginCard.setAlpha(0f);
-        loginCard.setScaleX(0.9f);
-        loginCard.setScaleY(0.9f);
-        loginCard.setTranslationY(200f);
+        loginCard.setScaleX(0.98f);
+        loginCard.setScaleY(0.98f);
+        loginCard.setTranslationY(dpToPx(20));
 
         if (loginInputLayout != null) {
             loginInputLayout.setAlpha(0f);
-            loginInputLayout.setTranslationY(50f);
+            loginInputLayout.setTranslationY(dpToPx(10));
         }
         if (passwordInputLayout != null) {
             passwordInputLayout.setAlpha(0f);
-            passwordInputLayout.setTranslationY(50f);
+            passwordInputLayout.setTranslationY(dpToPx(10));
         }
 
         btnLogin.setAlpha(0f);
-        btnLogin.setTranslationY(150f);
-        btnLogin.setScaleX(0.5f);
+        btnLogin.setTranslationY(dpToPx(14));
+        btnLogin.setScaleX(0.98f);
+        btnLogin.setScaleY(0.98f);
     }
 
     private void startKillerIntroAnimation() {
+        if (headerContainer != null) {
+            headerContainer.setAlpha(0f);
+            headerContainer.setTranslationY(-dpToPx(10));
+        }
+
+        if (headerContainer != null) {
+            headerContainer.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(ANIM_DURATION_ENTER)
+                    .setInterpolator(new DecelerateInterpolator(1.5f))
+                    .start();
+        }
+
         appIcon.animate()
                 .alpha(1f)
                 .translationY(0f)
-                .rotation(0f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(800)
-                .setInterpolator(new OvershootInterpolator(1.5f))
+                .setDuration(ANIM_DURATION_ENTER)
+                .setInterpolator(new DecelerateInterpolator(1.35f))
                 .start();
 
         loginCard.animate()
@@ -265,18 +265,18 @@ public class LoginActivity extends AppCompatActivity {
                 .translationY(0f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setStartDelay(200)
-                .setDuration(600)
-                .setInterpolator(new DecelerateInterpolator(1.2f))
+                .setStartDelay(ANIM_STAGGER_DELAY)
+                .setDuration(ANIM_DURATION_ENTER)
+                .setInterpolator(new DecelerateInterpolator(1.35f))
                 .start();
 
         if (loginInputLayout != null) {
             loginInputLayout.animate()
                     .alpha(1f)
                     .translationY(0f)
-                    .setStartDelay(400)
-                    .setDuration(500)
-                    .setInterpolator(new OvershootInterpolator(1.0f))
+                    .setStartDelay(ANIM_STAGGER_DELAY * 2L)
+                    .setDuration(ANIM_DURATION_ENTER - 80L)
+                    .setInterpolator(new DecelerateInterpolator(1.2f))
                     .start();
         }
 
@@ -284,9 +284,9 @@ public class LoginActivity extends AppCompatActivity {
             passwordInputLayout.animate()
                     .alpha(1f)
                     .translationY(0f)
-                    .setStartDelay(500)
-                    .setDuration(500)
-                    .setInterpolator(new OvershootInterpolator(1.0f))
+                    .setStartDelay(ANIM_STAGGER_DELAY * 3L)
+                    .setDuration(ANIM_DURATION_ENTER - 80L)
+                    .setInterpolator(new DecelerateInterpolator(1.2f))
                     .start();
         }
 
@@ -294,15 +294,22 @@ public class LoginActivity extends AppCompatActivity {
                 .alpha(1f)
                 .translationY(0f)
                 .scaleX(1f)
-                .setStartDelay(650)
-                .setDuration(600)
-                .setInterpolator(new OvershootInterpolator(2.0f))
+                .scaleY(1f)
+                .setStartDelay(ANIM_STAGGER_DELAY * 4L)
+                .setDuration(ANIM_DURATION_ENTER - 40L)
+                .setInterpolator(new DecelerateInterpolator(1.2f))
                 .start();
     }
 
     private void doLogin() {
-        String login = editLogin.getText() != null ? editLogin.getText().toString().trim() : "";
+        String rawLogin = editLogin.getText() != null ? editLogin.getText().toString().trim() : "";
+        String login = normalizeLoginIdentifier(rawLogin);
         String pass = editPass.getText() != null ? editPass.getText().toString().trim() : "";
+
+        if (!login.equals(rawLogin) && editLogin != null) {
+            editLogin.setText(login);
+            editLogin.setSelection(login.length());
+        }
 
         if (login.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, R.string.login_enter_credentials, Toast.LENGTH_SHORT).show();
@@ -333,6 +340,18 @@ public class LoginActivity extends AppCompatActivity {
         executeAuthTask(login, pass, token, tokenJpg);
     }
 
+    private String normalizeLoginIdentifier(String rawLogin) {
+        if (rawLogin == null) {
+            return "";
+        }
+        String normalized = rawLogin.trim();
+        int at = normalized.indexOf('@');
+        if (at > 0) {
+            normalized = normalized.substring(0, at).trim();
+        }
+        return normalized;
+    }
+
     private void startLimboLogin(String login) {
         if (isAuthTaskRunning) {
             return;
@@ -350,7 +369,7 @@ public class LoginActivity extends AppCompatActivity {
                 this,
                 getString(R.string.login_success, username),
                 Toast.LENGTH_LONG).show();
-        prepareNotificationsAndOpenHome();
+        runSuccessTransitionAndOpenHome(true);
     }
 
     private void startLoadingState() {
@@ -358,15 +377,15 @@ public class LoginActivity extends AppCompatActivity {
         editLogin.setEnabled(false);
         editPass.setEnabled(false);
 
-        editLogin.animate().alpha(0.5f).setDuration(300).start();
-        editPass.animate().alpha(0.5f).setDuration(300).start();
+        editLogin.animate().alpha(0.65f).setDuration(220).start();
+        editPass.animate().alpha(0.65f).setDuration(220).start();
 
         loadingAnimator = ObjectAnimator.ofPropertyValuesHolder(
                 btnLogin,
-                PropertyValuesHolder.ofFloat("scaleX", 1f, 0.95f),
-                PropertyValuesHolder.ofFloat("scaleY", 1f, 0.95f),
-                PropertyValuesHolder.ofFloat("alpha", 1f, 0.8f));
-        loadingAnimator.setDuration(600);
+                PropertyValuesHolder.ofFloat("scaleX", 1f, 0.98f),
+                PropertyValuesHolder.ofFloat("scaleY", 1f, 0.98f),
+                PropertyValuesHolder.ofFloat("alpha", 1f, 0.88f));
+        loadingAnimator.setDuration(520);
         loadingAnimator.setRepeatCount(ObjectAnimator.INFINITE);
         loadingAnimator.setRepeatMode(ObjectAnimator.REVERSE);
         loadingAnimator.start();
@@ -384,8 +403,8 @@ public class LoginActivity extends AppCompatActivity {
         editLogin.setEnabled(true);
         editPass.setEnabled(true);
 
-        editLogin.animate().alpha(1f).setDuration(200).start();
-        editPass.animate().alpha(1f).setDuration(200).start();
+        editLogin.animate().alpha(1f).setDuration(180).start();
+        editPass.animate().alpha(1f).setDuration(180).start();
     }
 
     private void animateFailureShake(View view) {
@@ -394,102 +413,43 @@ public class LoginActivity extends AppCompatActivity {
             v.vibrate(50);
         }
 
-        ObjectAnimator shake = ObjectAnimator.ofFloat(view, "translationX", 0, 25, -25, 25, -25, 15, -15, 6, -6, 0);
-        shake.setDuration(700);
+        ObjectAnimator shake = ObjectAnimator.ofFloat(view, "translationX", 0, 10, -10, 6, -6, 3, -3, 0);
+        shake.setDuration(320);
         shake.start();
     }
 
-    private void prepareNotificationsAndOpenHome() {
+    private void runSuccessTransitionAndOpenHome(boolean requestNotificationPermission) {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
         SessionExpiryManager.clearSessionExpiredNotice(this);
-        SharedPreferences settings = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
-        boolean asked = settings.getBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, false);
-        boolean hasPermission = NotificationSyncManager.hasNotificationPermission(this);
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            if (!asked) {
-                settings.edit()
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
-                        .apply();
-            }
-            NotificationSyncManager.syncWorkerSchedule(this);
-            runSuccessTransitionAndOpenHome();
-            return;
-        }
-
-        if (hasPermission) {
-            if (!asked) {
-                settings.edit()
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
-                        .apply();
-            }
-            NotificationSyncManager.syncWorkerSchedule(this);
-            runSuccessTransitionAndOpenHome();
-            return;
-        }
-
-        if (!asked) {
-            pendingHomeAfterPermission = true;
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-            return;
-        }
-
-        settings.edit()
-                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, false)
-                .apply();
-        NotificationSyncManager.syncWorkerSchedule(this);
-        runSuccessTransitionAndOpenHome();
-    }
-
-    private void onNotificationPermissionResult(boolean granted) {
-        SharedPreferences settings = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
-        settings.edit()
-                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
-                .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, granted)
-                .apply();
-
-        if (!granted) {
-            Toast.makeText(this, R.string.settings_notifications_permission_denied, Toast.LENGTH_LONG).show();
-        }
-
-        NotificationSyncManager.syncWorkerSchedule(this);
-
-        if (pendingHomeAfterPermission) {
-            pendingHomeAfterPermission = false;
-            runSuccessTransitionAndOpenHome();
-        }
-    }
-
-    private void runSuccessTransitionAndOpenHome() {
-        if (loadingAnimator != null)
+        if (loadingAnimator != null) {
             loadingAnimator.cancel();
+        }
 
-        appIcon.animate()
-                .translationY(-1000f)
-                .alpha(0f)
-                .setDuration(400)
-                .setInterpolator(new AccelerateInterpolator())
-                .start();
+        btnLogin.setEnabled(false);
+        editLogin.setEnabled(false);
+        editPass.setEnabled(false);
+
+        if (headerContainer != null) {
+            headerContainer.animate()
+                    .alpha(0f)
+                    .translationY(-dpToPx(10))
+                    .setDuration(210)
+                    .setInterpolator(new DecelerateInterpolator(1.2f))
+                    .start();
+        }
 
         loginCard.animate()
-                .translationY(1000f)
                 .alpha(0f)
-                .rotation(10f)
-                .setDuration(400)
-                .setInterpolator(new AccelerateInterpolator())
-                .start();
-
-        btnLogin.animate()
-                .scaleX(3f)
-                .scaleY(3f)
-                .alpha(0f)
-                .setDuration(300)
+                .translationY(-dpToPx(8))
+                .setDuration(240)
+                .setInterpolator(new DecelerateInterpolator(1.2f))
                 .withEndAction(() -> {
                     Intent i = new Intent(LoginActivity.this, HomeActivity.class);
-                    i.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                    i.putExtra(HomeActivity.EXTRA_REQUEST_NOTIF_PERMISSION, requestNotificationPermission);
                     startActivity(i);
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    overridePendingTransition(R.anim.activity_login_to_home_enter, R.anim.activity_login_to_home_exit);
                     finish();
                 })
                 .start();
@@ -601,6 +561,6 @@ public class LoginActivity extends AppCompatActivity {
                 getString(R.string.login_success, displayName),
                 Toast.LENGTH_LONG).show();
 
-        prepareNotificationsAndOpenHome();
+        runSuccessTransitionAndOpenHome(true);
     }
 }

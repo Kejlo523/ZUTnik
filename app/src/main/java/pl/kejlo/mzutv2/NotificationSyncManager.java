@@ -18,6 +18,7 @@ import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public final class NotificationSyncManager {
@@ -30,7 +31,7 @@ public final class NotificationSyncManager {
     public static final long SYNC_INTERVAL_MINUTES = 30L;
     private static final long SYNC_FLEX_MINUTES = 10L;
     private static final String PREFS_RUNTIME = "mzut_sync_runtime";
-    private static final String KEY_BOOTSTRAP_SYNC_USER = "bootstrap_sync_user_v1";
+    private static final String KEY_BOOTSTRAP_SYNC_SCOPE = "bootstrap_sync_scope_v2";
     private static final String PREFS_BG = "mzut_background_sync_cache";
     private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
@@ -177,14 +178,15 @@ public final class NotificationSyncManager {
             return;
         }
 
+        String scope = buildCurrentSyncScope(appContext);
         SharedPreferences runtimePrefs = appContext.getSharedPreferences(PREFS_RUNTIME, Context.MODE_PRIVATE);
-        String syncedUser = runtimePrefs.getString(KEY_BOOTSTRAP_SYNC_USER, "");
+        String syncedScope = runtimePrefs.getString(KEY_BOOTSTRAP_SYNC_SCOPE, "");
         SharedPreferences bgPrefs = appContext.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
-        boolean gradesBaselineReady = bgPrefs.getBoolean(KEY_GRADES_BASELINE_READY, false);
+        boolean gradesBaselineReady = bgPrefs.getBoolean(scopedPrefKey(KEY_GRADES_BASELINE_READY, scope), false);
         boolean requiresPlanBaseline = isPlanEnabled(appContext) && isAnyPlanCategoryEnabled(appContext);
-        boolean planBaselineReady = bgPrefs.getBoolean(KEY_PLAN_BASELINE_READY, false);
+        boolean planBaselineReady = bgPrefs.getBoolean(scopedPrefKey(KEY_PLAN_BASELINE_READY, scope), false);
 
-        if (userId.equals(syncedUser)
+        if (scope.equals(syncedScope)
                 && gradesBaselineReady
                 && (!requiresPlanBaseline || planBaselineReady)) {
             return;
@@ -207,11 +209,52 @@ public final class NotificationSyncManager {
                 ExistingWorkPolicy.KEEP,
                 request);
 
-        runtimePrefs.edit().putString(KEY_BOOTSTRAP_SYNC_USER, userId).apply();
+        runtimePrefs.edit().putString(KEY_BOOTSTRAP_SYNC_SCOPE, scope).apply();
     }
 
     public static void cancelWorker(Context context) {
-        WorkManager.getInstance(context.getApplicationContext()).cancelUniqueWork(UNIQUE_WORK_NAME);
+        WorkManager wm = WorkManager.getInstance(context.getApplicationContext());
+        wm.cancelUniqueWork(UNIQUE_WORK_NAME);
+        wm.cancelUniqueWork(UNIQUE_BOOTSTRAP_WORK_NAME);
+    }
+
+    static String buildCurrentSyncScope(Context context) {
+        Context appContext = context != null ? context.getApplicationContext() : null;
+        if (appContext != null) {
+            MzutSession.initializeFromPreferences(appContext);
+        }
+
+        MzutSession session = MzutSession.getInstance();
+        String userId = safeScopePart(session.getUserId());
+        String studyId = safeScopePart(session.getActiveStudyId());
+        if (studyId.isEmpty()) {
+            Study active = session.getActiveStudy();
+            if (active != null) {
+                studyId = safeScopePart(active.przynaleznoscId);
+            }
+        }
+
+        return "u:" + userId + "|s:" + studyId;
+    }
+
+    static String scopedPrefKey(String baseKey, String scope) {
+        return baseKey + "_" + scopeHash(scope);
+    }
+
+    private static String safeScopePart(String value) {
+        if (value == null) {
+            return "";
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? "" : trimmed;
+    }
+
+    private static String scopeHash(String scope) {
+        String normalized = scope == null ? "" : scope.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) {
+            normalized = "unknown";
+        }
+        return Integer.toHexString(normalized.hashCode());
     }
 
     public static void ensureChannels(Context context) {
