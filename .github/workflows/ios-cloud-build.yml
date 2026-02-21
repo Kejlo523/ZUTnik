@@ -10,6 +10,7 @@ on:
       - 'ios/mZUTiOS/**'
       - '.github/workflows/ios-cloud-build.yml'
       - '!ios/mZUTiOS/screenshots/**'
+      - '!ios/mZUTiOS/ci-logs/**'
 
 permissions:
   contents: write
@@ -107,10 +108,25 @@ jobs:
           xcrun simctl terminate "$SIM_UDID" "$APP_BUNDLE_ID" || true
 
       - name: Store screenshots in repo
+        if: always()
         run: |
           set -euo pipefail
           mkdir -p ios/mZUTiOS/screenshots
-          cp ios/mZUTiOS/build/screenshots/*.png ios/mZUTiOS/screenshots/
+          if ls ios/mZUTiOS/build/screenshots/*.png >/dev/null 2>&1; then
+            cp ios/mZUTiOS/build/screenshots/*.png ios/mZUTiOS/screenshots/
+          fi
+
+      - name: Store build logs in repo
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p ios/mZUTiOS/ci-logs
+          if [ -f ios/mZUTiOS/build/xcodebuild-build.log ]; then
+            cp ios/mZUTiOS/build/xcodebuild-build.log ios/mZUTiOS/ci-logs/latest-build.log
+          fi
+          if [ -f ios/mZUTiOS/build/xcodebuild-test.log ]; then
+            cp ios/mZUTiOS/build/xcodebuild-test.log ios/mZUTiOS/ci-logs/latest-test.log
+          fi
 
       - name: Upload screenshots artifact
         if: always()
@@ -127,14 +143,15 @@ jobs:
           path: ios/mZUTiOS/build/*.log
 
       - name: Commit screenshots
+        if: always()
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ios/mZUTiOS/screenshots/*.png
+          git add -A ios/mZUTiOS/screenshots ios/mZUTiOS/ci-logs
           if git diff --cached --quiet; then
-            echo "No screenshot changes to commit"
+            echo "No screenshot or log changes to commit"
             exit 0
           fi
-          git commit -m "ci: refresh iOS simulator screenshots"
+          git commit -m "ci: refresh iOS screenshots and logs"
           git push
