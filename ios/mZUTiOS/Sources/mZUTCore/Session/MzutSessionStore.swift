@@ -3,7 +3,7 @@ import Foundation
 
 @MainActor
 public final class MzutSessionStore: ObservableObject {
-    public static let prefsName = "mzut_prefs"
+    public nonisolated static let prefsName = "mzut_prefs"
 
     private enum Keys {
         static let userId = "user_id"

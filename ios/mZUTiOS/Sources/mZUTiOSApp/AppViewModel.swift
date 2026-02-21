@@ -17,9 +17,9 @@ final class AppViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(dependencies: DependencyContainer = DependencyContainer()) {
-        self.dependencies = dependencies
-        self.tiles = dependencies.homeRepository.loadTiles()
+    init(dependencies: DependencyContainer? = nil) {
+        self.dependencies = dependencies ?? DependencyContainer()
+        self.tiles = self.dependencies.homeRepository.loadTiles()
         bindSession()
         refreshFromSession()
     }
