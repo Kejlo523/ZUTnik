@@ -38,7 +38,32 @@ jobs:
         id: simulator
         run: |
           set -euo pipefail
-          SIM_UDID=$(xcrun simctl list devices available | grep -m1 "iPhone" | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+          SIM_UDID=$(
+            python3 - <<'PY'
+import json
+import subprocess
+import sys
+
+raw = subprocess.check_output(
+    ["xcrun", "simctl", "list", "devices", "available", "--json"],
+    text=True,
+)
+payload = json.loads(raw)
+
+for runtime_name, devices in payload.get("devices", {}).items():
+    if "iOS" not in runtime_name:
+        continue
+    for device in devices:
+        if not device.get("isAvailable"):
+            continue
+        name = device.get("name", "")
+        if name.startswith("iPhone"):
+            print(device.get("udid", ""))
+            sys.exit(0)
+
+sys.exit(1)
+PY
+          )
           if [ -z "$SIM_UDID" ]; then
             echo "No available iPhone simulator found" >&2
             exit 1
@@ -49,24 +74,28 @@ jobs:
         working-directory: ios/mZUTiOS
         run: |
           set -euo pipefail
+          mkdir -p build
+          set -o pipefail
           xcodebuild \
             -project mZUTiOS.xcodeproj \
             -scheme mZUTiOSApp \
             -configuration Debug \
             -destination "id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath build/DerivedData \
-            build
+            build 2>&1 | tee build/xcodebuild-build.log
 
       - name: Run unit tests
         working-directory: ios/mZUTiOS
         run: |
           set -euo pipefail
+          mkdir -p build
+          set -o pipefail
           xcodebuild \
             -project mZUTiOS.xcodeproj \
             -scheme mZUTiOSApp \
             -destination "id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath build/DerivedData \
-            test
+            test 2>&1 | tee build/xcodebuild-test.log
 
       - name: Capture login and home screenshots
         working-directory: ios/mZUTiOS
@@ -108,10 +137,18 @@ jobs:
           cp ios/mZUTiOS/build/screenshots/*.png ios/mZUTiOS/screenshots/
 
       - name: Upload screenshots artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-screenshots
           path: ios/mZUTiOS/screenshots/*.png
+
+      - name: Upload xcodebuild logs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: ios/mZUTiOS/build/*.log
 
       - name: Commit screenshots
         run: |
