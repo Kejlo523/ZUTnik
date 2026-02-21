@@ -11,6 +11,9 @@ targets:
     platform: iOS
     sources:
       - path: Sources/mZUTCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
   mZUTiOSApp:
     type: application
     platform: iOS
