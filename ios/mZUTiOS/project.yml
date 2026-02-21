@@ -1,0 +1,40 @@
+﻿name: mZUTiOS
+options:
+  deploymentTarget:
+    iOS: '16.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.10'
+targets:
+  mZUTCore:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/mZUTCore
+  mZUTiOSApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/mZUTiOSApp
+    dependencies:
+      - target: mZUTCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: pl.kejlo.mzut.ios
+        INFOPLIST_FILE: Sources/mZUTiOSApp/Info.plist
+  mZUTCoreTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/mZUTCoreTests
+    dependencies:
+      - target: mZUTCore
+schemes:
+  mZUTiOSApp:
+    build:
+      targets:
+        mZUTiOSApp: all
+        mZUTCore: all
+    test:
+      targets:
+        - mZUTCoreTests

@@ -1,0 +1,127 @@
+﻿name: iOS Cloud Build And Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - ios
+    paths:
+      - 'ios/mZUTiOS/**'
+      - '.github/workflows/ios-cloud-build.yml'
+      - '!ios/mZUTiOS/screenshots/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-capture:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios/mZUTiOS
+        run: xcodegen generate
+
+      - name: Show toolchain versions
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Resolve simulator
+        id: simulator
+        run: |
+          set -euo pipefail
+          SIM_UDID=$(xcrun simctl list devices available | grep -m1 "iPhone" | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+          if [ -z "$SIM_UDID" ]; then
+            echo "No available iPhone simulator found" >&2
+            exit 1
+          fi
+          echo "udid=$SIM_UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build app
+        working-directory: ios/mZUTiOS
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project mZUTiOS.xcodeproj \
+            -scheme mZUTiOSApp \
+            -configuration Debug \
+            -destination "id=${{ steps.simulator.outputs.udid }}" \
+            -derivedDataPath build/DerivedData \
+            build
+
+      - name: Run unit tests
+        working-directory: ios/mZUTiOS
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project mZUTiOS.xcodeproj \
+            -scheme mZUTiOSApp \
+            -destination "id=${{ steps.simulator.outputs.udid }}" \
+            -derivedDataPath build/DerivedData \
+            test
+
+      - name: Capture login and home screenshots
+        working-directory: ios/mZUTiOS
+        run: |
+          set -euo pipefail
+          SIM_UDID="${{ steps.simulator.outputs.udid }}"
+          APP_BUNDLE_ID="pl.kejlo.mzut.ios"
+          APP_PATH="build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTiOSApp.app"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Built app not found at: $APP_PATH" >&2
+            exit 1
+          fi
+
+          xcrun simctl shutdown "$SIM_UDID" || true
+          xcrun simctl erase "$SIM_UDID"
+          xcrun simctl boot "$SIM_UDID"
+          xcrun simctl bootstatus "$SIM_UDID" -b
+
+          xcrun simctl install "$SIM_UDID" "$APP_PATH"
+
+          mkdir -p build/screenshots
+
+          xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID"
+          sleep 4
+          xcrun simctl io "$SIM_UDID" screenshot "build/screenshots/01-login.png"
+
+          xcrun simctl terminate "$SIM_UDID" "$APP_BUNDLE_ID" || true
+          xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID" --screenshot-home
+          sleep 4
+          xcrun simctl io "$SIM_UDID" screenshot "build/screenshots/02-home.png"
+
+          xcrun simctl terminate "$SIM_UDID" "$APP_BUNDLE_ID" || true
+
+      - name: Store screenshots in repo
+        run: |
+          set -euo pipefail
+          mkdir -p ios/mZUTiOS/screenshots
+          cp ios/mZUTiOS/build/screenshots/*.png ios/mZUTiOS/screenshots/
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots
+          path: ios/mZUTiOS/screenshots/*.png
+
+      - name: Commit screenshots
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ios/mZUTiOS/screenshots/*.png
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit"
+            exit 0
+          fi
+          git commit -m "ci: refresh iOS simulator screenshots"
+          git push
