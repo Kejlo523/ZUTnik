@@ -12,18 +12,12 @@ public enum MzutTokenGenerator {
         randomBase: String? = nil,
         calendar: Calendar = .current
     ) -> String {
-        let fallback = "p4Hb7BwxUDqaiBATQe7KRhvBQuh2TY2j"
-
-        do {
-            let base = randomBase ?? randomString(length: 32, alphabet: carr)
-            guard let password, !password.isEmpty else {
-                return base
-            }
-
-            return mutate(base: base, login: login, password: password, now: now, calendar: calendar)
-        } catch {
-            return fallback
+        let base = randomBase ?? randomString(length: 32, alphabet: carr)
+        guard let password, !password.isEmpty else {
+            return base
         }
+
+        return mutate(base: base, login: login, password: password, now: now, calendar: calendar)
     }
 
     static func mutate(base: String, login: String, password: String, now: Date, calendar: Calendar) -> String {
@@ -82,11 +76,16 @@ public enum MzutTokenGenerator {
     private static func randomString(length: Int, alphabet: [Character]) -> String {
         var bytes = [UInt8](repeating: 0, count: length)
         let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        if status != errSecSuccess {
-            throw NSError(domain: "MzutTokenGenerator", code: Int(status))
+        if status == errSecSuccess {
+            return bytes.map { alphabet[Int($0) % alphabet.count] }.map(String.init).joined()
         }
 
-        return bytes.map { alphabet[Int($0) % alphabet.count] }.map(String.init).joined()
+        var fallback = String()
+        var random = SystemRandomNumberGenerator()
+        for _ in 0..<length {
+            fallback.append(alphabet.randomElement(using: &random) ?? "A")
+        }
+        return fallback
     }
 }
 
