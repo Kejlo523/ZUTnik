@@ -75,6 +75,7 @@ jobs:
             test 2>&1 | tee build/xcodebuild-test.log
 
       - name: Capture login and home screenshots
+        timeout-minutes: 4
         working-directory: ios/mZUTiOS
         run: |
           set -euo pipefail
@@ -100,13 +101,14 @@ jobs:
           mkdir -p build/screenshots
 
           {
-            if ! xcrun simctl launch --terminate-running-process "$SIM_UDID" "$APP_BUNDLE_ID"; then
+            if ! xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID"; then
               echo "First app launch failed, capturing simulator state anyway"
             fi
             sleep 5
             xcrun simctl io "$SIM_UDID" screenshot "build/screenshots/01-login.png"
 
-            if ! xcrun simctl launch --terminate-running-process "$SIM_UDID" "$APP_BUNDLE_ID" --args --screenshot-home; then
+            xcrun simctl terminate "$SIM_UDID" "$APP_BUNDLE_ID" || true
+            if ! xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID" --args --screenshot-home; then
               echo "Second app launch with screenshot args failed, capturing simulator state anyway"
             fi
             sleep 5
