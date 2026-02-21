@@ -14,6 +14,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: pl.kejlo.mzut.core
   mZUTiOSApp:
     type: application
     platform: iOS
@@ -35,6 +36,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: pl.kejlo.mzut.core.tests
 schemes:
   mZUTiOSApp:
     build:
