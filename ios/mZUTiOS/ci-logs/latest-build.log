@@ -33,12 +33,337 @@ ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/X
 
 ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
 
-Build description signature: 43bf60f0a81991e6a8ae133e76f0ebc9
-Build description path: /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/XCBuildData/43bf60f0a81991e6a8ae133e76f0ebc9.xcbuilddata
-error: Cannot code sign because the target does not have an Info.plist file and one is not being generated automatically. Apply an Info.plist file to the target using the INFOPLIST_FILE build setting or generate one automatically by setting the GENERATE_INFOPLIST_FILE build setting to YES (recommended). (in target 'mZUTCore' from project 'mZUTiOS')
+Build description signature: 77a55160a77221fdd4ad0af759bf3b6e
+Build description path: /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/XCBuildData/77a55160a77221fdd4ad0af759bf3b6e.xcbuilddata
+ClangStatCache /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-96ae0914227b19deccb34b33ba7b5dea.sdkstatcache
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/mZUTiOS.xcodeproj
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-96ae0914227b19deccb34b33ba7b5dea.sdkstatcache
+
+CreateBuildDirectory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/mZUTiOS.xcodeproj
+    builtin-create-build-directory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products
+
+CreateBuildDirectory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/mZUTiOS.xcodeproj
+    builtin-create-build-directory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOS-e26227d5c555ac962a094086feed86d3-VFS-iphonesimulator/all-product-headers.yaml
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/mZUTiOS.xcodeproj
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOS-e26227d5c555ac962a094086feed86d3-VFS-iphonesimulator/all-product-headers.yaml
+
+CreateBuildDirectory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/mZUTiOS.xcodeproj
+    builtin-create-build-directory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator
+
+CreateBuildDirectory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/mZUTiOS.xcodeproj
+    builtin-create-build-directory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp.hmap (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp.DependencyStaticMetadataFileList (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp.DependencyMetadataFileList (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-project-headers.hmap (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-own-target-headers.hmap (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-generated-files.hmap (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-all-target-headers.hmap (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-all-non-framework-target-headers.hmap (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-DebugDylibPath-normal-arm64.txt (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-DebugDylibInstallName-normal-arm64.txt (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/mZUTiOSApp-DebugDylibInstallName-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp_const_extract_protocols.json (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp.SwiftFileList (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp.SwiftConstValuesFileList (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp.LinkFileList (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp-OutputFileMap.json (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/Objects-normal/arm64/mZUTiOSApp-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/DerivedSources/Entitlements-Simulated.plist (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOSApp.build/DerivedSources/Entitlements-Simulated.plist
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore.hmap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/module.modulemap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/module.modulemap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore.DependencyStaticMetadataFileList (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore.DependencyMetadataFileList (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-project-headers.hmap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-own-target-headers.hmap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-generated-files.hmap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-target-headers.hmap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-non-framework-target-headers.hmap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/empty-mZUTCore.plist (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/empty-mZUTCore.plist
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore_const_extract_protocols.json (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.SwiftFileList (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.SwiftConstValuesFileList (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.LinkFileList (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore-OutputFileMap.json (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/7187679823f38a2a940e0043cdf9d637-common-args.resp (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/7187679823f38a2a940e0043cdf9d637-common-args.resp
+-target arm64-apple-ios16.0-simulator '-std=gnu11' -fmodules -gmodules '-fmodules-cache-path=/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/ModuleCache.noindex' '-fmodule-name=mZUTCore' -fpascal-strings -O0 -fno-common '-DDEBUG=1' -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -g -iquote /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-generated-files.hmap -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-own-target-headers.hmap -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-non-framework-target-headers.hmap -ivfsoverlay /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOS-e26227d5c555ac962a094086feed86d3-VFS-iphonesimulator/all-product-headers.yaml -iquote /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-project-headers.hmap -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/include -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources-normal/arm64 -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources/arm64 -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources -F/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources/mZUTCore_vers.c (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    write-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources/mZUTCore_vers.c
+
+Copy /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework/Modules/module.modulemap /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/module.modulemap (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/module.modulemap /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework/Modules
+
+MkDir /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTiOSApp.app/Frameworks (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    /bin/mkdir -p /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTiOSApp.app/Frameworks
+
+MkDir /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTiOSApp.app (in target 'mZUTiOSApp' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    /bin/mkdir -p /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTiOSApp.app
+
+MkDir /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework/Headers (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    /bin/mkdir -p /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework/Headers
+
+MkDir /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    /bin/mkdir -p /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework
+
+ProcessInfoPlistFile /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework/Info.plist /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/empty-mZUTCore.plist (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    builtin-infoPlistUtility /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/empty-mZUTCore.plist -producttype com.apple.product-type.framework -expandbuildsettings -format binary -platform iphonesimulator -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTCore.framework/Info.plist
+
+SwiftDriver mZUTCore normal arm64 com.apple.xcode.tools.swift.compiler (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    builtin-SwiftDriver -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name mZUTCore -Onone -enforce-exclusivity\=checked @/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Index.noindex/DataStore -swift-version 5 -I /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-96ae0914227b19deccb34b33ba7b5dea.sdkstatcache -output-file-map /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-generated-files.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-own-target-headers.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOS-e26227d5c555ac962a094086feed86d3-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-project-headers.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore-Swift.h -working-directory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS -experimental-emit-module-separately -disable-cmo
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ mZUTCore (in target 'mZUTCore' from project 'mZUTiOS')
+
+EmitSwiftModule normal arm64 (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift:31:86: warning: main actor-isolated static property 'prefsName' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+    public init(store: KeyValueStore = UserDefaultsStore(suiteName: MzutSessionStore.prefsName)) {
+                                                                                     ^
+/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift:6:23: note: static property declared here
+    public static let prefsName = "mzut_prefs"
+                      ^
+
+SwiftCompile normal arm64 Compiling\ Semester.swift,\ SessionExpiryDetector.swift,\ SettingsPrefs.swift,\ StudiesInfoRepository.swift,\ Study.swift,\ StudyInfoModels.swift,\ Tile.swift,\ UserDefaultsStore.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Semester.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/API/SessionExpiryDetector.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/SettingsPrefs.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/StudiesInfoRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Study.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/StudyInfoModels.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Tile.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/UserDefaultsStore.swift (in target 'mZUTCore' from project 'mZUTiOS')
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Semester.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/API/SessionExpiryDetector.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/SettingsPrefs.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/StudiesInfoRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Study.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/StudyInfoModels.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Tile.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/UserDefaultsStore.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 Compiling\ InMemoryStore.swift,\ JSONHelpers.swift,\ KeyValueStore.swift,\ MzutAPIClient.swift,\ MzutSessionStore.swift,\ MzutTokenGenerator.swift,\ NewsItem.swift,\ NewsRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/InMemoryStore.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/JSONHelpers.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/KeyValueStore.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/API/MzutAPIClient.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Auth/MzutTokenGenerator.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/NewsItem.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/NewsRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+Failed frontend command:
+/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Absence.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/AttendanceRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/AuthRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/CachePolicy.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/CustomPlanEvent.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/CustomPlanEventRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Grade.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/GradesRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/HomeRepository.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/InMemoryStore.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/JSONHelpers.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/KeyValueStore.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/API/MzutAPIClient.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Auth/MzutTokenGenerator.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/NewsItem.swift -primary-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/NewsRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Semester.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/API/SessionExpiryDetector.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/SettingsPrefs.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/StudiesInfoRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Study.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/StudyInfoModels.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Tile.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/UserDefaultsStore.swift -supplementary-output-file-map /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/supplementaryOutputs-2 -target arm64-apple-ios16.0-simulator -Xllvm -aarch64-use-tbi -enable-objc-interop -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -I /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator -no-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=4 -module-cache-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/ModuleCache.noindex -swift-version 5 -enforce-exclusivity\=checked -Onone -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS -resource-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift -enable-anonymous-context-mangled-names -file-compilation-dir /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS -Xcc -ivfsstatcache -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-96ae0914227b19deccb34b33ba7b5dea.sdkstatcache -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-generated-files.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-own-target-headers.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOS-e26227d5c555ac962a094086feed86d3-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-project-headers.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources -Xcc -DDEBUG\=1 -module-name mZUTCore -frontend-parseable-output -disable-clang-spi -target-sdk-version 18.5 -target-sdk-name iphonesimulator18.5 -external-plugin-path /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins\#/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server -external-plugin-path /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/local/lib/swift/host/plugins\#/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server -in-process-plugin-server-path /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -plugin-path /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins -plugin-path /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/lib/swift/host/plugins -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/InMemoryStore.o -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/JSONHelpers.o -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/KeyValueStore.o -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/MzutAPIClient.o -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/MzutSessionStore.o -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/MzutTokenGenerator.o -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/NewsItem.o -o /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/NewsRepository.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/InMemoryStore.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/JSONHelpers.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/KeyValueStore.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/MzutAPIClient.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/MzutSessionStore.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/MzutTokenGenerator.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/NewsItem.o -index-unit-output-path /mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/NewsRepository.o -index-store-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Index.noindex/DataStore -index-system-modules
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/InMemoryStore.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/JSONHelpers.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/KeyValueStore.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/API/MzutAPIClient.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift:31:86: warning: main actor-isolated static property 'prefsName' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+    public init(store: KeyValueStore = UserDefaultsStore(suiteName: MzutSessionStore.prefsName)) {
+                                                                                     ^
+/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift:6:23: note: static property declared here
+    public static let prefsName = "mzut_prefs"
+                      ^
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Auth/MzutTokenGenerator.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Auth/MzutTokenGenerator.swift:24:11: warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+        } catch {
+          ^
+/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Auth/MzutTokenGenerator.swift:86:13: error: error is not handled because the enclosing function is not declared 'throws'
+            throw NSError(domain: "MzutTokenGenerator", code: Int(status))
+            ^
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/NewsItem.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/NewsRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 Compiling\ Absence.swift,\ AttendanceRepository.swift,\ AuthRepository.swift,\ CachePolicy.swift,\ CustomPlanEvent.swift,\ CustomPlanEventRepository.swift,\ Grade.swift,\ GradesRepository.swift,\ HomeRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Absence.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/AttendanceRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/AuthRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/CachePolicy.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/CustomPlanEvent.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/CustomPlanEventRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Grade.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/GradesRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/HomeRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Absence.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/AttendanceRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/AuthRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/CachePolicy.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/CustomPlanEvent.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/CustomPlanEventRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/Grade.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/GradesRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/HomeRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for mZUTCore (in target 'mZUTCore' from project 'mZUTiOS')
+
+SwiftDriver\ Compilation\ Requirements mZUTCore normal arm64 com.apple.xcode.tools.swift.compiler (in target 'mZUTCore' from project 'mZUTiOS')
+    cd /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name mZUTCore -Onone -enforce-exclusivity\=checked @/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Index.noindex/DataStore -swift-version 5 -I /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-96ae0914227b19deccb34b33ba7b5dea.sdkstatcache -output-file-map /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-generated-files.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-own-target-headers.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTiOS-e26227d5c555ac962a094086feed86d3-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/mZUTCore-project-headers.hmap -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/build/DerivedData/Build/Intermediates.noindex/mZUTiOS.build/Debug-iphonesimulator/mZUTCore.build/Objects-normal/arm64/mZUTCore-Swift.h -working-directory /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling Absence.swift, AttendanceRepository.swift, AuthRepository.swift, CachePolicy.swift, CustomPlanEvent.swift, CustomPlanEventRepository.swift, Grade.swift, GradesRepository.swift, HomeRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+
 ** BUILD FAILED **
 
 
 The following build commands failed:
+	SwiftCompile normal arm64 Compiling\ InMemoryStore.swift,\ JSONHelpers.swift,\ KeyValueStore.swift,\ MzutAPIClient.swift,\ MzutSessionStore.swift,\ MzutTokenGenerator.swift,\ NewsItem.swift,\ NewsRepository.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/InMemoryStore.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/JSONHelpers.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Storage/KeyValueStore.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/API/MzutAPIClient.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Session/MzutSessionStore.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Auth/MzutTokenGenerator.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Models/NewsItem.swift /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Repositories/NewsRepository.swift (in target 'mZUTCore' from project 'mZUTiOS')
+	SwiftCompile normal arm64 /Users/runner/work/mzut-v2/mzut-v2/ios/mZUTiOS/Sources/mZUTCore/Auth/MzutTokenGenerator.swift (in target 'mZUTCore' from project 'mZUTiOS')
 	Building project mZUTiOS with scheme mZUTiOSApp and configuration Debug
-(1 failure)
+(3 failures)
