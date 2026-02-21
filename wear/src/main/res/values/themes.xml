@@ -1,6 +1,0 @@
-<resources>
-    <style name="Theme.MZUTv2.Wear" parent="@android:style/Theme.DeviceDefault">
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:textColor">@android:color/white</item>
-    </style>
-</resources>

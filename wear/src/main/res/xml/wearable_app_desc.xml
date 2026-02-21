@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<wearableApp xmlns:android="http://schemas.android.com/apk/res/android"
-    package="pl.kejlo.mzutv2.wear">
-    <capability android:name="mzut_wear_sync" />
-</wearableApp>
