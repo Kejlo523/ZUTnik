@@ -81,12 +81,15 @@ jobs:
           SIM_UDID="${{ steps.simulator.outputs.udid }}"
           APP_BUNDLE_ID="pl.kejlo.mzut.ios"
           APP_PATH="build/DerivedData/Build/Products/Debug-iphonesimulator/mZUTiOSApp.app"
+          SCREENSHOT_LOG="build/xcodebuild-screenshot.log"
 
           if [ ! -d "$APP_PATH" ]; then
             echo "Built app not found at: $APP_PATH" >&2
             exit 1
           fi
 
+          mkdir -p build
+          : > "$SCREENSHOT_LOG"
           xcrun simctl shutdown "$SIM_UDID" || true
           xcrun simctl erase "$SIM_UDID"
           xcrun simctl boot "$SIM_UDID"
@@ -96,16 +99,21 @@ jobs:
 
           mkdir -p build/screenshots
 
-          xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID"
-          sleep 4
-          xcrun simctl io "$SIM_UDID" screenshot "build/screenshots/01-login.png"
+          {
+            if ! xcrun simctl launch --terminate-running-process "$SIM_UDID" "$APP_BUNDLE_ID"; then
+              echo "First app launch failed, capturing simulator state anyway"
+            fi
+            sleep 5
+            xcrun simctl io "$SIM_UDID" screenshot "build/screenshots/01-login.png"
 
-          xcrun simctl terminate "$SIM_UDID" "$APP_BUNDLE_ID" || true
-          xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID" --screenshot-home
-          sleep 4
-          xcrun simctl io "$SIM_UDID" screenshot "build/screenshots/02-home.png"
+            if ! xcrun simctl launch --terminate-running-process "$SIM_UDID" "$APP_BUNDLE_ID" --args --screenshot-home; then
+              echo "Second app launch with screenshot args failed, capturing simulator state anyway"
+            fi
+            sleep 5
+            xcrun simctl io "$SIM_UDID" screenshot "build/screenshots/02-home.png"
 
-          xcrun simctl terminate "$SIM_UDID" "$APP_BUNDLE_ID" || true
+            xcrun simctl terminate "$SIM_UDID" "$APP_BUNDLE_ID" || true
+          } 2>&1 | tee -a "$SCREENSHOT_LOG"
 
       - name: Store screenshots in repo
         if: always()
@@ -126,6 +134,9 @@ jobs:
           fi
           if [ -f ios/mZUTiOS/build/xcodebuild-test.log ]; then
             cp ios/mZUTiOS/build/xcodebuild-test.log ios/mZUTiOS/ci-logs/latest-test.log
+          fi
+          if [ -f ios/mZUTiOS/build/xcodebuild-screenshot.log ]; then
+            cp ios/mZUTiOS/build/xcodebuild-screenshot.log ios/mZUTiOS/ci-logs/latest-screenshot.log
           fi
 
       - name: Upload screenshots artifact
