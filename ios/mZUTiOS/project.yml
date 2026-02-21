@@ -32,6 +32,9 @@ targets:
       - path: Tests/mZUTCoreTests
     dependencies:
       - target: mZUTCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   mZUTiOSApp:
     build:
