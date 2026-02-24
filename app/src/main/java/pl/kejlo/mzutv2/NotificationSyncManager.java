@@ -134,7 +134,7 @@ public final class NotificationSyncManager {
 
         MzutSession.initializeFromPreferences(appContext);
         MzutSession session = MzutSession.getInstance();
-        boolean hasSession = session.getAuthKey() != null && session.getUserId() != null;
+        boolean hasSession = session.isLoggedIn();
 
         if (!hasSession || !hasNotificationPermission(appContext) || !isAnyFeatureEnabled(appContext)) {
             cancelWorker(appContext);
@@ -171,7 +171,7 @@ public final class NotificationSyncManager {
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
 
-        if (userId == null || authKey == null) {
+        if (!session.isLoggedIn()) {
             return;
         }
         if (!hasNotificationPermission(appContext) || !isAnyFeatureEnabled(appContext)) {

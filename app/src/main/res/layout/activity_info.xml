@@ -428,6 +428,51 @@
                         android:orientation="vertical" />
                 </LinearLayout>
 
+                <!-- USOS Payments section – visible only for USOS login -->
+                <LinearLayout
+                    android:id="@+id/cardUsosPayments"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:orientation="vertical"
+                    android:padding="14dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_usos_finance_title"
+                            android:textColor="?attr/mzText"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/btnPaymentsRefresh"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:background="@drawable/bg_circle_soft"
+                            android:contentDescription="@null"
+                            android:padding="6dp"
+                            android:src="@android:drawable/ic_popup_sync"
+                            app:tint="?attr/mzMuted" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/usosPaymentsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/infoProgress"
                     android:layout_width="wrap_content"

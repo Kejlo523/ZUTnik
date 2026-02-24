@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/bg_login_canvas"
+    android:padding="32dp"
+    android:fitsSystemWindows="true">
+
+    <ProgressBar
+        android:id="@+id/usosProgress"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:indeterminate="true"
+        android:indeterminateTint="?attr/mzPrimary" />
+
+    <TextView
+        android:id="@+id/usosStatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:text="@string/login_usos_exchanging_token"
+        android:textColor="?attr/mzText"
+        android:textSize="15sp" />
+
+</LinearLayout>

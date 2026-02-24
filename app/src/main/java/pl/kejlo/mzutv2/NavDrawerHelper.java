@@ -156,10 +156,15 @@ public class NavDrawerHelper {
         MzutSession s = MzutSession.getInstance(activity);
         String username = s.getUsername();
         if (username == null || username.trim().isEmpty()) {
-            username = s.getUserId();
+            if (s.isUsosLogin()) {
+                // Prefer album number over raw USOS numeric ID
+                String sn = s.getStudentNumber();
+                username = (sn != null && !sn.isEmpty()) ? sn : s.getUserId();
+            } else {
+                username = s.getUserId();
+            }
         }
         if (username == null || username.trim().isEmpty()) {
-            // Default fallback username
             username = activity.getString(R.string.nav_header_default_username);
         }
         navHeaderUser.setText(username);

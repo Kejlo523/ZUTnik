@@ -82,6 +82,11 @@ public class InfoActivity extends MzutBaseActivity {
     private ArrayAdapter<String> studiesAdapter;
     private AdapterView.OnItemSelectedListener studiesSpinnerListener;
 
+    // USOS Payments
+    private View cardUsosPayments;
+    private LinearLayout usosPaymentsContainer;
+    private ImageView btnPaymentsRefresh;
+
     // endregion
 
     // endregion
@@ -141,12 +146,20 @@ public class InfoActivity extends MzutBaseActivity {
         progress = findViewById(R.id.infoProgress);
         infoContentRoot = findViewById(R.id.infoContent);
         spinnerStudies = findViewById(R.id.spinnerStudies);
+        cardUsosPayments = findViewById(R.id.cardUsosPayments);
+        usosPaymentsContainer = findViewById(R.id.usosPaymentsContainer);
+        btnPaymentsRefresh = findViewById(R.id.btnPaymentsRefresh);
 
         // Session & basic user info
         MzutSession session = MzutSession.getInstance();
         String username = session.getUsername();
         if (username == null || username.trim().isEmpty()) {
-            username = session.getUserId();
+            if (session.isUsosLogin()) {
+                String sn = session.getStudentNumber();
+                username = (sn != null && !sn.isEmpty()) ? sn : session.getUserId();
+            } else {
+                username = session.getUserId();
+            }
         }
         if (username == null || username.trim().isEmpty()) {
             username = getString(R.string.nav_header_default_username);
@@ -164,24 +177,149 @@ public class InfoActivity extends MzutBaseActivity {
             imageAvatar.setVisibility(View.GONE);
         }
 
-        // 1) Try to load from cache and bind immediately if possible
+        if (session.isUsosLogin()) {
+            // ── USOS mode: show album from session, load payments ────────────────
+            String sn = session.getStudentNumber();
+            setOrHide(tvAlbum, sn);
+
+            cardUsosPayments.setVisibility(View.VISIBLE);
+            loadUsosPayments();
+
+            if (btnPaymentsRefresh != null) {
+                btnPaymentsRefresh.setOnClickListener(v -> loadUsosPayments());
+            }
+            if (btnInfoRefresh != null) {
+                btnInfoRefresh.setOnClickListener(v -> loadUsosPayments());
+            }
+        } else {
+            cardUsosPayments.setVisibility(View.GONE);
+        }
+
+        // ── Shared load logic for study details ─────────────────────────────
         String currentScopeKey = getActiveStudyCacheScopeKey();
         loadInfoFromCacheIfAvailable(currentScopeKey);
-
-        // 2) Setup studies spinner (may already be available from other screens)
         setupStudiesSpinner();
-
-        // 3) If cache is missing or outdated, fetch from network
+        
         if (shouldFetchFromNetwork(currentScopeKey)) {
             startInfoLoad(false);
         }
-
-        // 4) Refresh icon – forces reload
+        
         if (btnInfoRefresh != null) {
-            btnInfoRefresh.setOnClickListener(v -> startInfoLoad(true));
+            btnInfoRefresh.setOnClickListener(v -> {
+                startInfoLoad(true);
+                if (session.isUsosLogin()) {
+                    loadUsosPayments();
+                }
+            });
         }
 
     }
+
+    // region USOS Payments
+
+    private void loadUsosPayments() {
+        if (usosPaymentsContainer == null) return;
+        usosPaymentsContainer.removeAllViews();
+        addPaymentTextView(getString(R.string.info_sync_in_progress), true);
+
+        executor.execute(() -> {
+            try {
+                JSONArray resp = UsosApi.getArray("services/payments/user_payments", null);
+                handler.post(() -> bindPayments(resp));
+            } catch (Exception e) {
+                android.util.Log.e("InfoActivity", "Payments error", e);
+                String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                handler.post(() -> {
+                    if (usosPaymentsContainer == null) return;
+                    usosPaymentsContainer.removeAllViews();
+                    addPaymentTextView(getString(R.string.info_usos_payment_error, msg), true);
+                });
+            }
+        });
+    }
+
+    private void bindPayments(JSONArray items) {
+        if (usosPaymentsContainer == null) return;
+        usosPaymentsContainer.removeAllViews();
+
+        if (items == null || items.length() == 0) {
+            addPaymentTextView(getString(R.string.info_usos_no_payments), true);
+            return;
+        }
+
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject item = items.optJSONObject(i);
+            if (item == null) continue;
+
+            // Title: may be localized {"pl":...,"en":...} or plain string
+            String title = extractLocalizedOrString(item, "name");
+            if (title == null || title.isEmpty()) {
+                title = extractLocalizedOrString(item, "title");
+            }
+            if (title == null || title.isEmpty()) {
+                title = item.optString("id", "Płatność " + (i + 1));
+            }
+
+            String amount = item.optString("amount", null);
+            String dueDate = item.optString("due_date", null);
+
+            // Status: may be {"symbol":"paid","name":{...}} or plain string
+            String statusSymbol = null;
+            JSONObject statusObj = item.optJSONObject("status");
+            if (statusObj != null) {
+                statusSymbol = statusObj.optString("symbol", null);
+            } else {
+                statusSymbol = item.optString("status", null);
+            }
+            boolean isPaid = "paid".equalsIgnoreCase(statusSymbol)
+                    || "1".equals(statusSymbol) || Boolean.TRUE.equals(item.opt("is_paid"));
+
+            StringBuilder sb = new StringBuilder(title);
+            if (amount != null && !amount.isEmpty()) {
+                sb.append("\n").append(getString(R.string.info_usos_payment_amount, amount));
+            }
+            if (dueDate != null && !dueDate.isEmpty()) {
+                sb.append("\n").append(getString(R.string.info_usos_payment_due, dueDate));
+            }
+            sb.append("\n").append(isPaid
+                    ? getString(R.string.info_usos_payment_status_paid)
+                    : getString(R.string.info_usos_payment_status_unpaid));
+
+            addPaymentTextView(sb.toString(), false);
+
+            // Divider between items
+            if (i < items.length() - 1) {
+                View divider = new View(this);
+                divider.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                divider.setBackgroundColor(ThemeManager.resolveColor(this, R.attr.mzMuted) & 0x40FFFFFF);
+                usosPaymentsContainer.addView(divider);
+            }
+        }
+    }
+
+    private String extractLocalizedOrString(JSONObject obj, String key) {
+        JSONObject localized = obj.optJSONObject(key);
+        if (localized != null) {
+            String val = localized.optString("pl", localized.optString("en", ""));
+            return val.isEmpty() ? null : val;
+        }
+        String plain = obj.optString(key, null);
+        return (plain == null || plain.isEmpty()) ? null : plain;
+    }
+
+    private void addPaymentTextView(String text, boolean muted) {
+        if (usosPaymentsContainer == null) return;
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextSize(13f);
+        int padV = dpToPx(8);
+        tv.setPadding(0, padV, 0, padV);
+        tv.setTextColor(ThemeManager.resolveColor(this, muted ? R.attr.mzMuted : R.attr.mzText));
+        usosPaymentsContainer.addView(tv);
+    }
+
+    // endregion
 
     // region Network loading
 
@@ -234,6 +372,8 @@ public class InfoActivity extends MzutBaseActivity {
 
                 if (!finalSuccess) {
                     String message = finalError != null ? finalError.getMessage() : "";
+                    android.util.Log.e("mZUTv2-INFO", "Failed to load student info or studies cache", finalError);
+                    
                     // Support suppression of "Unable to resolve host" toast
                     boolean isDnsError = message != null && message.contains("Unable to resolve host");
                     boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(InfoActivity.this);
@@ -364,6 +504,10 @@ public class InfoActivity extends MzutBaseActivity {
     }
 
     private void bindDetailsFromCache(JSONObject obj) {
+        if (obj == null) {
+            return;
+        }
+        
         setOrHide(tvAlbum, obj.optString("album", null));
         setOrHide(tvWydzial, obj.optString("wydzial", null));
         setOrHide(tvKierunek, obj.optString("kierunek", null));
@@ -539,19 +683,50 @@ public class InfoActivity extends MzutBaseActivity {
 
     // region Binding data from API
 
+    /**
+     * Binds study details to views, handling USOS/ZUT API differences.
+     * USOS API provides richer data structure, while fields may be empty.
+     */
     private void bindDetails(StudiesInfoRepository.StudyDetails d) {
+        if (d == null) {
+            return;
+        }
+        
+        // Album (Student Number) - from USOS user data
         setOrHide(tvAlbum, d.album);
+        
+        // Faculty (Wydział)
         setOrHide(tvWydzial, d.wydzial);
+        
+        // Direction/Programme (Kierunek)
         setOrHide(tvKierunek, d.kierunek);
+        
+        // Form of study (Forma) - stacjonarne/niestacjonarne
         setOrHide(tvForma, d.forma);
+        
+        // Level of study (Poziom) - first/second degree, etc.
         setOrHide(tvPoziom, d.poziom);
+        
+        // Specialty (Specjalność)
         setOrHide(tvSpecjalnosc, d.specjalnosc);
+        
+        // Specialization (Specjalizacja)
         setOrHide(tvSpecjalizacja, d.specjalizacja);
+        
+        // Status (Aktywny/Nieaktywny)
         setOrHide(tvStatus, d.status);
+        
+        // Academic Year (Rok Akademicki) - e.g., 2023/2024
         setOrHide(tvRok, d.rokAkademicki);
+        
+        // Semester Label (Semestr) - e.g., "1 zimowy" or full USOS term name
         setOrHide(tvSemestr, d.semestrLabel);
     }
 
+    /**
+     * Binds study history (list of completed/active semesters).
+     * USOS API provides term history with status.
+     */
     private void bindHistory(List<StudiesInfoRepository.StudyHistoryItem> history) {
         historyContainer.removeAllViews();
         if (history == null || history.isEmpty()) {
@@ -567,6 +742,9 @@ public class InfoActivity extends MzutBaseActivity {
         }
     }
 
+    /**
+     * Shows or hides a TextView based on whether the value is empty.
+     */
     private void setOrHide(TextView tv, String value) {
         if (value == null || value.trim().isEmpty()) {
             tv.setVisibility(View.GONE);
@@ -576,6 +754,9 @@ public class InfoActivity extends MzutBaseActivity {
         }
     }
 
+    /**
+     * Adds a single history item TextView to the history container.
+     */
     private void addHistoryTextView(String text, boolean isEmpty) {
         TextView tv = new TextView(this);
         tv.setText(text);

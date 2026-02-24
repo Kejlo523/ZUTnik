@@ -83,6 +83,36 @@
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
+                <RadioGroup
+                    android:id="@+id/loginMethodGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radioMzut"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="@string/login_method_old_system"
+                        android:textColor="?attr/mzText"
+                        android:textSize="13sp"
+                        android:buttonTint="?attr/mzPrimary" />
+
+                    <RadioButton
+                        android:id="@+id/radioUsos"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/login_method_usos"
+                        android:textColor="?attr/mzText"
+                        android:textSize="13sp"
+                        android:buttonTint="?attr/mzPrimary" />
+
+                </RadioGroup>
+
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/loginInputLayout"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"

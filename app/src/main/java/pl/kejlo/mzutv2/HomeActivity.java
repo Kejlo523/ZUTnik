@@ -64,7 +64,7 @@ public class HomeActivity extends MzutBaseActivity {
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
-        if (session.getAuthKey() == null || session.getUserId() == null) {
+        if (!session.isLoggedIn()) {
             Intent i = new Intent(this, LoginActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
@@ -298,6 +298,16 @@ public class HomeActivity extends MzutBaseActivity {
     private void setupWelcomeText(TextView textWelcome, TextView textWelcomeSub) {
         MzutSession s = MzutSession.getInstance(this);
         String username = s.getUsername();
+
+        if ((username == null || username.trim().isEmpty()) && s.isUsosLogin()) {
+            // No name cached – show placeholder and re-fetch silently from USOS
+            textWelcome.setText(getString(R.string.home_welcome_message,
+                    getString(R.string.nav_header_default_username)));
+            textWelcomeSub.setText(R.string.home_welcome_subtitle);
+            refreshUsosUsername(textWelcome, s);
+            return;
+        }
+
         if (username == null || username.trim().isEmpty()) {
             username = s.getUserId();
         }
@@ -308,6 +318,35 @@ public class HomeActivity extends MzutBaseActivity {
 
         textWelcome.setText(getString(R.string.home_welcome_message, username));
         textWelcomeSub.setText(R.string.home_welcome_subtitle);
+    }
+
+    private void refreshUsosUsername(TextView textWelcome, MzutSession s) {
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                org.json.JSONObject user = UsosApi.get("services/users/user", null);
+                org.json.JSONObject firstObj = user.optJSONObject("first_name");
+                org.json.JSONObject lastObj  = user.optJSONObject("last_name");
+                String first = firstObj != null
+                        ? firstObj.optString("pl", firstObj.optString("en", ""))
+                        : user.optString("first_name", "");
+                String last  = lastObj != null
+                        ? lastObj.optString("pl", lastObj.optString("en", ""))
+                        : user.optString("last_name", "");
+                String name = (first + " " + last).trim();
+                if (!name.isEmpty()) {
+                    s.setUsername(name);
+                    s.saveToPreferences(HomeActivity.this);
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        if (textWelcome != null) {
+                            textWelcome.setText(getString(R.string.home_welcome_message,
+                                    extractFirstName(name)));
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Could not refresh USOS username: " + e.getMessage());
+            }
+        });
     }
 
     private String extractFirstName(String rawName) {

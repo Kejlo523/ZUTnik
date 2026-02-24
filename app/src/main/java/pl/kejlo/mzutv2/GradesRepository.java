@@ -114,6 +114,15 @@ public class GradesRepository {
         return "";
     }
 
+    private String extractLocalized(JSONObject obj, String key) {
+        if (obj == null) return "";
+        JSONObject localized = obj.optJSONObject(key);
+        if (localized != null) {
+            return localized.optString("pl", localized.optString("en", ""));
+        }
+        return obj.optString(key, "");
+    }
+
     private double parseFlexibleDouble(Object raw) {
         if (raw == null) {
             return 0.0;
@@ -156,6 +165,87 @@ public class GradesRepository {
         return 0.0;
     }
 
+    /**
+     * Fetches course names from services/courses/user for a given term.
+     */
+    private Map<String, String> fetchUsosCourseNames(String termId) {
+        Map<String, String> names = new HashMap<>();
+        try {
+            Map<String, String> params = new HashMap<>();
+            params.put("active_terms_only", "false");
+            JSONObject resp = UsosApi.get("services/courses/user", params);
+            JSONObject editions = resp != null ? resp.optJSONObject("course_editions") : null;
+            if (editions != null) {
+                JSONArray courses = editions.optJSONArray(termId);
+                if (courses != null) {
+                    for (int i = 0; i < courses.length(); i++) {
+                        JSONObject c = courses.optJSONObject(i);
+                        if (c == null) continue;
+                        String cid = c.optString("course_id", "");
+                        if (!cid.isEmpty()) {
+                            names.put(cid, extractLocalized(c, "course_name"));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("GradesRepository", "Could not fetch course names", e);
+        }
+        return names;
+    }
+
+    /**
+     * Fetches ECTS points from services/courses/user_ects_points for a given term.
+     */
+    private Map<String, Double> fetchUsosEcts(String termId) {
+        Map<String, Double> ects = new HashMap<>();
+        try {
+            JSONObject resp = UsosApi.get("services/courses/user_ects_points", null);
+            JSONObject termEcts = resp != null ? resp.optJSONObject(termId) : null;
+            if (termEcts != null) {
+                java.util.Iterator<String> keys = termEcts.keys();
+                while (keys.hasNext()) {
+                    String cid = keys.next();
+                    ects.put(cid, parseFlexibleDouble(termEcts.opt(cid)));
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("GradesRepository", "Could not fetch ECTS", e);
+        }
+        return ects;
+    }
+
+    /**
+     * Parses a single USOS grade JSON object into a Grade domain object.
+     */
+    private Grade buildUsosGrade(JSONObject gradeObj, String courseName, double ects, String gradeType) {
+        if (gradeObj == null) return null;
+
+        Grade g = new Grade();
+        g.subjectName = courseName;
+        g.weight = ects;
+        g.type = gradeType;
+        g.teacher = "";
+        g.grade = gradeObj.optString("value_symbol", "");
+        g.gradeDescription = extractLocalized(gradeObj, "value_description");
+        g.passes = gradeObj.optBoolean("passes", false);
+        g.countsIntoAverage = gradeObj.optBoolean("counts_into_average", false);
+        g.comment = gradeObj.optString("comment", "");
+
+        // Date — prefer date_acquisition, fallback to date_modified
+        String dateAcq = gradeObj.optString("date_acquisition", "");
+        String dateMod = gradeObj.optString("date_modified", "");
+        if (dateAcq != null && !dateAcq.isEmpty()) {
+            g.date = dateAcq.contains(" ") ? dateAcq.split(" ")[0] : dateAcq;
+        } else if (dateMod != null && !dateMod.isEmpty()) {
+            g.date = dateMod.contains(" ") ? dateMod.split(" ")[0] : dateMod;
+        } else {
+            g.date = "";
+        }
+
+        return g;
+    }
+
     public List<Study> loadStudies() throws IOException, JSONException {
         return loadStudies(false);
     }
@@ -164,7 +254,7 @@ public class GradesRepository {
         MzutSession session = MzutSession.getInstance();
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
-        if (userId == null || authKey == null) {
+        if (userId == null || (!session.isUsosLogin() && authKey == null)) {
             return Collections.emptyList();
         }
 
@@ -201,43 +291,75 @@ public class GradesRepository {
         }
 
         try {
-            HashMap<String, String> params = new HashMap<>();
-            params.put("login", userId);
-            params.put("token", authKey);
-
-            JSONObject menu = MzutApi.callApi("getMenuStudent", params);
-            if (menu == null || !menu.has("Menu")) {
-                return Collections.emptyList();
-            }
-
-            Object block = menu.get("Menu");
-            JSONArray arr = block instanceof JSONArray
-                    ? (JSONArray) block
-                    : new JSONArray().put(block);
-
             List<Study> studies = new ArrayList<>();
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject row = arr.getJSONObject(i);
+            if (session.isUsosLogin()) {
+                // Fetch real student programmes from USOS.
+                // programme.id (e.g. "S1-INF") is used as przynaleznoscId so that
+                // StudiesInfoRepository can look up details for the selected programme.
+                // active_only=false includes past/completed programmes.
+                Map<String, String> params = new HashMap<>();
+                params.put("fields", "programme[id|description|mode_of_studies|level_of_studies]|status");
+                params.put("active_only", "false");
+                JSONArray arr = UsosApi.getArray("services/progs/student", params);
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject row = arr.getJSONObject(i);
+                    JSONObject prog = row.optJSONObject("programme");
+                    if (prog == null) continue;
 
-                Study s = new Study();
-                s.przynaleznoscId = normalizeStudyId(row.optString("przynaleznoscId", null));
+                    Study s = new Study();
+                    s.przynaleznoscId = prog.optString("id", "");
+                    if (s.przynaleznoscId == null || s.przynaleznoscId.isEmpty()) continue;
 
-                String nazwa = row.optString("nazwa", "").trim();
-                String poziom = row.optString("poziom", "").trim();
+                    JSONObject desc = prog.optJSONObject("description");
+                    String label = desc != null
+                            ? desc.optString("pl", desc.optString("en", s.przynaleznoscId))
+                            : s.przynaleznoscId;
 
-                String label = nazwa;
-                if (!poziom.isEmpty()) {
-                    if (!label.isEmpty()) {
-                        label += " ";
+                    int mode = prog.optInt("mode_of_studies", 0);
+                    if (mode > 0) {
+                        label += " (" + (mode == 1 ? "stacjonarne" : "niestacjonarne") + ")";
                     }
-                    label += "(" + poziom + ")";
+                    s.label = label;
+                    studies.add(s);
                 }
-                if (label.isEmpty()) {
-                    label = s.przynaleznoscId;
+            } else {
+                HashMap<String, String> params = new HashMap<>();
+                params.put("login", userId);
+                params.put("token", authKey);
+
+                JSONObject menu = MzutApi.callApi("getMenuStudent", params);
+                if (menu == null || !menu.has("Menu")) {
+                    return Collections.emptyList();
                 }
 
-                s.label = label;
-                studies.add(s);
+                Object block = menu.get("Menu");
+                JSONArray arr = block instanceof JSONArray
+                        ? (JSONArray) block
+                        : new JSONArray().put(block);
+
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject row = arr.getJSONObject(i);
+
+                    Study s = new Study();
+                    s.przynaleznoscId = normalizeStudyId(row.optString("przynaleznoscId", null));
+
+                    String nazwa = row.optString("nazwa", "").trim();
+                    String poziom = row.optString("poziom", "").trim();
+
+                    String label = nazwa;
+                    if (!poziom.isEmpty()) {
+                        if (!label.isEmpty()) {
+                            label += " ";
+                        }
+                        label += "(" + poziom + ")";
+                    }
+                    if (label.isEmpty()) {
+                        label = s.przynaleznoscId;
+                    }
+
+                    s.label = label;
+                    studies.add(s);
+                }
             }
 
             List<Study> result = copyStudies(studies);
@@ -281,7 +403,7 @@ public class GradesRepository {
 
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
-        if (userId == null || authKey == null) {
+        if (userId == null || (!session.isUsosLogin() && authKey == null)) {
             return Collections.emptyList();
         }
 
@@ -297,33 +419,83 @@ public class GradesRepository {
         }
 
         try {
-            HashMap<String, String> params = new HashMap<>();
-            params.put("login", userId);
-            params.put("token", authKey);
-            params.put("przynaleznoscId", activeStudyId);
-            params.put("oceny", "true");
-
-            JSONObject resp = MzutApi.callApi("getStudies", params);
-            if (resp == null || !resp.has("Przebieg")) {
-                return Collections.emptyList();
-            }
-
-            Object block = resp.get("Przebieg");
-            JSONArray arr = block instanceof JSONArray
-                    ? (JSONArray) block
-                    : new JSONArray().put(block);
-
             List<Semester> list = new ArrayList<>();
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject row = arr.getJSONObject(i);
+            
+            if (session.isUsosLogin()) {
+                // Step 1: get all term IDs the student is enrolled in via course_editions map keys.
+                // active_terms_only=false ensures past terms are included.
+                Map<String, String> ceParams = new HashMap<>();
+                ceParams.put("active_terms_only", "false");
+                ceParams.put("fields", "course_editions");
+                JSONObject ceResp = UsosApi.get("services/courses/user", ceParams);
+                JSONObject editions = ceResp != null ? ceResp.optJSONObject("course_editions") : null;
 
-                Semester s = new Semester();
-                s.listaSemestrowId = row.optString("listaSemestrowId", null);
-                s.nrSemestru = row.optString("nrSemestru", "");
-                s.pora = row.optString("pora", "");
-                s.rokAkademicki = row.optString("rokAkademicki", "");
-                s.status = row.optString("status", row.optString("statusO", ""));
-                list.add(s);
+                if (editions != null) {
+                    List<String> termIds = new ArrayList<>();
+                    java.util.Iterator<String> keys = editions.keys();
+                    while (keys.hasNext()) {
+                        termIds.add(keys.next());
+                    }
+                    Collections.sort(termIds); // ascending (oldest first)
+
+                    if (!termIds.isEmpty()) {
+                        // Step 2: batch-fetch term details (name + is_active).
+                        StringBuilder tids = new StringBuilder();
+                        for (int i = 0; i < termIds.size(); i++) {
+                            if (i > 0) tids.append("|");
+                            tids.append(termIds.get(i));
+                        }
+                        Map<String, String> tParams = new HashMap<>();
+                        tParams.put("term_ids", tids.toString());
+                        tParams.put("fields", "id|name|is_active");
+                        JSONObject tDetails = UsosApi.get("services/terms/terms", tParams);
+
+                        for (String tid : termIds) {
+                            JSONObject tObj = tDetails != null ? tDetails.optJSONObject(tid) : null;
+                            Semester s = new Semester();
+                            s.listaSemestrowId = tid;
+                            s.nrSemestru = tid;
+                            if (tObj != null) {
+                                String fullName = extractLocalized(tObj, "name");
+                                s.rokAkademicki = !fullName.isEmpty() ? fullName : tid;
+                                s.status = tObj.optBoolean("is_active", false) ? "Aktywny" : "Zakończony";
+                            } else {
+                                s.rokAkademicki = tid;
+                                s.status = "";
+                            }
+                            s.pora = tid.endsWith("Z") ? "Zimowy" : (tid.endsWith("L") ? "Letni" : "");
+                            list.add(s);
+                        }
+                    }
+                }
+            } else {
+                HashMap<String, String> params = new HashMap<>();
+                params.put("login", userId);
+                params.put("token", authKey);
+                params.put("przynaleznoscId", activeStudyId);
+                params.put("oceny", "true");
+
+                JSONObject resp = MzutApi.callApi("getStudies", params);
+                if (resp == null || !resp.has("Przebieg")) {
+                    return Collections.emptyList();
+                }
+
+                Object block = resp.get("Przebieg");
+                JSONArray arr = block instanceof JSONArray
+                        ? (JSONArray) block
+                        : new JSONArray().put(block);
+
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject row = arr.getJSONObject(i);
+
+                    Semester s = new Semester();
+                    s.listaSemestrowId = row.optString("listaSemestrowId", null);
+                    s.nrSemestru = row.optString("nrSemestru", "");
+                    s.pora = row.optString("pora", "");
+                    s.rokAkademicki = row.optString("rokAkademicki", "");
+                    s.status = row.optString("status", row.optString("statusO", ""));
+                    list.add(s);
+                }
             }
 
             SemesterCacheEntry ce2 = new SemesterCacheEntry();
@@ -348,6 +520,10 @@ public class GradesRepository {
         return loadGradesForSemester(semester.listaSemestrowId);
     }
 
+    /**
+     * Loads grades for a given semester using USOS API (services/grades/terms2).
+     * For USOS login only. Original ZUT API path is unchanged.
+     */
     public List<Grade> loadGradesForSemester(String listaSemestrowId)
             throws IOException, JSONException {
 
@@ -355,63 +531,148 @@ public class GradesRepository {
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
 
-        if (userId == null || authKey == null || listaSemestrowId == null) {
+        if (userId == null || (!session.isUsosLogin() && authKey == null) || listaSemestrowId == null) {
             return Collections.emptyList();
         }
-
-        HashMap<String, String> params = new HashMap<>();
-        params.put("login", userId);
-        params.put("token", authKey);
-        params.put("listaSemestrowId", listaSemestrowId);
-
-        JSONObject resp = MzutApi.callApi("getGrade", params);
-        if (resp == null || !resp.has("Ocena")) {
-            return Collections.emptyList();
-        }
-
-        Object block = resp.get("Ocena");
-        JSONArray arr = block instanceof JSONArray
-                ? (JSONArray) block
-                : new JSONArray().put(block);
 
         List<Grade> grades = new ArrayList<>();
-        for (int i = 0; i < arr.length(); i++) {
-            JSONObject row = arr.getJSONObject(i);
-            Grade g = new Grade();
-
-            String przedmiot = firstNonEmpty(
-                    row.optString("przedmiot", ""),
-                    row.optString("przedmiotO", ""));
-
-            String forma = firstNonEmpty(
-                    row.optString("formaZajec", ""),
-                    row.optString("formaZajecO", ""));
-
-            if (!forma.isEmpty()) {
-                if (!przedmiot.isEmpty()) {
-                    przedmiot += " ";
-                }
-                przedmiot += "(" + forma + ")";
+        
+        if (session.isUsosLogin()) {
+            // Bail out immediately if this task has already been cancelled by the caller
+            // (e.g. the user changed semester). Without this check the OkHttp calls below
+            // would throw InterruptedIOException and show a confusing error toast.
+            if (Thread.currentThread().isInterrupted()) {
+                return Collections.emptyList();
             }
 
-            g.subjectName = przedmiot;
-            g.grade = row.optString("ocena", "");
-            g.weight = parseEcts(row);
-            g.type = forma;
-            g.teacher = row.optString("pracownik", "");
+            // 1. Fetch course names and ECTS for this term
+            Map<String, String> courseNames = fetchUsosCourseNames(listaSemestrowId);
+            Map<String, Double> courseEcts = fetchUsosEcts(listaSemestrowId);
 
-            String termin = firstNonEmpty(
-                    row.optString("termin", ""),
-                    row.optString("terminO", ""));
-            String data = row.optString("data", "");
+            // 2. Fetch grades via services/grades/terms2
+            //    Response: { term_id: { course_id: { course_grades: [...], course_units_grades: { unit_id: [...] } } } }
+            //    course_grades = ARRAY of grade objects
+            //    course_units_grades = DICT of unit_id → ARRAY of grade objects
+            Map<String, String> gradeParams = new HashMap<>();
+            gradeParams.put("term_ids", listaSemestrowId);
+            gradeParams.put("fields", "value_symbol|passes|value_description|counts_into_average|date_modified|date_acquisition|comment");
 
-            g.date = termin.isEmpty()
-                    ? data
-                    : (data.isEmpty() ? termin : (termin + " " + data));
+            JSONObject resp = UsosApi.get("services/grades/terms2", gradeParams);
+            JSONObject termData = resp.optJSONObject(listaSemestrowId);
 
-            grades.add(g);
+            if (termData != null) {
+                java.util.Iterator<String> courseIdIter = termData.keys();
+                while (courseIdIter.hasNext()) {
+                    String courseId = courseIdIter.next();
+                    JSONObject courseData = termData.optJSONObject(courseId);
+                    if (courseData == null) continue;
+
+                    String name = courseNames.containsKey(courseId) ? courseNames.get(courseId) : courseId;
+                    double ects = courseEcts.containsKey(courseId) ? courseEcts.get(courseId) : 0.0;
+                    boolean hasAnyGrade = false;
+
+                    // course_grades is an ARRAY of grade objects (course-level / final grades)
+                    JSONArray courseGradesArr = courseData.optJSONArray("course_grades");
+                    if (courseGradesArr != null && courseGradesArr.length() > 0) {
+                        for (int i = 0; i < courseGradesArr.length(); i++) {
+                            JSONObject gradeObj = courseGradesArr.optJSONObject(i);
+                            Grade g = buildUsosGrade(gradeObj, name, ects, "Ocena końcowa");
+                            if (g != null) {
+                                grades.add(g);
+                                hasAnyGrade = true;
+                            }
+                        }
+                    }
+
+                    // course_units_grades is a DICT: unit_id → ARRAY of grade objects
+                    JSONObject unitGradesDict = courseData.optJSONObject("course_units_grades");
+                    if (unitGradesDict != null) {
+                        java.util.Iterator<String> unitIds = unitGradesDict.keys();
+                        while (unitIds.hasNext()) {
+                            String unitId = unitIds.next();
+                            JSONArray unitGradesArr = unitGradesDict.optJSONArray(unitId);
+                            if (unitGradesArr == null || unitGradesArr.length() == 0) continue;
+
+                            for (int i = 0; i < unitGradesArr.length(); i++) {
+                                JSONObject gradeObj = unitGradesArr.optJSONObject(i);
+                                Grade g = buildUsosGrade(gradeObj, name, ects, "Zaliczenie");
+                                if (g != null) {
+                                    grades.add(g);
+                                    hasAnyGrade = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // Placeholder for courses with no grades yet
+                    if (!hasAnyGrade) {
+                        Grade placeholder = new Grade();
+                        placeholder.subjectName = name;
+                        placeholder.weight = ects;
+                        placeholder.grade = "";
+                        placeholder.type = "";
+                        placeholder.teacher = "";
+                        placeholder.date = "";
+                        grades.add(placeholder);
+                    }
+                }
+            }
+        } else {
+            // Original ZUT API path - unchanged
+            HashMap<String, String> params = new HashMap<>();
+            params.put("login", userId);
+            params.put("token", authKey);
+            params.put("listaSemestrowId", listaSemestrowId);
+
+            JSONObject resp = MzutApi.callApi("getGrade", params);
+            if (resp == null || !resp.has("Ocena")) {
+                return Collections.emptyList();
+            }
+
+            Object block = resp.get("Ocena");
+            JSONArray arr = block instanceof JSONArray
+                    ? (JSONArray) block
+                    : new JSONArray().put(block);
+
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject row = arr.getJSONObject(i);
+                Grade g = new Grade();
+
+                String przedmiot = firstNonEmpty(
+                        row.optString("przedmiot", ""),
+                        row.optString("przedmiotO", ""));
+
+                String forma = firstNonEmpty(
+                        row.optString("formaZajec", ""),
+                        row.optString("formaZajecO", ""));
+
+                if (!forma.isEmpty()) {
+                    if (!przedmiot.isEmpty()) {
+                        przedmiot += " ";
+                    }
+                    przedmiot += "(" + forma + ")";
+                }
+
+                g.subjectName = przedmiot;
+                g.grade = row.optString("ocena", "");
+                g.weight = parseEcts(row);
+                g.type = forma;
+                g.teacher = row.optString("pracownik", "");
+
+                String termin = firstNonEmpty(
+                        row.optString("termin", ""),
+                        row.optString("terminO", ""));
+                String data = row.optString("data", "");
+
+                g.date = termin.isEmpty()
+                        ? data
+                        : (data.isEmpty() ? termin : (termin + " " + data));
+
+                grades.add(g);
+            }
         }
 
         return grades;
     }
+
 }

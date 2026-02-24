@@ -307,7 +307,7 @@ public class PlanActivity extends MzutBaseActivity {
 
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
-        if (session.getAuthKey() == null || session.getUserId() == null) {
+        if (!session.isLoggedIn()) {
             Intent i = new Intent(this, LoginActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);

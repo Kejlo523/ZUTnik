@@ -104,7 +104,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
     private static boolean ensureSessionFromPrefs(Context ctx) {
         MzutSession.initializeFromPreferences(ctx);
         MzutSession s = MzutSession.getInstance();
-        return s.getUserId() != null && s.getAuthKey() != null;
+        return s.isLoggedIn();
     }
     private void updateOneWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_glass);

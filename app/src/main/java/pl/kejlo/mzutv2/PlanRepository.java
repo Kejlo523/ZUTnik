@@ -288,6 +288,19 @@ public class PlanRepository {
 
         MzutSession session = MzutSession.getInstance();
         String userId = session.getUserId();
+
+        // For USOS users: student number is stored directly in session
+        if (session.isUsosLogin()) {
+            String sn = session.getStudentNumber();
+            if (sn != null && !sn.isEmpty()) {
+                sCachedAlbum = sn;
+                sCachedAlbumTs = now;
+                sCachedAlbumStudyId = "usos_" + userId;
+                return sn;
+            }
+            return null;
+        }
+
         String authKey = session.getAuthKey();
         if (userId == null || authKey == null) {
             return null;

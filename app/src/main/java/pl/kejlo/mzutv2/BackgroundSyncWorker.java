@@ -109,7 +109,7 @@ public class BackgroundSyncWorker extends Worker {
 
     private boolean canRunChecks(Context context) {
         MzutSession session = MzutSession.getInstance();
-        boolean hasSession = session.getUserId() != null && session.getAuthKey() != null;
+        boolean hasSession = session.isLoggedIn();
         if (!hasSession) {
             NotificationSyncManager.cancelWorker(context);
             return false;

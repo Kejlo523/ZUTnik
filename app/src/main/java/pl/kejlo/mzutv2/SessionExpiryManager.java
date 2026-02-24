@@ -188,7 +188,7 @@ public final class SessionExpiryManager {
 
     private static boolean isSessionMissing() {
         MzutSession session = MzutSession.getInstance();
-        return session.getUserId() == null || session.getAuthKey() == null;
+        return !session.isLoggedIn();
     }
 
     private static boolean isAppInForeground() {

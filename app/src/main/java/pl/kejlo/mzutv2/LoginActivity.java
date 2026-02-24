@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
-
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
@@ -18,6 +17,8 @@ import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RadioGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.textfield.TextInputEditText;
@@ -52,6 +53,8 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputLayout loginInputLayout;
     private TextInputLayout passwordInputLayout;
     private Button btnLogin;
+    private RadioGroup loginMethodGroup;
+    private TextView loginInfoText;
 
     private View rootView;
     private boolean isKeyboardVisible = false;
@@ -71,7 +74,7 @@ public class LoginActivity extends AppCompatActivity {
         MzutSession.initializeFromPreferences(this);
         MzutSession session = MzutSession.getInstance();
 
-        if (session.getAuthKey() != null && session.getUserId() != null) {
+        if (session.isLoggedIn()) {
             Intent i = new Intent(LoginActivity.this, HomeActivity.class);
             i.putExtra(HomeActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
             startActivity(i);
@@ -95,6 +98,18 @@ public class LoginActivity extends AppCompatActivity {
         editLogin = findViewById(R.id.editLogin);
         editPass = findViewById(R.id.editPass);
         btnLogin = findViewById(R.id.btnLogin);
+        loginMethodGroup = findViewById(R.id.loginMethodGroup);
+        loginInfoText = findViewById(R.id.loginInfoText);
+
+        if (loginMethodGroup != null) {
+            loginMethodGroup.setOnCheckedChangeListener((group, checkedId) -> {
+                if (checkedId == R.id.radioUsos) {
+                    switchToUsosMode();
+                } else {
+                    switchToMzutMode();
+                }
+            });
+        }
 
         if (headerContainer != null) {
             ViewGroup.LayoutParams params = headerContainer.getLayoutParams();
@@ -301,7 +316,31 @@ public class LoginActivity extends AppCompatActivity {
                 .start();
     }
 
+    private void switchToUsosMode() {
+        if (loginInputLayout != null)  loginInputLayout.setVisibility(View.GONE);
+        if (passwordInputLayout != null) passwordInputLayout.setVisibility(View.GONE);
+        if (btnLogin != null)          btnLogin.setText(R.string.login_usos_button);
+        if (loginInfoText != null)     loginInfoText.setText(R.string.login_usos_info_text);
+    }
+
+    private void switchToMzutMode() {
+        if (loginInputLayout != null)  loginInputLayout.setVisibility(View.VISIBLE);
+        if (passwordInputLayout != null) passwordInputLayout.setVisibility(View.VISIBLE);
+        if (btnLogin != null)          btnLogin.setText(R.string.login_button);
+        if (loginInfoText != null)     loginInfoText.setText(R.string.login_info_text);
+    }
+
+    private boolean isUsosSelected() {
+        return loginMethodGroup != null
+                && loginMethodGroup.getCheckedRadioButtonId() == R.id.radioUsos;
+    }
+
     private void doLogin() {
+        if (isUsosSelected()) {
+            doUsosLogin();
+            return;
+        }
+
         String rawLogin = editLogin.getText() != null ? editLogin.getText().toString().trim() : "";
         String login = normalizeLoginIdentifier(rawLogin);
         String pass = editPass.getText() != null ? editPass.getText().toString().trim() : "";
@@ -370,6 +409,55 @@ public class LoginActivity extends AppCompatActivity {
                 getString(R.string.login_success, username),
                 Toast.LENGTH_LONG).show();
         runSuccessTransitionAndOpenHome(true);
+    }
+
+    private void doUsosLogin() {
+        if (isAuthTaskRunning) return;
+
+        if (BuildConfig.USOS_CONSUMER_KEY.isEmpty()) {
+            Toast.makeText(this, R.string.login_usos_keys_not_configured, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        isAuthTaskRunning = true;
+        startLoadingState();
+
+        executor.execute(() -> {
+            try {
+                String scopes = "studies|grades|personal|photo|email|mobile_numbers|offline_access|payments";
+                UsosOAuth.RequestToken rt = UsosOAuth.fetchRequestToken(
+                        BuildConfig.USOS_CONSUMER_KEY,
+                        BuildConfig.USOS_CONSUMER_SECRET,
+                        scopes);
+
+                // Persist request token secret so UsosOAuthCallbackActivity can retrieve it
+                getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit()
+                        .putString(UsosOAuthCallbackActivity.KEY_TEMP_RT_SECRET, rt.tokenSecret)
+                        .apply();
+
+                String authUrl = UsosOAuth.authorizationUrl(rt.token);
+
+                handler.post(() -> {
+                    isAuthTaskRunning = false;
+                    stopLoadingState();
+                    Intent webIntent = new Intent(LoginActivity.this, UsosLoginWebActivity.class);
+                    webIntent.putExtra(UsosLoginWebActivity.EXTRA_AUTH_URL, authUrl);
+                    startActivity(webIntent);
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "USOS request token error", e);
+                String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                handler.post(() -> {
+                    isAuthTaskRunning = false;
+                    stopLoadingState();
+                    Toast.makeText(LoginActivity.this,
+                            getString(R.string.login_usos_error_request_token, msg),
+                            Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     private void startLoadingState() {

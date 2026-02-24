@@ -29,6 +29,25 @@
 
         <activity android:name=".HomeActivity" />
 
+        <activity
+            android:name=".UsosLoginWebActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateHidden" />
+
+        <activity
+            android:name=".UsosOAuthCallbackActivity"
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="mzutv2"
+                    android:host="oauth" />
+            </intent-filter>
+        </activity>
+
         <activity android:name=".InfoActivity" />
 
         <activity android:name=".GradesActivity" />

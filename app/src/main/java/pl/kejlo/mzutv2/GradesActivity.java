@@ -289,12 +289,17 @@ public class GradesActivity extends MzutBaseActivity {
                 }
 
                 List<String> semNames = new ArrayList<>();
+                boolean usos = MzutSession.getInstance().isUsosLogin();
                 for (Semester s : semesters) {
-                    semNames.add(
-                            getString(
-                                    R.string.grades_semester_label,
-                                    s.nrSemestru,
-                                    s.rokAkademicki));
+                    if (usos && s.rokAkademicki != null && s.rokAkademicki.toLowerCase().contains("semestr")) {
+                        semNames.add(s.rokAkademicki);
+                    } else {
+                        semNames.add(
+                                getString(
+                                        R.string.grades_semester_label,
+                                        s.nrSemestru,
+                                        s.rokAkademicki));
+                    }
                 }
 
                 semestersAdapter.clear();
@@ -499,6 +504,7 @@ public class GradesActivity extends MzutBaseActivity {
                 }
 
                 if (finalError != null) {
+                    android.util.Log.e("mZUTv2-GRADES", "Failed to load semesters", finalError);
                     String message = finalError.getMessage() != null ? finalError.getMessage() : "";
                     Toast.makeText(
                             GradesActivity.this,
@@ -538,12 +544,17 @@ public class GradesActivity extends MzutBaseActivity {
 
                 // Build labels for the semester spinner
                 List<String> semNames = new ArrayList<>();
+                boolean usos = MzutSession.getInstance().isUsosLogin();
                 for (Semester s : semesters) {
-                    semNames.add(
-                            getString(
-                                    R.string.grades_semester_label,
-                                    s.nrSemestru,
-                                    s.rokAkademicki));
+                    if (usos && s.rokAkademicki != null && s.rokAkademicki.toLowerCase().contains("semestr")) {
+                        semNames.add(s.rokAkademicki);
+                    } else {
+                        semNames.add(
+                                getString(
+                                        R.string.grades_semester_label,
+                                        s.nrSemestru,
+                                        s.rokAkademicki));
+                    }
                 }
 
                 semestersAdapter.clear();
@@ -748,6 +759,10 @@ public class GradesActivity extends MzutBaseActivity {
             Semester semester,
             boolean forceNetwork) {
         showLoading(true);
+        // Clear stale data immediately so the previous semester's grades are not
+        // still visible while the new semester's grades are loading.
+        currentGradesRaw.clear();
+        applyGradesView();
         currentGradesFuture = executor.submit(() -> {
             List<Grade> grades = null;
             Exception error = null;
@@ -788,19 +803,22 @@ public class GradesActivity extends MzutBaseActivity {
                         return;
                     }
 
-                    String message = finalError.getMessage() != null ? finalError.getMessage() : "";
-                    boolean isDnsError = message.contains("Unable to resolve host");
-                    boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
+                    android.util.Log.e("mZUTv2-GRADES", "Failed to load grades for semester", finalError);
+                     String message = finalError.getMessage() != null ? finalError.getMessage() : "";
+                     boolean isDnsError = message.contains("Unable to resolve host");
+                     boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
+                     boolean isInterruption = finalError instanceof java.io.InterruptedIOException ||
+                                              message.toLowerCase().contains("interrupted");
 
-                    if (isOffline || isDnsError) {
-                        android.util.Log.d("GradesActivity", "Suppressed toast error: " + message);
-                    } else {
-                        Toast.makeText(
-                                GradesActivity.this,
-                                getString(R.string.grades_error_loading_grades, message),
-                                Toast.LENGTH_LONG).show();
-                    }
-                    showEmptyState(true);
+                     if (isOffline || isDnsError || isInterruption) {
+                         android.util.Log.d("GradesActivity", "Suppressed toast error: " + message);
+                     } else {
+                         Toast.makeText(
+                                 GradesActivity.this,
+                                 getString(R.string.grades_error_loading_grades, message),
+                                 Toast.LENGTH_LONG).show();
+                     }
+                     showEmptyState(true);
                     updateGradesDataFreshness(false);
                     return;
                 }

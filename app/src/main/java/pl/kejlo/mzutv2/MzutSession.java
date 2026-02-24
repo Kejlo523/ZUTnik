@@ -113,6 +113,10 @@ public final class MzutSession {
                 .remove(KEY_ACTIVE_STUDY_INDEX)
                 .remove(KEY_ACTIVE_STUDY_ID)
                 .remove(KEY_STUDIES_JSON)
+                .remove(KEY_LOGIN_TYPE)
+                .remove(KEY_USOS_ACCESS_TOKEN)
+                .remove(KEY_USOS_ACCESS_TOKEN_SEC)
+                .remove(KEY_USOS_STUDENT_NUMBER)
                 .apply();
     }
 
@@ -125,17 +129,30 @@ public final class MzutSession {
 
     // endregion
 
+    // region Login-type constants
+
+    /** Legacy ZUT proxy authentication. */
+    public static final String LOGIN_TYPE_MZUT = "mzut";
+    /** USOS API OAuth 1.0a authentication. */
+    public static final String LOGIN_TYPE_USOS = "usos";
+
+    // endregion
+
     // region SharedPreferences
 
     private static final String PREFS_NAME = "mzut_prefs";
 
-    private static final String KEY_USER_ID = "user_id";
-    private static final String KEY_AUTH_KEY = "auth_key";
-    private static final String KEY_USERNAME = "username";
-    private static final String KEY_IMAGE_URL = "image_url";
-    private static final String KEY_ACTIVE_STUDY_INDEX = "active_study_idx";
-    private static final String KEY_ACTIVE_STUDY_ID = "active_study_id";
-    private static final String KEY_STUDIES_JSON = "studies_json";
+    private static final String KEY_USER_ID               = "user_id";
+    private static final String KEY_AUTH_KEY              = "auth_key";
+    private static final String KEY_USERNAME              = "username";
+    private static final String KEY_IMAGE_URL             = "image_url";
+    private static final String KEY_ACTIVE_STUDY_INDEX    = "active_study_idx";
+    private static final String KEY_ACTIVE_STUDY_ID       = "active_study_id";
+    private static final String KEY_STUDIES_JSON          = "studies_json";
+    private static final String KEY_LOGIN_TYPE            = "login_type";
+    private static final String KEY_USOS_ACCESS_TOKEN     = "usos_access_token";
+    private static final String KEY_USOS_ACCESS_TOKEN_SEC = "usos_access_token_secret";
+    private static final String KEY_USOS_STUDENT_NUMBER   = "usos_student_number";
 
     private Context appContext;
 
@@ -157,6 +174,12 @@ public final class MzutSession {
     private String username;
     private String authKey;
     private String imageUrl;
+
+    // USOS OAuth tokens (populated only when loginType == LOGIN_TYPE_USOS)
+    private String loginType = LOGIN_TYPE_MZUT;
+    private String usosAccessToken;
+    private String usosAccessTokenSecret;
+    private String studentNumber;
 
     // Studies data (similar to $_SESSION['STUDIES'], ACTIVE_STUDY_IDX)
     // Persisted in SharedPreferences to keep the same active study across app restarts.
@@ -183,12 +206,16 @@ public final class MzutSession {
     private void loadFromPreferences(Context context) {
         SharedPreferences prefs = getPreferences(context);
 
-        this.userId = prefs.getString(KEY_USER_ID, null);
-        this.authKey = prefs.getString(KEY_AUTH_KEY, null);
-        this.username = prefs.getString(KEY_USERNAME, null);
-        this.imageUrl = prefs.getString(KEY_IMAGE_URL, null);
-        this.activeStudyIndex = prefs.getInt(KEY_ACTIVE_STUDY_INDEX, 0);
-        this.activeStudyId = prefs.getString(KEY_ACTIVE_STUDY_ID, null);
+        this.userId               = prefs.getString(KEY_USER_ID, null);
+        this.authKey              = prefs.getString(KEY_AUTH_KEY, null);
+        this.username             = prefs.getString(KEY_USERNAME, null);
+        this.imageUrl             = prefs.getString(KEY_IMAGE_URL, null);
+        this.activeStudyIndex     = prefs.getInt(KEY_ACTIVE_STUDY_INDEX, 0);
+        this.activeStudyId        = prefs.getString(KEY_ACTIVE_STUDY_ID, null);
+        this.loginType            = prefs.getString(KEY_LOGIN_TYPE, LOGIN_TYPE_MZUT);
+        this.usosAccessToken      = prefs.getString(KEY_USOS_ACCESS_TOKEN, null);
+        this.usosAccessTokenSecret = prefs.getString(KEY_USOS_ACCESS_TOKEN_SEC, null);
+        this.studentNumber        = prefs.getString(KEY_USOS_STUDENT_NUMBER, null);
 
         String studiesJson = prefs.getString(KEY_STUDIES_JSON, null);
         if (studiesJson != null) {
@@ -241,6 +268,22 @@ public final class MzutSession {
         e.putString(KEY_AUTH_KEY, authKey);
         e.putString(KEY_USERNAME, username);
         e.putString(KEY_IMAGE_URL, imageUrl);
+        e.putString(KEY_LOGIN_TYPE, loginType != null ? loginType : LOGIN_TYPE_MZUT);
+        if (usosAccessToken != null) {
+            e.putString(KEY_USOS_ACCESS_TOKEN, usosAccessToken);
+        } else {
+            e.remove(KEY_USOS_ACCESS_TOKEN);
+        }
+        if (usosAccessTokenSecret != null) {
+            e.putString(KEY_USOS_ACCESS_TOKEN_SEC, usosAccessTokenSecret);
+        } else {
+            e.remove(KEY_USOS_ACCESS_TOKEN_SEC);
+        }
+        if (studentNumber != null) {
+            e.putString(KEY_USOS_STUDENT_NUMBER, studentNumber);
+        } else {
+            e.remove(KEY_USOS_STUDENT_NUMBER);
+        }
         reconcileActiveStudySelection();
         e.putInt(KEY_ACTIVE_STUDY_INDEX, activeStudyIndex);
         if (activeStudyId != null && !activeStudyId.trim().isEmpty()) {
@@ -269,14 +312,39 @@ public final class MzutSession {
     }
 
     /**
-     * Convenient method for setting the entire user at once.
-     * Used for example in LoginActivity after successful login.
+     * Sets the mZUT (legacy proxy) user session.
+     * Clears any previously stored USOS tokens.
      */
     public void updateUser(String userId, String username, String authKey, String imageUrl) {
         this.userId = userId;
         this.username = username;
         this.authKey = authKey;
         this.imageUrl = imageUrl;
+        this.loginType = LOGIN_TYPE_MZUT;
+        this.usosAccessToken = null;
+        this.usosAccessTokenSecret = null;
+        this.studies = null;
+        this.activeStudyIndex = 0;
+        this.activeStudyId = null;
+        this.loaded = true;
+    }
+
+    /**
+     * Sets the USOS OAuth user session.
+     * Clears the legacy mZUT authKey.
+     */
+    public void updateUsosUser(
+            String userId, String username,
+            String accessToken, String accessTokenSecret,
+            String imageUrl, String studentNumber) {
+        this.userId = userId;
+        this.username = username;
+        this.authKey = null;
+        this.imageUrl = imageUrl;
+        this.loginType = LOGIN_TYPE_USOS;
+        this.usosAccessToken = accessToken;
+        this.usosAccessTokenSecret = accessTokenSecret;
+        this.studentNumber = studentNumber;
         this.studies = null;
         this.activeStudyIndex = 0;
         this.activeStudyId = null;
@@ -317,6 +385,39 @@ public final class MzutSession {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getLoginType() {
+        return loginType != null ? loginType : LOGIN_TYPE_MZUT;
+    }
+
+    public String getUsosAccessToken() {
+        return usosAccessToken;
+    }
+
+    public String getUsosAccessTokenSecret() {
+        return usosAccessTokenSecret;
+    }
+
+    public String getStudentNumber() {
+        return studentNumber;
+    }
+
+    /** Returns true when the user authenticated via USOS OAuth. */
+    public boolean isUsosLogin() {
+        return LOGIN_TYPE_USOS.equals(loginType);
+    }
+
+    /**
+     * Returns true if the session contains enough data to use the app
+     * (regardless of login method).
+     */
+    public boolean isLoggedIn() {
+        if (userId == null || userId.isEmpty()) return false;
+        if (isUsosLogin()) {
+            return usosAccessToken != null && !usosAccessToken.isEmpty();
+        }
+        return authKey != null && !authKey.isEmpty();
     }
 
     public List<Study> getStudies() {

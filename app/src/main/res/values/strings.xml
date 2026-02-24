@@ -55,6 +55,19 @@
   <string name="login_system_error">Błąd systemu ZUT (SYSTEM ERROR).</string>
   <string name="login_invalid_credentials">Nieprawidłowy login lub hasło.</string>
   <string name="login_success">Zalogowano jako %1$s</string>
+  <!-- USOS login -->
+  <string name="login_method_old_system">Stary system ZUT</string>
+  <string name="login_method_usos">USOS</string>
+  <string name="login_usos_button">Zaloguj przez USOS</string>
+  <string name="login_usos_info_text">
+        Logowanie wymaga autoryzacji w przeglądarce. Zostaniesz przekierowany na stronę USOS.
+    </string>
+  <string name="login_usos_connecting">Łączę z USOS…</string>
+  <string name="login_usos_exchanging_token">Autoryzacja USOS…</string>
+  <string name="login_usos_fetching_user">Pobieram dane użytkownika…</string>
+  <string name="login_usos_error_request_token">Błąd połączenia z USOS: %1$s</string>
+  <string name="login_usos_error_auth">Błąd autoryzacji USOS: %1$s</string>
+  <string name="login_usos_keys_not_configured">Klucze USOS API nie są skonfigurowane.</string>
   <string name="home_title">Pulpit główny</string>
   <string name="home_toolbar_title">Strona główna</string>
   <string name="home_welcome_message">Witaj %1$s</string>
@@ -89,6 +102,13 @@
   <string name="info_user_id_placeholder">ID użytkownika: -</string>
   <string name="info_sync_in_progress">Synchronizuję…</string>
   <string name="info_error_loading">Błąd ładowania danych: %1$s</string>
+  <string name="info_usos_finance_title">Finanse</string>
+  <string name="info_usos_no_payments">Brak zobowiązań finansowych.</string>
+  <string name="info_usos_payment_error">Błąd pobierania finansów: %1$s</string>
+  <string name="info_usos_payment_amount">Kwota: %1$s zł</string>
+  <string name="info_usos_payment_due">Termin: %1$s</string>
+  <string name="info_usos_payment_status_paid">Zapłacone</string>
+  <string name="info_usos_payment_status_unpaid">Niezapłacone</string>
   <string name="info_history_empty">Brak przebiegu studiów.</string>
   <string name="info_history_item">%1$s – %2$s</string>
   <string name="info_history_title">Przebieg studiów</string>

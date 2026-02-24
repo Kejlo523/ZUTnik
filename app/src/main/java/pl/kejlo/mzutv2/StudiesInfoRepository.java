@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StudiesInfoRepository {
 
@@ -39,6 +40,15 @@ public class StudiesInfoRepository {
             }
         }
         return "";
+    }
+
+    private String extractLocalized(JSONObject obj, String key) {
+        if (obj == null) return "";
+        JSONObject localized = obj.optJSONObject(key);
+        if (localized != null) {
+            return localized.optString("pl", localized.optString("en", ""));
+        }
+        return obj.optString(key, "");
     }
 
     private String getActivePrzynaleznoscId() throws IOException, JSONException {
@@ -73,13 +83,105 @@ public class StudiesInfoRepository {
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
 
-        if (userId == null || authKey == null) {
+        if (userId == null || (!session.isUsosLogin() && authKey == null)) {
             return null;
         }
 
         String przynaleznoscId = getActivePrzynaleznoscId();
         if (przynaleznoscId == null) {
             return null;
+        }
+
+        if (session.isUsosLogin()) {
+            StudyDetails d = new StudyDetails();
+
+            // Album number — prefer session cache, then fresh API call
+            d.album = session.getStudentNumber();
+            if (d.album == null || d.album.isEmpty()) {
+                try {
+                    Map<String, String> userParams = new HashMap<>();
+                    userParams.put("fields", "student_number");
+                    JSONObject userObj = UsosApi.get("services/users/user", userParams);
+                    d.album = userObj.optString("student_number", "");
+                } catch (Exception ignored) {}
+            }
+
+            // Fetch student programmes — active_only=false to include past ones.
+            // przynaleznoscId is programme.id (e.g. "S1-INF"), so match on that.
+            Map<String, String> progsParams = new HashMap<>();
+            progsParams.put("fields", "programme[id|description|mode_of_studies|level_of_studies]|status");
+            progsParams.put("active_only", "false");
+            JSONArray progs = UsosApi.getArray("services/progs/student", progsParams);
+            for (int i = 0; i < progs.length(); i++) {
+                JSONObject row = progs.getJSONObject(i);
+                JSONObject prog = row.optJSONObject("programme");
+                if (prog == null) continue;
+
+                String pid = prog.optString("id", "");
+                // Match the selected study; fall back to first entry if nothing matches
+                if (!pid.equals(przynaleznoscId) && i < progs.length() - 1) continue;
+
+                JSONObject desc = prog.optJSONObject("description");
+                d.kierunek = desc != null
+                        ? desc.optString("pl", desc.optString("en", pid))
+                        : pid;
+
+                // Faculty — separate lightweight call (faculty[id|name] avoids subfield error)
+                try {
+                    Map<String, String> pParams = new HashMap<>();
+                    pParams.put("programme_id", pid);
+                    pParams.put("fields", "faculty[id|name]");
+                    JSONObject pObj = UsosApi.get("services/progs/programme", pParams);
+                    if (pObj != null) {
+                        JSONObject fac = pObj.optJSONObject("faculty");
+                        if (fac != null) {
+                            d.wydzial = extractLocalized(fac, "name");
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                int mode = prog.optInt("mode_of_studies", 0);
+                d.forma = mode == 1 ? "Stacjonarne" : "Niestacjonarne";
+                d.poziom = extractLocalized(prog, "level_of_studies");
+                d.specjalnosc = "";
+                d.specjalizacja = "";
+
+                // Status — API returns string like "active", "graduated_diploma" etc.
+                String statusRaw = row.optString("status", "");
+                switch (statusRaw) {
+                    case "active": d.status = "Aktywny"; break;
+                    case "cancelled": d.status = "Anulowany"; break;
+                    case "graduated_diploma": d.status = "Absolwent"; break;
+                    case "graduated_end_of_study":
+                    case "graduated_before_diploma": d.status = "Absolwent (ukończone)"; break;
+                    default: d.status = statusRaw;
+                }
+
+                // Active term → academic year + season
+                d.rokAkademicki = "";
+                d.semestrLabel = "";
+                try {
+                    Map<String, String> ceParams = new HashMap<>();
+                    ceParams.put("active_terms_only", "true");
+                    ceParams.put("fields", "course_editions");
+                    JSONObject ceResp = UsosApi.get("services/courses/user", ceParams);
+                    JSONObject editions = ceResp != null ? ceResp.optJSONObject("course_editions") : null;
+                    if (editions != null && editions.keys().hasNext()) {
+                        String tid = editions.keys().next(); // e.g. "2024/25Z"
+                        d.semestrLabel = tid.endsWith("Z") ? "zimowy"
+                                : (tid.endsWith("L") ? "letni" : "");
+                        if (tid.length() >= 7) {
+                            // "2024/25Z" → "2024/2025"
+                            d.rokAkademicki = tid.substring(0, 4) + "/20" + tid.substring(5, 7);
+                        } else {
+                            d.rokAkademicki = tid.replaceAll("[ZL]$", "");
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                break;
+            }
+            return d;
         }
 
         HashMap<String, String> params = new HashMap<>();
@@ -135,13 +237,38 @@ public class StudiesInfoRepository {
         MzutSession session = MzutSession.getInstance();
         String userId = session.getUserId();
         String authKey = session.getAuthKey();
-        if (userId == null || authKey == null) {
+        if (userId == null || (!session.isUsosLogin() && authKey == null)) {
             return new ArrayList<>();
         }
 
         String przynaleznoscId = getActivePrzynaleznoscId();
         if (przynaleznoscId == null) {
             return new ArrayList<>();
+        }
+
+        if (session.isUsosLogin()) {
+             List<StudyHistoryItem> result = new ArrayList<>();
+             Map<String, String> params = new HashMap<>();
+             params.put("fields", "terms");
+             JSONObject termsObj = UsosApi.get("services/courses/user", params);
+             JSONArray termsArray = termsObj.optJSONArray("terms");
+             if (termsArray != null) {
+                 for (int i = 0; i < termsArray.length(); i++) {
+                     JSONObject termItem = termsArray.optJSONObject(i);
+                     if (termItem != null) {
+                         String termId = termItem.optString("id");
+                         if (termId != null && !termId.isEmpty()) {
+                             StudyHistoryItem item = new StudyHistoryItem();
+                             String pora = termId.endsWith("Z") ? "Zimowy" : (termId.endsWith("L") ? "Letni" : "");
+                             item.label = termId + " " + pora;
+                             item.status = "Zaliczone/Aktywne";
+                             result.add(item);
+                         }
+                     }
+                 }
+                 result.sort((a, b) -> b.label.compareTo(a.label));
+             }
+             return result;
         }
 
         HashMap<String, String> params = new HashMap<>();

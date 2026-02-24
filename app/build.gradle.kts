@@ -1,5 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { stream -> localProperties.load(stream) }
 }
 
 android {
@@ -14,6 +22,10 @@ android {
         versionName = "1.62"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "USOS_CONSUMER_KEY",    "\"${localProperties["usos.consumer_key"]    ?: ""}\"")
+        buildConfigField("String", "USOS_CONSUMER_SECRET", "\"${localProperties["usos.consumer_secret"] ?: ""}\"")
+        buildConfigField("String", "USOS_BASE_URL",        "\"https://usosapi.zut.edu.pl/\"")
     }
 
     buildTypes {

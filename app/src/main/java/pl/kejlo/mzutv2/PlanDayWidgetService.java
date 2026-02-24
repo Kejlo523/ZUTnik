@@ -32,7 +32,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
     private static boolean ensureSessionFromPrefs(Context ctx) {
         MzutSession.initializeFromPreferences(ctx);
         MzutSession s = MzutSession.getInstance();
-        return s.getUserId() != null && s.getAuthKey() != null;
+        return s.isLoggedIn();
     }
 
     private static class PlanDayFactory implements RemoteViewsFactory {
