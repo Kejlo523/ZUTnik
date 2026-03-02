@@ -103,7 +103,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:text="→"
+                android:text="@string/plan_change_arrow"
                 android:textColor="?attr/mzMuted"
                 android:textSize="18sp" />
 

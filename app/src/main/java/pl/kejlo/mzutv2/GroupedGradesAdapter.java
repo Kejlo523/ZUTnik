@@ -58,19 +58,12 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
     private final List<ListItem> items = new ArrayList<>();
 
     public void setGroups(List<GradeGroup> newGroups) {
-        int oldCount = items.size();
         groups.clear();
         if (newGroups != null) {
             groups.addAll(newGroups);
         }
         rebuildItems();
-        int newCount = items.size();
-        if (oldCount > 0) {
-            notifyItemRangeRemoved(0, oldCount);
-        }
-        if (newCount > 0) {
-            notifyItemRangeInserted(0, newCount);
-        }
+        notifyDataSetChanged();
     }
 
     private void rebuildItems() {
@@ -166,7 +159,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
     private void bindGroup(GroupViewHolder h, GradeGroup g) {
         Context ctx = h.itemView.getContext();
         if (g == null) {
-            h.subject.setText("");
+            h.subject.setText((CharSequence) null);
             h.finalPill.setText(ctx.getString(R.string.common_dash));
             h.finalLabel.setText(R.string.grades_final_grade_missing);
             h.previewRow.removeAllViews();

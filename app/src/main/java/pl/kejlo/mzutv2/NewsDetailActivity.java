@@ -125,7 +125,7 @@ public class NewsDetailActivity extends AppCompatActivity {
                 startActivity(browser);
             });
         } else {
-            tvSource.setText("");
+            tvSource.setText((CharSequence) null);
             tvSource.setVisibility(View.GONE);
             tvSource.setOnClickListener(null);
         }

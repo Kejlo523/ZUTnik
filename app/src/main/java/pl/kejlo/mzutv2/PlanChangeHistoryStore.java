@@ -63,7 +63,7 @@ public final class PlanChangeHistoryStore {
         SharedPreferences prefs = context.getApplicationContext()
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String json = prefs.getString(scopedKey(context), "[]");
-        if (json == null || json.isEmpty()) {
+        if (json.isEmpty()) {
             return out;
         }
 

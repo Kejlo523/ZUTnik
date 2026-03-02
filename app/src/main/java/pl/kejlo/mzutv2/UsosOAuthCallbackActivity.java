@@ -52,6 +52,7 @@ public class UsosOAuthCallbackActivity extends AppCompatActivity {
         ThemeManager.applyTheme(this);
         setContentView(R.layout.activity_usos_oauth_callback);
         ThemeManager.applySystemBars(this);
+        ThemeManager.applyRootWindowInsets(findViewById(R.id.contentRoot));
 
         statusText = findViewById(R.id.usosStatusText);
 

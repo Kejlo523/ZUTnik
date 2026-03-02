@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pl">
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:locale="pl"
+    tools:ignore="MissingTranslation">
   <string name="battery_opt_dialog_title">Wymagane uprawnienia</string>
   <string name="battery_opt_dialog_message">Aplikacja potrzebuje działać w tle, aby widgety działały poprawnie. Proszę wyłączyć optymalizację baterii dla tej aplikacji.</string>
   <string name="battery_opt_button_settings">Ustawienia</string>
@@ -56,9 +59,14 @@
   <string name="login_invalid_credentials">Nieprawidłowy login lub hasło.</string>
   <string name="login_success">Zalogowano jako %1$s</string>
   <!-- USOS login -->
-  <string name="login_method_old_system">Stary system ZUT</string>
+  <string name="login_method_old_system">System ZUT</string>
   <string name="login_method_usos">USOS</string>
   <string name="login_usos_button">Zaloguj przez USOS</string>
+  <string name="login_usos_web_title">Logowanie USOS</string>
+  <string name="login_usos_missing_auth_url">Brak URL autoryzacji</string>
+  <string name="login_usos_reason_incomplete_params">niekompletne parametry</string>
+  <string name="login_usos_reason_missing_request_secret">brak request token secret</string>
+  <string name="login_usos_error_missing_user_id">Brak ID użytkownika w odpowiedzi USOS</string>
   <string name="login_usos_info_text">
         Logowanie wymaga autoryzacji w przeglądarce. Zostaniesz przekierowany na stronę USOS.
     </string>
@@ -161,9 +169,6 @@
   <string name="plan_button_filters">Filtr przedmiotów</string>
   <string name="plan_button_history">Historia zmian w planie</string>
   <string name="plan_button_calendar_export">Eksport kalendarza</string>
-  <string name="plan_button_export_ics">Eksport do kalendarza (.ics)</string>
-  <string name="plan_button_share_ics">Udostępnij .ics do aplikacji</string>
-  <string name="plan_button_export_ics_semester">Eksport całego semestru (.ics)</string>
   <string name="plan_toast_resetting_search">Resetowanie wyszukiwania…</string>
   <string name="plan_toast_refreshed">Plan odświeżony</string>
   <string name="plan_toast_search_prefix">Wyszukiwanie: %1$s %2$s</string>
@@ -353,6 +358,7 @@
   <string name="plan_change_label_after">Jest</string>
   <string name="plan_change_label_current">Aktualnie</string>
   <string name="plan_change_label_removed">Usunięty termin</string>
+  <string name="plan_change_arrow" translatable="false">→</string>
   <string name="plan_change_field_room">Sala</string>
   <string name="plan_change_field_group">Grupa</string>
   <string name="plan_change_field_teacher">Prowadzący</string>
@@ -382,7 +388,6 @@
   <string name="calendar_export_section_device">Kalendarz urządzenia</string>
   <string name="calendar_export_device_title">Import do kalendarza w telefonie</string>
   <string name="calendar_export_device_desc">Pozwala dodać wydarzenia bezpośrednio do jednego z dostępnych kalendarzy na urządzeniu, np. Google, Samsung albo innego konta.</string>
-  <string name="calendar_export_device_pick_action">Wybierz kalendarz</string>
   <string name="calendar_export_device_action">Wybierz kalendarz i importuj</string>
   <string name="calendar_export_device_clear_action">Wybierz kalendarz i wyczyść wpisy mZUT</string>
   <string name="calendar_export_permission_denied">Bez uprawnień do kalendarza nie można zaimportować wydarzeń do kalendarza urządzenia</string>
@@ -536,6 +541,7 @@
   <!-- Extracted Strings -->
   <string name="useful_links_badge_recommended">Polecane</string>
   <string name="about_version_prefix">v</string>
+  <string name="about_version_value" translatable="false">v%1$s</string>
   <string name="about_section_support_project">Wsparcie i Projekt</string>
   <string name="about_footer_made_with">Made with ❤️ by Kejlo</string>
   <string name="about_github_title">Kod źródłowy</string>

@@ -115,16 +115,16 @@ public class AboutActivity extends AppCompatActivity {
 
     private void setupUI() {
         // Version
-        try {
-            String versionName = BuildConfig.VERSION_NAME;
-            aboutVersion.setText(getString(R.string.about_version_prefix) + versionName);
-        } catch (Exception e) {
-            aboutVersion.setText(getString(R.string.about_version_prefix) + "1.0");
+        String versionName = BuildConfig.VERSION_NAME;
+        if (versionName == null || versionName.trim().isEmpty()) {
+            aboutVersion.setText(R.string.common_dash);
+        } else {
+            aboutVersion.setText(getString(R.string.about_version_value, versionName));
         }
 
         // GitHub Button
         findViewById(R.id.cardGithub).setOnClickListener(v -> {
-            openUrl("https://github.com/Kejlo523/mzut-v2", "GitHub");
+            openUrl("https://github.com/Kejlo523/mzut-v2", getString(R.string.about_github_title));
         });
 
         // Rate Us Button - Direct Play Store link

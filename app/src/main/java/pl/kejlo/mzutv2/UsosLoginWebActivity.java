@@ -67,6 +67,7 @@ public class UsosLoginWebActivity extends AppCompatActivity {
         ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_usos_login_web);
         ThemeManager.applySystemBars(this);
+        ThemeManager.applyRootWindowInsets(findViewById(R.id.contentRoot));
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         progressBar    = findViewById(R.id.progressBar);
@@ -77,12 +78,12 @@ public class UsosLoginWebActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Logowanie USOS");
+            getSupportActionBar().setTitle(R.string.login_usos_web_title);
         }
 
         String authUrl = getIntent().getStringExtra(EXTRA_AUTH_URL);
         if (authUrl == null || authUrl.isEmpty()) {
-            Toast.makeText(this, "Brak URL autoryzacji", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.login_usos_missing_auth_url, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -133,7 +134,9 @@ public class UsosLoginWebActivity extends AppCompatActivity {
         String oauthVerifier = callbackUri.getQueryParameter("oauth_verifier");
 
         if (oauthToken == null || oauthVerifier == null) {
-            Toast.makeText(this, getString(R.string.login_usos_error_auth, "niekompletne parametry"),
+            Toast.makeText(this, getString(
+                            R.string.login_usos_error_auth,
+                            getString(R.string.login_usos_reason_incomplete_params)),
                     Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -143,7 +146,9 @@ public class UsosLoginWebActivity extends AppCompatActivity {
         String requestTokenSecret = prefs.getString(UsosOAuthCallbackActivity.KEY_TEMP_RT_SECRET, null);
 
         if (requestTokenSecret == null) {
-            Toast.makeText(this, getString(R.string.login_usos_error_auth, "brak request token secret"),
+            Toast.makeText(this, getString(
+                            R.string.login_usos_error_auth,
+                            getString(R.string.login_usos_reason_missing_request_secret)),
                     Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -175,7 +180,9 @@ public class UsosLoginWebActivity extends AppCompatActivity {
                 Log.d(TAG, "USOS user response: " + user.toString());
 
                 String userId = user.optString("id", "");
-                if (userId.isEmpty()) throw new Exception("Brak ID użytkownika w odpowiedzi USOS");
+                if (userId.isEmpty()) {
+                    throw new Exception(getString(R.string.login_usos_error_missing_user_id));
+                }
 
                 JSONObject firstObj = user.optJSONObject("first_name");
                 JSONObject lastObj  = user.optJSONObject("last_name");

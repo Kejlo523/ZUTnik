@@ -26,6 +26,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -160,11 +161,11 @@ public class MainWearActivity extends Activity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(WearSyncConstants.ACTION_SNAPSHOT_UPDATED);
         filter.addAction(WearSyncConstants.ACTION_SYNC_PROGRESS);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(syncReceiver, filter, RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(syncReceiver, filter);
-        }
+        ContextCompat.registerReceiver(
+                this,
+                syncReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
         handler.post(statusRunnable);
     }
 
