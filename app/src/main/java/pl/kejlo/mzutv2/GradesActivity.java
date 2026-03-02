@@ -643,10 +643,7 @@ public class GradesActivity extends MzutBaseActivity {
             if (listGrades.getAdapter() != flatAdapter) {
                 listGrades.setAdapter(flatAdapter);
             }
-            int itemCount = flatAdapter.getItemCount();
-            if (itemCount > 0) {
-                flatAdapter.notifyItemRangeChanged(0, itemCount);
-            }
+            flatAdapter.notifyDataSetChanged();
             showEmptyState(currentGradesRaw.isEmpty());
         }
     }

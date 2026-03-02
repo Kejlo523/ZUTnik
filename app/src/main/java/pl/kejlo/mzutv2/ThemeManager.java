@@ -3,11 +3,16 @@ package pl.kejlo.mzutv2;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Build;
+import android.view.View;
 import android.view.WindowManager;
 
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 public class ThemeManager {
@@ -47,6 +52,14 @@ public class ThemeManager {
         int bg = resolveColor(activity, R.attr.mzBg);
         android.view.Window window = activity.getWindow();
         WindowCompat.setDecorFitsSystemWindows(window, false);
+        window.setNavigationBarColor(bg);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setNavigationBarContrastEnforced(false);
+            window.setStatusBarContrastEnforced(false);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            window.setStatusBarColor(Color.TRANSPARENT);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowManager.LayoutParams attrs = window.getAttributes();
             if (attrs.layoutInDisplayCutoutMode
@@ -62,6 +75,28 @@ public class ThemeManager {
                 WindowCompat.getInsetsController(window, window.getDecorView());
         controller.setAppearanceLightStatusBars(light);
         controller.setAppearanceLightNavigationBars(light);
+    }
+
+    public static void applyRootWindowInsets(View root) {
+        if (root == null) {
+            return;
+        }
+
+        final int paddingLeft = root.getPaddingLeft();
+        final int paddingTop = root.getPaddingTop();
+        final int paddingRight = root.getPaddingRight();
+        final int paddingBottom = root.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            view.setPadding(
+                    paddingLeft + insets.left,
+                    paddingTop + insets.top,
+                    paddingRight + insets.right,
+                    paddingBottom + insets.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.requestApplyInsets(root);
     }
 
     public static String getTheme(Context context) {

@@ -9,6 +9,7 @@
     android:fitsSystemWindows="false">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/planCoordinatorRoot"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 

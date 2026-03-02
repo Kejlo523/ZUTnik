@@ -84,6 +84,7 @@ public class LoginActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_login);
         ThemeManager.applySystemBars(this);
+        ThemeManager.applyRootWindowInsets(findViewById(R.id.contentRoot));
 
         if (getIntent().getBooleanExtra(EXTRA_SESSION_EXPIRED, false)
                 || SessionExpiryManager.consumeSessionExpiredNotice(this)) {

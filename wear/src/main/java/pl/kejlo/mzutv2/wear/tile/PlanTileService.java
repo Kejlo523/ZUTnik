@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.concurrent.futures.ResolvableFuture;
+import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.wear.tiles.ActionBuilders;
 import androidx.wear.tiles.ColorBuilders;
 import androidx.wear.tiles.DimensionBuilders;
@@ -71,51 +71,53 @@ public class PlanTileService extends TileService {
     @Override
     public ListenableFuture<TileBuilders.Tile> onTileRequest(
             @NonNull RequestBuilders.TileRequest requestParams) {
-        ResolvableFuture<TileBuilders.Tile> future = ResolvableFuture.create();
-        try {
-            markTileSeen();
-            WearPlanSnapshot snap = WearSnapshotStore.load(this);
-            if (snap == null) {
-                snap = new WearPlanSnapshot();
+        return CallbackToFutureAdapter.getFuture(completer -> {
+            try {
+                markTileSeen();
+                WearPlanSnapshot snap = WearSnapshotStore.load(this);
+                if (snap == null) {
+                    snap = new WearPlanSnapshot();
+                }
+                applyTheme(snap);
+
+                LayoutElementBuilders.Layout layout = new LayoutElementBuilders.Layout.Builder()
+                        .setRoot(buildLayout(snap))
+                        .build();
+
+                TileBuilders.Tile tile = new TileBuilders.Tile.Builder()
+                        .setResourcesVersion(RESOURCES_VERSION)
+                        .setFreshnessIntervalMillis(30 * 60 * 1000L)
+                        .setTimeline(new TimelineBuilders.Timeline.Builder()
+                                .addTimelineEntry(new TimelineBuilders.TimelineEntry.Builder()
+                                        .setLayout(layout)
+                                        .build())
+                                .build())
+                        .build();
+
+                completer.set(tile);
+            } catch (Exception e) {
+                Log.e(TAG, "onTileRequest: failed", e);
+                completer.set(buildErrorTile());
             }
-            applyTheme(snap);
-
-            LayoutElementBuilders.Layout layout = new LayoutElementBuilders.Layout.Builder()
-                    .setRoot(buildLayout(snap))
-                    .build();
-
-            TileBuilders.Tile tile = new TileBuilders.Tile.Builder()
-                    .setResourcesVersion(RESOURCES_VERSION)
-                    .setFreshnessIntervalMillis(30 * 60 * 1000L)
-                    .setTimeline(new TimelineBuilders.Timeline.Builder()
-                            .addTimelineEntry(new TimelineBuilders.TimelineEntry.Builder()
-                                    .setLayout(layout)
-                                    .build())
-                            .build())
-                    .build();
-
-            future.set(tile);
-        } catch (Exception e) {
-            Log.e(TAG, "onTileRequest: failed", e);
-            future.set(buildErrorTile());
-        }
-        return future;
+            return "PlanTileService#onTileRequest";
+        });
     }
 
     @NonNull
     @Override
     public ListenableFuture<ResourceBuilders.Resources> onResourcesRequest(
             @NonNull RequestBuilders.ResourcesRequest requestParams) {
-        ResolvableFuture<ResourceBuilders.Resources> future = ResolvableFuture.create();
-        future.set(new ResourceBuilders.Resources.Builder()
-                .setVersion(RESOURCES_VERSION)
-                .addIdToImageMapping("logo_image", new ResourceBuilders.ImageResource.Builder()
-                        .setAndroidResourceByResId(new ResourceBuilders.AndroidImageResourceByResId.Builder()
-                                .setResourceId(R.mipmap.ic_zut_logo_round)
-                                .build())
-                        .build())
-                .build());
-        return future;
+        return CallbackToFutureAdapter.getFuture(completer -> {
+            completer.set(new ResourceBuilders.Resources.Builder()
+                    .setVersion(RESOURCES_VERSION)
+                    .addIdToImageMapping("logo_image", new ResourceBuilders.ImageResource.Builder()
+                            .setAndroidResourceByResId(new ResourceBuilders.AndroidImageResourceByResId.Builder()
+                                    .setResourceId(R.mipmap.ic_zut_logo_round)
+                                    .build())
+                            .build())
+                    .build());
+            return "PlanTileService#onResourcesRequest";
+        });
     }
 
     private void applyTheme(WearPlanSnapshot snap) {

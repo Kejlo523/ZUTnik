@@ -27,10 +27,8 @@ import java.util.Locale;
 
 public class PlanChangeHistoryActivity extends MzutBaseActivity {
 
-    private static final DateTimeFormatter DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.getDefault());
-    private static final DateTimeFormatter TIMESTAMP_FORMATTER =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.getDefault());
+    private static final String DATE_PATTERN = "dd.MM.yyyy";
+    private static final String TIMESTAMP_PATTERN = "dd.MM.yyyy HH:mm";
 
     private LinearLayout historyContainer;
     private View scrollHistory;
@@ -279,7 +277,7 @@ public class PlanChangeHistoryActivity extends MzutBaseActivity {
         LocalDateTime dateTime = LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(timestamp),
                 ZoneId.systemDefault());
-        return dateTime.format(TIMESTAMP_FORMATTER);
+        return dateTime.format(createFormatter(TIMESTAMP_PATTERN));
     }
 
     private String formatSlot(
@@ -327,7 +325,7 @@ public class PlanChangeHistoryActivity extends MzutBaseActivity {
             return "--.--.----";
         }
         try {
-            return LocalDate.parse(dateIso.trim()).format(DATE_FORMATTER);
+            return LocalDate.parse(dateIso.trim()).format(createFormatter(DATE_PATTERN));
         } catch (Exception ignored) {
             return dateIso;
         }
@@ -346,5 +344,9 @@ public class PlanChangeHistoryActivity extends MzutBaseActivity {
         int hours = safeMinutes / 60;
         int mins = safeMinutes % 60;
         return String.format(Locale.getDefault(), "%02d:%02d", hours, mins);
+    }
+
+    private DateTimeFormatter createFormatter(String pattern) {
+        return DateTimeFormatter.ofPattern(pattern, Locale.getDefault());
     }
 }

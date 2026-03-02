@@ -1119,7 +1119,7 @@ public class BackgroundSyncWorker extends Worker {
             try {
                 String core = obj.optString("c", "");
                 String coreNoType = obj.optString("b", "");
-                if (coreNoType == null || coreNoType.isEmpty()) {
+                if (coreNoType.isEmpty()) {
                     coreNoType = core;
                 }
                 String title = obj.optString("t", "");

@@ -511,7 +511,7 @@ public final class PlanCalendarExportHelper {
         }
     }
 
-    private int flushCalendarInsertBatch(ContentResolver resolver, List<ContentValues> valuesBatch) throws Exception {
+    private int flushCalendarInsertBatch(ContentResolver resolver, List<ContentValues> valuesBatch) {
         if (resolver == null || valuesBatch == null || valuesBatch.isEmpty()) {
             return 0;
         }
@@ -527,15 +527,13 @@ public final class PlanCalendarExportHelper {
                         .build());
             }
             ContentProviderResult[] results = resolver.applyBatch(CalendarContract.AUTHORITY, ops);
-            if (results != null) {
-                for (int i = 0; i < results.length && i < snapshot.size(); i++) {
-                    ContentProviderResult result = results[i];
-                    if (result != null && result.uri != null) {
-                        maybeUpdateInsertedEventColor(resolver, result.uri, snapshot.get(i));
-                    }
+            for (int i = 0; i < results.length && i < snapshot.size(); i++) {
+                ContentProviderResult result = results[i];
+                if (result != null && result.uri != null) {
+                    maybeUpdateInsertedEventColor(resolver, result.uri, snapshot.get(i));
                 }
             }
-            return results != null ? results.length : 0;
+            return results.length;
         } catch (Exception batchError) {
             android.util.Log.w("PlanCalendarExport", "Batch calendar insert failed, falling back to single inserts", batchError);
             int inserted = 0;
@@ -573,7 +571,7 @@ public final class PlanCalendarExportHelper {
             colorValues.put(CalendarContract.Events.EVENT_COLOR_KEY, eventColorKey);
         }
 
-        if (colorValues.size() == 0) {
+        if (colorValues.size() < 1) {
             return;
         }
 
@@ -768,15 +766,15 @@ public final class PlanCalendarExportHelper {
         return lines.isEmpty() ? "" : TextUtils.join("\n", lines);
     }
 
-    private LocalDate[] resolveSemesterRange() throws Exception {
+    private LocalDate[] resolveSemesterRange() {
         LocalDate fallbackStart = defaultSemesterStart(currentDate);
         LocalDate fallbackEnd = defaultSemesterEnd(currentDate);
 
         List<PlanRepository.SessionPeriod> periods = PlanRepository.getCachedSessionDates(appContext);
-        if (periods == null || periods.isEmpty()) {
+        if (periods.isEmpty()) {
             periods = planRepository.fetchSessionDates();
         }
-        if (periods == null || periods.isEmpty()) {
+        if (periods.isEmpty()) {
             return new LocalDate[] { fallbackStart, fallbackEnd };
         }
 
@@ -888,7 +886,7 @@ public final class PlanCalendarExportHelper {
     }
 
     private String buildEventKey(LocalDate date, PlanRepository.PlanEventUi event) {
-        return String.valueOf(date)
+        return date
                 + "|" + event.startMin
                 + "|" + event.endMin
                 + "|" + trimToEmpty(event.title)
