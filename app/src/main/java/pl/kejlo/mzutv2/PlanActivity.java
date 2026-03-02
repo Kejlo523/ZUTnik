@@ -1,5 +1,7 @@
 package pl.kejlo.mzutv2;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -12,6 +14,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.Typeface;
+import android.net.Uri;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -46,6 +49,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.content.FileProvider;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
@@ -53,9 +57,17 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
@@ -122,6 +134,11 @@ public class PlanActivity extends MzutBaseActivity {
     private static final float MONTH_CELL_HEIGHT_DP = 70f;
 
     private static final int VP_START_POSITION = 5000;
+    private static final ZoneId EXPORT_TIME_ZONE = ZoneId.of("Europe/Warsaw");
+    private static final DateTimeFormatter ICS_LOCAL_DT = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+    private static final DateTimeFormatter ICS_UTC_DT = DateTimeFormatter
+            .ofPattern("yyyyMMdd'T'HHmmss'Z'")
+            .withZone(ZoneOffset.UTC);
 
     private Button btnViewDay;
     private Button btnViewWeek;
@@ -141,6 +158,7 @@ public class PlanActivity extends MzutBaseActivity {
     private LinearLayout layoutMonthHeadersFixed;
 
     private ViewPager2 viewPager;
+    private RecyclerView pagerRecyclerView;
     private PlanPagerAdapter pagerAdapter;
 
     private ProgressBar progress;
@@ -158,6 +176,8 @@ public class PlanActivity extends MzutBaseActivity {
     private Set<String> hiddenSubjectKeys = new HashSet<>();
 
     private PlanRepository.SearchParams currentSearchQuery = null;
+    private ActivityResultLauncher<String> exportCalendarLauncher;
+    private String pendingCalendarExportContent = null;
 
     private android.animation.ObjectAnimator mRefreshAnimator;
 
@@ -193,6 +213,26 @@ public class PlanActivity extends MzutBaseActivity {
         public int hashCode() {
             return viewModeId.hashCode() * 31 + date.hashCode();
         }
+    }
+
+    private static class CalendarExportEvent {
+        final LocalDate date;
+        final PlanRepository.PlanEventUi event;
+
+        CalendarExportEvent(LocalDate date, PlanRepository.PlanEventUi event) {
+            this.date = date;
+            this.event = event;
+        }
+    }
+
+    private enum CalendarExportScope {
+        CURRENT_VIEW,
+        SEMESTER
+    }
+
+    private enum CalendarExportDelivery {
+        SAVE,
+        SHARE
     }
 
     private final LinkedHashMap<PlanKey, PlanRepository.PlanResult> planCache = new LinkedHashMap<>(
@@ -302,6 +342,7 @@ public class PlanActivity extends MzutBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupCalendarExportLauncher();
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
 
@@ -385,6 +426,11 @@ public class PlanActivity extends MzutBaseActivity {
             viewPager.setAdapter(pagerAdapter);
             viewPager.setCurrentItem(VP_START_POSITION, false);
             viewPager.setNestedScrollingEnabled(false);
+            View pagerChild = viewPager.getChildAt(0);
+            if (pagerChild instanceof RecyclerView) {
+                pagerRecyclerView = (RecyclerView) pagerChild;
+                pagerRecyclerView.setItemAnimator(null);
+            }
 
             viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
                 @Override
@@ -756,6 +802,8 @@ public class PlanActivity extends MzutBaseActivity {
 
                 popup.getMenu().add(0, 1, 0, R.string.plan_button_today);
                 popup.getMenu().add(0, 3, 2, R.string.plan_button_filters);
+                popup.getMenu().add(0, 4, 3, R.string.plan_button_history);
+                popup.getMenu().add(0, 5, 4, R.string.plan_button_calendar_export);
 
                 popup.setOnMenuItemClickListener(item -> {
                     switch (item.getItemId()) {
@@ -764,6 +812,12 @@ public class PlanActivity extends MzutBaseActivity {
                             return true;
                         case 3:
                             loadSubjectsForFilterAsync();
+                            return true;
+                        case 4:
+                            startActivity(new Intent(this, PlanChangeHistoryActivity.class));
+                            return true;
+                        case 5:
+                            startActivity(buildCalendarExportIntent());
                             return true;
                         default:
                             return false;
@@ -795,6 +849,24 @@ public class PlanActivity extends MzutBaseActivity {
             viewPager.setCurrentItem(VP_START_POSITION, true);
         }
         notifyAllPlanPagesChanged();
+    }
+
+    private Intent buildCalendarExportIntent() {
+        Intent intent = new Intent(this, CalendarExportActivity.class);
+        intent.putExtra(PlanCalendarExportHelper.EXTRA_VIEW_MODE, viewModeId);
+        intent.putExtra(PlanCalendarExportHelper.EXTRA_CURRENT_DATE, currentDate != null ? currentDate.toString() : "");
+        intent.putStringArrayListExtra(
+                PlanCalendarExportHelper.EXTRA_HIDDEN_SUBJECT_KEYS,
+                new ArrayList<>(hiddenSubjectKeys));
+        if (currentSearchQuery != null) {
+            intent.putExtra(
+                    PlanCalendarExportHelper.EXTRA_SEARCH_CATEGORY,
+                    currentSearchQuery.category != null ? currentSearchQuery.category : "");
+            intent.putExtra(
+                    PlanCalendarExportHelper.EXTRA_SEARCH_QUERY,
+                    currentSearchQuery.query != null ? currentSearchQuery.query : "");
+        }
+        return intent;
     }
 
     private void setupRefreshButton() {
@@ -1596,9 +1668,7 @@ public class PlanActivity extends MzutBaseActivity {
 
                 if (finalRes != null) {
                     putPlanInCache(modeId, date, finalRes);
-                    if (pagerAdapter != null) {
-                        pagerAdapter.notifyItemChanged(position);
-                    }
+                    requestPageRefresh(position);
 
                     if (date.equals(currentDate)) {
                         if (finalRes.headerLabel != null) {
@@ -2246,10 +2316,552 @@ public class PlanActivity extends MzutBaseActivity {
         if (pagerAdapter == null) {
             return;
         }
-        int count = pagerAdapter.getItemCount();
-        if (count > 0) {
-            pagerAdapter.notifyItemRangeChanged(0, count);
+        Runnable refresh = () -> {
+            if (pagerAdapter != null) {
+                pagerAdapter.notifyDataSetChanged();
+            }
+        };
+        if (pagerRecyclerView != null) {
+            pagerRecyclerView.post(refresh);
+        } else if (viewPager != null) {
+            viewPager.post(refresh);
+        } else {
+            refresh.run();
         }
+    }
+
+    private void requestPageRefresh(int position) {
+        if (pagerAdapter == null || position < 0 || position >= pagerAdapter.getItemCount()) {
+            return;
+        }
+        Runnable refresh = () -> {
+            if (pagerAdapter != null && position >= 0 && position < pagerAdapter.getItemCount()) {
+                pagerAdapter.notifyItemChanged(position);
+            }
+        };
+        if (pagerRecyclerView != null) {
+            pagerRecyclerView.post(refresh);
+        } else if (viewPager != null) {
+            viewPager.post(refresh);
+        } else {
+            refresh.run();
+        }
+    }
+
+    private void setupCalendarExportLauncher() {
+        exportCalendarLauncher = registerForActivityResult(
+                new ActivityResultContracts.CreateDocument("text/calendar"),
+                uri -> {
+                    if (uri == null) {
+                        pendingCalendarExportContent = null;
+                        return;
+                    }
+                    writeCalendarExportToUri(uri);
+                });
+    }
+
+    private void exportCurrentViewAsCalendar() {
+        runCalendarExport(CalendarExportScope.CURRENT_VIEW, CalendarExportDelivery.SAVE);
+    }
+
+    private void shareCurrentViewAsCalendar() {
+        runCalendarExport(CalendarExportScope.CURRENT_VIEW, CalendarExportDelivery.SHARE);
+    }
+
+    private void exportCurrentSemesterAsCalendar() {
+        runCalendarExport(CalendarExportScope.SEMESTER, CalendarExportDelivery.SAVE);
+    }
+
+    private void runCalendarExport(CalendarExportScope scope, CalendarExportDelivery delivery) {
+        if (delivery == CalendarExportDelivery.SAVE && exportCalendarLauncher == null) {
+            return;
+        }
+        if (progress != null) {
+            progress.setVisibility(View.VISIBLE);
+        }
+
+        executor.execute(() -> {
+            try {
+                List<CalendarExportEvent> events = collectEventsForCalendarExport(scope);
+                if (events.isEmpty()) {
+                    runOnUiThread(() -> {
+                        if (isDestroyed() || isFinishing()) {
+                            return;
+                        }
+                        if (progress != null) {
+                            progress.setVisibility(View.GONE);
+                        }
+                        Toast.makeText(this, R.string.plan_export_ics_no_events, Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+
+                String icsContent = buildCalendarIcs(events);
+                String fileName = buildCalendarExportFileName(scope, events);
+
+                if (delivery == CalendarExportDelivery.SHARE) {
+                    Uri shareUri = createCalendarShareUri(icsContent, fileName);
+                    runOnUiThread(() -> {
+                        if (isDestroyed() || isFinishing()) {
+                            return;
+                        }
+                        if (progress != null) {
+                            progress.setVisibility(View.GONE);
+                        }
+                        shareCalendarFile(shareUri, fileName);
+                    });
+                    return;
+                }
+
+                runOnUiThread(() -> {
+                    if (isDestroyed() || isFinishing()) {
+                        return;
+                    }
+                    if (progress != null) {
+                        progress.setVisibility(View.GONE);
+                    }
+                    pendingCalendarExportContent = icsContent;
+                    exportCalendarLauncher.launch(fileName);
+                });
+            } catch (Exception e) {
+                android.util.Log.e("PlanActivity", "ICS export failed", e);
+                runOnUiThread(() -> {
+                    if (isDestroyed() || isFinishing()) {
+                        return;
+                    }
+                    if (progress != null) {
+                        progress.setVisibility(View.GONE);
+                    }
+                    Toast.makeText(this, R.string.plan_export_ics_error, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void writeCalendarExportToUri(Uri uri) {
+        String content = pendingCalendarExportContent;
+        pendingCalendarExportContent = null;
+        if (uri == null || content == null || content.isEmpty()) {
+            return;
+        }
+
+        try (OutputStream os = getContentResolver().openOutputStream(uri, "w")) {
+            if (os == null) {
+                throw new IllegalStateException("Output stream is null");
+            }
+            os.write(content.getBytes(StandardCharsets.UTF_8));
+            os.flush();
+            Toast.makeText(this, R.string.plan_export_ics_saved, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            android.util.Log.e("PlanActivity", "Failed to write ICS file", e);
+            Toast.makeText(this, R.string.plan_export_ics_write_error, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private Uri createCalendarShareUri(String content, String fileName) throws Exception {
+        if (content == null || content.isEmpty()) {
+            throw new IllegalArgumentException("ICS content is empty");
+        }
+
+        File dir = new File(getCacheDir(), "shared_calendar");
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("Cannot create cache directory for shared calendar");
+        }
+
+        String safeFileName = safe(fileName).isEmpty() ? "mzut-plan.ics" : fileName;
+        File outFile = new File(dir, safeFileName);
+        try (FileOutputStream fos = new FileOutputStream(outFile, false)) {
+            fos.write(content.getBytes(StandardCharsets.UTF_8));
+            fos.flush();
+        }
+
+        return FileProvider.getUriForFile(
+                this,
+                getPackageName() + ".fileprovider",
+                outFile);
+    }
+
+    private void shareCalendarFile(Uri uri, String fileName) {
+        if (uri == null) {
+            Toast.makeText(this, R.string.plan_export_ics_share_error, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/calendar");
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, fileName);
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        Intent chooser = Intent.createChooser(shareIntent, getString(R.string.plan_export_ics_share_title));
+        try {
+            startActivity(chooser);
+        } catch (Exception e) {
+            android.util.Log.e("PlanActivity", "No app available to share ICS", e);
+            Toast.makeText(this, R.string.plan_export_ics_share_error, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private LocalDate[] resolveSemesterExportRange() throws Exception {
+        LocalDate fallbackStart = defaultSemesterStart(currentDate);
+        LocalDate fallbackEnd = defaultSemesterEnd(currentDate);
+
+        List<PlanRepository.SessionPeriod> periods = PlanRepository.getCachedSessionDates(this);
+        if (periods == null || periods.isEmpty()) {
+            periods = planRepository.fetchSessionDates();
+        }
+        if (periods == null || periods.isEmpty()) {
+            return new LocalDate[] { fallbackStart, fallbackEnd };
+        }
+
+        List<PlanRepository.SessionPeriod> noClasses = new ArrayList<>();
+        for (PlanRepository.SessionPeriod period : periods) {
+            if (period == null || period.startDate == null || period.endDate == null) {
+                continue;
+            }
+            if (PlanRepository.isNoClassesPeriodName(period.name)) {
+                noClasses.add(period);
+            }
+        }
+
+        if (noClasses.isEmpty()) {
+            return new LocalDate[] { fallbackStart, fallbackEnd };
+        }
+
+        noClasses.sort(Comparator.comparing(period -> period.startDate));
+        PlanRepository.SessionPeriod activeBreak = null;
+        PlanRepository.SessionPeriod previousBreak = null;
+        PlanRepository.SessionPeriod nextBreak = null;
+
+        for (PlanRepository.SessionPeriod period : noClasses) {
+            if (period.contains(currentDate)) {
+                activeBreak = period;
+                break;
+            }
+            if (period.endDate.isBefore(currentDate)) {
+                previousBreak = period;
+                continue;
+            }
+            if (period.startDate.isAfter(currentDate)) {
+                nextBreak = period;
+                break;
+            }
+        }
+
+        if (activeBreak != null) {
+            long daysFromStart = java.time.temporal.ChronoUnit.DAYS.between(activeBreak.startDate, currentDate);
+            long daysToEnd = java.time.temporal.ChronoUnit.DAYS.between(currentDate, activeBreak.endDate);
+            if (daysFromStart <= daysToEnd) {
+                LocalDate end = activeBreak.startDate.minusDays(1);
+                LocalDate start = previousBreak != null
+                        ? previousBreak.endDate.plusDays(1)
+                        : defaultSemesterStart(end);
+                return sanitizeSemesterRange(start, end, fallbackStart, fallbackEnd);
+            }
+
+            PlanRepository.SessionPeriod afterActive = null;
+            boolean passedActive = false;
+            for (PlanRepository.SessionPeriod period : noClasses) {
+                if (!passedActive) {
+                    if (period == activeBreak) {
+                        passedActive = true;
+                    }
+                    continue;
+                }
+                afterActive = period;
+                break;
+            }
+            LocalDate start = activeBreak.endDate.plusDays(1);
+            LocalDate end = afterActive != null
+                    ? afterActive.startDate.minusDays(1)
+                    : defaultSemesterEnd(start);
+            return sanitizeSemesterRange(start, end, fallbackStart, fallbackEnd);
+        }
+
+        LocalDate start = previousBreak != null
+                ? previousBreak.endDate.plusDays(1)
+                : fallbackStart;
+        LocalDate end = nextBreak != null
+                ? nextBreak.startDate.minusDays(1)
+                : fallbackEnd;
+        return sanitizeSemesterRange(start, end, fallbackStart, fallbackEnd);
+    }
+
+    private LocalDate[] sanitizeSemesterRange(
+            LocalDate start,
+            LocalDate end,
+            LocalDate fallbackStart,
+            LocalDate fallbackEnd) {
+        if (start == null || end == null || end.isBefore(start)) {
+            return new LocalDate[] { fallbackStart, fallbackEnd };
+        }
+        return new LocalDate[] { start, end };
+    }
+
+    private LocalDate defaultSemesterStart(LocalDate anchor) {
+        LocalDate date = anchor != null ? anchor : LocalDate.now();
+        int month = date.getMonthValue();
+        if (month >= 2 && month <= 7) {
+            return LocalDate.of(date.getYear(), 2, 1);
+        }
+        if (month == 1) {
+            return LocalDate.of(date.getYear() - 1, 9, 1);
+        }
+        return LocalDate.of(date.getYear(), 9, 1);
+    }
+
+    private LocalDate defaultSemesterEnd(LocalDate anchor) {
+        LocalDate date = anchor != null ? anchor : LocalDate.now();
+        int month = date.getMonthValue();
+        if (month >= 2 && month <= 7) {
+            return LocalDate.of(date.getYear(), 7, 31);
+        }
+        if (month == 1) {
+            return LocalDate.of(date.getYear(), 1, 31);
+        }
+        return LocalDate.of(date.getYear() + 1, 1, 31);
+    }
+
+    private List<CalendarExportEvent> collectEventsForCalendarExport(CalendarExportScope scope) throws Exception {
+        Map<String, CalendarExportEvent> collected = new LinkedHashMap<>();
+        if (scope == CalendarExportScope.SEMESTER) {
+            LocalDate[] semesterRange = resolveSemesterExportRange();
+            LocalDate start = semesterRange[0];
+            LocalDate end = semesterRange[1];
+            LocalDate cursor = start;
+            while (!cursor.isAfter(end)) {
+                PlanRepository.PlanResult result = loadPlanResultForExport(ViewMode.WEEK.getId(), cursor);
+                appendCalendarExportEvents(collected, result, start, end);
+                cursor = cursor.plusWeeks(1);
+            }
+        } else {
+            ViewMode mode = getCurrentViewMode();
+            if (mode == ViewMode.MONTH) {
+                LocalDate monthStart = currentDate.with(TemporalAdjusters.firstDayOfMonth());
+                LocalDate monthEnd = currentDate.with(TemporalAdjusters.lastDayOfMonth());
+                LocalDate cursor = monthStart;
+                while (!cursor.isAfter(monthEnd)) {
+                    PlanRepository.PlanResult result = loadPlanResultForExport(ViewMode.WEEK.getId(), cursor);
+                    appendCalendarExportEvents(collected, result, monthStart, monthEnd);
+                    cursor = cursor.plusWeeks(1);
+                }
+            } else {
+                PlanRepository.PlanResult result = loadPlanResultForExport(viewModeId, currentDate);
+                appendCalendarExportEvents(collected, result, null, null);
+            }
+        }
+
+        List<CalendarExportEvent> events = new ArrayList<>(collected.values());
+        events.sort(Comparator
+                .comparing((CalendarExportEvent item) -> item.date)
+                .thenComparingInt(item -> item.event.startMin)
+                .thenComparing(item -> safe(item.event.title)));
+        return events;
+    }
+
+    private PlanRepository.PlanResult loadPlanResultForExport(String modeId, LocalDate date) throws Exception {
+        PlanRepository.PlanResult cached = getPlanFromCache(modeId, date);
+        if (cached != null) {
+            return cached;
+        }
+        if (currentSearchQuery != null) {
+            return planRepository.searchPlan(modeId, date, currentSearchQuery);
+        }
+        return planRepository.loadPlan(modeId, date);
+    }
+
+    private void appendCalendarExportEvents(
+            Map<String, CalendarExportEvent> out,
+            PlanRepository.PlanResult result,
+            LocalDate minDate,
+            LocalDate maxDate) {
+        if (out == null || result == null || result.dayColumns == null || result.dayColumns.isEmpty()) {
+            return;
+        }
+
+        List<PlanRepository.DayColumn> columns = getVisibleColumns(result.dayColumns);
+        for (PlanRepository.DayColumn column : columns) {
+            if (column == null || column.date == null || column.events == null) {
+                continue;
+            }
+            if (minDate != null && column.date.isBefore(minDate)) {
+                continue;
+            }
+            if (maxDate != null && column.date.isAfter(maxDate)) {
+                continue;
+            }
+            for (PlanRepository.PlanEventUi event : column.events) {
+                if (event == null || shouldHideEvent(event)) {
+                    continue;
+                }
+                String key = buildCalendarExportKey(column.date, event);
+                if (!out.containsKey(key)) {
+                    out.put(key, new CalendarExportEvent(column.date, event));
+                }
+            }
+        }
+    }
+
+    private String buildCalendarExportKey(LocalDate date, PlanRepository.PlanEventUi event) {
+        return String.valueOf(date)
+                + "|" + event.startMin
+                + "|" + event.endMin
+                + "|" + safe(event.title)
+                + "|" + safe(event.room)
+                + "|" + safe(event.group)
+                + "|" + safe(event.teacher)
+                + "|" + safe(event.typeLabel)
+                + "|" + (event.isCustomEvent ? "1" : "0");
+    }
+
+    private String buildCalendarIcs(List<CalendarExportEvent> events) {
+        StringBuilder sb = new StringBuilder();
+        appendIcsLine(sb, "BEGIN:VCALENDAR");
+        appendIcsLine(sb, "VERSION:2.0");
+        appendIcsLine(sb, "PRODID:-//mZUT v2//Plan Export//PL");
+        appendIcsLine(sb, "CALSCALE:GREGORIAN");
+        appendIcsLine(sb, "METHOD:PUBLISH");
+        appendIcsLine(sb, "X-WR-CALNAME:" + escapeIcsText(getString(R.string.plan_title)));
+        appendIcsLine(sb, "X-WR-TIMEZONE:" + EXPORT_TIME_ZONE.getId());
+
+        String dtStamp = ICS_UTC_DT.format(Instant.now());
+        for (CalendarExportEvent item : events) {
+            if (item == null || item.date == null || item.event == null) {
+                continue;
+            }
+
+            int endMin = item.event.endMin > item.event.startMin
+                    ? item.event.endMin
+                    : item.event.startMin + 60;
+            LocalDateTime start = item.date.atStartOfDay().plusMinutes(item.event.startMin);
+            LocalDateTime end = item.date.atStartOfDay().plusMinutes(endMin);
+
+            appendIcsLine(sb, "BEGIN:VEVENT");
+            appendIcsLine(sb, "UID:" + buildIcsUid(item));
+            appendIcsLine(sb, "DTSTAMP:" + dtStamp);
+            appendIcsLine(sb, "DTSTART;TZID=" + EXPORT_TIME_ZONE.getId() + ":" + ICS_LOCAL_DT.format(start));
+            appendIcsLine(sb, "DTEND;TZID=" + EXPORT_TIME_ZONE.getId() + ":" + ICS_LOCAL_DT.format(end));
+            appendIcsLine(sb, "SUMMARY:" + escapeIcsText(nonEmptyTitle(item.event.title)));
+
+            String location = safe(item.event.room);
+            if (!location.isEmpty()) {
+                appendIcsLine(sb, "LOCATION:" + escapeIcsText(location));
+            }
+
+            String description = buildCalendarDescription(item.event);
+            if (!description.isEmpty()) {
+                appendIcsLine(sb, "DESCRIPTION:" + escapeIcsText(description));
+            }
+
+            if (isCancelledCalendarEvent(item.event)) {
+                appendIcsLine(sb, "STATUS:CANCELLED");
+            }
+            appendIcsLine(sb, "END:VEVENT");
+        }
+
+        appendIcsLine(sb, "END:VCALENDAR");
+        return sb.toString();
+    }
+
+    private String buildCalendarDescription(PlanRepository.PlanEventUi event) {
+        if (event == null) {
+            return "";
+        }
+
+        List<String> lines = new ArrayList<>();
+        if (!safe(event.typeLabel).isEmpty()) {
+            lines.add(getString(R.string.plan_change_field_type) + ": " + safe(event.typeLabel));
+        }
+        if (!safe(event.group).isEmpty()) {
+            lines.add(getString(R.string.plan_change_field_group) + ": " + safe(event.group));
+        }
+        if (!safe(event.teacher).isEmpty()) {
+            lines.add(getString(R.string.plan_change_field_teacher) + ": " + safe(event.teacher));
+        }
+        if (event.isCustomEvent) {
+            lines.add(getString(R.string.plan_export_ics_custom_event));
+        }
+        return lines.isEmpty() ? "" : TextUtils.join("\n", lines);
+    }
+
+    private String buildIcsUid(CalendarExportEvent item) {
+        String base = buildCalendarExportKey(item.date, item.event);
+        return Integer.toHexString(base.hashCode()) + "@mzutv2";
+    }
+
+    private boolean isCancelledCalendarEvent(PlanRepository.PlanEventUi event) {
+        return event != null
+                && event.typeClass != null
+                && "week-event-type-cancelled".equalsIgnoreCase(event.typeClass.trim());
+    }
+
+    private String buildCalendarExportFileName(
+            CalendarExportScope scope,
+            List<CalendarExportEvent> events) {
+        if (scope == CalendarExportScope.SEMESTER) {
+            LocalDate[] range = extractDateRange(events);
+            return "mzut-plan-semestr-"
+                    + range[0].format(YMD)
+                    + "_do_"
+                    + range[1].format(YMD)
+                    + ".ics";
+        }
+
+        ViewMode mode = getCurrentViewMode();
+        if (mode == ViewMode.DAY) {
+            return "mzut-plan-dzien-" + currentDate.format(YMD) + ".ics";
+        }
+        if (mode == ViewMode.MONTH) {
+            return "mzut-plan-miesiac-"
+                    + currentDate.with(TemporalAdjusters.firstDayOfMonth())
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM"))
+                    + ".ics";
+        }
+        return "mzut-plan-tydzien-" + currentDate.format(YMD) + ".ics";
+    }
+
+    private LocalDate[] extractDateRange(List<CalendarExportEvent> events) {
+        if (events == null || events.isEmpty()) {
+            return new LocalDate[] { currentDate, currentDate };
+        }
+        LocalDate start = events.get(0).date;
+        LocalDate end = events.get(events.size() - 1).date;
+        if (start == null) {
+            start = currentDate;
+        }
+        if (end == null) {
+            end = start;
+        }
+        return new LocalDate[] { start, end };
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String nonEmptyTitle(String value) {
+        String title = safe(value);
+        return title.isEmpty() ? getString(R.string.plan_export_ics_default_title) : title;
+    }
+
+    private void appendIcsLine(StringBuilder sb, String line) {
+        if (sb == null || line == null) {
+            return;
+        }
+        sb.append(line).append("\r\n");
+    }
+
+    private String escapeIcsText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("\\", "\\\\")
+                .replace(";", "\\;")
+                .replace(",", "\\,")
+                .replace("\r\n", "\\n")
+                .replace("\n", "\\n")
+                .replace("\r", "\\n");
     }
 
     private void replaceSuggestionItems(
