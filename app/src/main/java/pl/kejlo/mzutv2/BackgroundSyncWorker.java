@@ -40,10 +40,10 @@ public class BackgroundSyncWorker extends Worker {
 
     private static final String PREFS_BG = "mzut_background_sync_cache";
     private static final String PREFS_PLAN = "mzut_plan";
-    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
-    private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v1";
-    private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
-    private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v1";
+    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v2";
+    private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v2";
+    private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v3";
+    private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v3";
     private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
     private static final String FILTER_CACHE_JSON_PREFIX = "plan_filters_cache_json_";
     private static final String FILTER_CACHE_TS_PREFIX = "plan_filters_cache_ts_";
@@ -169,7 +169,7 @@ public class BackgroundSyncWorker extends Worker {
                 continue;
             }
             for (Grade grade : grades) {
-                if (grade == null) {
+                if (grade == null || safe(grade.grade).isEmpty()) {
                     continue;
                 }
                 String key = buildGradeKey(semester, grade);
@@ -269,7 +269,7 @@ public class BackgroundSyncWorker extends Worker {
             return;
         }
 
-        List<PlanSnapshotEvent> current = collectPlanSnapshot(context);
+        PlanNotificationDiffEngine.Snapshot current = collectPlanNotificationSnapshot(context);
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
         String scope = NotificationSyncManager.buildCurrentSyncScope(context);
@@ -278,7 +278,7 @@ public class BackgroundSyncWorker extends Worker {
         String planAlertHashKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_PLAN_ALERT_HASH, scope);
         String planAlertTsKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_PLAN_ALERT_TS, scope);
         boolean baselineReady = prefs.getBoolean(planBaselineReadyKey, false);
-        List<PlanSnapshotEvent> previous = readPlanSnapshot(prefs.getString(planBaselineJsonKey, "[]"));
+        PlanNotificationDiffEngine.Snapshot previous = readPlanBaselineSnapshot(prefs, planBaselineJsonKey);
 
         if (!baselineReady) {
             savePlanBaselineSnapshot(prefs, planBaselineJsonKey, current);
@@ -286,7 +286,7 @@ public class BackgroundSyncWorker extends Worker {
             return;
         }
 
-        PlanDiff diff = diffPlan(previous, current, movedEnabled);
+        PlanNotificationDiffEngine.Diff diff = PlanNotificationDiffEngine.diff(previous, current);
         int totalChanges = diff.moved.size()
                 + diff.updated.size()
                 + diff.cancelled.size()
@@ -328,7 +328,7 @@ public class BackgroundSyncWorker extends Worker {
         List<PlanChangeHistoryStore.ChangeRecord> historyEntries = new ArrayList<>();
         long notifiedAt = System.currentTimeMillis();
         if (movedEnabled) {
-            for (PlanMove move : diff.moved) {
+            for (PlanNotificationDiffEngine.Move move : diff.moved) {
                 lines.add(context.getString(
                         R.string.notif_plan_line_moved,
                         move.from.title,
@@ -340,7 +340,7 @@ public class BackgroundSyncWorker extends Worker {
             }
         }
         if (addedEnabled || removedEnabled) {
-            for (PlanUpdate update : diff.updated) {
+            for (PlanNotificationDiffEngine.Update update : diff.updated) {
                 String summary = buildUpdateSummary(context, update.from, update.to);
                 lines.add(context.getString(
                         R.string.notif_plan_line_updated,
@@ -357,33 +357,33 @@ public class BackgroundSyncWorker extends Worker {
             }
         }
         if (cancelledEnabled) {
-            for (PlanSnapshotEvent ev : diff.cancelled) {
+            for (PlanNotificationDiffEngine.Event event : diff.cancelled) {
                 lines.add(context.getString(
                         R.string.notif_plan_line_cancelled,
-                        ev.title,
-                        formatDate(ev.date),
-                        formatTimeRange(ev.startMin, ev.endMin)));
-                historyEntries.add(buildHistoryRecord(PlanChangeHistoryStore.TYPE_CANCELLED, null, ev, "", notifiedAt));
+                        event.title,
+                        formatDate(event.date),
+                        formatTimeRange(event.startMin, event.endMin)));
+                historyEntries.add(buildHistoryRecord(PlanChangeHistoryStore.TYPE_CANCELLED, null, event, "", notifiedAt));
             }
         }
         if (removedEnabled) {
-            for (PlanSnapshotEvent ev : diff.removed) {
+            for (PlanNotificationDiffEngine.Event event : diff.removed) {
                 lines.add(context.getString(
                         R.string.notif_plan_line_removed,
-                        ev.title,
-                        formatDate(ev.date),
-                        formatTimeRange(ev.startMin, ev.endMin)));
-                historyEntries.add(buildHistoryRecord(PlanChangeHistoryStore.TYPE_REMOVED, ev, null, "", notifiedAt));
+                        event.title,
+                        formatDate(event.date),
+                        formatTimeRange(event.startMin, event.endMin)));
+                historyEntries.add(buildHistoryRecord(PlanChangeHistoryStore.TYPE_REMOVED, event, null, "", notifiedAt));
             }
         }
         if (addedEnabled) {
-            for (PlanSnapshotEvent ev : diff.added) {
+            for (PlanNotificationDiffEngine.Event event : diff.added) {
                 lines.add(context.getString(
                         R.string.notif_plan_line_added,
-                        ev.title,
-                        formatDate(ev.date),
-                        formatTimeRange(ev.startMin, ev.endMin)));
-                historyEntries.add(buildHistoryRecord(PlanChangeHistoryStore.TYPE_ADDED, null, ev, "", notifiedAt));
+                        event.title,
+                        formatDate(event.date),
+                        formatTimeRange(event.startMin, event.endMin)));
+                historyEntries.add(buildHistoryRecord(PlanChangeHistoryStore.TYPE_ADDED, null, event, "", notifiedAt));
             }
         }
 
@@ -468,6 +468,26 @@ public class BackgroundSyncWorker extends Worker {
                 91020,
                 openIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private PlanNotificationDiffEngine.Snapshot collectPlanNotificationSnapshot(Context context)
+            throws IOException, org.json.JSONException {
+        PlanRepository repo = new PlanRepository(context);
+        LocalDate start = LocalDate.now();
+        LocalDate end = start.plusDays(13);
+        Map<LocalDate, List<PlanRepository.PlanEventRaw>> rawRange = repo.loadRawPlanRange(start, end, "notifications");
+        return PlanNotificationDiffEngine.buildSnapshot(start, end, rawRange);
+    }
+
+    private PlanNotificationDiffEngine.Snapshot readPlanBaselineSnapshot(SharedPreferences prefs, String storageKey) {
+        return PlanNotificationDiffEngine.Snapshot.fromJsonString(prefs.getString(storageKey, ""));
+    }
+
+    private void savePlanBaselineSnapshot(
+            SharedPreferences prefs,
+            String storageKey,
+            PlanNotificationDiffEngine.Snapshot snapshot) {
+        prefs.edit().putString(storageKey, snapshot != null ? snapshot.toJsonString() : "").apply();
     }
 
     private List<PlanSnapshotEvent> collectPlanSnapshot(Context context) throws IOException, org.json.JSONException {
@@ -705,11 +725,43 @@ public class BackgroundSyncWorker extends Worker {
 
     private String buildGradeKey(Semester semester, Grade grade) {
         return normalize(semester.listaSemestrowId)
+                + "|" + normalize(grade.courseId)
                 + "|" + normalize(grade.subjectName)
                 + "|" + normalize(grade.grade)
-                + "|" + normalize(grade.date)
+                + "|" + normalize(normalizeGradeDate(grade))
                 + "|" + normalize(grade.type)
-                + "|" + normalize(grade.teacher);
+                + "|" + normalize(grade.gradeDescription)
+                + "|" + normalize(grade.comment);
+    }
+
+    private String normalizeGradeDate(Grade grade) {
+        if (grade == null) {
+            return "";
+        }
+        String[] candidates = {
+                safe(grade.dateAcquisition),
+                safe(grade.dateModified),
+                safe(grade.date)
+        };
+        for (String candidate : candidates) {
+            if (candidate.isEmpty()) {
+                continue;
+            }
+            java.util.regex.Matcher isoMatcher = java.util.regex.Pattern
+                    .compile("(\\d{4}-\\d{2}-\\d{2})")
+                    .matcher(candidate);
+            if (isoMatcher.find()) {
+                return isoMatcher.group(1);
+            }
+            java.util.regex.Matcher localMatcher = java.util.regex.Pattern
+                    .compile("(\\d{2}\\.\\d{2}\\.\\d{4})")
+                    .matcher(candidate);
+            if (localMatcher.find()) {
+                return localMatcher.group(1);
+            }
+            return candidate;
+        }
+        return "";
     }
 
     private String buildGradeLabel(Grade grade) {
@@ -769,6 +821,34 @@ public class BackgroundSyncWorker extends Worker {
 
     private PlanChangeHistoryStore.ChangeRecord buildHistoryRecord(
             String type,
+            PlanNotificationDiffEngine.Event from,
+            PlanNotificationDiffEngine.Event to,
+            String summary,
+            long notifiedAt) {
+        String title = to != null && !safe(to.title).isEmpty() ? to.title : (from != null ? from.title : "");
+        return new PlanChangeHistoryStore.ChangeRecord(
+                type,
+                title,
+                summary,
+                notifiedAt,
+                from != null && from.date != null ? from.date.toString() : "",
+                from != null ? from.startMin : 0,
+                from != null ? from.endMin : 0,
+                from != null ? from.room : "",
+                from != null ? from.group : "",
+                from != null ? from.teacher : "",
+                from != null ? from.typeLabel : "",
+                to != null && to.date != null ? to.date.toString() : "",
+                to != null ? to.startMin : 0,
+                to != null ? to.endMin : 0,
+                to != null ? to.room : "",
+                to != null ? to.group : "",
+                to != null ? to.teacher : "",
+                to != null ? to.typeLabel : "");
+    }
+
+    private PlanChangeHistoryStore.ChangeRecord buildHistoryRecord(
+            String type,
             PlanSnapshotEvent from,
             PlanSnapshotEvent to,
             String summary,
@@ -793,6 +873,34 @@ public class BackgroundSyncWorker extends Worker {
                 to != null ? to.group : "",
                 to != null ? to.teacher : "",
                 to != null ? to.typeLabel : "");
+    }
+
+    private String buildUpdateSummary(
+            Context context,
+            PlanNotificationDiffEngine.Event from,
+            PlanNotificationDiffEngine.Event to) {
+        List<String> changes = new ArrayList<>();
+        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_room), from.room, to.room);
+        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_group), from.group, to.group);
+        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_teacher), from.teacher, to.teacher);
+        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_type), from.typeLabel, to.typeLabel);
+
+        if (changes.isEmpty()) {
+            return context.getString(R.string.plan_change_update_generic);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        int limit = Math.min(2, changes.size());
+        for (int i = 0; i < limit; i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(changes.get(i));
+        }
+        if (changes.size() > limit) {
+            sb.append(", ...");
+        }
+        return sb.toString();
     }
 
     private String buildUpdateSummary(Context context, PlanSnapshotEvent from, PlanSnapshotEvent to) {
@@ -934,6 +1042,19 @@ public class BackgroundSyncWorker extends Worker {
             arr.put(ev.toJson());
         }
         prefs.edit().putString(storageKey, arr.toString()).apply();
+    }
+
+    private String buildPlanSnapshotSignature(PlanNotificationDiffEngine.Snapshot snapshot) {
+        if (snapshot == null || snapshot.events == null || snapshot.events.isEmpty()) {
+            return "empty";
+        }
+        List<String> ids = new ArrayList<>(snapshot.events.size());
+        for (PlanNotificationDiffEngine.Event event : snapshot.events) {
+            if (event != null) {
+                ids.add(event.signature());
+            }
+        }
+        return buildAlertSignatureFromList(ids);
     }
 
     private String buildPlanSnapshotSignature(List<PlanSnapshotEvent> events) {

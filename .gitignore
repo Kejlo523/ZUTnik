@@ -15,3 +15,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+/.gradle-user/
+/.idea/
+/.sandbox-home/
+/app/release/

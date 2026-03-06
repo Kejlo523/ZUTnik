@@ -1666,6 +1666,44 @@ public class PlanRepository {
         return Collections.emptyList();
     }
 
+    public Map<LocalDate, List<PlanEventRaw>> loadRawPlanRange(
+            LocalDate rangeStart,
+            LocalDate rangeEnd,
+            String cacheScope) throws IOException, JSONException {
+        if (rangeStart == null || rangeEnd == null || rangeEnd.isBefore(rangeStart)) {
+            return Collections.emptyMap();
+        }
+
+        String album = resolveAlbumNumber();
+        if (album == null) {
+            return Collections.emptyMap();
+        }
+
+        String scope = cacheScope != null ? cacheScope.trim() : "";
+        if (scope.isEmpty()) {
+            scope = "raw";
+        }
+
+        Map<LocalDate, List<PlanEventRaw>> byDate = ensureScopeData(
+                album,
+                rangeStart,
+                rangeEnd,
+                scope,
+                false,
+                new PlanDebug());
+
+        Map<LocalDate, List<PlanEventRaw>> result = new LinkedHashMap<>();
+        LocalDate iter = rangeStart;
+        while (!iter.isAfter(rangeEnd)) {
+            List<PlanEventRaw> dayEvents = byDate.get(iter);
+            if (dayEvents != null && !dayEvents.isEmpty()) {
+                result.put(iter, new ArrayList<>(dayEvents));
+            }
+            iter = iter.plusDays(1);
+        }
+        return result;
+    }
+
     public List<SubjectFilterItem> loadSubjectsForFilter() throws IOException, JSONException {
         return loadSubjectsForFilter(false);
     }

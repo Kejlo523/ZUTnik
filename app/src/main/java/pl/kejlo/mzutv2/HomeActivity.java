@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
+import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -229,7 +230,8 @@ public class HomeActivity extends MzutBaseActivity {
         tileGrid.setEditMode(true);
         invalidateOptionsMenu();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START);
+        drawerLayout.closeDrawers();
     }
 
     private void saveAndExitEditMode() {
@@ -238,6 +240,7 @@ public class HomeActivity extends MzutBaseActivity {
         tileGrid.setEditMode(false);
         invalidateOptionsMenu();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
         showActionIndicator(); // Replaces "Saved" toast
     }
 
@@ -247,6 +250,7 @@ public class HomeActivity extends MzutBaseActivity {
         tileGrid.setEditMode(false);
         invalidateOptionsMenu();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
         // No toast for cancel needed, visuals revert is enough.
         // Toast.makeText(this, R.string.home_cancel_toast, Toast.LENGTH_SHORT).show();
     }
