@@ -60,7 +60,7 @@
 
         <activity android:name=".NewsDetailActivity" />
 
-        <activity android:name=".PlanActivity" />
+        <activity android:name=".PlanActivity" android:windowSoftInputMode="stateHidden|adjustResize" />
 
         <activity android:name=".PlanChangeHistoryActivity" />
 

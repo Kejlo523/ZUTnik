@@ -21,6 +21,11 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.widget.NestedScrollView;
+
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -56,6 +61,7 @@ public class LoginActivity extends AppCompatActivity {
     private RadioGroup loginMethodGroup;
     private TextView loginInfoText;
 
+    private NestedScrollView contentRootScroll;
     private View rootView;
     private boolean isKeyboardVisible = false;
     private int headerExpandedBottomMargin = 0;
@@ -84,7 +90,8 @@ public class LoginActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_login);
         ThemeManager.applySystemBars(this);
-        ThemeManager.applyRootWindowInsets(findViewById(R.id.contentRoot));
+        contentRootScroll = findViewById(R.id.contentRoot);
+        applyLoginWindowInsets();
 
         if (getIntent().getBooleanExtra(EXTRA_SESSION_EXPIRED, false)
                 || SessionExpiryManager.consumeSessionExpiredNotice(this)) {
@@ -129,6 +136,8 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         btnLogin.setOnClickListener(v -> doLogin());
+        bindFocusAutoScroll(editLogin);
+        bindFocusAutoScroll(editPass);
 
         if (loginInputLayout != null) {
             loginInputLayout.post(() -> {
@@ -199,6 +208,7 @@ public class LoginActivity extends AppCompatActivity {
                     .setDuration(180)
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
+            scrollFocusedInputIntoView();
         } else {
             if (headerContainer != null) {
                 ViewGroup.LayoutParams params = headerContainer.getLayoutParams();
@@ -220,6 +230,59 @@ public class LoginActivity extends AppCompatActivity {
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
         }
+    }
+
+    private void applyLoginWindowInsets() {
+        if (contentRootScroll == null) {
+            return;
+        }
+
+        final int paddingLeft = contentRootScroll.getPaddingLeft();
+        final int paddingTop = contentRootScroll.getPaddingTop();
+        final int paddingRight = contentRootScroll.getPaddingRight();
+        final int paddingBottom = contentRootScroll.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(contentRootScroll, (view, windowInsets) -> {
+            Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+            int bottomInset = Math.max(systemBars.bottom, ime.bottom);
+            view.setPadding(
+                    paddingLeft + systemBars.left,
+                    paddingTop + systemBars.top,
+                    paddingRight + systemBars.right,
+                    paddingBottom + bottomInset);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.requestApplyInsets(contentRootScroll);
+    }
+
+    private void bindFocusAutoScroll(View target) {
+        if (target == null) {
+            return;
+        }
+        target.setOnFocusChangeListener((view, hasFocus) -> {
+            if (hasFocus) {
+                scrollFocusedInputIntoView();
+            }
+        });
+    }
+
+    private void scrollFocusedInputIntoView() {
+        if (contentRootScroll == null) {
+            return;
+        }
+        View focused = getCurrentFocus();
+        if (focused == null) {
+            return;
+        }
+        contentRootScroll.post(() -> {
+            Rect rect = new Rect();
+            focused.getDrawingRect(rect);
+            int extraSpace = dpToPx(24);
+            rect.top = Math.max(0, rect.top - extraSpace);
+            rect.bottom += extraSpace;
+            contentRootScroll.requestChildRectangleOnScreen(focused, rect, true);
+        });
     }
 
     private int dpToPx(int dp) {

@@ -218,11 +218,12 @@ public class GradesRepository {
     /**
      * Parses a single USOS grade JSON object into a Grade domain object.
      */
-    private Grade buildUsosGrade(JSONObject gradeObj, String courseName, double ects, String gradeType) {
+    private Grade buildUsosGrade(JSONObject gradeObj, String courseId, String courseName, double ects, String gradeType) {
         if (gradeObj == null) return null;
 
         Grade g = new Grade();
         g.subjectName = courseName;
+        g.courseId = courseId;
         g.weight = ects;
         g.type = gradeType;
         g.teacher = "";
@@ -231,10 +232,12 @@ public class GradesRepository {
         g.passes = gradeObj.optBoolean("passes", false);
         g.countsIntoAverage = gradeObj.optBoolean("counts_into_average", false);
         g.comment = gradeObj.optString("comment", "");
+        g.dateAcquisition = gradeObj.optString("date_acquisition", "");
+        g.dateModified = gradeObj.optString("date_modified", "");
 
         // Date — prefer date_acquisition, fallback to date_modified
-        String dateAcq = gradeObj.optString("date_acquisition", "");
-        String dateMod = gradeObj.optString("date_modified", "");
+        String dateAcq = g.dateAcquisition;
+        String dateMod = g.dateModified;
         if (dateAcq != null && !dateAcq.isEmpty()) {
             g.date = dateAcq.contains(" ") ? dateAcq.split(" ")[0] : dateAcq;
         } else if (dateMod != null && !dateMod.isEmpty()) {
@@ -576,7 +579,7 @@ public class GradesRepository {
                     if (courseGradesArr != null && courseGradesArr.length() > 0) {
                         for (int i = 0; i < courseGradesArr.length(); i++) {
                             JSONObject gradeObj = courseGradesArr.optJSONObject(i);
-                            Grade g = buildUsosGrade(gradeObj, name, ects, "Ocena końcowa");
+                            Grade g = buildUsosGrade(gradeObj, courseId, name, ects, "Ocena końcowa");
                             if (g != null) {
                                 grades.add(g);
                                 hasAnyGrade = true;
@@ -595,7 +598,7 @@ public class GradesRepository {
 
                             for (int i = 0; i < unitGradesArr.length(); i++) {
                                 JSONObject gradeObj = unitGradesArr.optJSONObject(i);
-                                Grade g = buildUsosGrade(gradeObj, name, ects, "Zaliczenie");
+                                Grade g = buildUsosGrade(gradeObj, courseId, name, ects, "Zaliczenie");
                                 if (g != null) {
                                     grades.add(g);
                                     hasAnyGrade = true;

@@ -1,5 +1,6 @@
 package pl.kejlo.mzutv2;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -45,6 +46,7 @@ import android.text.format.DateUtils;
 import android.text.style.RelativeSizeSpan;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -135,6 +137,7 @@ public class PlanActivity extends MzutBaseActivity {
 
     private TextView tvHeaderLabel;
     private Toolbar toolbar;
+    private DrawerLayout drawerLayout;
 
     private LinearLayout layoutTimeColumn;
 
@@ -206,6 +209,43 @@ public class PlanActivity extends MzutBaseActivity {
         }
     };
 
+    private static class PageLoadRequest {
+        final int renderContextVersion;
+        final String viewModeId;
+        final LocalDate date;
+
+        PageLoadRequest(int renderContextVersion, String viewModeId, LocalDate date) {
+            this.renderContextVersion = renderContextVersion;
+            this.viewModeId = viewModeId;
+            this.date = date;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (!(o instanceof PageLoadRequest))
+                return false;
+            PageLoadRequest other = (PageLoadRequest) o;
+            if (renderContextVersion != other.renderContextVersion)
+                return false;
+            if (viewModeId != null ? !viewModeId.equals(other.viewModeId) : other.viewModeId != null)
+                return false;
+            return date != null ? date.equals(other.date) : other.date == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = renderContextVersion;
+            result = 31 * result + (viewModeId != null ? viewModeId.hashCode() : 0);
+            result = 31 * result + (date != null ? date.hashCode() : 0);
+            return result;
+        }
+    }
+
+    private final Set<PageLoadRequest> activePageLoads = Collections.synchronizedSet(new HashSet<>());
+    private int planRenderContextVersion = 0;
+
     private void putPlanInCache(String modeId, LocalDate date, PlanRepository.PlanResult result) {
         if (modeId == null || date == null || result == null)
             return;
@@ -218,11 +258,38 @@ public class PlanActivity extends MzutBaseActivity {
         return planCache.get(new PlanKey(modeId, date));
     }
 
+    private void beginPlanRenderContext() {
+        planRenderContextVersion++;
+        activePageLoads.clear();
+
+        if (viewPager != null) {
+            viewPager.animate().cancel();
+            viewPager.clearAnimation();
+        }
+        if (pagerRecyclerView != null) {
+            pagerRecyclerView.stopScroll();
+            pagerRecyclerView.clearAnimation();
+            pagerRecyclerView.getRecycledViewPool().clear();
+        }
+    }
+
+    private PlanRepository.SearchParams snapshotCurrentSearchQuery() {
+        if (currentSearchQuery == null) {
+            return null;
+        }
+
+        PlanRepository.SearchParams snapshot = new PlanRepository.SearchParams();
+        snapshot.category = currentSearchQuery.category;
+        snapshot.query = currentSearchQuery.query;
+        return snapshot;
+    }
+
     private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
     private final Runnable nowLineRunnable = () -> {
         updateNowLineInVisiblePage();
         scheduleNextNowLineUpdate();
     };
+    private final Runnable resumePlanRecoveryRunnable = this::restorePlanContentIfNeeded;
 
     private List<PlanRepository.DayColumn> getVisibleColumns(List<PlanRepository.DayColumn> allColumns) {
         if (allColumns == null || allColumns.isEmpty()) {
@@ -328,7 +395,7 @@ public class PlanActivity extends MzutBaseActivity {
 
         LinearLayout drawerContentRoot = findViewById(R.id.drawerContentRoot);
         CoordinatorLayout planCoordinatorRoot = findViewById(R.id.planCoordinatorRoot);
-        DrawerLayout drawerLayout = findViewById(R.id.drawerLayout);
+        drawerLayout = findViewById(R.id.drawerLayout);
         NavigationView navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
         FloatingActionButton fabAddEvent = findViewById(R.id.fabAddEvent);
@@ -414,11 +481,13 @@ public class PlanActivity extends MzutBaseActivity {
         setupMenuButton();
         setupSearchButton();
         setupRefreshButton();
+        setupBackNavigation();
 
         if (viewPager != null) {
             pagerAdapter = new PlanPagerAdapter(this);
             viewPager.setAdapter(pagerAdapter);
             viewPager.setCurrentItem(VP_START_POSITION, false);
+            viewPager.setOffscreenPageLimit(1);
             viewPager.setNestedScrollingEnabled(false);
             View pagerChild = viewPager.getChildAt(0);
             if (pagerChild instanceof RecyclerView) {
@@ -637,10 +706,12 @@ public class PlanActivity extends MzutBaseActivity {
     protected void onResume() {
         super.onResume();
         nowLineHandler.removeCallbacks(nowLineRunnable);
+        handler.removeCallbacks(resumePlanRecoveryRunnable);
         if (!isMonthMode()) {
             updateNowLineInVisiblePage();
             scheduleNextNowLineUpdate();
         }
+        handler.postDelayed(resumePlanRecoveryRunnable, 520L);
     }
 
     @Override
@@ -652,12 +723,14 @@ public class PlanActivity extends MzutBaseActivity {
     protected void onPause() {
         super.onPause();
         nowLineHandler.removeCallbacks(nowLineRunnable);
+        handler.removeCallbacks(resumePlanRecoveryRunnable);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         nowLineHandler.removeCallbacks(nowLineRunnable);
+        handler.removeCallbacks(resumePlanRecoveryRunnable);
         if (mRefreshAnimator != null) {
             mRefreshAnimator.cancel();
             mRefreshAnimator = null;
@@ -723,6 +796,7 @@ public class PlanActivity extends MzutBaseActivity {
 
     private void loadPlanForCurrentMode() {
         updateViewModeButtonsUi();
+        beginPlanRenderContext();
 
         if (isMonthMode()) {
             baseDate = baseDate.with(TemporalAdjusters.firstDayOfMonth());
@@ -887,6 +961,110 @@ public class PlanActivity extends MzutBaseActivity {
         }
     }
 
+    private void setupBackNavigation() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout != null && drawerLayout.isDrawerVisible(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    return;
+                }
+                if (exitSearchMode(false)) {
+                    return;
+                }
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+                setEnabled(true);
+            }
+        });
+    }
+
+    private boolean exitSearchMode(boolean showToast) {
+        if (currentSearchQuery == null) {
+            return false;
+        }
+
+        currentSearchQuery = null;
+        if (showToast) {
+            Toast.makeText(this, R.string.plan_toast_resetting_search, Toast.LENGTH_SHORT).show();
+        }
+        planCache.clear();
+        loadPlanForCurrentMode();
+        return true;
+    }
+
+    private void restorePlanContentIfNeeded() {
+        if (isDestroyed() || isFinishing() || viewPager == null || pagerAdapter == null) {
+            return;
+        }
+
+        // Recover from interrupted entrance animations after returning from another screen.
+        viewPager.animate().cancel();
+        viewPager.setAlpha(1f);
+        viewPager.setScaleX(1f);
+        viewPager.setScaleY(1f);
+        viewPager.setTranslationX(0f);
+        viewPager.setTranslationY(0f);
+
+        if (layoutTimeColumn != null) {
+            layoutTimeColumn.animate().cancel();
+            layoutTimeColumn.setAlpha(1f);
+            layoutTimeColumn.setTranslationX(0f);
+        }
+        if (layoutWeekHeadersFixed != null) {
+            layoutWeekHeadersFixed.animate().cancel();
+            layoutWeekHeadersFixed.setAlpha(1f);
+            layoutWeekHeadersFixed.setTranslationY(0f);
+        }
+
+        final int currentItem = viewPager.getCurrentItem();
+        viewPager.post(() -> {
+            if (isDestroyed() || isFinishing() || pagerAdapter == null) {
+                return;
+            }
+
+            boolean needsRefresh = false;
+            if (pagerRecyclerView != null) {
+                for (int i = 0; i < pagerRecyclerView.getChildCount(); i++) {
+                    View child = pagerRecyclerView.getChildAt(i);
+                    if (child == null) {
+                        continue;
+                    }
+                    child.animate().cancel();
+                    child.setAlpha(1f);
+                    child.setScaleX(1f);
+                    child.setScaleY(1f);
+                    child.setTranslationX(0f);
+                    child.setTranslationY(0f);
+                }
+
+                RecyclerView.ViewHolder holder = pagerRecyclerView.findViewHolderForAdapterPosition(currentItem);
+                if (!(holder instanceof PlanPageViewHolder)) {
+                    needsRefresh = true;
+                } else {
+                    FrameLayout container = ((PlanPageViewHolder) holder).container;
+                    needsRefresh = container == null
+                            || container.getChildCount() == 0
+                            || container.getAlpha() < 0.1f
+                            || container.getWidth() == 0
+                            || container.getHeight() == 0;
+                    if (!needsRefresh) {
+                        cancelPlanPageLoadingState(container);
+                        container.setAlpha(1f);
+                        container.setScaleX(1f);
+                        container.setScaleY(1f);
+                    }
+                }
+            } else {
+                needsRefresh = true;
+            }
+
+            if (needsRefresh) {
+                requestPageRefresh(currentItem);
+            }
+        });
+    }
+
     private void updatePlanDataFreshness(boolean fetchedFromNetwork) {
         if (prefs == null) {
             return;
@@ -941,6 +1119,7 @@ public class PlanActivity extends MzutBaseActivity {
 
     private void showSearchDialog() {
         View layout = getLayoutInflater().inflate(R.layout.dialog_plan_search, null);
+        View searchDialogScroll = layout.findViewById(R.id.searchDialogScroll);
 
         TextInputLayout inputCategoryLayout = layout.findViewById(R.id.inputCategoryLayout);
         MaterialAutoCompleteTextView categoryView = layout.findViewById(R.id.editCategory);
@@ -949,6 +1128,22 @@ public class PlanActivity extends MzutBaseActivity {
         RecyclerView suggestionsRecycler = layout.findViewById(R.id.suggestionsRecycler);
         ImageButton btnClipboard = layout.findViewById(R.id.btnSavedSearches);
         Button btnSaveQuery = layout.findViewById(R.id.btnSaveQuery);
+
+        if (searchDialogScroll != null) {
+            final int scrollPaddingLeft = searchDialogScroll.getPaddingLeft();
+            final int scrollPaddingTop = searchDialogScroll.getPaddingTop();
+            final int scrollPaddingRight = searchDialogScroll.getPaddingRight();
+            final int scrollPaddingBottom = searchDialogScroll.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(searchDialogScroll, (view, windowInsets) -> {
+                Insets ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+                view.setPadding(
+                        scrollPaddingLeft,
+                        scrollPaddingTop,
+                        scrollPaddingRight,
+                        scrollPaddingBottom + ime.bottom);
+                return windowInsets;
+            });
+        }
 
         String[] displayCategories = {
                 getString(R.string.plan_search_cat_album),
@@ -1080,6 +1275,22 @@ public class PlanActivity extends MzutBaseActivity {
 
         refreshPlaceholder.run();
 
+        if (searchDialogScroll instanceof ViewGroup) {
+            input.setOnFocusChangeListener((view, hasFocus) -> {
+                if (!hasFocus) {
+                    return;
+                }
+                searchDialogScroll.post(() -> {
+                    android.graphics.Rect rect = new android.graphics.Rect();
+                    view.getDrawingRect(rect);
+                    int extraSpace = dpToPx(24);
+                    rect.top = Math.max(0, rect.top - extraSpace);
+                    rect.bottom += extraSpace;
+                    ((ViewGroup) searchDialogScroll).requestChildRectangleOnScreen(view, rect, true);
+                });
+            });
+        }
+
         final Handler debounceHandler = new Handler(Looper.getMainLooper());
         final Runnable[] fetchRunnable = { null };
         final boolean[] isDialogDismissed = { false };
@@ -1210,6 +1421,14 @@ public class PlanActivity extends MzutBaseActivity {
         });
 
         dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
+                            | android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        if (searchDialogScroll != null) {
+            ViewCompat.requestApplyInsets(searchDialogScroll);
+        }
     }
 
     private void showSaveQueryDialog(String catKey, String catLabel, String query) {
@@ -1388,6 +1607,7 @@ public class PlanActivity extends MzutBaseActivity {
         public void onBindViewHolder(@NonNull PlanPageViewHolder holder, int position) {
             int diff = position - VP_START_POSITION;
             LocalDate pageDate;
+            int renderContextVersion = planRenderContextVersion;
 
             if (isDayMode()) {
                 pageDate = baseDate.plusDays(diff);
@@ -1397,19 +1617,30 @@ public class PlanActivity extends MzutBaseActivity {
                 pageDate = baseDate.plusMonths(diff).with(TemporalAdjusters.firstDayOfMonth());
             }
 
+            boolean animateEntrance = holder.boundContextVersion != renderContextVersion || holder.wasLoading;
+            cancelPlanPageLoadingState(holder.container);
+            holder.container.animate().cancel();
             holder.container.removeAllViews();
+            holder.boundContextVersion = renderContextVersion;
+            holder.boundModeId = viewModeId;
+            holder.boundDate = pageDate;
 
             PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, pageDate);
 
             if (cached != null) {
+                holder.wasLoading = false;
                 if (isMonthMode()) {
                     renderMonthPage(holder, cached);
                 } else {
                     renderWeekPage(holder, cached);
                 }
+                if (animateEntrance) {
+                    animatePlanPageEntrance(holder.container);
+                }
             } else {
                 showLoadingState(holder);
-                loadPageAsync(position, pageDate, viewModeId);
+                holder.wasLoading = true;
+                loadPageAsync(position, pageDate, viewModeId, renderContextVersion);
             }
         }
 
@@ -1419,12 +1650,22 @@ public class PlanActivity extends MzutBaseActivity {
         }
 
         private void showLoadingState(PlanPageViewHolder holder) {
-            TextView loadingView = new TextView(context);
-            loadingView.setText(R.string.plan_filters_loading);
-            loadingView.setGravity(Gravity.CENTER);
-            holder.container.addView(loadingView, new FrameLayout.LayoutParams(
+            View skeleton = createPlanLoadingSkeletonView();
+            holder.container.addView(skeleton, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
+            android.animation.ObjectAnimator pulse = android.animation.ObjectAnimator.ofFloat(
+                    skeleton,
+                    View.ALPHA,
+                    0.48f,
+                    0.95f,
+                    0.48f);
+            pulse.setDuration(880L);
+            pulse.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            pulse.setRepeatMode(android.animation.ValueAnimator.RESTART);
+            pulse.setInterpolator(new DecelerateInterpolator());
+            pulse.start();
+            holder.container.setTag(pulse);
         }
 
         private void renderWeekPage(PlanPageViewHolder holder,
@@ -1657,6 +1898,10 @@ public class PlanActivity extends MzutBaseActivity {
 
     private static class PlanPageViewHolder extends RecyclerView.ViewHolder {
         FrameLayout container;
+        String boundModeId;
+        LocalDate boundDate;
+        int boundContextVersion = -1;
+        boolean wasLoading;
 
         PlanPageViewHolder(FrameLayout container) {
             super(container);
@@ -1664,13 +1909,22 @@ public class PlanActivity extends MzutBaseActivity {
         }
     }
 
-    private void loadPageAsync(int position, LocalDate date, String modeId) {
+    private void loadPageAsync(int position, LocalDate date, String modeId, int renderContextVersion) {
+        PageLoadRequest request = new PageLoadRequest(renderContextVersion, modeId, date);
+        synchronized (activePageLoads) {
+            if (activePageLoads.contains(request)) {
+                return;
+            }
+            activePageLoads.add(request);
+        }
+
+        PlanRepository.SearchParams searchSnapshot = snapshotCurrentSearchQuery();
         final boolean forceRefreshThisLoad = consumePendingForceRefresh(date, modeId);
         executor.execute(() -> {
             PlanRepository.PlanResult res = null;
             try {
-                if (currentSearchQuery != null) {
-                    res = planRepository.searchPlan(modeId, date, currentSearchQuery);
+                if (searchSnapshot != null) {
+                    res = planRepository.searchPlan(modeId, date, searchSnapshot);
                 } else {
                     res = planRepository.loadPlan(modeId, date, forceRefreshThisLoad);
                 }
@@ -1679,8 +1933,12 @@ public class PlanActivity extends MzutBaseActivity {
 
             final PlanRepository.PlanResult finalRes = res;
             runOnUiThread(() -> {
+                activePageLoads.remove(request);
                 if (isDestroyed() || isFinishing())
                     return;
+                if (request.renderContextVersion != planRenderContextVersion) {
+                    return;
+                }
 
                 if (finalRes != null) {
                     putPlanInCache(modeId, date, finalRes);
@@ -2218,6 +2476,7 @@ public class PlanActivity extends MzutBaseActivity {
 
     private void refreshAfterCustomEvent() {
         planCache.clear();
+        beginPlanRenderContext();
         notifyAllPlanPagesChanged();
     }
 
@@ -2431,6 +2690,243 @@ public class PlanActivity extends MzutBaseActivity {
                 child.animate().alpha(0f).setDuration(150).withEndAction(() -> dayBody.removeView(child)).start();
             }
         }
+    }
+
+    private void cancelPlanPageLoadingState(View container) {
+        if (container == null) {
+            return;
+        }
+        Object tag = container.getTag();
+        if (tag instanceof android.animation.Animator) {
+            ((android.animation.Animator) tag).cancel();
+        }
+        container.setTag(null);
+    }
+
+    private void animatePlanPageEntrance(View container) {
+        if (container == null) {
+            return;
+        }
+        container.animate().cancel();
+        container.setAlpha(0f);
+        container.setScaleX(0.985f);
+        container.setScaleY(0.985f);
+        container.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(220L)
+                .setInterpolator(new DecelerateInterpolator(1.35f))
+                .start();
+    }
+
+    private View createPlanLoadingSkeletonView() {
+        int baseSurface = ThemeManager.resolveColor(this, R.attr.mzCardSoft);
+        int border = ThemeManager.resolveColor(this, R.attr.mzBorderSoft);
+        int text = ThemeManager.resolveColor(this, R.attr.mzText);
+        int primary = ThemeManager.resolveColor(this, R.attr.mzPrimary);
+        int fill = ColorUtils.blendARGB(baseSurface, text, 0.06f);
+        int stroke = ColorUtils.blendARGB(border, fill, 0.45f);
+        int accentFill = ColorUtils.blendARGB(fill, primary, 0.18f);
+        int accentStroke = ColorUtils.blendARGB(stroke, primary, 0.32f);
+
+        if (isMonthMode()) {
+            return createMonthLoadingSkeleton(fill, stroke, accentFill, accentStroke);
+        }
+        return createScheduleLoadingSkeleton(fill, stroke, accentFill, accentStroke);
+    }
+
+    private View createScheduleLoadingSkeleton(
+            int fillColor,
+            int strokeColor,
+            int accentFillColor,
+            int accentStrokeColor) {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.HORIZONTAL);
+        root.setClipToPadding(false);
+        root.setClipChildren(false);
+        root.setPadding(dpToPx(12), dpToPx(12), dpToPx(12), dpToPx(12));
+
+        int columnCount = isDayMode() ? 1 : 5;
+        for (int i = 0; i < columnCount; i++) {
+            LinearLayout column = new LinearLayout(this);
+            column.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout.LayoutParams columnLp = new LinearLayout.LayoutParams(
+                    0,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    1f);
+            columnLp.setMargins(dpToPx(4), 0, dpToPx(4), 0);
+            column.setLayoutParams(columnLp);
+
+            boolean isAccentColumn = columnCount == 1 || i == 1;
+            View headerBlock = createSkeletonBlock(
+                    isAccentColumn ? accentFillColor : fillColor,
+                    isAccentColumn ? accentStrokeColor : strokeColor);
+            LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dpToPx(16));
+            headerLp.leftMargin = dpToPx(10);
+            headerLp.rightMargin = dpToPx(18 + ((i + 1) % 3) * 8);
+            headerLp.bottomMargin = dpToPx(12);
+            headerBlock.setLayoutParams(headerLp);
+            column.addView(headerBlock);
+
+            FrameLayout body = new FrameLayout(this);
+            LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    0,
+                    1f);
+            body.setLayoutParams(bodyLp);
+            body.setBackground(buildRoundedBg(
+                    ColorUtils.setAlphaComponent(fillColor, 196),
+                    ColorUtils.setAlphaComponent(strokeColor, 88)));
+            body.setPadding(dpToPx(8), dpToPx(10), dpToPx(8), dpToPx(10));
+
+            addSkeletonEventBlock(
+                    body,
+                    isAccentColumn ? accentFillColor : fillColor,
+                    isAccentColumn ? accentStrokeColor : strokeColor,
+                    22,
+                    26,
+                    2,
+                    22);
+            addSkeletonEventBlock(
+                    body,
+                    fillColor,
+                    strokeColor,
+                    68,
+                    38,
+                    14,
+                    12);
+            addSkeletonEventBlock(
+                    body,
+                    accentFillColor,
+                    accentStrokeColor,
+                    126,
+                    18,
+                    8,
+                    40);
+            column.addView(body);
+
+            root.addView(column);
+        }
+
+        return root;
+    }
+
+    private View createMonthLoadingSkeleton(
+            int fillColor,
+            int strokeColor,
+            int accentFillColor,
+            int accentStrokeColor) {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dpToPx(10), dpToPx(10), dpToPx(10), dpToPx(10));
+
+        GridLayout weekdayRow = new GridLayout(this);
+        weekdayRow.setColumnCount(7);
+        weekdayRow.setUseDefaultMargins(false);
+        weekdayRow.setPadding(0, 0, 0, dpToPx(8));
+        for (int i = 0; i < 7; i++) {
+            View weekdayBlock = createSkeletonBlock(fillColor, strokeColor);
+            GridLayout.LayoutParams labelLp = new GridLayout.LayoutParams();
+            labelLp.width = 0;
+            labelLp.height = dpToPx(8);
+            labelLp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            labelLp.setMargins(dpToPx(10), dpToPx(3), dpToPx(10), dpToPx(3));
+            weekdayBlock.setLayoutParams(labelLp);
+            weekdayRow.addView(weekdayBlock);
+        }
+        root.addView(weekdayRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(7);
+        grid.setUseDefaultMargins(false);
+
+        for (int i = 0; i < 42; i++) {
+            LinearLayout cell = new LinearLayout(this);
+            cell.setOrientation(LinearLayout.VERTICAL);
+            cell.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
+            boolean accentCell = i % 8 == 2 || i % 8 == 5;
+            cell.setBackground(buildRoundedBg(
+                    accentCell ? ColorUtils.setAlphaComponent(accentFillColor, 214) : ColorUtils.setAlphaComponent(fillColor, 202),
+                    accentCell ? ColorUtils.setAlphaComponent(accentStrokeColor, 112) : ColorUtils.setAlphaComponent(strokeColor, 84)));
+
+            GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+            lp.width = 0;
+            lp.height = dpToPx(MONTH_CELL_HEIGHT_DP);
+            lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            lp.setMargins(dpToPx(2), dpToPx(2), dpToPx(2), dpToPx(2));
+            cell.setLayoutParams(lp);
+
+            View dayNumber = createSkeletonBlock(
+                    accentCell ? accentFillColor : fillColor,
+                    accentCell ? accentStrokeColor : strokeColor);
+            LinearLayout.LayoutParams dayNumberLp = new LinearLayout.LayoutParams(
+                    dpToPx((i % 3 == 0) ? 14 : 18),
+                    dpToPx(8));
+            dayNumberLp.bottomMargin = dpToPx(10);
+            dayNumber.setLayoutParams(dayNumberLp);
+            cell.addView(dayNumber);
+
+            if (i % 5 != 0) {
+                View hintBlock = createSkeletonBlock(fillColor, strokeColor);
+                LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(
+                        dpToPx(8),
+                        dpToPx(8));
+                hintLp.topMargin = dpToPx(2);
+                cell.addView(hintBlock, hintLp);
+            }
+
+            if (i % 7 == 3 || i % 7 == 6 || accentCell) {
+                View secondHint = createSkeletonBlock(accentFillColor, accentStrokeColor);
+                LinearLayout.LayoutParams secondHintLp = new LinearLayout.LayoutParams(
+                        dpToPx(8),
+                        dpToPx(6));
+                secondHintLp.topMargin = dpToPx(5);
+                cell.addView(secondHint, secondHintLp);
+            }
+
+            grid.addView(cell);
+        }
+
+        root.addView(grid, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        return root;
+    }
+
+    private void addSkeletonEventBlock(
+            FrameLayout body,
+            int fillColor,
+            int strokeColor,
+            int topDp,
+            int heightDp,
+            int startDp,
+            int endDp) {
+        if (body == null) {
+            return;
+        }
+        View block = createSkeletonBlock(
+                ColorUtils.setAlphaComponent(fillColor, 235),
+                ColorUtils.setAlphaComponent(strokeColor, 140));
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                dpToPx(heightDp));
+        lp.topMargin = dpToPx(topDp);
+        lp.leftMargin = dpToPx(startDp);
+        lp.rightMargin = dpToPx(endDp);
+        block.setLayoutParams(lp);
+        body.addView(block);
+    }
+
+    private View createSkeletonBlock(int fillColor, int strokeColor) {
+        View block = new View(this);
+        block.setBackground(buildRoundedBg(fillColor, strokeColor));
+        block.setAlpha(0.96f);
+        return block;
     }
 
     /**

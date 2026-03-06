@@ -33,8 +33,8 @@ public final class NotificationSyncManager {
     private static final String PREFS_RUNTIME = "mzut_sync_runtime";
     private static final String KEY_BOOTSTRAP_SYNC_SCOPE = "bootstrap_sync_scope_v2";
     private static final String PREFS_BG = "mzut_background_sync_cache";
-    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v1";
-    private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v1";
+    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v2";
+    private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v3";
 
     public static final String CHANNEL_GRADES = "mzut_grades_changes";
     public static final String CHANNEL_PLAN = "mzut_plan_changes";
