@@ -1131,7 +1131,149 @@ public class PlanRepository {
             ui.teacher = (String) ev.get("teacher");
             result.add(ui);
         }
-        return result;
+        return relayoutDayEvents(result);
+    }
+
+    List<PlanEventUi> relayoutDayEvents(List<PlanEventUi> events) {
+        if (events == null || events.isEmpty()) {
+            return events != null ? events : new ArrayList<>();
+        }
+
+        List<PlanEventUi> sorted = new ArrayList<>(events);
+        sorted.sort((a, b) -> {
+            if (a.startMin == b.startMin) {
+                return Integer.compare(a.endMin, b.endMin);
+            }
+            return Integer.compare(a.startMin, b.startMin);
+        });
+
+        List<List<PlanEventUi>> clusters = new ArrayList<>();
+        List<PlanEventUi> currentCluster = new ArrayList<>();
+        int clusterEnd = Integer.MIN_VALUE;
+
+        for (PlanEventUi ev : sorted) {
+            if (currentCluster.isEmpty()) {
+                currentCluster.add(ev);
+                clusterEnd = ev.endMin;
+                continue;
+            }
+
+            if (ev.startMin < clusterEnd) {
+                currentCluster.add(ev);
+                if (ev.endMin > clusterEnd) {
+                    clusterEnd = ev.endMin;
+                }
+            } else {
+                clusters.add(currentCluster);
+                currentCluster = new ArrayList<>();
+                currentCluster.add(ev);
+                clusterEnd = ev.endMin;
+            }
+        }
+        if (!currentCluster.isEmpty()) {
+            clusters.add(currentCluster);
+        }
+
+        final float overlapOffsetPct = 6f;
+
+        for (List<PlanEventUi> cluster : clusters) {
+            if (cluster.isEmpty()) {
+                continue;
+            }
+
+            boolean hasRealCollision = false;
+            for (int i = 0; i < cluster.size(); i++) {
+                for (int j = i + 1; j < cluster.size(); j++) {
+                    PlanEventUi first = cluster.get(i);
+                    PlanEventUi second = cluster.get(j);
+                    int overlap = Math.min(first.endMin, second.endMin)
+                            - Math.max(first.startMin, second.startMin);
+                    if (overlap >= 20) {
+                        hasRealCollision = true;
+                        break;
+                    }
+                }
+                if (hasRealCollision) {
+                    break;
+                }
+            }
+
+            if (!hasRealCollision) {
+                float availableWidthPct = 100f - overlapOffsetPct * (cluster.size() - 1);
+                if (availableWidthPct < 40f) {
+                    availableWidthPct = 100f;
+                }
+
+                for (int i = 0; i < cluster.size(); i++) {
+                    PlanEventUi ev = cluster.get(i);
+                    ev.leftPct = i * overlapOffsetPct;
+                    ev.widthPct = availableWidthPct;
+                }
+                continue;
+            }
+
+            if (cluster.size() == 1) {
+                PlanEventUi only = cluster.get(0);
+                only.leftPct = 0f;
+                only.widthPct = 100f;
+                continue;
+            }
+
+            List<Integer> laneEnd = new ArrayList<>();
+            Map<PlanEventUi, Integer> laneByEvent = new HashMap<>();
+
+            for (PlanEventUi ev : cluster) {
+                int assignedLane = -1;
+                for (int laneIdx = 0; laneIdx < laneEnd.size(); laneIdx++) {
+                    if (ev.startMin >= laneEnd.get(laneIdx)) {
+                        assignedLane = laneIdx;
+                        laneEnd.set(laneIdx, ev.endMin);
+                        break;
+                    }
+                }
+                if (assignedLane == -1) {
+                    assignedLane = laneEnd.size();
+                    laneEnd.add(ev.endMin);
+                }
+                laneByEvent.put(ev, assignedLane);
+            }
+
+            int laneCount = Math.max(1, laneEnd.size());
+            float laneWidthPct = 100f / laneCount;
+
+            for (PlanEventUi ev : cluster) {
+                int laneIdx = laneByEvent.get(ev);
+                int laneSpan = 1;
+
+                for (int candidateLane = laneIdx + 1; candidateLane < laneCount; candidateLane++) {
+                    boolean blocked = false;
+                    for (PlanEventUi other : cluster) {
+                        if (ev == other) {
+                            continue;
+                        }
+                        Integer otherLane = laneByEvent.get(other);
+                        if (otherLane == null || otherLane != candidateLane) {
+                            continue;
+                        }
+                        int overlap = Math.min(ev.endMin, other.endMin)
+                                - Math.max(ev.startMin, other.startMin);
+                        if (overlap > 0) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+                    if (blocked) {
+                        break;
+                    }
+                    laneSpan++;
+                }
+
+                ev.leftPct = laneIdx * laneWidthPct;
+                ev.widthPct = Math.min(100f - ev.leftPct, laneWidthPct * laneSpan);
+            }
+        }
+
+        return events;
     }
 
     private List<List<MonthCell>> buildMonthGrid(LocalDate monthDate, Set<LocalDate> daysWithPlan) {
@@ -1482,6 +1624,7 @@ public class PlanRepository {
 
                 // Integrate custom events for this day
                 col.events = mergeCustomEvents(col.events, iter);
+                col.events = relayoutDayEvents(col.events);
 
                 if (!col.events.isEmpty())
                     any = true;

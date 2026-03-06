@@ -21,6 +21,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -356,8 +357,9 @@ public class PlanActivity extends MzutBaseActivity {
             fabMarginBottom = 0;
         }
 
-        if (planCoordinatorRoot != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(planCoordinatorRoot, (v, windowInsets) -> {
+        View insetHost = planCoordinatorRoot != null ? planCoordinatorRoot : drawerContentRoot;
+        if (insetHost != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(insetHost, (v, windowInsets) -> {
                 Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
                 drawerContentRoot.setPadding(
                         contentPaddingLeft + insets.left,
@@ -376,7 +378,7 @@ public class PlanActivity extends MzutBaseActivity {
                 }
                 return WindowInsetsCompat.CONSUMED;
             });
-            ViewCompat.requestApplyInsets(planCoordinatorRoot);
+            ViewCompat.requestApplyInsets(insetHost);
         }
 
         toolbar.setTitle(R.string.plan_title);
@@ -1486,25 +1488,45 @@ public class PlanActivity extends MzutBaseActivity {
                 attachEmptySlotAdd(dayBody, col.date);
 
                 List<PlanRepository.PlanEventUi> events = col.events != null ? col.events : Collections.emptyList();
+                List<PlanRepository.PlanEventUi> visibleEvents = new ArrayList<>();
+                for (PlanRepository.PlanEventUi ev : events) {
+                    if (!shouldHideEvent(ev)) {
+                        visibleEvents.add(ev);
+                    }
+                }
+                if (visibleEvents.size() != events.size() && planRepository != null) {
+                    planRepository.relayoutDayEvents(visibleEvents);
+                }
 
                 List<RenderedEvent> renderedEvents = new ArrayList<>();
-                for (PlanRepository.PlanEventUi ev : events) {
-                    if (shouldHideEvent(ev))
-                        continue;
+                for (PlanRepository.PlanEventUi ev : visibleEvents) {
                     View evView = createEventView(ev, col.date);
+                    evView.setVisibility(View.INVISIBLE);
                     dayBody.addView(evView);
                     renderedEvents.add(new RenderedEvent(ev, evView));
                 }
 
                 LocalDate colDate = col.date;
-                dayBody.post(() -> {
-                    int w = dayBody.getWidth();
-                    if (w <= 0)
-                        return;
-                    layoutEventsInDayBody(renderedEvents, w);
-                    if (colDate != null && colDate.equals(today)) {
-                        dayBody.setTag("TODAY_BODY");
-                        updateNowLineInVisiblePage();
+                boolean isTodayColumn = colDate != null && colDate.equals(today);
+                if (isTodayColumn) {
+                    dayBody.setTag("TODAY_BODY");
+                }
+                dayBody.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                    @Override
+                    public boolean onPreDraw() {
+                        int width = dayBody.getWidth();
+                        if (width <= 0) {
+                            return true;
+                        }
+                        ViewTreeObserver observer = dayBody.getViewTreeObserver();
+                        if (observer.isAlive()) {
+                            observer.removeOnPreDrawListener(this);
+                        }
+                        layoutEventsInDayBody(renderedEvents, width);
+                        if (isTodayColumn) {
+                            updateNowLineInVisiblePage();
+                        }
+                        return true;
                     }
                 });
 
@@ -2149,155 +2171,48 @@ public class PlanActivity extends MzutBaseActivity {
         int calStart = START_HOUR * 60;
         int calEnd = END_HOUR * 60;
 
-        if (renderedEvents.isEmpty())
+        if (renderedEvents.isEmpty() || widthPx <= 0)
             return;
 
-        renderedEvents.sort(Comparator.comparingInt(o -> o.ev.startMin));
-
-        List<List<RenderedEvent>> clusters = new ArrayList<>();
-        List<RenderedEvent> currentCluster = new ArrayList<>();
-        int clusterEnd = -1;
+        int marginPx = dpToPx(2);
+        int contentWidth = Math.max(0, widthPx - 2 * marginPx);
 
         for (RenderedEvent re : renderedEvents) {
-            int s = re.ev.startMin;
-            int e = re.ev.endMin;
+            int startMin = re.ev.startMin;
+            int endMin = re.ev.endMin;
 
-            if (currentCluster.isEmpty()) {
-                currentCluster.add(re);
-                clusterEnd = e;
-            } else {
-                if (s < clusterEnd) {
-                    currentCluster.add(re);
-                    if (e > clusterEnd)
-                        clusterEnd = e;
-                } else {
-                    clusters.add(new ArrayList<>(currentCluster));
-                    currentCluster.clear();
-                    currentCluster.add(re);
-                    clusterEnd = e;
-                }
-            }
-        }
-        if (!currentCluster.isEmpty())
-            clusters.add(currentCluster);
-
-        int marginPx = dpToPx(2);
-        int overlapOffset = dpToPx(6);
-
-        for (List<RenderedEvent> cluster : clusters) {
-            if (cluster.isEmpty())
-                continue;
-
-            boolean hasRealCollision = false;
-            for (int i = 0; i < cluster.size(); i++) {
-                for (int j = i + 1; j < cluster.size(); j++) {
-                    int s1 = cluster.get(i).ev.startMin;
-                    int e1 = cluster.get(i).ev.endMin;
-                    int s2 = cluster.get(j).ev.startMin;
-                    int e2 = cluster.get(j).ev.endMin;
-                    int overlap = Math.min(e1, e2) - Math.max(s1, s2);
-                    if (overlap >= 20) {
-                        hasRealCollision = true;
-                        break;
-                    }
-                }
-                if (hasRealCollision)
-                    break;
-            }
-
-            if (!hasRealCollision) {
-                int clusterSize = cluster.size();
-                int maxOffset = overlapOffset * (clusterSize - 1);
-                int availableWidth = widthPx - 2 * marginPx - maxOffset;
-                if (availableWidth < dpToPx(40)) {
-                    availableWidth = widthPx - 2 * marginPx;
-                }
-
-                for (int i = 0; i < clusterSize; i++) {
-                    RenderedEvent re = cluster.get(i);
-                    int startMin = re.ev.startMin;
-                    int endMin = re.ev.endMin;
-
-                    if (endMin <= calStart || startMin >= calEnd) {
-                        re.view.setVisibility(View.GONE);
-                        continue;
-                    }
-
-                    int startClamped = Math.max(startMin, calStart);
-                    int endClamped = Math.min(endMin, calEnd);
-                    int duration = Math.max(endClamped - startClamped, 15);
-
-                    float offsetMinutes = startClamped - calStart;
-                    float topPx = (offsetMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP);
-                    float heightPx = (duration / 60f) * dpToPx(HOUR_HEIGHT_DP);
-                    if (heightPx < dpToPx(22))
-                        heightPx = dpToPx(22);
-
-                    FrameLayoutWithChildren.LayoutParams lp = (FrameLayoutWithChildren.LayoutParams) re.view
-                            .getLayoutParams();
-                    lp.topMargin = (int) topPx;
-                    lp.height = (int) heightPx;
-                    lp.leftMargin = marginPx + i * overlapOffset;
-                    lp.width = availableWidth;
-                    re.view.setLayoutParams(lp);
-                }
+            if (endMin <= calStart || startMin >= calEnd) {
+                re.view.setVisibility(View.GONE);
                 continue;
             }
 
-            List<Integer> laneEnd = new ArrayList<>();
-            int[] laneOf = new int[cluster.size()];
+            int startClamped = Math.max(startMin, calStart);
+            int endClamped = Math.min(endMin, calEnd);
+            int duration = Math.max(endClamped - startClamped, 15);
 
-            for (int i = 0; i < cluster.size(); i++) {
-                RenderedEvent re = cluster.get(i);
-                int s = re.ev.startMin;
-                int e = re.ev.endMin;
-                int assignedLane = -1;
-                for (int laneIdx = 0; laneIdx < laneEnd.size(); laneIdx++) {
-                    if (s >= laneEnd.get(laneIdx)) {
-                        assignedLane = laneIdx;
-                        laneEnd.set(laneIdx, e);
-                        break;
-                    }
-                }
-                if (assignedLane == -1) {
-                    assignedLane = laneEnd.size();
-                    laneEnd.add(e);
-                }
-                laneOf[i] = assignedLane;
+            float offsetMinutes = startClamped - calStart;
+            float topPx = (offsetMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP);
+            float heightPx = (duration / 60f) * dpToPx(HOUR_HEIGHT_DP);
+            if (heightPx < dpToPx(22))
+                heightPx = dpToPx(22);
+
+            float safeLeftPct = Math.max(0f, Math.min(100f, re.ev.leftPct));
+            float safeWidthPct = re.ev.widthPct > 0f ? re.ev.widthPct : 100f;
+            if (safeLeftPct + safeWidthPct > 100f) {
+                safeWidthPct = 100f - safeLeftPct;
             }
 
-            int laneCount = Math.max(1, laneEnd.size());
-            float laneWidth = (widthPx - 2f * marginPx) / laneCount;
+            int leftInset = Math.round(contentWidth * (safeLeftPct / 100f));
+            int itemWidth = Math.round(contentWidth * (safeWidthPct / 100f));
 
-            for (int i = 0; i < cluster.size(); i++) {
-                RenderedEvent re = cluster.get(i);
-                int laneIdx = laneOf[i];
-                int startMin = re.ev.startMin;
-                int endMin = re.ev.endMin;
-
-                if (endMin <= calStart || startMin >= calEnd) {
-                    re.view.setVisibility(View.GONE);
-                    continue;
-                }
-
-                int startClamped = Math.max(startMin, calStart);
-                int endClamped = Math.min(endMin, calEnd);
-                int duration = Math.max(endClamped - startClamped, 15);
-
-                float offsetMinutes = startClamped - calStart;
-                float topPx = (offsetMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP);
-                float heightPx = (duration / 60f) * dpToPx(HOUR_HEIGHT_DP);
-                if (heightPx < dpToPx(22))
-                    heightPx = dpToPx(22);
-
-                FrameLayoutWithChildren.LayoutParams lp = (FrameLayoutWithChildren.LayoutParams) re.view
-                        .getLayoutParams();
-                lp.topMargin = (int) topPx;
-                lp.height = (int) heightPx;
-                lp.leftMargin = (int) (marginPx + laneIdx * laneWidth);
-                lp.width = (int) (laneWidth - 2 * marginPx);
-                re.view.setLayoutParams(lp);
-            }
+            FrameLayoutWithChildren.LayoutParams lp =
+                    (FrameLayoutWithChildren.LayoutParams) re.view.getLayoutParams();
+            lp.topMargin = (int) topPx;
+            lp.height = (int) heightPx;
+            lp.leftMargin = marginPx + leftInset;
+            lp.width = Math.max(0, itemWidth - marginPx);
+            re.view.setLayoutParams(lp);
+            re.view.setVisibility(View.VISIBLE);
         }
     }
 

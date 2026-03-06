@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.ViewGroup;
 import android.view.ViewConfiguration;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -139,18 +140,8 @@ public class NavDrawerHelper {
                     activity.getString(R.string.app_version, versionName));
         }
 
-        if (navHeaderRoot != null) {
-            final int baseLeft = navHeaderRoot.getPaddingLeft();
-            final int baseTop = navHeaderRoot.getPaddingTop();
-            final int baseRight = navHeaderRoot.getPaddingRight();
-            final int baseBottom = navHeaderRoot.getPaddingBottom();
-            ViewCompat.setOnApplyWindowInsetsListener(navHeaderRoot, (v, insets) -> {
-                Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(baseLeft, baseTop, baseRight, baseBottom + bars.bottom);
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(navHeaderRoot);
-        }
+        applyDrawerWindowInsets(drawerLayout, navigationView);
+        applyDrawerHeaderInsets(navHeaderRoot);
 
         // User name in header
         MzutSession s = MzutSession.getInstance(activity);
@@ -285,6 +276,70 @@ public class NavDrawerHelper {
             enableFullWidthDrawerDrag(drawerLayout);
             enableInteractiveSwipe(activity, drawerLayout);
         }
+    }
+
+    private static void applyDrawerWindowInsets(DrawerLayout drawerLayout, NavigationView navigationView) {
+        if (drawerLayout == null || navigationView == null) {
+            return;
+        }
+
+        ViewGroup.LayoutParams rawLayoutParams = navigationView.getLayoutParams();
+        if (!(rawLayoutParams instanceof ViewGroup.MarginLayoutParams)) {
+            ViewCompat.requestApplyInsets(drawerLayout);
+            return;
+        }
+
+        ViewGroup.MarginLayoutParams baseLayoutParams = (ViewGroup.MarginLayoutParams) rawLayoutParams;
+        final int baseLeftMargin = baseLayoutParams.leftMargin;
+        final int baseTopMargin = baseLayoutParams.topMargin;
+        final int baseRightMargin = baseLayoutParams.rightMargin;
+        final int baseBottomMargin = baseLayoutParams.bottomMargin;
+
+        ViewCompat.setOnApplyWindowInsetsListener(drawerLayout, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            ViewGroup.LayoutParams currentLayoutParams = navigationView.getLayoutParams();
+            if (currentLayoutParams instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams navLayoutParams =
+                        (ViewGroup.MarginLayoutParams) currentLayoutParams;
+
+                int targetLeft = baseLeftMargin + bars.left;
+                int targetTop = baseTopMargin;
+                int targetRight = baseRightMargin + bars.right;
+                int targetBottom = baseBottomMargin + bars.bottom;
+
+                if (navLayoutParams.leftMargin != targetLeft
+                        || navLayoutParams.topMargin != targetTop
+                        || navLayoutParams.rightMargin != targetRight
+                        || navLayoutParams.bottomMargin != targetBottom) {
+                    navLayoutParams.setMargins(targetLeft, targetTop, targetRight, targetBottom);
+                    navigationView.setLayoutParams(navLayoutParams);
+                }
+            }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(drawerLayout);
+    }
+
+    private static void applyDrawerHeaderInsets(View navHeaderRoot) {
+        if (navHeaderRoot == null) {
+            return;
+        }
+
+        final int baseLeft = navHeaderRoot.getPaddingLeft();
+        final int baseTop = navHeaderRoot.getPaddingTop();
+        final int baseRight = navHeaderRoot.getPaddingRight();
+        final int baseBottom = navHeaderRoot.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(navHeaderRoot, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            view.setPadding(
+                    baseLeft,
+                    baseTop + bars.top,
+                    baseRight,
+                    baseBottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(navHeaderRoot);
     }
 
     private static void enableFullWidthDrawerDrag(DrawerLayout drawerLayout) {

@@ -182,7 +182,9 @@ public class InfoActivity extends MzutBaseActivity {
             String sn = session.getStudentNumber();
             setOrHide(tvAlbum, sn);
 
-            cardUsosPayments.setVisibility(View.VISIBLE);
+            if (cardUsosPayments != null) {
+                cardUsosPayments.setVisibility(View.VISIBLE);
+            }
             loadUsosPayments();
 
             if (btnPaymentsRefresh != null) {
@@ -191,7 +193,7 @@ public class InfoActivity extends MzutBaseActivity {
             if (btnInfoRefresh != null) {
                 btnInfoRefresh.setOnClickListener(v -> loadUsosPayments());
             }
-        } else {
+        } else if (cardUsosPayments != null) {
             cardUsosPayments.setVisibility(View.GONE);
         }
 

@@ -54,7 +54,7 @@ public class BackgroundSyncWorker extends Worker {
 
     private static final int NOTIF_ID_GRADES = 9101;
     private static final int NOTIF_ID_PLAN = 9102;
-    private static final int PLAN_REFRESH_THRESHOLD = 10;
+    private static final int PLAN_REFRESH_THRESHOLD = 35; // 36+ changes trigger the bulk refresh alert.
     private static final long ALERT_DEDUP_WINDOW_MS = 24L * 60L * 60L * 1000L;
 
     private static final String DATE_SHORT_PATTERN = "dd.MM";
