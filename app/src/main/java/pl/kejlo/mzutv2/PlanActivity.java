@@ -555,13 +555,6 @@ public class PlanActivity extends MzutBaseActivity {
             }
         }
 
-        // Initial "Smart Sunday" logic: If opening in Week view and it's Sunday, show
-        // next week
-        if (isWeekMode() && currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            currentDate = currentDate.plusDays(1);
-            baseDate = currentDate;
-        }
-
         setupFab();
 
         // Load session dates in background
@@ -765,6 +758,28 @@ public class PlanActivity extends MzutBaseActivity {
         return getCurrentViewMode() == ViewMode.MONTH;
     }
 
+    private LocalDate normalizeAnchorDateForMode(LocalDate date, ViewMode mode) {
+        LocalDate safeDate = date != null ? date : LocalDate.now();
+        if (mode == null) {
+            return safeDate;
+        }
+        if (mode == ViewMode.MONTH) {
+            return safeDate.with(TemporalAdjusters.firstDayOfMonth());
+        }
+        if (mode == ViewMode.WEEK && safeDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return safeDate.plusDays(1);
+        }
+        return safeDate;
+    }
+
+    private void normalizeCurrentModeAnchor() {
+        ViewMode mode = getCurrentViewMode();
+        LocalDate anchor = currentDate != null ? currentDate : baseDate;
+        anchor = normalizeAnchorDateForMode(anchor, mode);
+        currentDate = anchor;
+        baseDate = anchor;
+    }
+
     private void updateCurrentDateFromPosition(int position) {
         int diff = position - VP_START_POSITION;
         LocalDate newDate;
@@ -797,11 +812,7 @@ public class PlanActivity extends MzutBaseActivity {
     private void loadPlanForCurrentMode() {
         updateViewModeButtonsUi();
         beginPlanRenderContext();
-
-        if (isMonthMode()) {
-            baseDate = baseDate.with(TemporalAdjusters.firstDayOfMonth());
-            currentDate = currentDate.with(TemporalAdjusters.firstDayOfMonth());
-        }
+        normalizeCurrentModeAnchor();
 
         setupHeightForViewPager();
 
@@ -842,7 +853,9 @@ public class PlanActivity extends MzutBaseActivity {
 
             if (!newMode.getId().equals(viewModeId)) {
                 setCurrentViewMode(newMode);
-                baseDate = currentDate;
+                LocalDate anchor = normalizeAnchorDateForMode(currentDate, newMode);
+                currentDate = anchor;
+                baseDate = anchor;
                 if (viewPager != null) {
                     viewPager.setCurrentItem(VP_START_POSITION, false);
                 }
@@ -899,21 +912,9 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     private void goToToday() {
-        LocalDate today = LocalDate.now();
-
-        if (isWeekMode() && today.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            // Smart Sunday: If clicked "Today" on Sunday, show next week
-            currentDate = today.plusDays(1);
-            baseDate = currentDate;
-        } else {
-            currentDate = today;
-            baseDate = today;
-        }
-
-        if (isMonthMode()) {
-            baseDate = today.with(TemporalAdjusters.firstDayOfMonth());
-            currentDate = baseDate;
-        }
+        LocalDate anchor = normalizeAnchorDateForMode(LocalDate.now(), getCurrentViewMode());
+        currentDate = anchor;
+        baseDate = anchor;
 
         if (viewPager != null) {
             viewPager.setCurrentItem(VP_START_POSITION, true);
@@ -2435,11 +2436,13 @@ public class PlanActivity extends MzutBaseActivity {
         int marginPx = dpToPx(2);
         int contentWidth = Math.max(0, widthPx - 2 * marginPx);
 
-        for (RenderedEvent re : renderedEvents) {
+        for (int i = 0; i < renderedEvents.size(); i++) {
+            RenderedEvent re = renderedEvents.get(i);
             int startMin = re.ev.startMin;
             int endMin = re.ev.endMin;
 
             if (endMin <= calStart || startMin >= calEnd) {
+                re.view.animate().cancel();
                 re.view.setVisibility(View.GONE);
                 continue;
             }
@@ -2470,8 +2473,39 @@ public class PlanActivity extends MzutBaseActivity {
             lp.leftMargin = marginPx + leftInset;
             lp.width = Math.max(0, itemWidth - marginPx);
             re.view.setLayoutParams(lp);
-            re.view.setVisibility(View.VISIBLE);
+            if (re.view.getVisibility() != View.VISIBLE) {
+                animateScheduleEventEntrance(re.view, i);
+            } else {
+                re.view.animate().cancel();
+                re.view.setAlpha(1f);
+                re.view.setScaleX(1f);
+                re.view.setScaleY(1f);
+                re.view.setTranslationY(0f);
+                re.view.setVisibility(View.VISIBLE);
+            }
         }
+    }
+
+    private void animateScheduleEventEntrance(View view, int order) {
+        if (view == null) {
+            return;
+        }
+        long startDelay = Math.min(96L, Math.max(0, order) * 20L);
+        view.animate().cancel();
+        view.setAlpha(0f);
+        view.setScaleX(0.92f);
+        view.setScaleY(0.92f);
+        view.setTranslationY(dpToPx(8));
+        view.setVisibility(View.VISIBLE);
+        view.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setStartDelay(startDelay)
+                .setDuration(220L)
+                .setInterpolator(new DecelerateInterpolator(1.4f))
+                .start();
     }
 
     private void refreshAfterCustomEvent() {
@@ -2745,31 +2779,61 @@ public class PlanActivity extends MzutBaseActivity {
         root.setOrientation(LinearLayout.HORIZONTAL);
         root.setClipToPadding(false);
         root.setClipChildren(false);
-        root.setPadding(dpToPx(12), dpToPx(12), dpToPx(12), dpToPx(12));
+        root.setPadding(dpToPx(14), dpToPx(12), dpToPx(14), dpToPx(18));
 
         int columnCount = isDayMode() ? 1 : 5;
+        boolean singleColumn = columnCount == 1;
         for (int i = 0; i < columnCount; i++) {
             LinearLayout column = new LinearLayout(this);
             column.setOrientation(LinearLayout.VERTICAL);
+            column.setClipToPadding(false);
+            column.setClipChildren(false);
             LinearLayout.LayoutParams columnLp = new LinearLayout.LayoutParams(
                     0,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     1f);
-            columnLp.setMargins(dpToPx(4), 0, dpToPx(4), 0);
+            columnLp.setMargins(dpToPx(singleColumn ? 0 : 4), 0, dpToPx(singleColumn ? 0 : 4), 0);
             column.setLayoutParams(columnLp);
 
-            boolean isAccentColumn = columnCount == 1 || i == 1;
-            View headerBlock = createSkeletonBlock(
-                    isAccentColumn ? accentFillColor : fillColor,
-                    isAccentColumn ? accentStrokeColor : strokeColor);
-            LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
+            boolean isAccentColumn = singleColumn || i == 2;
+            LinearLayout headerStack = new LinearLayout(this);
+            headerStack.setOrientation(LinearLayout.VERTICAL);
+            headerStack.setGravity(Gravity.CENTER_HORIZONTAL);
+            LinearLayout.LayoutParams headerStackLp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dpToPx(16));
-            headerLp.leftMargin = dpToPx(10);
-            headerLp.rightMargin = dpToPx(18 + ((i + 1) % 3) * 8);
-            headerLp.bottomMargin = dpToPx(12);
-            headerBlock.setLayoutParams(headerLp);
-            column.addView(headerBlock);
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            headerStackLp.bottomMargin = dpToPx(singleColumn ? 14 : 12);
+            headerStack.setLayoutParams(headerStackLp);
+
+            View topDot = createSkeletonBlock(
+                    isAccentColumn ? accentFillColor : fillColor,
+                    isAccentColumn ? accentStrokeColor : strokeColor,
+                    999);
+            LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(
+                    dpToPx(singleColumn ? 12 : 8),
+                    dpToPx(singleColumn ? 12 : 8));
+            dotLp.bottomMargin = dpToPx(singleColumn ? 8 : 7);
+            headerStack.addView(topDot, dotLp);
+
+            View titleBlock = createSkeletonBlock(
+                    isAccentColumn ? accentFillColor : fillColor,
+                    isAccentColumn ? accentStrokeColor : strokeColor,
+                    999);
+            LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+                    dpToPx(singleColumn ? 74 : 24 + (i % 2) * 4),
+                    dpToPx(singleColumn ? 11 : 9));
+            headerStack.addView(titleBlock, titleLp);
+
+            View subtitleBlock = createSkeletonBlock(
+                    ColorUtils.setAlphaComponent(fillColor, 232),
+                    ColorUtils.setAlphaComponent(strokeColor, 104),
+                    999);
+            LinearLayout.LayoutParams subtitleLp = new LinearLayout.LayoutParams(
+                    dpToPx(singleColumn ? 52 : 16 + ((i + 1) % 3) * 3),
+                    dpToPx(singleColumn ? 7 : 6));
+            subtitleLp.topMargin = dpToPx(6);
+            headerStack.addView(subtitleBlock, subtitleLp);
+            column.addView(headerStack);
 
             FrameLayout body = new FrameLayout(this);
             LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
@@ -2778,40 +2842,217 @@ public class PlanActivity extends MzutBaseActivity {
                     1f);
             body.setLayoutParams(bodyLp);
             body.setBackground(buildRoundedBg(
-                    ColorUtils.setAlphaComponent(fillColor, 196),
-                    ColorUtils.setAlphaComponent(strokeColor, 88)));
-            body.setPadding(dpToPx(8), dpToPx(10), dpToPx(8), dpToPx(10));
+                    ColorUtils.setAlphaComponent(fillColor, singleColumn ? 112 : 90),
+                    ColorUtils.setAlphaComponent(strokeColor, singleColumn ? 86 : 64),
+                    singleColumn ? 22 : 18));
+            body.setPadding(dpToPx(singleColumn ? 10 : 4), dpToPx(10), dpToPx(singleColumn ? 10 : 4), dpToPx(12));
 
-            addSkeletonEventBlock(
+            addSkeletonGuideLine(
                     body,
-                    isAccentColumn ? accentFillColor : fillColor,
                     isAccentColumn ? accentStrokeColor : strokeColor,
-                    22,
-                    26,
-                    2,
-                    22);
-            addSkeletonEventBlock(
-                    body,
-                    fillColor,
-                    strokeColor,
-                    68,
-                    38,
-                    14,
-                    12);
-            addSkeletonEventBlock(
-                    body,
-                    accentFillColor,
-                    accentStrokeColor,
-                    126,
                     18,
-                    8,
-                    40);
+                    singleColumn ? 14 : 8,
+                    singleColumn ? 14 : 8,
+                    isAccentColumn ? 86 : 68,
+                    4);
+            addSkeletonGuideLine(body, strokeColor, 86, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 44, 1);
+            addSkeletonGuideLine(body, strokeColor, 176, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
+            addSkeletonGuideLine(body, strokeColor, 266, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
+            addSkeletonGuideLine(body, strokeColor, 356, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
+            addSkeletonGuideLine(body, strokeColor, 446, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
+            addSkeletonGuideLine(body, strokeColor, 536, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
+            addSkeletonGuideLine(body, strokeColor, 626, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
+
+            if (singleColumn) {
+                addSkeletonEventCard(
+                        body,
+                        accentFillColor,
+                        accentStrokeColor,
+                        82,
+                        84,
+                        8,
+                        42,
+                        18,
+                        40);
+                addSkeletonEventCard(
+                        body,
+                        fillColor,
+                        strokeColor,
+                        238,
+                        62,
+                        24,
+                        14,
+                        48,
+                        76);
+                addSkeletonEventCard(
+                        body,
+                        accentFillColor,
+                        accentStrokeColor,
+                        404,
+                        92,
+                        12,
+                        54,
+                        22,
+                        46);
+                addSkeletonEventCard(
+                        body,
+                        fillColor,
+                        strokeColor,
+                        578,
+                        56,
+                        36,
+                        18,
+                        60,
+                        92);
+            } else {
+                addSkeletonEventCard(
+                        body,
+                        isAccentColumn ? accentFillColor : fillColor,
+                        isAccentColumn ? accentStrokeColor : strokeColor,
+                        84,
+                        74,
+                        4,
+                        4,
+                        6,
+                        12);
+                addSkeletonEventCard(
+                        body,
+                        fillColor,
+                        strokeColor,
+                        248,
+                        56,
+                        8,
+                        4,
+                        12,
+                        18);
+                addSkeletonEventCard(
+                        body,
+                        accentFillColor,
+                        accentStrokeColor,
+                        426,
+                        68,
+                        4,
+                        6,
+                        8,
+                        14);
+            }
             column.addView(body);
 
             root.addView(column);
         }
 
         return root;
+    }
+
+    private void addSkeletonGuideLine(
+            FrameLayout body,
+            int strokeColor,
+            int topDp,
+            int startDp,
+            int endDp,
+            int alpha,
+            int heightDp) {
+        if (body == null) {
+            return;
+        }
+        View line = new View(this);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                dpToPx(heightDp));
+        lp.topMargin = dpToPx(topDp);
+        lp.leftMargin = dpToPx(startDp);
+        lp.rightMargin = dpToPx(endDp);
+        line.setLayoutParams(lp);
+        line.setBackgroundColor(ColorUtils.setAlphaComponent(strokeColor, alpha));
+        body.addView(line);
+    }
+
+    private void addSkeletonEventCard(
+            FrameLayout body,
+            int fillColor,
+            int strokeColor,
+            int topDp,
+            int heightDp,
+            int startDp,
+            int endDp,
+            int titleEndInsetDp,
+            int metaEndInsetDp) {
+        if (body == null) {
+            return;
+        }
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setClipToPadding(false);
+        card.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
+        card.setBackground(buildRoundedBg(
+                ColorUtils.setAlphaComponent(fillColor, 246),
+                ColorUtils.setAlphaComponent(strokeColor, 146),
+                16));
+
+        FrameLayout.LayoutParams cardLp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                dpToPx(heightDp));
+        cardLp.topMargin = dpToPx(topDp);
+        cardLp.leftMargin = dpToPx(startDp);
+        cardLp.rightMargin = dpToPx(endDp);
+        card.setLayoutParams(cardLp);
+
+        View accent = createSkeletonBlock(
+                ColorUtils.blendARGB(
+                        ColorUtils.setAlphaComponent(fillColor, 255),
+                        ColorUtils.setAlphaComponent(strokeColor, 196),
+                        0.28f),
+                ColorUtils.setAlphaComponent(strokeColor, 0),
+                999);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(
+                dpToPx(3),
+                ViewGroup.LayoutParams.MATCH_PARENT);
+        accentLp.rightMargin = dpToPx(7);
+        card.addView(accent, accentLp);
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setClipToPadding(false);
+        content.setLayoutParams(new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f));
+
+        View title = createSkeletonBlock(
+                ColorUtils.setAlphaComponent(fillColor, 248),
+                ColorUtils.setAlphaComponent(strokeColor, 112),
+                999);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(8));
+        titleLp.rightMargin = dpToPx(titleEndInsetDp);
+        content.addView(title, titleLp);
+
+        View meta = createSkeletonBlock(
+                ColorUtils.setAlphaComponent(fillColor, 222),
+                ColorUtils.setAlphaComponent(strokeColor, 92),
+                999);
+        LinearLayout.LayoutParams metaLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(6));
+        metaLp.topMargin = dpToPx(7);
+        metaLp.rightMargin = dpToPx(metaEndInsetDp);
+        content.addView(meta, metaLp);
+
+        View footer = createSkeletonBlock(
+                ColorUtils.setAlphaComponent(strokeColor, 132),
+                ColorUtils.setAlphaComponent(strokeColor, 72),
+                999);
+        LinearLayout.LayoutParams footerLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(5));
+        footerLp.topMargin = dpToPx(6);
+        footerLp.rightMargin = dpToPx(metaEndInsetDp + 12);
+        content.addView(footer, footerLp);
+
+        card.addView(content);
+        body.addView(card);
     }
 
     private View createMonthLoadingSkeleton(
@@ -2898,33 +3139,13 @@ public class PlanActivity extends MzutBaseActivity {
         return root;
     }
 
-    private void addSkeletonEventBlock(
-            FrameLayout body,
-            int fillColor,
-            int strokeColor,
-            int topDp,
-            int heightDp,
-            int startDp,
-            int endDp) {
-        if (body == null) {
-            return;
-        }
-        View block = createSkeletonBlock(
-                ColorUtils.setAlphaComponent(fillColor, 235),
-                ColorUtils.setAlphaComponent(strokeColor, 140));
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(heightDp));
-        lp.topMargin = dpToPx(topDp);
-        lp.leftMargin = dpToPx(startDp);
-        lp.rightMargin = dpToPx(endDp);
-        block.setLayoutParams(lp);
-        body.addView(block);
+    private View createSkeletonBlock(int fillColor, int strokeColor) {
+        return createSkeletonBlock(fillColor, strokeColor, 10);
     }
 
-    private View createSkeletonBlock(int fillColor, int strokeColor) {
+    private View createSkeletonBlock(int fillColor, int strokeColor, int radiusDp) {
         View block = new View(this);
-        block.setBackground(buildRoundedBg(fillColor, strokeColor));
+        block.setBackground(buildRoundedBg(fillColor, strokeColor, radiusDp));
         block.setAlpha(0.96f);
         return block;
     }
@@ -3314,9 +3535,13 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     private GradientDrawable buildRoundedBg(int fillColor, int strokeColor) {
+        return buildRoundedBg(fillColor, strokeColor, 10);
+    }
+
+    private GradientDrawable buildRoundedBg(int fillColor, int strokeColor, int radiusDp) {
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(fillColor);
-        bg.setCornerRadius(dpToPx(10));
+        bg.setCornerRadius(dpToPx(radiusDp));
         bg.setStroke(dpToPx(1), strokeColor);
         return bg;
     }
