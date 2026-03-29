@@ -12,12 +12,15 @@ import androidx.appcompat.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -40,6 +43,7 @@ import android.widget.Toast;
 import android.text.Editable;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.TextPaint;
 import android.text.TextWatcher;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
@@ -484,15 +488,18 @@ public class PlanActivity extends MzutBaseActivity {
         setupBackNavigation();
 
         if (viewPager != null) {
+            setupHeightForViewPager();
             pagerAdapter = new PlanPagerAdapter(this);
             viewPager.setAdapter(pagerAdapter);
             viewPager.setCurrentItem(VP_START_POSITION, false);
-            viewPager.setOffscreenPageLimit(1);
+            viewPager.setOffscreenPageLimit(ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT);
             viewPager.setNestedScrollingEnabled(false);
             View pagerChild = viewPager.getChildAt(0);
             if (pagerChild instanceof RecyclerView) {
                 pagerRecyclerView = (RecyclerView) pagerChild;
                 pagerRecyclerView.setItemAnimator(null);
+                pagerRecyclerView.setItemViewCacheSize(0);
+                pagerRecyclerView.getRecycledViewPool().setMaxRecycledViews(0, 1);
             }
 
             viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -1619,9 +1626,7 @@ public class PlanActivity extends MzutBaseActivity {
             }
 
             boolean animateEntrance = holder.boundContextVersion != renderContextVersion || holder.wasLoading;
-            cancelPlanPageLoadingState(holder.container);
-            holder.container.animate().cancel();
-            holder.container.removeAllViews();
+            clearPlanPageHolder(holder);
             holder.boundContextVersion = renderContextVersion;
             holder.boundModeId = viewModeId;
             holder.boundDate = pageDate;
@@ -1643,6 +1648,16 @@ public class PlanActivity extends MzutBaseActivity {
                 holder.wasLoading = true;
                 loadPageAsync(position, pageDate, viewModeId, renderContextVersion);
             }
+        }
+
+        @Override
+        public void onViewRecycled(@NonNull PlanPageViewHolder holder) {
+            clearPlanPageHolder(holder);
+            holder.boundModeId = null;
+            holder.boundDate = null;
+            holder.boundContextVersion = -1;
+            holder.wasLoading = false;
+            super.onViewRecycled(holder);
         }
 
         @Override
@@ -1908,6 +1923,17 @@ public class PlanActivity extends MzutBaseActivity {
             super(container);
             this.container = container;
         }
+    }
+
+    private void clearPlanPageHolder(@NonNull PlanPageViewHolder holder) {
+        FrameLayout container = holder.container;
+        if (container == null) {
+            return;
+        }
+        cancelPlanPageLoadingState(container);
+        container.animate().cancel();
+        container.clearAnimation();
+        container.removeAllViews();
     }
 
     private void loadPageAsync(int position, LocalDate date, String modeId, int renderContextVersion) {
@@ -3431,29 +3457,8 @@ public class PlanActivity extends MzutBaseActivity {
     }
 
     private View createEventView(PlanRepository.PlanEventUi ev, LocalDate eventDate) {
-        TextView tv = new TextView(this);
-        tv.setTag(ev);
-
-        String time = ev.startStr + " - " + ev.endStr;
-        StringBuilder sb = new StringBuilder();
-        sb.append(ev.title != null ? ev.title : "");
-        sb.append("\n");
-        sb.append(time);
-        if (ev.room != null && !ev.room.isEmpty()) {
-            sb.append(" - ").append(ev.room);
-        }
-        if (ev.group != null && !ev.group.isEmpty()) {
-            sb.append(" - ").append(ev.group);
-        }
-
-        tv.setText(sb.toString());
-        tv.setTextSize(11f);
-        tv.setTextColor(ThemeManager.resolveColor(this, R.attr.mzPlanEventTextColor));
-        tv.setPadding(dpToPx(4), dpToPx(3), dpToPx(4), dpToPx(3));
-        tv.setClickable(true);
-
-        tv.setClickable(true);
-
+        PlanEventBlockView eventView = new PlanEventBlockView(this);
+        eventView.setTag(ev);
         int color = ThemeManager.resolveEventColor(this, ev.typeClass);
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(color);
@@ -3461,35 +3466,31 @@ public class PlanActivity extends MzutBaseActivity {
 
         int danger = ThemeManager.resolveColor(this, R.attr.mzDanger);
         int dangerSoft = ThemeManager.resolveColor(this, R.attr.mzDangerSoft);
+        int textColor = ThemeManager.resolveColor(this, R.attr.mzPlanEventTextColor);
 
         // Handle custom event overlay (exam/test on top of official event)
-        if (ev.hasCustomOverlay && ev.customOverlayLabel != null) {
-            // Add red/orange stroke for events with custom overlay
+        if (ev.hasCustomOverlay && !TextUtils.isEmpty(ev.customOverlayLabel)) {
             bg.setStroke(dpToPx(3), danger);
-
-            // Prepend the overlay label to text
-            sb.insert(0, ev.customOverlayLabel + "\n");
-            tv.setText(sb.toString());
-            tv.setTextColor(danger);
+            textColor = danger;
         }
 
         // Handle standalone custom events (not matching any official event)
         if (ev.isCustomEvent) {
-            // Use a distinct background for custom events
             bg.setColor(dangerSoft);
             bg.setStroke(dpToPx(2), danger);
-            tv.setTextColor(danger);
+            textColor = danger;
         }
 
-        tv.setBackground(bg);
+        List<String> displayLines = buildEventDisplayLines(ev);
+        eventView.bind(displayLines, textColor, bg, buildEventContentDescription(displayLines));
 
         FrameLayoutWithChildren.LayoutParams lp = new FrameLayoutWithChildren.LayoutParams(
                 FrameLayoutWithChildren.LayoutParams.MATCH_PARENT,
                 FrameLayoutWithChildren.LayoutParams.WRAP_CONTENT);
-        tv.setLayoutParams(lp);
+        eventView.setLayoutParams(lp);
 
-        tv.setOnClickListener(v -> showEventDetails(ev, eventDate));
-        return tv;
+        eventView.setOnClickListener(v -> showEventDetails(ev, eventDate));
+        return eventView;
     }
 
     private void showEventDetails(PlanRepository.PlanEventUi ev, LocalDate eventDate) {
@@ -3501,6 +3502,191 @@ public class PlanActivity extends MzutBaseActivity {
             performSearch(categoryKey, categoryLabel, query);
         });
         dialog.show(getSupportFragmentManager(), "mark_custom_event");
+    }
+
+    private List<String> buildEventDisplayLines(PlanRepository.PlanEventUi ev) {
+        List<String> lines = new ArrayList<>(4);
+        if (ev == null) {
+            return lines;
+        }
+        appendEventLine(lines, ev.hasCustomOverlay ? ev.customOverlayLabel : null);
+        appendEventLine(lines, ev.title);
+
+        String start = safe(ev.startStr);
+        String end = safe(ev.endStr);
+        if (!start.isEmpty() || !end.isEmpty()) {
+            appendEventLine(lines, start.isEmpty() || end.isEmpty() ? start + end : start + " - " + end);
+        }
+
+        String room = safe(ev.room);
+        String group = safe(ev.group);
+        if (!room.isEmpty() || !group.isEmpty()) {
+            appendEventLine(lines, room.isEmpty() ? group : (group.isEmpty() ? room : room + " • " + group));
+        }
+        return lines;
+    }
+
+    private CharSequence buildEventContentDescription(List<String> lines) {
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            if (TextUtils.isEmpty(line)) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
+            sb.append(line);
+        }
+        return sb.toString();
+    }
+
+    private void appendEventLine(List<String> lines, String value) {
+        String normalized = safe(value);
+        if (!normalized.isEmpty()) {
+            lines.add(normalized);
+        }
+    }
+
+    private class PlanEventBlockView extends View {
+        private final TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final List<String> sourceLines = new ArrayList<>(4);
+        private final List<String> renderedLines = new ArrayList<>(4);
+        private final int horizontalPaddingPx = dpToPx(4);
+        private final int verticalPaddingPx = dpToPx(3);
+        private final int lineHeightPx;
+        private boolean linesDirty = true;
+
+        PlanEventBlockView(Context context) {
+            super(context);
+            textPaint.setTextSize(TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_SP,
+                    11f,
+                    getResources().getDisplayMetrics()));
+            Paint.FontMetricsInt metrics = textPaint.getFontMetricsInt();
+            lineHeightPx = Math.max(dpToPx(12), metrics.descent - metrics.ascent + dpToPx(1));
+        }
+
+        void bind(List<String> lines, int textColor, GradientDrawable background, CharSequence contentDescription) {
+            sourceLines.clear();
+            if (lines != null) {
+                sourceLines.addAll(lines);
+            }
+            textPaint.setColor(textColor);
+            setBackground(background);
+            setContentDescription(contentDescription);
+            linesDirty = true;
+            invalidate();
+        }
+
+        @Override
+        protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+            super.onSizeChanged(w, h, oldw, oldh);
+            if (w != oldw || h != oldh) {
+                linesDirty = true;
+            }
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            if (sourceLines.isEmpty()) {
+                return;
+            }
+
+            ensureRenderedLines();
+            if (renderedLines.isEmpty()) {
+                return;
+            }
+
+            Paint.FontMetrics metrics = textPaint.getFontMetrics();
+            float baseline = verticalPaddingPx - metrics.top;
+            for (int i = 0; i < renderedLines.size(); i++) {
+                if (baseline > getHeight() - verticalPaddingPx + lineHeightPx) {
+                    break;
+                }
+                canvas.drawText(renderedLines.get(i), horizontalPaddingPx, baseline, textPaint);
+                baseline += lineHeightPx;
+            }
+        }
+
+        private void ensureRenderedLines() {
+            if (!linesDirty) {
+                return;
+            }
+            linesDirty = false;
+            renderedLines.clear();
+
+            int availableWidth = getWidth() - horizontalPaddingPx * 2;
+            int availableHeight = getHeight() - verticalPaddingPx * 2;
+            if (availableWidth <= 0 || availableHeight <= 0) {
+                return;
+            }
+
+            int maxLines = Math.max(1, availableHeight / lineHeightPx);
+            for (int lineIndex = 0; lineIndex < sourceLines.size(); lineIndex++) {
+                String remaining = safe(sourceLines.get(lineIndex));
+                if (remaining.isEmpty()) {
+                    continue;
+                }
+                while (!remaining.isEmpty()) {
+                    if (renderedLines.size() >= maxLines - 1) {
+                        renderedLines.add(TextUtils.ellipsize(
+                                buildTrailingText(lineIndex, remaining),
+                                textPaint,
+                                availableWidth,
+                                TextUtils.TruncateAt.END).toString());
+                        return;
+                    }
+
+                    int count = textPaint.breakText(remaining, true, availableWidth, null);
+                    if (count <= 0) {
+                        return;
+                    }
+                    int split = findWrapPosition(remaining, count);
+                    String chunk = remaining.substring(0, split).trim();
+                    if (chunk.isEmpty()) {
+                        chunk = remaining.substring(0, Math.min(remaining.length(), count)).trim();
+                        split = Math.min(remaining.length(), count);
+                    }
+                    if (!chunk.isEmpty()) {
+                        renderedLines.add(chunk);
+                    }
+                    remaining = remaining.substring(Math.min(split, remaining.length())).trim();
+                    if (renderedLines.size() >= maxLines) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        private CharSequence buildTrailingText(int lineIndex, String currentRemainder) {
+            StringBuilder sb = new StringBuilder(currentRemainder);
+            for (int i = lineIndex + 1; i < sourceLines.size(); i++) {
+                String next = safe(sourceLines.get(i));
+                if (next.isEmpty()) {
+                    continue;
+                }
+                if (sb.length() > 0) {
+                    sb.append(" • ");
+                }
+                sb.append(next);
+            }
+            return sb;
+        }
+
+        private int findWrapPosition(String text, int maxChars) {
+            int limit = Math.min(text.length(), Math.max(1, maxChars));
+            if (limit >= text.length()) {
+                return text.length();
+            }
+            for (int i = limit; i > 0; i--) {
+                char c = text.charAt(i - 1);
+                if (Character.isWhitespace(c) || c == '-' || c == '/' || c == '•') {
+                    return i;
+                }
+            }
+            return limit;
+        }
     }
 
     private String formatDayHeader(LocalDate date) {
