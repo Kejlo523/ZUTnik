@@ -44,7 +44,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class AboutActivity extends AppCompatActivity {
+public class AboutActivity extends PhoneAwareActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {

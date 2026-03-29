@@ -16,7 +16,6 @@ import android.widget.TextView;
 
 import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -25,7 +24,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
  * Base Activity that handles the offline indicator bar.
  * It injects the indicator into the root view and monitors network status.
  */
-public abstract class MzutBaseActivity extends AppCompatActivity {
+public abstract class MzutBaseActivity extends PhoneAwareActivity {
 
     private TextView offlineIndicator;
     private NetworkStatusHelper networkStatusHelper;

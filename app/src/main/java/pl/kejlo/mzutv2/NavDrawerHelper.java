@@ -42,6 +42,7 @@ public class NavDrawerHelper {
     public enum Screen {
         HOME("home"),
         INFO("info"),
+        FINANCE("finance"),
         PLAN("plan"),
         GRADES("grades"),
         ATTENDANCE("attendance"),
@@ -91,7 +92,7 @@ public class NavDrawerHelper {
     /**
      * Legacy overload.
      * Sets up navigation drawer for the given screen.
-     * currentScreen: "home", "info", "plan", "grades", "news", "about", "useful"
+     * currentScreen: "home", "info", "finance", "plan", "grades", "news", "about", "useful"
      */
     @SuppressLint("StringFormatInvalid")
     public static void setupNavigation(
@@ -120,6 +121,7 @@ public class NavDrawerHelper {
         TextView navLinkGrades = navigationView.findViewById(R.id.navLinkGrades);
         TextView navLinkAttendance = navigationView.findViewById(R.id.navLinkAttendance);
         TextView navLinkInfo = navigationView.findViewById(R.id.navLinkInfo);
+        TextView navLinkFinance = navigationView.findViewById(R.id.navLinkFinance);
         TextView navLinkNews = navigationView.findViewById(R.id.navLinkNews);
         TextView navLinkUseful = navigationView.findViewById(R.id.navLinkUsefull);
         TextView navLinkAbout = navigationView.findViewById(R.id.navLinkAbout);
@@ -172,6 +174,9 @@ public class NavDrawerHelper {
             } else if (id == R.id.navLinkInfo) {
                 targetScreen = Screen.INFO;
                 targetActivity = InfoActivity.class;
+            } else if (id == R.id.navLinkFinance) {
+                targetScreen = Screen.FINANCE;
+                targetActivity = FinanceActivity.class;
             } else if (id == R.id.navLinkPlan) {
                 targetScreen = Screen.PLAN;
                 targetActivity = PlanActivity.class;
@@ -236,6 +241,9 @@ public class NavDrawerHelper {
         navLinkGrades.setOnClickListener(listener);
         navLinkAttendance.setOnClickListener(listener);
         navLinkInfo.setOnClickListener(listener);
+        if (navLinkFinance != null) {
+            navLinkFinance.setOnClickListener(listener);
+        }
         navLinkNews.setOnClickListener(listener);
         navLinkUseful.setOnClickListener(listener);
         navLinkAbout.setOnClickListener(listener);

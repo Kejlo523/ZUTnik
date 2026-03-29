@@ -66,7 +66,7 @@ import android.widget.Toast;
  * - RecyclerView @+id/listLinks
  * - TextView @+id/tvLinksEmpty (optional "no data" label)
  */
-public class UsefulLinksActivity extends AppCompatActivity {
+public class UsefulLinksActivity extends PhoneAwareActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {

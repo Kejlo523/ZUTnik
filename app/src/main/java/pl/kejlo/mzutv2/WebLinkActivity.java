@@ -25,7 +25,7 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-public class WebLinkActivity extends AppCompatActivity {
+public class WebLinkActivity extends PhoneAwareActivity {
 
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_URL = "url";
