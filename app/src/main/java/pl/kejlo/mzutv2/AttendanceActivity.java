@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-public class AttendanceActivity extends AppCompatActivity {
+public class AttendanceActivity extends PhoneAwareActivity {
 
     private DrawerLayout drawerLayout;
     private LinearLayout drawerContentRoot;

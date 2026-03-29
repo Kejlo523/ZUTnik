@@ -23,6 +23,7 @@ public final class CachePolicy {
     // Secondary content
     public static final long NEWS_TTL_MS = 4L * HOUR_MS;
     public static final long ABOUT_STATS_TTL_MS = 12L * HOUR_MS;
+    public static final long FINANCE_TTL_MS = 4L * HOUR_MS;
 
     // Plan-related caches
     public static final long PLAN_FILTER_TTL_MS = 12L * HOUR_MS;

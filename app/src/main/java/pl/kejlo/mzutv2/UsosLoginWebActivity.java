@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
  *   i.putExtra(EXTRA_AUTH_URL, authorizationUrl);
  *   startActivity(i);
  */
-public class UsosLoginWebActivity extends AppCompatActivity {
+public class UsosLoginWebActivity extends PhoneAwareActivity {
 
     public static final String EXTRA_AUTH_URL = "usos_auth_url";
 

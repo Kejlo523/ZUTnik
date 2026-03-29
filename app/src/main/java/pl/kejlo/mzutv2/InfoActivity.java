@@ -82,9 +82,9 @@ public class InfoActivity extends MzutBaseActivity {
     private ArrayAdapter<String> studiesAdapter;
     private AdapterView.OnItemSelectedListener studiesSpinnerListener;
 
-    // USOS Payments
-    private View cardUsosPayments;
-    private LinearLayout usosPaymentsContainer;
+    // Payments
+    private View cardPayments;
+    private LinearLayout paymentsContainer;
     private ImageView btnPaymentsRefresh;
 
     // endregion
@@ -95,6 +95,7 @@ public class InfoActivity extends MzutBaseActivity {
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     private java.util.concurrent.Future<?> currentInfoFuture;
+    private java.util.concurrent.Future<?> currentPaymentsFuture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,9 +147,12 @@ public class InfoActivity extends MzutBaseActivity {
         progress = findViewById(R.id.infoProgress);
         infoContentRoot = findViewById(R.id.infoContent);
         spinnerStudies = findViewById(R.id.spinnerStudies);
-        cardUsosPayments = findViewById(R.id.cardUsosPayments);
-        usosPaymentsContainer = findViewById(R.id.usosPaymentsContainer);
+        cardPayments = findViewById(R.id.cardPayments);
+        paymentsContainer = findViewById(R.id.paymentsContainer);
         btnPaymentsRefresh = findViewById(R.id.btnPaymentsRefresh);
+        if (cardPayments != null) {
+            cardPayments.setVisibility(View.GONE);
+        }
 
         // Session & basic user info
         MzutSession session = MzutSession.getInstance();
@@ -178,23 +182,9 @@ public class InfoActivity extends MzutBaseActivity {
         }
 
         if (session.isUsosLogin()) {
-            // ── USOS mode: show album from session, load payments ────────────────
+            // ── USOS mode: show album from session ──────────────────────────────
             String sn = session.getStudentNumber();
             setOrHide(tvAlbum, sn);
-
-            if (cardUsosPayments != null) {
-                cardUsosPayments.setVisibility(View.VISIBLE);
-            }
-            loadUsosPayments();
-
-            if (btnPaymentsRefresh != null) {
-                btnPaymentsRefresh.setOnClickListener(v -> loadUsosPayments());
-            }
-            if (btnInfoRefresh != null) {
-                btnInfoRefresh.setOnClickListener(v -> loadUsosPayments());
-            }
-        } else if (cardUsosPayments != null) {
-            cardUsosPayments.setVisibility(View.GONE);
         }
 
         // ── Shared load logic for study details ─────────────────────────────
@@ -207,45 +197,75 @@ public class InfoActivity extends MzutBaseActivity {
         }
         
         if (btnInfoRefresh != null) {
-            btnInfoRefresh.setOnClickListener(v -> {
-                startInfoLoad(true);
-                if (session.isUsosLogin()) {
-                    loadUsosPayments();
-                }
-            });
+            btnInfoRefresh.setOnClickListener(v -> startInfoLoad(true));
         }
 
     }
 
-    // region USOS Payments
+    // region Payments
 
     private void loadUsosPayments() {
-        if (usosPaymentsContainer == null) return;
-        usosPaymentsContainer.removeAllViews();
+        if (paymentsContainer == null) return;
+        cancelPaymentsLoadIfRunning();
+        paymentsContainer.removeAllViews();
         addPaymentTextView(getString(R.string.info_sync_in_progress), true);
 
-        executor.execute(() -> {
+        currentPaymentsFuture = executor.submit(() -> {
             try {
                 JSONArray resp = UsosApi.getArray("services/payments/user_payments", null);
-                handler.post(() -> bindPayments(resp));
+                handler.post(() -> bindUsosPayments(resp));
             } catch (Exception e) {
                 android.util.Log.e("InfoActivity", "Payments error", e);
                 String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
                 handler.post(() -> {
-                    if (usosPaymentsContainer == null) return;
-                    usosPaymentsContainer.removeAllViews();
-                    addPaymentTextView(getString(R.string.info_usos_payment_error, msg), true);
+                    if (paymentsContainer == null) return;
+                    paymentsContainer.removeAllViews();
+                    addPaymentTextView(getString(R.string.info_payment_error, msg), true);
                 });
             }
         });
     }
 
-    private void bindPayments(JSONArray items) {
-        if (usosPaymentsContainer == null) return;
-        usosPaymentsContainer.removeAllViews();
+    private void loadLegacyPayments(boolean forceRefreshStudies) {
+        if (paymentsContainer == null) return;
+        cancelPaymentsLoadIfRunning();
+        paymentsContainer.removeAllViews();
+        addPaymentTextView(getString(R.string.info_sync_in_progress), true);
+
+        currentPaymentsFuture = executor.submit(() -> {
+            try {
+                LegacyPaymentRepository repo = new LegacyPaymentRepository();
+                List<LegacyPaymentRepository.LegacyPayment> items =
+                        repo.loadPaymentsForActiveStudy(forceRefreshStudies);
+                final String finalScopeKey = getActiveStudyCacheScopeKey();
+                handler.post(() -> {
+                    if (finalScopeKey != null && !finalScopeKey.equals(getActiveStudyCacheScopeKey())) {
+                        return;
+                    }
+                    bindLegacyPayments(items);
+                });
+            } catch (Exception e) {
+                android.util.Log.e("InfoActivity", "Legacy payments error", e);
+                String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                final String finalScopeKey = getActiveStudyCacheScopeKey();
+                handler.post(() -> {
+                    if (finalScopeKey != null && !finalScopeKey.equals(getActiveStudyCacheScopeKey())) {
+                        return;
+                    }
+                    if (paymentsContainer == null) return;
+                    paymentsContainer.removeAllViews();
+                    addPaymentTextView(getString(R.string.info_payment_error, msg), true);
+                });
+            }
+        });
+    }
+
+    private void bindUsosPayments(JSONArray items) {
+        if (paymentsContainer == null) return;
+        paymentsContainer.removeAllViews();
 
         if (items == null || items.length() == 0) {
-            addPaymentTextView(getString(R.string.info_usos_no_payments), true);
+            addPaymentTextView(getString(R.string.info_no_payments), true);
             return;
         }
 
@@ -259,14 +279,13 @@ public class InfoActivity extends MzutBaseActivity {
                 title = extractLocalizedOrString(item, "title");
             }
             if (title == null || title.isEmpty()) {
-                title = item.optString("id", "Płatność " + (i + 1));
+                title = item.optString("id", getString(R.string.info_payment_title_fallback, i + 1));
             }
 
             String amount = item.optString("amount", null);
             String dueDate = item.optString("due_date", null);
 
-            // Status: may be {"symbol":"paid","name":{...}} or plain string
-            String statusSymbol = null;
+            String statusSymbol;
             JSONObject statusObj = item.optJSONObject("status");
             if (statusObj != null) {
                 statusSymbol = statusObj.optString("symbol", null);
@@ -276,27 +295,64 @@ public class InfoActivity extends MzutBaseActivity {
             boolean isPaid = "paid".equalsIgnoreCase(statusSymbol)
                     || "1".equals(statusSymbol) || Boolean.TRUE.equals(item.opt("is_paid"));
 
-            StringBuilder sb = new StringBuilder(title);
+            List<String> lines = new ArrayList<>();
             if (amount != null && !amount.isEmpty()) {
-                sb.append("\n").append(getString(R.string.info_usos_payment_amount, amount));
+                lines.add(getString(R.string.info_usos_payment_amount, amount));
             }
             if (dueDate != null && !dueDate.isEmpty()) {
-                sb.append("\n").append(getString(R.string.info_usos_payment_due, dueDate));
+                lines.add(getString(R.string.info_usos_payment_due, dueDate));
             }
-            sb.append("\n").append(isPaid
+            lines.add(isPaid
                     ? getString(R.string.info_usos_payment_status_paid)
                     : getString(R.string.info_usos_payment_status_unpaid));
 
-            addPaymentTextView(sb.toString(), false);
+            addPaymentItemView(title, lines);
+            addPaymentDividerIfNeeded(i, items.length());
+        }
+    }
 
-            // Divider between items
-            if (i < items.length() - 1) {
-                View divider = new View(this);
-                divider.setLayoutParams(new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, 1));
-                divider.setBackgroundColor(ThemeManager.resolveColor(this, R.attr.mzMuted) & 0x40FFFFFF);
-                usosPaymentsContainer.addView(divider);
+    private void bindLegacyPayments(List<LegacyPaymentRepository.LegacyPayment> items) {
+        if (paymentsContainer == null) return;
+        paymentsContainer.removeAllViews();
+
+        if (items == null || items.isEmpty()) {
+            addPaymentTextView(getString(R.string.info_no_payments), true);
+            return;
+        }
+
+        for (int i = 0; i < items.size(); i++) {
+            LegacyPaymentRepository.LegacyPayment item = items.get(i);
+            if (item == null) {
+                continue;
             }
+
+            String title = item.name;
+            if (title == null || title.trim().isEmpty()) {
+                title = getString(R.string.info_payment_title_fallback, i + 1);
+            }
+
+            List<String> lines = new ArrayList<>();
+            if (item.chargeAmount != null) {
+                lines.add(getString(R.string.info_payment_amount, item.chargeAmount));
+            }
+            if (item.paidAmount != null) {
+                lines.add(getString(R.string.info_payment_paid, item.paidAmount));
+            }
+            if (item.dueDate != null) {
+                lines.add(getString(R.string.info_payment_due, item.dueDate));
+            }
+            if (item.paidDate != null) {
+                lines.add(getString(R.string.info_payment_paid_date, item.paidDate));
+            }
+            if (item.balance != null) {
+                lines.add(getString(R.string.info_payment_balance, item.balance));
+            }
+            if (item.account != null) {
+                lines.add(getString(R.string.info_payment_account, item.account));
+            }
+
+            addPaymentItemView(title, lines);
+            addPaymentDividerIfNeeded(i, items.size());
         }
     }
 
@@ -311,14 +367,80 @@ public class InfoActivity extends MzutBaseActivity {
     }
 
     private void addPaymentTextView(String text, boolean muted) {
-        if (usosPaymentsContainer == null) return;
+        if (paymentsContainer == null) return;
         TextView tv = new TextView(this);
         tv.setText(text);
         tv.setTextSize(13f);
         int padV = dpToPx(8);
         tv.setPadding(0, padV, 0, padV);
         tv.setTextColor(ThemeManager.resolveColor(this, muted ? R.attr.mzMuted : R.attr.mzText));
-        usosPaymentsContainer.addView(tv);
+        paymentsContainer.addView(tv);
+    }
+
+    private void addPaymentItemView(String title, List<String> lines) {
+        if (paymentsContainer == null) return;
+
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        itemLayout.setOrientation(LinearLayout.VERTICAL);
+        int padV = dpToPx(8);
+        itemLayout.setPadding(0, padV, 0, padV);
+
+        TextView titleView = new TextView(this);
+        titleView.setText(title);
+        titleView.setTextSize(14f);
+        titleView.setTextColor(ThemeManager.resolveColor(this, R.attr.mzText));
+        titleView.setTypeface(titleView.getTypeface(), android.graphics.Typeface.BOLD);
+        itemLayout.addView(titleView);
+
+        String detailsText = joinLines(lines);
+        if (!detailsText.isEmpty()) {
+            TextView detailsView = new TextView(this);
+            detailsView.setText(detailsText);
+            detailsView.setTextSize(12f);
+            detailsView.setPadding(0, dpToPx(4), 0, 0);
+            detailsView.setTextColor(ThemeManager.resolveColor(this, R.attr.mzMuted));
+            itemLayout.addView(detailsView);
+        }
+
+        paymentsContainer.addView(itemLayout);
+    }
+
+    private void addPaymentDividerIfNeeded(int index, int totalCount) {
+        if (paymentsContainer == null || index >= totalCount - 1) {
+            return;
+        }
+        View divider = new View(this);
+        divider.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 1));
+        divider.setBackgroundColor(ThemeManager.resolveColor(this, R.attr.mzMuted) & 0x40FFFFFF);
+        paymentsContainer.addView(divider);
+    }
+
+    private String joinLines(List<String> lines) {
+        if (lines == null || lines.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            if (line == null || line.trim().isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append(line);
+        }
+        return sb.toString();
+    }
+
+    private void cancelPaymentsLoadIfRunning() {
+        if (currentPaymentsFuture != null) {
+            currentPaymentsFuture.cancel(true);
+            currentPaymentsFuture = null;
+        }
     }
 
     // endregion
@@ -341,8 +463,6 @@ public class InfoActivity extends MzutBaseActivity {
     private void executeLoadInfoTask(boolean forceRefreshStudies) {
         progress.setVisibility(View.VISIBLE);
         infoContentRoot.setAlpha(0.3f);
-        final String expectedScopeKey = getActiveStudyCacheScopeKey();
-
         currentInfoFuture = executor.submit(() -> {
             StudiesInfoRepository.StudyDetails details = null;
             List<StudiesInfoRepository.StudyHistoryItem> history = null;
@@ -364,11 +484,12 @@ public class InfoActivity extends MzutBaseActivity {
             final List<StudiesInfoRepository.StudyHistoryItem> finalHistory = history;
             final Exception finalError = error;
             final boolean finalSuccess = success;
+            final String finalScopeKey = getActiveStudyCacheScopeKey();
 
             handler.post(() -> {
                 progress.setVisibility(View.GONE);
                 infoContentRoot.setAlpha(1f);
-                if (!expectedScopeKey.equals(getActiveStudyCacheScopeKey())) {
+                if (finalScopeKey != null && !finalScopeKey.equals(getActiveStudyCacheScopeKey())) {
                     return;
                 }
 

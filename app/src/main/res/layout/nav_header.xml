@@ -172,6 +172,25 @@
                 android:textSize="14sp" />
 
             <TextView
+                android:id="@+id/navLinkFinance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_nav_item"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-medium"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="10dp"
+                android:text="@string/finance_title"
+                android:textColor="?attr/mzText"
+                android:textSize="14sp" />
+
+            <TextView
                 android:id="@+id/navLinkNews"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

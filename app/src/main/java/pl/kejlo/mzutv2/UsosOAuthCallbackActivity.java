@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
  *   ↓
  *   HomeActivity (on success) or LoginActivity (on failure)
  */
-public class UsosOAuthCallbackActivity extends AppCompatActivity {
+public class UsosOAuthCallbackActivity extends PhoneAwareActivity {
 
     private static final String TAG = "UsosOAuthCallback";
 

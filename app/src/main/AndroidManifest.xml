@@ -52,6 +52,8 @@
 
         <activity android:name=".InfoActivity" />
 
+        <activity android:name=".FinanceActivity" />
+
         <activity android:name=".GradesActivity" />
 
         <activity android:name=".AttendanceActivity" />

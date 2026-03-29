@@ -26,7 +26,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends PhoneAwareActivity {
 
     private Spinner spinnerLanguage;
     private SwitchMaterial switchNotifMaster;

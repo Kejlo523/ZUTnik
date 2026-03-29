@@ -23,7 +23,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.util.Locale;
 
-public class NewsDetailActivity extends AppCompatActivity {
+public class NewsDetailActivity extends PhoneAwareActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {

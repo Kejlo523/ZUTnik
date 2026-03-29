@@ -428,9 +428,9 @@
                         android:orientation="vertical" />
                 </LinearLayout>
 
-                <!-- USOS Payments section – visible only for USOS login -->
+                <!-- Payments section – visible for both USOS and legacy mZUT logins -->
                 <LinearLayout
-                    android:id="@+id/cardUsosPayments"
+                    android:id="@+id/cardPayments"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
@@ -450,7 +450,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="@string/info_usos_finance_title"
+                            android:text="@string/info_finance_title"
                             android:textColor="?attr/mzText"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -467,7 +467,7 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:id="@+id/usosPaymentsContainer"
+                        android:id="@+id/paymentsContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical" />
