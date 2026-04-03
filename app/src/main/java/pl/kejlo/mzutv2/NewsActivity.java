@@ -37,7 +37,6 @@ public class NewsActivity extends MzutBaseActivity {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
 
-    // Cache
     private static final String PREFS_NEWS_CACHE = "mzut_news_cache";
     private static final String KEY_NEWS_LIST_JSON = "news_list_json";
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
@@ -105,21 +104,18 @@ public class NewsActivity extends MzutBaseActivity {
 
         listNews.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new NewsAdapter(this, items);
+        adapter = new NewsAdapter(this);
         listNews.setAdapter(adapter);
         setRefreshing(false);
 
-        // 1) Try to show cached data
         loadNewsFromCacheIfAvailable();
         updateNewsInfo(getCacheTimestamp());
         checkAutoOpen();
 
-        // 2) If cache is missing or outdated, fetch from network
         if (shouldFetchFromNetwork()) {
             startLoadNews(false);
         }
 
-        // 3) Manual refresh – always forces a network fetch
         if (btnNewsRefresh != null) {
             btnNewsRefresh.setOnClickListener(v -> {
                 Toast.makeText(
@@ -133,7 +129,7 @@ public class NewsActivity extends MzutBaseActivity {
 
     private void checkAutoOpen() {
         if (openLatestOnLoad && !items.isEmpty()) {
-            openLatestOnLoad = false; // Consume
+            openLatestOnLoad = false;
             NewsItem item = items.get(0);
             Intent i = new Intent(this, NewsDetailActivity.class);
             i.putExtra("title", item.title);
@@ -145,27 +141,15 @@ public class NewsActivity extends MzutBaseActivity {
         }
     }
 
-    // Start loading
-
     private void startLoadNews(boolean forceReload) {
         if (currentNewsFuture != null) {
             currentNewsFuture.cancel(true);
         }
 
         if (forceReload) {
-            // Clear cache immediately
-            getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE)
-                    .edit()
-                    .remove(KEY_NEWS_LIST_JSON)
-                    .remove(KEY_NEWS_TIMESTAMP)
-                    .apply();
-
-            // Clear items from adapter to visual feedback of reload
-            items.clear();
-            adapter.notifyDataSetChanged();
+            clearNewsCache();
+            renderNewsItems(null);
             updateNewsInfo(0L);
-
-            // Also suggest clearing image cache if desired
             ImageCache.getInstance().clear();
         }
 
@@ -198,9 +182,7 @@ public class NewsActivity extends MzutBaseActivity {
                 setRefreshing(false);
 
                 if (!finalSuccess || finalLoaded == null) {
-                    if (items.isEmpty()) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                    }
+                    syncEmptyState();
                     if (finalError != null) {
                         String msg = finalError.getMessage() != null ? finalError.getMessage() : "";
                         Toast.makeText(
@@ -211,25 +193,13 @@ public class NewsActivity extends MzutBaseActivity {
                     return;
                 }
 
-                items.clear();
-                items.addAll(finalLoaded);
-                adapter.notifyDataSetChanged();
-
-                if (items.isEmpty()) {
-                    tvEmpty.setVisibility(View.VISIBLE);
-                } else {
-                    tvEmpty.setVisibility(View.GONE);
-                }
-
-                // Save to cache after successful fetch
+                renderNewsItems(finalLoaded);
                 saveNewsToCache(finalLoaded);
                 updateNewsInfo(getCacheTimestamp());
                 checkAutoOpen();
             });
         });
     }
-
-    // Cache logic
 
     private boolean shouldFetchFromNetwork() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE);
@@ -265,7 +235,7 @@ public class NewsActivity extends MzutBaseActivity {
                     now,
                     DateUtils.MINUTE_IN_MILLIS);
         }
-        tvInfo.setText(baseInfo + " \u2022 " + relative);
+        tvInfo.setText(getString(R.string.news_header_source_info_with_time, baseInfo, relative));
     }
 
     private void setRefreshing(boolean refreshing) {
@@ -274,7 +244,7 @@ public class NewsActivity extends MzutBaseActivity {
         }
 
         btnNewsRefresh.setEnabled(!refreshing);
-        btnNewsRefresh.setAlpha(0.6f);
+        btnNewsRefresh.setAlpha(refreshing ? 0.6f : 1f);
     }
 
     private void loadNewsFromCacheIfAvailable() {
@@ -286,7 +256,7 @@ public class NewsActivity extends MzutBaseActivity {
 
         try {
             JSONArray arr = new JSONArray(json);
-            items.clear();
+            List<NewsItem> cachedItems = new ArrayList<>();
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject obj = arr.optJSONObject(i);
                 if (obj == null) {
@@ -305,18 +275,10 @@ public class NewsActivity extends MzutBaseActivity {
                 ni.contentHtml = obj.optString("contentHtml", null);
                 ni.thumbUrl = obj.optString("thumbUrl", null);
 
-                items.add(ni);
+                cachedItems.add(ni);
             }
-            adapter.notifyDataSetChanged();
-
-            if (items.isEmpty()) {
-                tvEmpty.setVisibility(View.VISIBLE);
-            } else {
-                tvEmpty.setVisibility(View.GONE);
-            }
-
+            renderNewsItems(cachedItems);
         } catch (JSONException e) {
-            // Ignore cache on error
         }
     }
 
@@ -353,8 +315,31 @@ public class NewsActivity extends MzutBaseActivity {
                     .apply();
 
         } catch (JSONException e) {
-            // Cache is optional, ignore errors
         }
+    }
+
+    private void clearNewsCache() {
+        getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE)
+                .edit()
+                .remove(KEY_NEWS_LIST_JSON)
+                .remove(KEY_NEWS_TIMESTAMP)
+                .apply();
+    }
+
+    private void renderNewsItems(List<NewsItem> newsItems) {
+        items.clear();
+        if (newsItems != null) {
+            items.addAll(newsItems);
+        }
+        adapter.replaceItems(items);
+        syncEmptyState();
+    }
+
+    private void syncEmptyState() {
+        if (tvEmpty == null) {
+            return;
+        }
+        tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     @Override

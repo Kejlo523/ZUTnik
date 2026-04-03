@@ -33,7 +33,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -291,7 +290,8 @@ public class GradesActivity extends MzutBaseActivity {
                 List<String> semNames = new ArrayList<>();
                 boolean usos = MzutSession.getInstance().isUsosLogin();
                 for (Semester s : semesters) {
-                    if (usos && s.rokAkademicki != null && s.rokAkademicki.toLowerCase().contains("semestr")) {
+                    if (usos && s.rokAkademicki != null
+                            && s.rokAkademicki.toLowerCase(Locale.ROOT).contains("semestr")) {
                         semNames.add(s.rokAkademicki);
                     } else {
                         semNames.add(
@@ -546,7 +546,8 @@ public class GradesActivity extends MzutBaseActivity {
                 List<String> semNames = new ArrayList<>();
                 boolean usos = MzutSession.getInstance().isUsosLogin();
                 for (Semester s : semesters) {
-                    if (usos && s.rokAkademicki != null && s.rokAkademicki.toLowerCase().contains("semestr")) {
+                    if (usos && s.rokAkademicki != null
+                            && s.rokAkademicki.toLowerCase(Locale.ROOT).contains("semestr")) {
                         semNames.add(s.rokAkademicki);
                     } else {
                         semNames.add(
@@ -587,7 +588,7 @@ public class GradesActivity extends MzutBaseActivity {
         Map<String, GroupedGradesAdapter.GradeGroup> map = new LinkedHashMap<>();
 
         for (Grade g : source) {
-            String subject = extractBaseSubject(g.subjectName);
+            String subject = GradesTextUtils.extractBaseSubject(g.subjectName);
             if (subject.trim().isEmpty()) {
                 continue;
             }
@@ -652,68 +653,14 @@ public class GradesActivity extends MzutBaseActivity {
         if (g == null) {
             return false;
         }
-        String type = normalizeKey(g.type);
-        if (type.contains("ocena koncowa")
-                || type.contains("koncowa")
-                || type.contains("final")
-                || type.contains("abschluss")) {
+        String type = GradesTextUtils.normalizeKey(g.type);
+        if (GradesTextUtils.hasFinalGradeMarker(type)) {
             return true;
         }
         if (type.isEmpty()) {
-            String subject = normalizeKey(g.subjectName);
-            return subject.contains("ocena koncowa")
-                    || subject.contains("koncowa")
-                    || subject.contains("final")
-                    || subject.contains("abschluss");
+            return GradesTextUtils.isFinalGradeLabel(g.subjectName);
         }
         return false;
-    }
-
-    private String extractBaseSubject(String label) {
-        if (label == null) {
-            return "";
-        }
-        String name = label.trim();
-        int parenIdx = name.lastIndexOf(" (");
-        if (parenIdx > 0 && name.endsWith(")")) {
-            name = name.substring(0, parenIdx);
-        }
-        return name.trim();
-    }
-
-    private static String normalizeKey(String value) {
-        if (value == null) {
-            return "";
-        }
-        String lower = repairMojibake(value).trim().toLowerCase(Locale.ROOT);
-        String normalized = Normalizer.normalize(lower, Normalizer.Form.NFD);
-        return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    }
-    private static String repairMojibake(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        return value
-                .replace("\u00C4\u2026", "\u0105")
-                .replace("\u00C4\u2021", "\u0107")
-                .replace("\u00C4\u2122", "\u0119")
-                .replace("\u00C5\u201A", "\u0142")
-                .replace("\u00C5\u201E", "\u0144")
-                .replace("\u00C3\u00B3", "\u00F3")
-                .replace("\u00C5\u203A", "\u015B")
-                .replace("\u00C5\u00BC", "\u017C")
-                .replace("\u00C5\u00BA", "\u017A")
-                .replace("\u00C4\u201E", "\u0104")
-                .replace("\u00C4\u2020", "\u0106")
-                .replace("\u00C4\u02DC", "\u0118")
-                .replace("\u00C5\u0081", "\u0141")
-                .replace("\u00C5\u0192", "\u0143")
-                .replace("\u00C3\u201C", "\u00D3")
-                .replace("\u00C5\u0160", "\u015A")
-                .replace("\u00C5\u00BB", "\u017B")
-                .replace("\u00C5\u00B9", "\u0179")
-                .replace("\u0139\u201A", "\u0142")
-                .replace("\u0139\u201E", "\u0144");
     }
 
     private void reloadGrades(Semester semester, boolean forceNetwork) {
@@ -801,21 +748,22 @@ public class GradesActivity extends MzutBaseActivity {
                     }
 
                     android.util.Log.e("mZUTv2-GRADES", "Failed to load grades for semester", finalError);
-                     String message = finalError.getMessage() != null ? finalError.getMessage() : "";
-                     boolean isDnsError = message.contains("Unable to resolve host");
-                     boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
-                     boolean isInterruption = finalError instanceof java.io.InterruptedIOException ||
-                                              message.toLowerCase().contains("interrupted");
+                    String message = finalError.getMessage() != null ? finalError.getMessage() : "";
+                    String normalizedMessage = message.toLowerCase(Locale.ROOT);
+                    boolean isDnsError = message.contains("Unable to resolve host");
+                    boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
+                    boolean isInterruption = finalError instanceof java.io.InterruptedIOException
+                            || normalizedMessage.contains("interrupted");
 
-                     if (isOffline || isDnsError || isInterruption) {
-                         android.util.Log.d("GradesActivity", "Suppressed toast error: " + message);
-                     } else {
-                         Toast.makeText(
-                                 GradesActivity.this,
-                                 getString(R.string.grades_error_loading_grades, message),
-                                 Toast.LENGTH_LONG).show();
-                     }
-                     showEmptyState(true);
+                    if (isOffline || isDnsError || isInterruption) {
+                        android.util.Log.d("GradesActivity", "Suppressed toast error: " + message);
+                    } else {
+                        Toast.makeText(
+                                GradesActivity.this,
+                                getString(R.string.grades_error_loading_grades, message),
+                                Toast.LENGTH_LONG).show();
+                    }
+                    showEmptyState(true);
                     updateGradesDataFreshness(false);
                     return;
                 }

@@ -148,14 +148,6 @@ public class AboutActivity extends PhoneAwareActivity {
 
         setupEasterEggHold();
     }
-
-    /*
-    private void launchInAppReview() {
-        // Disabled due to Google Play Quotas making it unreliable for a static button.
-        // Reverted to openPlayStore().
-    }
-    */
-
     private void openUrl(String url, String title) {
         try {
             Intent intent = new Intent(this, WebLinkActivity.class);

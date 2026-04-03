@@ -17,15 +17,11 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +40,9 @@ public class BackgroundSyncWorker extends Worker {
     private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v2";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v3";
     private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v3";
+    private static final String KEY_FINANCE_BASELINE_READY = "finance_baseline_ready_v1";
+    private static final String KEY_FINANCE_BASELINE_JSON = "finance_baseline_json_v1";
+    private static final String KEY_FINANCE_DUE_SENT_JSON = "finance_due_sent_json_v1";
     private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
     private static final String FILTER_CACHE_JSON_PREFIX = "plan_filters_cache_json_";
     private static final String FILTER_CACHE_TS_PREFIX = "plan_filters_cache_ts_";
@@ -54,6 +53,8 @@ public class BackgroundSyncWorker extends Worker {
 
     private static final int NOTIF_ID_GRADES = 9101;
     private static final int NOTIF_ID_PLAN = 9102;
+    private static final int NOTIF_ID_FINANCE_DUE = 9103;
+    private static final int NOTIF_ID_FINANCE_BOOKED = 9104;
     private static final int PLAN_REFRESH_THRESHOLD = 35; // 36+ changes trigger the bulk refresh alert.
     private static final long ALERT_DEDUP_WINDOW_MS = 24L * 60L * 60L * 1000L;
 
@@ -78,9 +79,9 @@ public class BackgroundSyncWorker extends Worker {
                 return Result.success();
             }
 
-            if (!isWithinAcademicNotificationWindow(context)) {
-                Log.d(TAG, "Skipping checks outside didactic/session period.");
-                return Result.success();
+            boolean withinAcademicWindow = isWithinAcademicNotificationWindow(context);
+            if (!withinAcademicWindow) {
+                Log.d(TAG, "Skipping grades and timetable checks outside didactic/session period.");
             }
 
             if (getInputData().getBoolean(INPUT_BOOTSTRAP_PREFETCH, false)) {
@@ -88,11 +89,20 @@ public class BackgroundSyncWorker extends Worker {
             }
 
             if (NotificationSyncManager.isGradesEnabled(context)) {
-                checkGrades(context);
+                if (withinAcademicWindow) {
+                    checkGrades(context);
+                }
             }
 
             if (NotificationSyncManager.isPlanEnabled(context) && NotificationSyncManager.isAnyPlanCategoryEnabled(context)) {
-                checkPlanChanges(context);
+                if (withinAcademicWindow) {
+                    checkPlanChanges(context);
+                }
+            }
+
+            if (NotificationSyncManager.isFinanceEnabled(context)
+                    && NotificationSyncManager.isAnyFinanceCategoryEnabled(context)) {
+                checkFinanceChanges(context);
             }
             return Result.success();
         } catch (SessionExpiredException expired) {
@@ -192,7 +202,7 @@ public class BackgroundSyncWorker extends Worker {
                 Log.d(TAG, "Skipping grades baseline init: no semesters loaded yet.");
                 return;
             }
-            saveGradesBaselineSet(prefs, gradesBaselineJsonKey, current.keySet());
+            saveStringSetJson(prefs, gradesBaselineJsonKey, current.keySet());
             prefs.edit().putBoolean(gradesBaselineReadyKey, true).apply();
             return;
         }
@@ -213,7 +223,7 @@ public class BackgroundSyncWorker extends Worker {
                 }
             }
             Collections.sort(lines);
-            saveGradesBaselineSet(prefs, gradesBaselineJsonKey, current.keySet());
+            saveStringSetJson(prefs, gradesBaselineJsonKey, current.keySet());
 
             String signature = buildAlertSignatureFromList(addedKeys);
             if (shouldNotifyForSignature(prefs, gradesAlertHashKey, gradesAlertTsKey, signature)) {
@@ -223,7 +233,7 @@ public class BackgroundSyncWorker extends Worker {
             return;
         }
 
-        saveGradesBaselineSet(prefs, gradesBaselineJsonKey, current.keySet());
+        saveStringSetJson(prefs, gradesBaselineJsonKey, current.keySet());
     }
 
     private void notifyGrades(Context context, int count, List<String> lines) {
@@ -258,6 +268,136 @@ public class BackgroundSyncWorker extends Worker {
             return;
         }
         NotificationManagerCompat.from(context).notify(NOTIF_ID_GRADES, builder.build());
+    }
+
+    private void checkFinanceChanges(Context context) throws Exception {
+        boolean dueEnabled = NotificationSyncManager.isFinanceDueEnabled(context);
+        boolean bookedEnabled = NotificationSyncManager.isFinanceBookedEnabled(context);
+        if (!dueEnabled && !bookedEnabled) {
+            return;
+        }
+
+        FinanceRepository repository = new FinanceRepository(context);
+        FinanceRepository.FinanceSnapshot snapshot = repository.loadPaymentsForActiveStudy(true);
+        List<FinanceRecord> currentRecords = snapshot != null && snapshot.records != null
+                ? snapshot.records
+                : Collections.emptyList();
+
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
+        String scope = NotificationSyncManager.buildCurrentSyncScope(context);
+        String financeBaselineReadyKey = NotificationSyncManager.scopedPrefKey(KEY_FINANCE_BASELINE_READY, scope);
+        String financeBaselineJsonKey = NotificationSyncManager.scopedPrefKey(KEY_FINANCE_BASELINE_JSON, scope);
+        boolean baselineReady = prefs.getBoolean(financeBaselineReadyKey, false);
+        List<FinanceRecord> previousRecords = readFinanceBaselineSnapshot(prefs, financeBaselineJsonKey);
+
+        if (dueEnabled) {
+            notifyFinanceDueReminders(context, prefs, scope, currentRecords);
+        }
+
+        if (!baselineReady) {
+            saveFinanceBaselineSnapshot(prefs, financeBaselineJsonKey, currentRecords);
+            prefs.edit().putBoolean(financeBaselineReadyKey, true).apply();
+            return;
+        }
+
+        if (bookedEnabled) {
+            List<FinanceRecord> newlyBooked = FinanceNotificationPlanner.findNewlyBooked(previousRecords, currentRecords);
+            if (!newlyBooked.isEmpty()) {
+                notifyFinanceBooked(context, newlyBooked);
+            }
+        }
+
+        saveFinanceBaselineSnapshot(prefs, financeBaselineJsonKey, currentRecords);
+    }
+
+    private void notifyFinanceDueReminders(
+            Context context,
+            SharedPreferences prefs,
+            String scope,
+            List<FinanceRecord> currentRecords) {
+        List<FinanceRecord> candidates = FinanceNotificationPlanner.findDueReminders(currentRecords, LocalDate.now());
+        String dueSentKey = NotificationSyncManager.scopedPrefKey(KEY_FINANCE_DUE_SENT_JSON, scope);
+        Set<String> sentKeys = pruneFinanceDueReminderKeys(
+                readStringSetJson(prefs.getString(dueSentKey, "[]")),
+                LocalDate.now());
+
+        List<FinanceRecord> freshReminders = new ArrayList<>();
+        for (FinanceRecord record : candidates) {
+            String reminderKey = buildFinanceDueReminderKey(record);
+            if (reminderKey.isEmpty() || !sentKeys.add(reminderKey)) {
+                continue;
+            }
+            freshReminders.add(record);
+        }
+
+        saveStringSetJson(prefs, dueSentKey, sentKeys);
+        if (!freshReminders.isEmpty()) {
+            notifyFinanceDue(context, freshReminders);
+        }
+    }
+
+    private void notifyFinanceDue(Context context, List<FinanceRecord> records) {
+        if (!NotificationSyncManager.hasNotificationPermission(context)) {
+            return;
+        }
+
+        NotificationSyncManager.ensureChannels(context);
+
+        List<String> lines = new ArrayList<>();
+        for (FinanceRecord record : records) {
+            lines.add(buildFinanceDueLine(context, record));
+        }
+
+        String title = context.getString(R.string.notif_finance_due_title);
+        String summary = context.getString(R.string.notif_finance_due_summary, records.size());
+        String bigText = buildBigText(lines, 6, summary);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationSyncManager.CHANNEL_FINANCE)
+                .setSmallIcon(R.drawable.ic_info)
+                .setContentTitle(title)
+                .setContentText(summary)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText))
+                .setAutoCancel(true)
+                .setContentIntent(buildFinancePendingIntent(context))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_FINANCE_DUE, builder.build());
+    }
+
+    private void notifyFinanceBooked(Context context, List<FinanceRecord> records) {
+        if (!NotificationSyncManager.hasNotificationPermission(context)) {
+            return;
+        }
+
+        NotificationSyncManager.ensureChannels(context);
+
+        List<String> lines = new ArrayList<>();
+        for (FinanceRecord record : records) {
+            lines.add(buildFinanceBookedLine(context, record));
+        }
+
+        String title = context.getString(R.string.notif_finance_booked_title);
+        String summary = context.getString(R.string.notif_finance_booked_summary, records.size());
+        String bigText = buildBigText(lines, 6, summary);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationSyncManager.CHANNEL_FINANCE)
+                .setSmallIcon(R.drawable.ic_check)
+                .setContentTitle(title)
+                .setContentText(summary)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText))
+                .setAutoCancel(true)
+                .setContentIntent(buildFinancePendingIntent(context))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_FINANCE_BOOKED, builder.build());
     }
 
     private void checkPlanChanges(Context context) throws IOException, org.json.JSONException {
@@ -470,6 +610,15 @@ public class BackgroundSyncWorker extends Worker {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
+    private PendingIntent buildFinancePendingIntent(Context context) {
+        Intent openIntent = new Intent(context, FinanceActivity.class);
+        return PendingIntent.getActivity(
+                context,
+                91030,
+                openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
     private PlanNotificationDiffEngine.Snapshot collectPlanNotificationSnapshot(Context context)
             throws IOException, org.json.JSONException {
         PlanRepository repo = new PlanRepository(context);
@@ -490,237 +639,43 @@ public class BackgroundSyncWorker extends Worker {
         prefs.edit().putString(storageKey, snapshot != null ? snapshot.toJsonString() : "").apply();
     }
 
-    private List<PlanSnapshotEvent> collectPlanSnapshot(Context context) throws IOException, org.json.JSONException {
-        PlanRepository repo = new PlanRepository(context);
-        LocalDate start = LocalDate.now();
-        LocalDate end = start.plusDays(13);
-
-        PlanRepository.PlanResult firstWeek = repo.loadPlan("week", start);
-        PlanRepository.PlanResult secondWeek = repo.loadPlan("week", start.plusDays(7));
-
-        Map<String, PlanSnapshotEvent> unique = new LinkedHashMap<>();
-        collectSnapshotFromResult(unique, firstWeek, start, end);
-        collectSnapshotFromResult(unique, secondWeek, start, end);
-
-        List<PlanSnapshotEvent> out = new ArrayList<>(unique.values());
-        out.sort(Comparator
-                .comparing((PlanSnapshotEvent e) -> e.date)
-                .thenComparingInt(e -> e.startMin)
-                .thenComparing(e -> e.title));
-        return out;
-    }
-
-    private void collectSnapshotFromResult(
-            Map<String, PlanSnapshotEvent> out,
-            PlanRepository.PlanResult result,
-            LocalDate start,
-            LocalDate end) {
-        if (result == null || result.dayColumns == null) {
-            return;
+    private List<FinanceRecord> readFinanceBaselineSnapshot(SharedPreferences prefs, String storageKey) {
+        List<FinanceRecord> records = new ArrayList<>();
+        String raw = prefs.getString(storageKey, "[]");
+        if (raw == null || raw.isEmpty()) {
+            return records;
         }
-        for (PlanRepository.DayColumn day : result.dayColumns) {
-            if (day == null || day.date == null || day.events == null) {
-                continue;
-            }
-            if (day.date.isBefore(start) || day.date.isAfter(end)) {
-                continue;
-            }
-            for (PlanRepository.PlanEventUi ev : day.events) {
-                if (ev == null || ev.isCustomEvent) {
+        try {
+            JSONArray arr = new JSONArray(raw);
+            for (int i = 0; i < arr.length(); i++) {
+                org.json.JSONObject item = arr.optJSONObject(i);
+                if (item == null) {
                     continue;
                 }
-                PlanSnapshotEvent snap = PlanSnapshotEvent.from(day.date, ev);
-                out.put(snap.id(), snap);
+                records.add(FinanceRecord.fromJson(item));
             }
+        } catch (Exception ignored) {
         }
+        return records;
     }
 
-    private PlanDiff diffPlan(List<PlanSnapshotEvent> previous, List<PlanSnapshotEvent> current, boolean detectMoves) {
-        PlanDiff diff = new PlanDiff();
-
-        Map<String, PlanSnapshotEvent> prevById = new HashMap<>();
-        for (PlanSnapshotEvent ev : previous) {
-            prevById.put(ev.id(), ev);
-        }
-        Map<String, PlanSnapshotEvent> curById = new HashMap<>();
-        for (PlanSnapshotEvent ev : current) {
-            curById.put(ev.id(), ev);
-        }
-
-        List<PlanSnapshotEvent> removed = new ArrayList<>();
-        for (PlanSnapshotEvent ev : previous) {
-            if (!curById.containsKey(ev.id())) {
-                removed.add(ev);
-            }
-        }
-
-        List<PlanSnapshotEvent> added = new ArrayList<>();
-        for (PlanSnapshotEvent ev : current) {
-            if (!prevById.containsKey(ev.id())) {
-                added.add(ev);
-            }
-        }
-
-        if (detectMoves && !removed.isEmpty() && !added.isEmpty()) {
-            Set<Integer> usedAdded = new HashSet<>();
-            List<PlanSnapshotEvent> remainingRemoved = new ArrayList<>();
-
-            for (PlanSnapshotEvent oldEv : removed) {
-                int bestIdx = -1;
-                int bestScore = Integer.MAX_VALUE;
-                for (int i = 0; i < added.size(); i++) {
-                    if (usedAdded.contains(i)) {
-                        continue;
-                    }
-                    PlanSnapshotEvent newEv = added.get(i);
-                    if (!oldEv.core.equals(newEv.core)) {
-                        continue;
-                    }
-                    int dayDiff = Math.abs((int) (newEv.date.toEpochDay() - oldEv.date.toEpochDay()));
-                    int timeDiff = Math.abs(newEv.startMin - oldEv.startMin);
-                    int score = dayDiff * 2000 + timeDiff;
-                    if (score < bestScore) {
-                        bestScore = score;
-                        bestIdx = i;
-                    }
+    private void saveFinanceBaselineSnapshot(
+            SharedPreferences prefs,
+            String storageKey,
+            List<FinanceRecord> records) {
+        JSONArray arr = new JSONArray();
+        if (records != null) {
+            for (FinanceRecord record : records) {
+                if (record == null) {
+                    continue;
                 }
-                if (bestIdx >= 0) {
-                    PlanSnapshotEvent newEv = added.get(bestIdx);
-                    usedAdded.add(bestIdx);
-                    if (isVisibleSlotChanged(oldEv, newEv)) {
-                        diff.moved.add(new PlanMove(oldEv, newEv));
-                    } else {
-                        Log.d(TAG, "Ignoring same-slot move noise for: " + oldEv.title);
-                    }
-                } else {
-                    remainingRemoved.add(oldEv);
+                try {
+                    arr.put(record.toJson());
+                } catch (Exception ignored) {
                 }
             }
-
-            List<PlanSnapshotEvent> remainingAdded = new ArrayList<>();
-            for (int i = 0; i < added.size(); i++) {
-                if (!usedAdded.contains(i)) {
-                    remainingAdded.add(added.get(i));
-                }
-            }
-            removed = remainingRemoved;
-            added = remainingAdded;
         }
-
-        if (!removed.isEmpty() && !added.isEmpty()) {
-            Set<Integer> usedAddedForCancelled = new HashSet<>();
-            List<PlanSnapshotEvent> remainingRemoved = new ArrayList<>();
-
-            for (PlanSnapshotEvent oldEv : removed) {
-                int matchedIdx = -1;
-                for (int i = 0; i < added.size(); i++) {
-                    if (usedAddedForCancelled.contains(i)) {
-                        continue;
-                    }
-                    PlanSnapshotEvent newEv = added.get(i);
-                    if (!isCancellationTransition(oldEv, newEv)) {
-                        continue;
-                    }
-                    matchedIdx = i;
-                    break;
-                }
-
-                if (matchedIdx >= 0) {
-                    usedAddedForCancelled.add(matchedIdx);
-                    diff.cancelled.add(added.get(matchedIdx));
-                } else {
-                    remainingRemoved.add(oldEv);
-                }
-            }
-
-            List<PlanSnapshotEvent> remainingAdded = new ArrayList<>();
-            for (int i = 0; i < added.size(); i++) {
-                if (!usedAddedForCancelled.contains(i)) {
-                    remainingAdded.add(added.get(i));
-                }
-            }
-            removed = remainingRemoved;
-            added = remainingAdded;
-        }
-
-        if (!removed.isEmpty() && !added.isEmpty()) {
-            Set<Integer> usedAddedForUpdates = new HashSet<>();
-            List<PlanSnapshotEvent> remainingRemoved = new ArrayList<>();
-
-            for (PlanSnapshotEvent oldEv : removed) {
-                int matchedIdx = -1;
-                for (int i = 0; i < added.size(); i++) {
-                    if (usedAddedForUpdates.contains(i)) {
-                        continue;
-                    }
-                    PlanSnapshotEvent newEv = added.get(i);
-                    if (!isDetailOnlyUpdate(oldEv, newEv)) {
-                        continue;
-                    }
-                    matchedIdx = i;
-                    break;
-                }
-
-                if (matchedIdx >= 0) {
-                    usedAddedForUpdates.add(matchedIdx);
-                    diff.updated.add(new PlanUpdate(oldEv, added.get(matchedIdx)));
-                } else {
-                    remainingRemoved.add(oldEv);
-                }
-            }
-
-            List<PlanSnapshotEvent> remainingAdded = new ArrayList<>();
-            for (int i = 0; i < added.size(); i++) {
-                if (!usedAddedForUpdates.contains(i)) {
-                    remainingAdded.add(added.get(i));
-                }
-            }
-            removed = remainingRemoved;
-            added = remainingAdded;
-        }
-
-        diff.removed.addAll(removed);
-        for (PlanSnapshotEvent ev : added) {
-            if (ev.cancelledType) {
-                diff.cancelled.add(ev);
-            } else {
-                diff.added.add(ev);
-            }
-        }
-
-        Comparator<PlanSnapshotEvent> byDateTime = Comparator
-                .comparing((PlanSnapshotEvent e) -> e.date)
-                .thenComparingInt(e -> e.startMin)
-                .thenComparing(e -> e.title);
-        diff.cancelled.sort(byDateTime);
-        diff.removed.sort(byDateTime);
-        diff.added.sort(byDateTime);
-        diff.moved.sort(Comparator
-                .comparing((PlanMove m) -> m.to.date)
-                .thenComparingInt(m -> m.to.startMin)
-                .thenComparing(m -> m.to.title));
-        diff.updated.sort(Comparator
-                .comparing((PlanUpdate u) -> u.to.date)
-                .thenComparingInt(u -> u.to.startMin)
-                .thenComparing(u -> u.to.title));
-
-        return diff;
-    }
-
-    private boolean isCancellationTransition(PlanSnapshotEvent oldEv, PlanSnapshotEvent newEv) {
-        if (oldEv == null || newEv == null) {
-            return false;
-        }
-        if (oldEv.cancelledType || !newEv.cancelledType) {
-            return false;
-        }
-        if (oldEv.date == null || newEv.date == null || !oldEv.date.equals(newEv.date)) {
-            return false;
-        }
-        if (oldEv.startMin != newEv.startMin || oldEv.endMin != newEv.endMin) {
-            return false;
-        }
-        return oldEv.coreNoType.equals(newEv.coreNoType);
+        prefs.edit().putString(storageKey, arr.toString()).apply();
     }
 
     private String buildGradeKey(Semester semester, Grade grade) {
@@ -847,34 +802,6 @@ public class BackgroundSyncWorker extends Worker {
                 to != null ? to.typeLabel : "");
     }
 
-    private PlanChangeHistoryStore.ChangeRecord buildHistoryRecord(
-            String type,
-            PlanSnapshotEvent from,
-            PlanSnapshotEvent to,
-            String summary,
-            long notifiedAt) {
-        String title = to != null && !safe(to.title).isEmpty() ? to.title : (from != null ? from.title : "");
-        return new PlanChangeHistoryStore.ChangeRecord(
-                type,
-                title,
-                summary,
-                notifiedAt,
-                from != null && from.date != null ? from.date.toString() : "",
-                from != null ? from.startMin : 0,
-                from != null ? from.endMin : 0,
-                from != null ? from.room : "",
-                from != null ? from.group : "",
-                from != null ? from.teacher : "",
-                from != null ? from.typeLabel : "",
-                to != null && to.date != null ? to.date.toString() : "",
-                to != null ? to.startMin : 0,
-                to != null ? to.endMin : 0,
-                to != null ? to.room : "",
-                to != null ? to.group : "",
-                to != null ? to.teacher : "",
-                to != null ? to.typeLabel : "");
-    }
-
     private String buildUpdateSummary(
             Context context,
             PlanNotificationDiffEngine.Event from,
@@ -903,29 +830,34 @@ public class BackgroundSyncWorker extends Worker {
         return sb.toString();
     }
 
-    private String buildUpdateSummary(Context context, PlanSnapshotEvent from, PlanSnapshotEvent to) {
-        List<String> changes = new ArrayList<>();
-        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_room), from.room, to.room);
-        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_group), from.group, to.group);
-        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_teacher), from.teacher, to.teacher);
-        addUpdateFieldChange(changes, context.getString(R.string.plan_change_field_type), from.typeLabel, to.typeLabel);
-
-        if (changes.isEmpty()) {
-            return context.getString(R.string.plan_change_update_generic);
+    private String buildFinanceDueLine(Context context, FinanceRecord record) {
+        String title = safe(record != null ? record.getSafeTitle() : null);
+        if (title.isEmpty()) {
+            title = context.getString(R.string.notif_finance_item_fallback);
         }
 
-        StringBuilder sb = new StringBuilder();
-        int limit = Math.min(2, changes.size());
-        for (int i = 0; i < limit; i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-            sb.append(changes.get(i));
+        String dueDate = formatDate(record != null ? record.getDueDate() : null);
+        String amount = FinanceRecord.formatMoneyText(record != null ? record.amountText : null);
+        if (amount == null || amount.isEmpty()) {
+            return context.getString(R.string.notif_finance_due_line, title, dueDate);
         }
-        if (changes.size() > limit) {
-            sb.append(", ...");
+        return context.getString(R.string.notif_finance_due_line_with_amount, title, dueDate, amount);
+    }
+
+    private String buildFinanceBookedLine(Context context, FinanceRecord record) {
+        String title = safe(record != null ? record.getSafeTitle() : null);
+        if (title.isEmpty()) {
+            title = context.getString(R.string.notif_finance_item_fallback);
         }
-        return sb.toString();
+
+        String amount = FinanceRecord.formatMoneyText(record != null ? record.paidText : null);
+        if (amount == null || amount.isEmpty()) {
+            amount = FinanceRecord.formatMoneyText(record != null ? record.amountText : null);
+        }
+        if (amount == null || amount.isEmpty()) {
+            return context.getString(R.string.notif_finance_booked_line, title);
+        }
+        return context.getString(R.string.notif_finance_booked_line_with_amount, title, amount);
     }
 
     private void addUpdateFieldChange(List<String> out, String label, String before, String after) {
@@ -941,40 +873,6 @@ public class BackgroundSyncWorker extends Worker {
             newValue = "-";
         }
         out.add(label + " " + oldValue + " -> " + newValue);
-    }
-
-    private boolean isVisibleSlotChanged(PlanSnapshotEvent oldEv, PlanSnapshotEvent newEv) {
-        if (oldEv == null || newEv == null) {
-            return false;
-        }
-        if (oldEv.date == null || newEv.date == null) {
-            return true;
-        }
-        return !oldEv.date.equals(newEv.date)
-                || oldEv.startMin != newEv.startMin
-                || oldEv.endMin != newEv.endMin;
-    }
-
-    private boolean isDetailOnlyUpdate(PlanSnapshotEvent oldEv, PlanSnapshotEvent newEv) {
-        if (oldEv == null || newEv == null) {
-            return false;
-        }
-        if (!sameVisibleSlot(oldEv, newEv)) {
-            return false;
-        }
-        return PlanChangeHistoryStore.safeForCompare(oldEv.title)
-                .equals(PlanChangeHistoryStore.safeForCompare(newEv.title));
-    }
-
-    private boolean sameVisibleSlot(PlanSnapshotEvent first, PlanSnapshotEvent second) {
-        if (first == null || second == null) {
-            return false;
-        }
-        if (first.date == null || second.date == null || !first.date.equals(second.date)) {
-            return false;
-        }
-        return first.startMin == second.startMin
-                && first.endMin == second.endMin;
     }
 
     private String normalize(String value) {
@@ -1006,7 +904,7 @@ public class BackgroundSyncWorker extends Worker {
         return out;
     }
 
-    private void saveGradesBaselineSet(SharedPreferences prefs, String storageKey, Set<String> values) {
+    private void saveStringSetJson(SharedPreferences prefs, String storageKey, Set<String> values) {
         JSONArray arr = new JSONArray();
         for (String value : values) {
             arr.put(value);
@@ -1014,34 +912,31 @@ public class BackgroundSyncWorker extends Worker {
         prefs.edit().putString(storageKey, arr.toString()).apply();
     }
 
-    private List<PlanSnapshotEvent> readPlanSnapshot(String json) {
-        List<PlanSnapshotEvent> out = new ArrayList<>();
-        if (json == null || json.isEmpty()) {
-            return out;
+    private Set<String> pruneFinanceDueReminderKeys(Set<String> values, LocalDate today) {
+        Set<String> pruned = new HashSet<>();
+        if (values == null || values.isEmpty()) {
+            return pruned;
         }
-        try {
-            JSONArray arr = new JSONArray(json);
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.optJSONObject(i);
-                if (obj == null) {
-                    continue;
-                }
-                PlanSnapshotEvent ev = PlanSnapshotEvent.fromJson(obj);
-                if (ev != null) {
-                    out.add(ev);
-                }
+        for (String value : values) {
+            if (value == null || value.length() < 10) {
+                continue;
             }
-        } catch (Exception ignored) {
+            try {
+                LocalDate dueDate = LocalDate.parse(value.substring(0, 10));
+                if (!dueDate.isBefore(today)) {
+                    pruned.add(value);
+                }
+            } catch (Exception ignored) {
+            }
         }
-        return out;
+        return pruned;
     }
 
-    private void savePlanBaselineSnapshot(SharedPreferences prefs, String storageKey, List<PlanSnapshotEvent> events) {
-        JSONArray arr = new JSONArray();
-        for (PlanSnapshotEvent ev : events) {
-            arr.put(ev.toJson());
+    private String buildFinanceDueReminderKey(FinanceRecord record) {
+        if (record == null || record.getDueDate() == null) {
+            return "";
         }
-        prefs.edit().putString(storageKey, arr.toString()).apply();
+        return record.getDueDate() + "|" + record.getStableKey();
     }
 
     private String buildPlanSnapshotSignature(PlanNotificationDiffEngine.Snapshot snapshot) {
@@ -1052,19 +947,6 @@ public class BackgroundSyncWorker extends Worker {
         for (PlanNotificationDiffEngine.Event event : snapshot.events) {
             if (event != null) {
                 ids.add(event.signature());
-            }
-        }
-        return buildAlertSignatureFromList(ids);
-    }
-
-    private String buildPlanSnapshotSignature(List<PlanSnapshotEvent> events) {
-        if (events == null || events.isEmpty()) {
-            return "empty";
-        }
-        List<String> ids = new ArrayList<>(events.size());
-        for (PlanSnapshotEvent ev : events) {
-            if (ev != null) {
-                ids.add(ev.id());
             }
         }
         return buildAlertSignatureFromList(ids);
@@ -1120,159 +1002,6 @@ public class BackgroundSyncWorker extends Worker {
         }
         editor.putBoolean(KEY_FILTER_CACHE_FORCE_REFRESH, true);
         editor.apply();
-    }
-
-    private static class PlanDiff {
-        final List<PlanSnapshotEvent> cancelled = new ArrayList<>();
-        final List<PlanSnapshotEvent> removed = new ArrayList<>();
-        final List<PlanSnapshotEvent> added = new ArrayList<>();
-        final List<PlanMove> moved = new ArrayList<>();
-        final List<PlanUpdate> updated = new ArrayList<>();
-    }
-
-    private static class PlanMove {
-        final PlanSnapshotEvent from;
-        final PlanSnapshotEvent to;
-
-        PlanMove(PlanSnapshotEvent from, PlanSnapshotEvent to) {
-            this.from = from;
-            this.to = to;
-        }
-    }
-
-    private static class PlanUpdate {
-        final PlanSnapshotEvent from;
-        final PlanSnapshotEvent to;
-
-        PlanUpdate(PlanSnapshotEvent from, PlanSnapshotEvent to) {
-            this.from = from;
-            this.to = to;
-        }
-    }
-
-    private static class PlanSnapshotEvent {
-        final String core;
-        final String coreNoType;
-        final String title;
-        final String room;
-        final String group;
-        final String teacher;
-        final String typeLabel;
-        final LocalDate date;
-        final int startMin;
-        final int endMin;
-        final boolean cancelledType;
-
-        PlanSnapshotEvent(
-                String core,
-                String coreNoType,
-                String title,
-                String room,
-                String group,
-                String teacher,
-                String typeLabel,
-                LocalDate date,
-                int startMin,
-                int endMin,
-                boolean cancelledType) {
-            this.core = core;
-            this.coreNoType = coreNoType;
-            this.title = title;
-            this.room = room;
-            this.group = group;
-            this.teacher = teacher;
-            this.typeLabel = typeLabel;
-            this.date = date;
-            this.startMin = startMin;
-            this.endMin = endMin;
-            this.cancelledType = cancelledType;
-        }
-
-        static PlanSnapshotEvent from(LocalDate date, PlanRepository.PlanEventUi event) {
-            String title = event.title != null ? event.title.trim() : "";
-            String teacher = event.teacher != null ? event.teacher.trim() : "";
-            String group = event.group != null ? event.group.trim() : "";
-            String room = event.room != null ? event.room.trim() : "";
-            String type = event.typeClass != null ? event.typeClass.trim() : "";
-            String typeLabel = event.typeLabel != null ? event.typeLabel.trim() : "";
-            int duration = Math.max(0, event.endMin - event.startMin);
-            String coreNoType = (title + "|" + teacher + "|" + group + "|" + room + "|" + duration)
-                    .trim()
-                    .toLowerCase(Locale.ROOT);
-            String core = (title + "|" + teacher + "|" + group + "|" + room + "|" + type + "|" + duration)
-                    .trim()
-                    .toLowerCase(Locale.ROOT);
-            boolean cancelledType = "week-event-type-cancelled".equalsIgnoreCase(type);
-            return new PlanSnapshotEvent(
-                    core,
-                    coreNoType,
-                    title,
-                    room,
-                    group,
-                    teacher,
-                    typeLabel,
-                    date,
-                    event.startMin,
-                    event.endMin,
-                    cancelledType);
-        }
-
-        JSONObject toJson() {
-            JSONObject obj = new JSONObject();
-            try {
-                obj.put("c", core);
-                obj.put("b", coreNoType);
-                obj.put("t", title);
-                obj.put("r", room);
-                obj.put("g", group);
-                obj.put("w", teacher);
-                obj.put("l", typeLabel);
-                obj.put("d", date != null ? date.toString() : "");
-                obj.put("s", startMin);
-                obj.put("e", endMin);
-                obj.put("x", cancelledType);
-            } catch (Exception ignored) {
-            }
-            return obj;
-        }
-
-        static PlanSnapshotEvent fromJson(JSONObject obj) {
-            try {
-                String core = obj.optString("c", "");
-                String coreNoType = obj.optString("b", "");
-                if (coreNoType.isEmpty()) {
-                    coreNoType = core;
-                }
-                String title = obj.optString("t", "");
-                String room = obj.optString("r", "");
-                String group = obj.optString("g", "");
-                String teacher = obj.optString("w", "");
-                String typeLabel = obj.optString("l", "");
-                String dateStr = obj.optString("d", "");
-                LocalDate date = LocalDate.parse(dateStr);
-                int start = obj.optInt("s", 0);
-                int end = obj.optInt("e", start);
-                boolean cancelledType = obj.optBoolean("x", false);
-                return new PlanSnapshotEvent(
-                        core,
-                        coreNoType,
-                        title,
-                        room,
-                        group,
-                        teacher,
-                        typeLabel,
-                        date,
-                        start,
-                        end,
-                        cancelledType);
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        String id() {
-            return core + "|" + date + "|" + startMin + "|" + endMin;
-        }
     }
 }
 

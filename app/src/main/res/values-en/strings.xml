@@ -2,10 +2,6 @@
 <resources>
   <string name="app_name">mZUT v2</string>
   <string name="app_version">Version %1$s</string>
-  <string name="battery_opt_dialog_title">Required permissions</string>
-  <string name="battery_opt_dialog_message">The app needs to run in the background for widgets to work correctly. Please disable battery optimization for this app.</string>
-  <string name="battery_opt_button_settings">Settings</string>
-  <string name="battery_opt_button_cancel">Cancel</string>
   <string name="nav_header_default_username">Student</string>
   <string name="logout_success_message">Logged out</string>
   <string name="nav_settings_label">Settings</string>
@@ -31,7 +27,6 @@
         Quick access to timetable, grades, study info and ZUT news – in one place.
     </string>
   <string name="home_welcome_fallback">Hello Student 👋</string>
-  <string name="home_grades_not_available">Grades screen is not connected yet.</string>
   <string name="home_shortcuts_title">Quick shortcuts</string>
   <string name="home_side_panel_desc">Side panel</string>
   <string name="home_tile_plan_title">📅 Timetable</string>
@@ -58,16 +53,6 @@
   <string name="info_user_id_placeholder">User ID: -</string>
   <string name="info_sync_in_progress">Syncing…</string>
   <string name="info_error_loading">Error loading data: %1$s</string>
-  <string name="info_finance_title">Finance</string>
-  <string name="info_no_payments">No financial obligations.</string>
-  <string name="info_payment_error">Error loading finance data: %1$s</string>
-  <string name="info_payment_amount">Amount: %1$s</string>
-  <string name="info_payment_paid">Paid: %1$s</string>
-  <string name="info_payment_due">Due date: %1$s</string>
-  <string name="info_payment_paid_date">Payment date: %1$s</string>
-  <string name="info_payment_balance">Balance: %1$s</string>
-  <string name="info_payment_account">Account: %1$s</string>
-  <string name="info_payment_title_fallback">Payment %1$d</string>
   <string name="finance_title">Finance</string>
   <string name="finance_subtitle">Liabilities, balances and payment accounts for the selected study programme.</string>
   <string name="finance_refresh">Refresh finance</string>
@@ -105,14 +90,10 @@
   <string name="finance_label_account">Payment account</string>
   <string name="finance_copy_account">Copy account</string>
   <string name="finance_copy_details">Copy details</string>
-  <string name="finance_share">Share</string>
   <string name="finance_copy_account_missing">No account number to copy</string>
-  <string name="finance_copy_account_success">Account number copied</string>
   <string name="finance_copy_account_dialog_title">Account number copied</string>
   <string name="finance_copy_account_dialog_message">Always verify the account number and check it in eDziekanat as well.</string>
   <string name="finance_copy_details_success">Payment details copied</string>
-  <string name="finance_share_title">Share payment details</string>
-  <string name="finance_share_error">Could not share payment details</string>
   <string name="finance_line_amount">Amount: %1$s</string>
   <string name="finance_line_paid">Paid: %1$s</string>
   <string name="finance_line_due_date">Due date: %1$s</string>
@@ -135,7 +116,6 @@
   <string name="info_label_academic_year">Academic year:</string>
   <string name="info_label_semester">Semester:</string>
   <string name="plan_title">Timetable</string>
-  <string name="plan_filters_loading">Loading…</string>
   <string name="plan_filters_error">Error loading subject list: %1$s</string>
   <string name="plan_filters_empty">No subjects to filter.</string>
   <string name="plan_filters_dialog_title">Subject filter – exclude from view</string>
@@ -230,6 +210,7 @@
     </string>
   <string name="news_header_title">Announcements channel for students</string>
   <string name="news_header_source_info">RSS source: ZUT students</string>
+  <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">just now</string>
   <string name="news_empty_state">
         No news or a problem occurred while fetching the RSS channel.
@@ -300,9 +281,14 @@
   <string name="settings_widget_refresh_entry_manual">Never (manual)</string>
   <string name="settings_section_notifications">Notifications</string>
   <string name="settings_notifications_master_label">Enable notifications</string>
-  <string name="settings_notifications_master_desc">Notifications about grades and timetable changes.</string>
+  <string name="settings_notifications_master_desc">Notifications about grades, finance and timetable changes.</string>
   <string name="settings_notifications_grades_label">Grade notifications</string>
   <string name="settings_notifications_grades_desc">Check new grades periodically (every 30 min).</string>
+  <string name="settings_notifications_finance_label">Finance notifications</string>
+  <string name="settings_notifications_finance_desc">Monitor payment due dates and newly booked payments.</string>
+  <string name="settings_notifications_finance_categories">Finance categories</string>
+  <string name="settings_notifications_finance_due">Reminder 5 days before the due date</string>
+  <string name="settings_notifications_finance_booked">Payment booked</string>
   <string name="settings_notifications_plan_label">Timetable change notifications</string>
   <string name="settings_notifications_plan_desc">Monitor timetable changes up to 2 weeks ahead.</string>
   <string name="settings_notifications_plan_categories">Timetable change categories</string>
@@ -318,12 +304,23 @@
   <string name="session_expired_notification_text">Session expired. Open the app and log in again.</string>
   <string name="notif_channel_grades_name">Grades</string>
   <string name="notif_channel_grades_desc">Notifications about new grades</string>
+  <string name="notif_channel_finance_name">Finance</string>
+  <string name="notif_channel_finance_desc">Notifications about due payments and booked payments</string>
   <string name="notif_channel_plan_name">Timetable</string>
   <string name="notif_channel_plan_desc">Notifications about timetable changes</string>
   <string name="notif_channel_auth_name">Session security</string>
   <string name="notif_channel_auth_desc">Information about session expiration</string>
   <string name="notif_grades_title">New grades</string>
   <string name="notif_grades_summary">New grades added: %1$d</string>
+  <string name="notif_finance_due_title">Payment due date is approaching</string>
+  <string name="notif_finance_due_summary">Payments due in 5 days: %1$d</string>
+  <string name="notif_finance_due_line">%1$s: due on %2$s</string>
+  <string name="notif_finance_due_line_with_amount">%1$s: due on %2$s (%3$s)</string>
+  <string name="notif_finance_booked_title">Payment booked</string>
+  <string name="notif_finance_booked_summary">Newly booked payments: %1$d</string>
+  <string name="notif_finance_booked_line">%1$s: booked</string>
+  <string name="notif_finance_booked_line_with_amount">%1$s: booked %2$s</string>
+  <string name="notif_finance_item_fallback">Payment</string>
   <string name="notif_plan_title">Timetable changes</string>
   <string name="notif_plan_summary">Changes: %1$d</string>
   <string name="notif_plan_line_moved">%1$s: %2$s %3$s -&gt; %4$s %5$s</string>
@@ -377,7 +374,6 @@
   <string name="menu_home_add">Add tile</string>
   <string name="menu_home_cancel">Cancel</string>
   <string name="menu_home_reset">Reset defaults</string>
-  <string name="home_cancel_toast">Changes cancelled</string>
   <string name="home_reset_dialog_title">Reset defaults?</string>
   <string name="home_reset_dialog_message">Are you sure you want to restore the default tile layout? Your changes will be lost.</string>
   <string name="home_reset_dialog_yes">Yes</string>
@@ -393,7 +389,6 @@
   <string name="grades_grouping_toggle">Group grades</string>
   <string name="grades_final_grade_label">Final grade</string>
   <string name="grades_final_grade_missing">No final grade</string>
-  <string name="grades_group_items_count">Remaining: %d</string>
   <string name="plan_type_label">Class type</string>
   <!-- Attendance -->
   <string name="attendance_title">Attendance</string>
@@ -443,7 +438,6 @@
   <string name="attendance_subject_type_placeholder">Laboratory</string>
   <string name="common_zero">0</string>
   <string name="common_dash">-</string>
-  <string name="common_percent_zero">0%</string>
   <string name="common_percent_placeholder">--%</string>
   <string name="common_percent_format">%1$d%%</string>
   <string name="grades_placeholder_value">4.5</string>
@@ -492,7 +486,6 @@
   <string name="period_holiday_summer">Summer holidays</string>
   <!-- Extracted Strings -->
   <string name="useful_links_badge_recommended">Recommended</string>
-  <string name="about_version_prefix">v</string>
   <string name="about_section_support_project">Support &amp; Project</string>
   <string name="about_footer_made_with">Made with ❤️ by Kejlo</string>
   <string name="about_rate_title">Rate app</string>
@@ -517,8 +510,6 @@
   <string name="wear_sync_status_error">Sync error.</string>
   <string name="wear_sync_status_watch_received">Watch confirmed receipt!</string>
   <string name="wear_main_status_syncing">Syncing…</string>
-  <string name="common_ok">OK</string>
-  <string name="wear_sync_request_title">Sync Request</string>
   <string name="wear_install_dialog_open_store">Open Store</string>
   <string name="wear_install_sent_toast">Request sent to watch</string>
 </resources>

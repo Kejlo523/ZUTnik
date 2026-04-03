@@ -42,6 +42,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     buildFeatures {
         buildConfig = true
     }

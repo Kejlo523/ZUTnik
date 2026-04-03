@@ -1,5 +1,8 @@
 package pl.kejlo.mzutv2;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -22,6 +25,7 @@ public class FinanceRecord {
         UNKNOWN
     }
 
+    public String recordId;
     public String title;
     public String amountText;
     public String paidText;
@@ -45,6 +49,11 @@ public class FinanceRecord {
             return Status.PAID;
         }
         return Status.UNKNOWN;
+    }
+
+    public boolean isBookedInSystem() {
+        Status status = getStatus();
+        return status == Status.PAID || status == Status.OVERPAID;
     }
 
     public boolean hasAccount() {
@@ -115,6 +124,26 @@ public class FinanceRecord {
         return getStatus() == filter;
     }
 
+    public LocalDate getDueDate() {
+        return parseDate(dueDateText);
+    }
+
+    public LocalDate getPaidDate() {
+        return parseDate(paidDateText);
+    }
+
+    public String getStableKey() {
+        String normalizedId = normalizeKeyPart(recordId);
+        if (!normalizedId.isEmpty()) {
+            return "id:" + normalizedId;
+        }
+        return "row:"
+                + normalizeKeyPart(getSafeTitle()) + "|"
+                + normalizeKeyPart(amountText) + "|"
+                + normalizeKeyPart(dueDateText) + "|"
+                + normalizeKeyPart(getCopyableAccount());
+    }
+
     public long getRelevantDateSortKey() {
         String preferredDate = getStatus() == Status.PAID
                 ? firstNonEmpty(paidDateText, dueDateText)
@@ -162,6 +191,38 @@ public class FinanceRecord {
         return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
     }
 
+    public JSONObject toJson() throws JSONException {
+        JSONObject obj = new JSONObject();
+        obj.put("recordId", recordId);
+        obj.put("title", title);
+        obj.put("amountText", amountText);
+        obj.put("paidText", paidText);
+        obj.put("dueDateText", dueDateText);
+        obj.put("paidDateText", paidDateText);
+        obj.put("balanceText", balanceText);
+        obj.put("accountText", accountText);
+        obj.put("amountValue", amountValue);
+        obj.put("paidValue", paidValue);
+        obj.put("balanceValue", balanceValue);
+        return obj;
+    }
+
+    public static FinanceRecord fromJson(JSONObject obj) {
+        FinanceRecord record = new FinanceRecord();
+        record.recordId = normalizeText(obj.optString("recordId", null));
+        record.title = normalizeText(obj.optString("title", null));
+        record.amountText = normalizeText(obj.optString("amountText", null));
+        record.paidText = normalizeText(obj.optString("paidText", null));
+        record.dueDateText = normalizeText(obj.optString("dueDateText", null));
+        record.paidDateText = normalizeText(obj.optString("paidDateText", null));
+        record.balanceText = normalizeText(obj.optString("balanceText", null));
+        record.accountText = normalizeText(obj.optString("accountText", null));
+        record.amountValue = obj.optDouble("amountValue", parseAmount(record.amountText));
+        record.paidValue = obj.optDouble("paidValue", parseAmount(record.paidText));
+        record.balanceValue = obj.optDouble("balanceValue", parseAmount(record.balanceText));
+        return record;
+    }
+
     private static String firstNonEmpty(String... values) {
         if (values == null) {
             return null;
@@ -174,19 +235,28 @@ public class FinanceRecord {
         return null;
     }
 
-    private static long parseDateSortKey(String raw) {
+    private static String normalizeKeyPart(String value) {
+        String normalized = normalizeText(value);
+        return normalized == null ? "" : normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private static LocalDate parseDate(String raw) {
         if (raw == null || raw.trim().isEmpty()) {
-            return Long.MAX_VALUE;
+            return null;
         }
 
         String normalized = raw.trim();
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
-                LocalDate date = LocalDate.parse(normalized, formatter);
-                return date.toEpochDay();
+                return LocalDate.parse(normalized, formatter);
             } catch (DateTimeParseException ignored) {
             }
         }
-        return Long.MAX_VALUE;
+        return null;
+    }
+
+    private static long parseDateSortKey(String raw) {
+        LocalDate date = parseDate(raw);
+        return date != null ? date.toEpochDay() : Long.MAX_VALUE;
     }
 }

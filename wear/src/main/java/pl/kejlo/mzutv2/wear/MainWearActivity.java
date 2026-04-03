@@ -27,6 +27,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -54,6 +55,7 @@ public class MainWearActivity extends Activity {
     private static final String TAG = "MZUTWearSync/WEAR";
     private static final long SYNC_REQUEST_TIMEOUT_MS = 20_000L;
     private static final long SYNC_TAP_DEBOUNCE_MS = 1_200L;
+    private static final long WATCH_STATUS_UPDATE_INTERVAL_MS = 5 * 60 * 1000L;
     private static final float ROTARY_THRESHOLD = 48f;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -98,7 +100,7 @@ public class MainWearActivity extends Activity {
         @Override
         public void run() {
             publishWatchStatus();
-            handler.postDelayed(this, 5 * 60 * 1000L);
+            handler.postDelayed(this, WATCH_STATUS_UPDATE_INTERVAL_MS);
         }
     };
 
@@ -258,14 +260,25 @@ public class MainWearActivity extends Activity {
             if (action == MotionEvent.ACTION_UP) {
                 float dx = event.getX() - swipeStartX;
                 float dy = event.getY() - swipeStartY;
-                if (Math.abs(dx) > dp(40) && Math.abs(dx) > Math.abs(dy) * 1.2f) {
+                if (isHorizontalSwipe(dx, dy)) {
                     int direction = dx < 0 ? 1 : -1;
                     navigatePage(direction, true);
                     return true;
                 }
+                if (isTapGesture(dx, dy)) {
+                    v.performClick();
+                }
             }
             return false;
         });
+    }
+
+    private boolean isHorizontalSwipe(float dx, float dy) {
+        return Math.abs(dx) > dp(40) && Math.abs(dx) > Math.abs(dy) * 1.2f;
+    }
+
+    private boolean isTapGesture(float dx, float dy) {
+        return Math.abs(dx) < dp(12) && Math.abs(dy) < dp(12);
     }
 
     private void updateUI() {
@@ -644,14 +657,11 @@ public class MainWearActivity extends Activity {
         syncCounter.setTextColor(themeAccent);
         syncStatus.setTextColor(themeText);
         btnSyncNow.setBackground(makeRounded(themeAccent, dp(18)));
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            syncProgress.setProgressTintList(ColorStateList.valueOf(themeAccent));
-            syncProgress.setProgressBackgroundTintList(ColorStateList.valueOf(0x33222222));
-        }
+        syncProgress.setProgressTintList(ColorStateList.valueOf(themeAccent));
+        syncProgress.setProgressBackgroundTintList(ColorStateList.valueOf(0x33222222));
 
         if (eventAdapter != null) {
-            eventAdapter.notifyDataSetChanged();
+            eventAdapter.refreshVisibleItems();
         }
     }
 
@@ -685,6 +695,16 @@ public class MainWearActivity extends Activity {
             this.room = room != null ? room : "";
             this.color = color;
         }
+
+        boolean hasSameIdentity(@NonNull EventItem other) {
+            return title.equals(other.title)
+                    && time.equals(other.time)
+                    && room.equals(other.room);
+        }
+
+        boolean hasSameContent(@NonNull EventItem other) {
+            return hasSameIdentity(other) && color == other.color;
+        }
     }
 
     private final class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
@@ -696,12 +716,37 @@ public class MainWearActivity extends Activity {
         }
 
         void setItems(List<EventItem> newItems) {
+            List<EventItem> updatedItems = newItems != null
+                    ? new ArrayList<>(newItems)
+                    : Collections.emptyList();
+            int previousActiveIndex = activeIndex;
+            DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+                @Override
+                public int getOldListSize() {
+                    return items.size();
+                }
+
+                @Override
+                public int getNewListSize() {
+                    return updatedItems.size();
+                }
+
+                @Override
+                public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                    return items.get(oldItemPosition).hasSameIdentity(updatedItems.get(newItemPosition));
+                }
+
+                @Override
+                public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                    return items.get(oldItemPosition).hasSameContent(updatedItems.get(newItemPosition));
+                }
+            });
+
             items.clear();
-            if (newItems != null) {
-                items.addAll(newItems);
-            }
+            items.addAll(updatedItems);
             activeIndex = 0;
-            notifyDataSetChanged();
+            diff.dispatchUpdatesTo(this);
+            refreshActiveItem(previousActiveIndex);
         }
 
         void setActiveIndex(int index) {
@@ -715,6 +760,22 @@ public class MainWearActivity extends Activity {
                 notifyItemChanged(old);
             }
             if (activeIndex >= 0 && activeIndex < items.size()) {
+                notifyItemChanged(activeIndex);
+            }
+        }
+
+        void refreshVisibleItems() {
+            if (items.isEmpty()) {
+                return;
+            }
+            notifyItemRangeChanged(0, items.size());
+        }
+
+        private void refreshActiveItem(int previousActiveIndex) {
+            if (previousActiveIndex >= 0 && previousActiveIndex < items.size()) {
+                notifyItemChanged(previousActiveIndex);
+            }
+            if (!items.isEmpty()) {
                 notifyItemChanged(activeIndex);
             }
         }
@@ -822,7 +883,10 @@ public class MainWearActivity extends Activity {
                 } else if (TextUtils.isEmpty(item.room)) {
                     holder.time.setText(item.time);
                 } else {
-                    holder.time.setText(item.time + " · " + item.room);
+                    holder.time.setText(getString(
+                            R.string.wear_event_meta_format,
+                            item.time,
+                            item.room));
                 }
             }
 

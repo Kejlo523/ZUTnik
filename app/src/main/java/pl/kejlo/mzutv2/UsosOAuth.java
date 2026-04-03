@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -214,7 +215,7 @@ public final class UsosOAuth {
         String normalizedParams = join(pairs);
 
         // Signature base string: METHOD & pct(baseUrl) & pct(normalizedParams)
-        String sigBase = method.toUpperCase()
+        String sigBase = method.toUpperCase(Locale.ROOT)
                 + "&" + pct(baseUrl)
                 + "&" + pct(normalizedParams);
 

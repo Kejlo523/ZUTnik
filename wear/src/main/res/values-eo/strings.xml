@@ -12,8 +12,6 @@
   <string name="complication_preview_title">Na kursie</string>
   <string name="complication_preview_eta_short">za 2h</string>
   <string name="complication_preview_long">Wykład\nza 2h 10m · 08:00–09:30</string>
-  <string name="watch_face_label">mZUT Rejs</string>
-  <string name="watch_face_login_required">Zaloguj się na telefonie, majtku</string>
   <string name="wear_main_title">Łączność z telefonem</string>
   <string name="wear_main_sync">Nadaj sync</string>
   <string name="wear_main_sync_failed">Sygnał nie doleciał</string>
@@ -23,9 +21,8 @@
   <string name="wear_main_status_idle">Stuknij „Nadaj sync”, żeby pobrać dane</string>
   <string name="wear_main_status_received">Dane na pokładzie</string>
   <string name="wear_main_status_login_required">Najpierw zaloguj się na telefonie</string>
-  <string name="watch_face_next_label">Następny abordaż</string>
-  <string name="watch_face_no_next">Brak zajęć</string>
   <string name="wear_device_default_name">Kompas</string>
+  <string name="wear_event_meta_format">%1$s · %2$s</string>
   <string name="wear_eta_now">teraz</string>
   <string name="wear_eta_minutes">za %1$dm</string>
   <string name="wear_eta_hours">za %1$dh</string>

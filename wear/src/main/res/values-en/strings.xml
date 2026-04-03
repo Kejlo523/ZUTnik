@@ -12,8 +12,6 @@
   <string name="complication_preview_title">Next</string>
   <string name="complication_preview_eta_short">in 2h</string>
   <string name="complication_preview_long">Lecture\nin 2h 10m · 08:00–09:30</string>
-  <string name="watch_face_label">mZUT Schedule</string>
-  <string name="watch_face_login_required">Sign in on your phone</string>
   <string name="wear_main_title">Phone sync</string>
   <string name="wear_main_sync">Sync</string>
   <string name="wear_main_sync_failed">Failed to send sync request</string>
@@ -23,9 +21,8 @@
   <string name="wear_main_status_idle">Tap sync to fetch data</string>
   <string name="wear_main_status_received">Data updated</string>
   <string name="wear_main_status_login_required">Sign in on phone and try again</string>
-  <string name="watch_face_next_label">Next classes</string>
-  <string name="watch_face_no_next">No classes</string>
   <string name="wear_device_default_name">Wear</string>
+  <string name="wear_event_meta_format">%1$s · %2$s</string>
   <string name="wear_eta_now">now</string>
   <string name="wear_eta_minutes">in %1$dm</string>
   <string name="wear_eta_hours">in %1$dh</string>

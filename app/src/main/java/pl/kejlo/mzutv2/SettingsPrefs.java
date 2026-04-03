@@ -25,6 +25,15 @@ public final class SettingsPrefs {
     public static final String KEY_NOTIFICATIONS_PLAN_ENABLED = "notifications_plan_enabled";
     public static final boolean DEFAULT_NOTIFICATIONS_PLAN_ENABLED = true;
 
+    public static final String KEY_NOTIFICATIONS_FINANCE_ENABLED = "notifications_finance_enabled";
+    public static final boolean DEFAULT_NOTIFICATIONS_FINANCE_ENABLED = true;
+
+    public static final String KEY_NOTIFICATIONS_FINANCE_DUE_ENABLED = "notifications_finance_due_enabled";
+    public static final boolean DEFAULT_NOTIFICATIONS_FINANCE_DUE_ENABLED = true;
+
+    public static final String KEY_NOTIFICATIONS_FINANCE_BOOKED_ENABLED = "notifications_finance_booked_enabled";
+    public static final boolean DEFAULT_NOTIFICATIONS_FINANCE_BOOKED_ENABLED = true;
+
     public static final String KEY_NOTIFICATIONS_PLAN_MOVED_ENABLED = "notifications_plan_moved_enabled";
     public static final boolean DEFAULT_NOTIFICATIONS_PLAN_MOVED_ENABLED = true;
 

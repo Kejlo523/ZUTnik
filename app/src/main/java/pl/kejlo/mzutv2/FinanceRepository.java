@@ -86,6 +86,7 @@ public class FinanceRepository {
             }
 
             FinanceRecord record = new FinanceRecord();
+            record.recordId = null;
             record.title = FinanceRecord.normalizeLegacyTitle(item.name);
             record.amountText = FinanceRecord.normalizeText(item.chargeAmount);
             record.paidText = FinanceRecord.normalizeText(item.paidAmount);
@@ -116,6 +117,7 @@ public class FinanceRepository {
             }
 
             FinanceRecord record = new FinanceRecord();
+            record.recordId = FinanceRecord.normalizeText(item.optString("id", null));
             record.title = firstNonEmpty(
                     extractLocalizedOrString(item, "name"),
                     extractLocalizedOrString(item, "title"),
@@ -234,7 +236,7 @@ public class FinanceRepository {
                     if (item == null) {
                         continue;
                     }
-                    records.add(recordFromJson(item));
+                    records.add(FinanceRecord.fromJson(item));
                 }
             }
             return new FinanceSnapshot(records, fetchedAt, true);
@@ -258,7 +260,7 @@ public class FinanceRepository {
                     if (record == null) {
                         continue;
                     }
-                    recordsJson.put(recordToJson(record));
+                    recordsJson.put(record.toJson());
                 }
             }
             root.put("records", recordsJson);
@@ -269,35 +271,5 @@ public class FinanceRepository {
                     .apply();
         } catch (JSONException ignored) {
         }
-    }
-
-    private JSONObject recordToJson(FinanceRecord record) throws JSONException {
-        JSONObject obj = new JSONObject();
-        obj.put("title", record.title);
-        obj.put("amountText", record.amountText);
-        obj.put("paidText", record.paidText);
-        obj.put("dueDateText", record.dueDateText);
-        obj.put("paidDateText", record.paidDateText);
-        obj.put("balanceText", record.balanceText);
-        obj.put("accountText", record.accountText);
-        obj.put("amountValue", record.amountValue);
-        obj.put("paidValue", record.paidValue);
-        obj.put("balanceValue", record.balanceValue);
-        return obj;
-    }
-
-    private FinanceRecord recordFromJson(JSONObject obj) {
-        FinanceRecord record = new FinanceRecord();
-        record.title = FinanceRecord.normalizeText(obj.optString("title", null));
-        record.amountText = FinanceRecord.normalizeText(obj.optString("amountText", null));
-        record.paidText = FinanceRecord.normalizeText(obj.optString("paidText", null));
-        record.dueDateText = FinanceRecord.normalizeText(obj.optString("dueDateText", null));
-        record.paidDateText = FinanceRecord.normalizeText(obj.optString("paidDateText", null));
-        record.balanceText = FinanceRecord.normalizeText(obj.optString("balanceText", null));
-        record.accountText = FinanceRecord.normalizeText(obj.optString("accountText", null));
-        record.amountValue = obj.optDouble("amountValue", FinanceRecord.parseAmount(record.amountText));
-        record.paidValue = obj.optDouble("paidValue", FinanceRecord.parseAmount(record.paidText));
-        record.balanceValue = obj.optDouble("balanceValue", FinanceRecord.parseAmount(record.balanceText));
-        return record;
     }
 }

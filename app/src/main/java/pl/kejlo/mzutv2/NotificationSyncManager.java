@@ -35,9 +35,11 @@ public final class NotificationSyncManager {
     private static final String PREFS_BG = "mzut_background_sync_cache";
     private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v2";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v3";
+    private static final String KEY_FINANCE_BASELINE_READY = "finance_baseline_ready_v1";
 
     public static final String CHANNEL_GRADES = "mzut_grades_changes";
     public static final String CHANNEL_PLAN = "mzut_plan_changes";
+    public static final String CHANNEL_FINANCE = "mzut_finance_changes";
     public static final String CHANNEL_AUTH = "mzut_session_auth";
 
     public static boolean hasNotificationPermission(Context context) {
@@ -74,6 +76,33 @@ public final class NotificationSyncManager {
         return prefs.getBoolean(
                 SettingsPrefs.KEY_NOTIFICATIONS_PLAN_ENABLED,
                 SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_ENABLED);
+    }
+
+    public static boolean isFinanceEnabled(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        return prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_FINANCE_ENABLED);
+    }
+
+    public static boolean isFinanceDueEnabled(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        return prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_DUE_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_FINANCE_DUE_ENABLED);
+    }
+
+    public static boolean isFinanceBookedEnabled(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+                SettingsPrefs.PREFS_SETTINGS,
+                Context.MODE_PRIVATE);
+        return prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_BOOKED_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_FINANCE_BOOKED_ENABLED);
     }
 
     public static boolean isPlanMovedEnabled(Context context) {
@@ -119,13 +148,18 @@ public final class NotificationSyncManager {
                 || isPlanRemovedEnabled(context);
     }
 
+    public static boolean isAnyFinanceCategoryEnabled(Context context) {
+        return isFinanceDueEnabled(context) || isFinanceBookedEnabled(context);
+    }
+
     public static boolean isAnyFeatureEnabled(Context context) {
         if (!isMasterEnabled(context)) {
             return false;
         }
         boolean grades = isGradesEnabled(context);
         boolean plan = isPlanEnabled(context) && isAnyPlanCategoryEnabled(context);
-        return grades || plan;
+        boolean finance = isFinanceEnabled(context) && isAnyFinanceCategoryEnabled(context);
+        return grades || plan || finance;
     }
 
     public static void syncWorkerSchedule(Context context) {
@@ -182,13 +216,20 @@ public final class NotificationSyncManager {
         SharedPreferences runtimePrefs = appContext.getSharedPreferences(PREFS_RUNTIME, Context.MODE_PRIVATE);
         String syncedScope = runtimePrefs.getString(KEY_BOOTSTRAP_SYNC_SCOPE, "");
         SharedPreferences bgPrefs = appContext.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
-        boolean gradesBaselineReady = bgPrefs.getBoolean(scopedPrefKey(KEY_GRADES_BASELINE_READY, scope), false);
+        boolean requiresGradesBaseline = isGradesEnabled(appContext);
         boolean requiresPlanBaseline = isPlanEnabled(appContext) && isAnyPlanCategoryEnabled(appContext);
-        boolean planBaselineReady = bgPrefs.getBoolean(scopedPrefKey(KEY_PLAN_BASELINE_READY, scope), false);
+        boolean requiresFinanceBaseline = isFinanceEnabled(appContext) && isAnyFinanceCategoryEnabled(appContext);
+        boolean gradesBaselineReady = !requiresGradesBaseline
+                || bgPrefs.getBoolean(scopedPrefKey(KEY_GRADES_BASELINE_READY, scope), false);
+        boolean planBaselineReady = !requiresPlanBaseline
+                || bgPrefs.getBoolean(scopedPrefKey(KEY_PLAN_BASELINE_READY, scope), false);
+        boolean financeBaselineReady = !requiresFinanceBaseline
+                || bgPrefs.getBoolean(scopedPrefKey(KEY_FINANCE_BASELINE_READY, scope), false);
 
         if (scope.equals(syncedScope)
                 && gradesBaselineReady
-                && (!requiresPlanBaseline || planBaselineReady)) {
+                && planBaselineReady
+                && financeBaselineReady) {
             return;
         }
 
@@ -275,6 +316,12 @@ public final class NotificationSyncManager {
                 NotificationManager.IMPORTANCE_DEFAULT);
         plan.setDescription(context.getString(R.string.notif_channel_plan_desc));
 
+        NotificationChannel finance = new NotificationChannel(
+                CHANNEL_FINANCE,
+                context.getString(R.string.notif_channel_finance_name),
+                NotificationManager.IMPORTANCE_DEFAULT);
+        finance.setDescription(context.getString(R.string.notif_channel_finance_desc));
+
         NotificationChannel auth = new NotificationChannel(
                 CHANNEL_AUTH,
                 context.getString(R.string.notif_channel_auth_name),
@@ -283,6 +330,7 @@ public final class NotificationSyncManager {
 
         nm.createNotificationChannel(grades);
         nm.createNotificationChannel(plan);
+        nm.createNotificationChannel(finance);
         nm.createNotificationChannel(auth);
     }
 }

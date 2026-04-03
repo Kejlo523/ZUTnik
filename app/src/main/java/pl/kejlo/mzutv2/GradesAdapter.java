@@ -14,7 +14,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.text.Normalizer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -41,17 +40,17 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         Grade g = grades.get(i);
         Context ctx = h.itemView.getContext();
 
-        String subject = extractBaseSubject(g != null ? g.subjectName : "");
+        String subject = GradesTextUtils.extractBaseSubject(g != null ? g.subjectName : "");
         if (subject.isEmpty()) {
-            subject = safe(g != null ? g.subjectName : "");
+            subject = GradesTextUtils.clean(g != null ? g.subjectName : "");
         }
         h.colSubject.setText(subject);
 
-        String typeRaw = safe(g != null ? g.type : "");
+        String typeRaw = GradesTextUtils.clean(g != null ? g.type : "");
         if (typeRaw.isEmpty()) {
-            typeRaw = extractTypeFromSubject(g != null ? g.subjectName : "");
+            typeRaw = GradesTextUtils.extractTypeFromSubject(g != null ? g.subjectName : "");
         }
-        String typeDisplay = formatTypeDisplay(ctx, typeRaw);
+        String typeDisplay = GradesTextUtils.formatTypeDisplay(ctx, typeRaw);
         if (!typeDisplay.isEmpty()) {
             h.colType.setText(typeDisplay);
             h.colType.setVisibility(View.VISIBLE);
@@ -59,7 +58,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
             h.colType.setVisibility(View.GONE);
         }
 
-        String date = safe(g != null ? g.date : "");
+        String date = GradesTextUtils.clean(g != null ? g.date : "");
         if (!date.isEmpty()) {
             h.colDate.setText(date);
             h.colDate.setVisibility(View.VISIBLE);
@@ -67,7 +66,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
             h.colDate.setVisibility(View.GONE);
         }
 
-        if (isFinalGradeType(typeRaw) && g != null && g.weight > 0.0) {
+        if (GradesTextUtils.isFinalGradeLabel(typeRaw) && g != null && g.weight > 0.0) {
             h.colEcts.setVisibility(View.VISIBLE);
             h.colEcts.setText(ctx.getString(R.string.grades_ects_format, g.weight));
         } else {
@@ -85,7 +84,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
 
         List<String> history = g != null ? g.gradeHistory : null;
         if (history == null || history.isEmpty()) {
-            String rawSingle = safe(g != null ? g.grade : "");
+            String rawSingle = GradesTextUtils.clean(g != null ? g.grade : "");
             if (!rawSingle.isEmpty()) {
                 history = Collections.singletonList(rawSingle);
             }
@@ -102,7 +101,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         int rendered = 0;
 
         for (int idx = 0; idx < show; idx++) {
-            String rawGrade = safe(history.get(idx));
+            String rawGrade = GradesTextUtils.clean(history.get(idx));
             if (rawGrade.isEmpty()) {
                 continue;
             }
@@ -194,133 +193,6 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
 
     private int dp(Resources res, int dp) {
         return Math.round(dp * res.getDisplayMetrics().density);
-    }
-
-    private boolean isFinalGradeType(String type) {
-        String normalized = normalizeKey(type);
-        return normalized.contains("ocena koncowa")
-                || normalized.equals("koncowa")
-                || normalized.contains("koncowa")
-                || normalized.contains("final")
-                || normalized.contains("abschluss");
-    }
-
-    private String formatTypeDisplay(Context ctx, String value) {
-        String raw = safe(value);
-        if (raw.isEmpty()) {
-            return "";
-        }
-
-        String normalized = normalizeKey(raw);
-        if (normalized.contains("wyklad")) {
-            return ctx.getString(R.string.plan_type_lecture);
-        }
-        if (normalized.contains("laboratorium")) {
-            return ctx.getString(R.string.plan_type_lab);
-        }
-        if (normalized.contains("audytoryjne")) {
-            return ctx.getString(R.string.plan_type_auditory);
-        }
-        if (normalized.contains("egzamin")) {
-            return ctx.getString(R.string.plan_type_exam);
-        }
-        if (normalized.contains("zaliczen")) {
-            return ctx.getString(R.string.plan_type_pass);
-        }
-        return toTitleCase(raw);
-    }
-
-    private String extractTypeFromSubject(String subject) {
-        if (subject == null) {
-            return "";
-        }
-        String name = subject.trim();
-        int start = name.lastIndexOf(" (");
-        if (start > 0 && name.endsWith(")")) {
-            return name.substring(start + 2, name.length() - 1).trim();
-        }
-        return "";
-    }
-
-    private String extractBaseSubject(String label) {
-        if (label == null) {
-            return "";
-        }
-        String name = label.trim();
-        int parenIdx = name.lastIndexOf(" (");
-        if (parenIdx > 0 && name.endsWith(")")) {
-            name = name.substring(0, parenIdx);
-        }
-        return name.trim();
-    }
-
-    private String toTitleCase(String value) {
-        if (value == null) {
-            return "";
-        }
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) {
-            return "";
-        }
-        String[] parts = trimmed.toLowerCase(Locale.getDefault()).split("\\s+");
-        StringBuilder sb = new StringBuilder();
-        for (String part : parts) {
-            if (part.isEmpty()) {
-                continue;
-            }
-            if (sb.length() > 0) {
-                sb.append(" ");
-            }
-            sb.append(Character.toUpperCase(part.charAt(0)));
-            if (part.length() > 1) {
-                sb.append(part.substring(1));
-            }
-        }
-        return sb.toString();
-    }
-
-    private String normalizeKey(String value) {
-        if (value == null) {
-            return "";
-        }
-        String repaired = repairMojibake(value);
-        String lower = repaired.trim().toLowerCase(Locale.ROOT);
-        String normalized = Normalizer.normalize(lower, Normalizer.Form.NFD);
-        return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    }
-
-    private String safe(String value) {
-        if (value == null) {
-            return "";
-        }
-        return repairMojibake(value).trim();
-    }
-
-    private String repairMojibake(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        return value
-                .replace("Ä…", "ą")
-                .replace("Ä‡", "ć")
-                .replace("Ä™", "ę")
-                .replace("Å‚", "ł")
-                .replace("Å„", "ń")
-                .replace("Ã³", "ó")
-                .replace("Å›", "ś")
-                .replace("Å¼", "ż")
-                .replace("Åº", "ź")
-                .replace("Ä„", "Ą")
-                .replace("Ä†", "Ć")
-                .replace("Ä˜", "Ę")
-                .replace("Å�", "Ł")
-                .replace("Åƒ", "Ń")
-                .replace("Ã“", "Ó")
-                .replace("Åš", "Ś")
-                .replace("Å»", "Ż")
-                .replace("Å¹", "Ź")
-                .replace("Ĺ‚", "ł")
-                .replace("Ĺ„", "ń");
     }
 
     @Override
