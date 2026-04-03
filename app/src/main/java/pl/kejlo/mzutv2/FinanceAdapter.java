@@ -6,12 +6,14 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHolder> {
 
@@ -28,11 +30,34 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
     }
 
     public void submitList(List<FinanceRecord> records) {
+        List<FinanceRecord> updatedItems = records != null
+                ? new ArrayList<>(records)
+                : new ArrayList<>();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() {
+                return items.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return updatedItems.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return sameItem(items.get(oldItemPosition), updatedItems.get(newItemPosition));
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                return sameContent(items.get(oldItemPosition), updatedItems.get(newItemPosition));
+            }
+        });
+
         items.clear();
-        if (records != null) {
-            items.addAll(records);
-        }
-        notifyDataSetChanged();
+        items.addAll(updatedItems);
+        diffResult.dispatchUpdatesTo(this);
     }
 
     @NonNull
@@ -168,6 +193,30 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
     @Override
     public int getItemCount() {
         return items.size();
+    }
+
+    private boolean sameItem(FinanceRecord oldItem, FinanceRecord newItem) {
+        if (oldItem == null || newItem == null) {
+            return oldItem == newItem;
+        }
+        return Objects.equals(oldItem.getStableKey(), newItem.getStableKey());
+    }
+
+    private boolean sameContent(FinanceRecord oldItem, FinanceRecord newItem) {
+        if (oldItem == null || newItem == null) {
+            return oldItem == newItem;
+        }
+        return Objects.equals(oldItem.recordId, newItem.recordId)
+                && Objects.equals(oldItem.title, newItem.title)
+                && Objects.equals(oldItem.amountText, newItem.amountText)
+                && Objects.equals(oldItem.paidText, newItem.paidText)
+                && Objects.equals(oldItem.dueDateText, newItem.dueDateText)
+                && Objects.equals(oldItem.paidDateText, newItem.paidDateText)
+                && Objects.equals(oldItem.balanceText, newItem.balanceText)
+                && Objects.equals(oldItem.accountText, newItem.accountText)
+                && Double.compare(oldItem.amountValue, newItem.amountValue) == 0
+                && Double.compare(oldItem.paidValue, newItem.paidValue) == 0
+                && Double.compare(oldItem.balanceValue, newItem.balanceValue) == 0;
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

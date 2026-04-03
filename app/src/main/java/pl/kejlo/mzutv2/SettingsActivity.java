@@ -31,11 +31,15 @@ public class SettingsActivity extends PhoneAwareActivity {
     private Spinner spinnerLanguage;
     private SwitchMaterial switchNotifMaster;
     private SwitchMaterial switchNotifGrades;
+    private SwitchMaterial switchNotifFinance;
+    private SwitchMaterial switchNotifFinanceDue;
+    private SwitchMaterial switchNotifFinanceBooked;
     private SwitchMaterial switchNotifPlan;
     private SwitchMaterial switchNotifPlanMoved;
     private SwitchMaterial switchNotifPlanCancelled;
     private SwitchMaterial switchNotifPlanAdded;
     private SwitchMaterial switchNotifPlanRemoved;
+    private LinearLayout layoutFinanceNotifCategories;
     private LinearLayout layoutPlanNotifCategories;
 
     private boolean internalNotifUiChange = false;
@@ -232,14 +236,20 @@ public class SettingsActivity extends PhoneAwareActivity {
     private void setupNotificationSettings() {
         switchNotifMaster = findViewById(R.id.switchNotifMaster);
         switchNotifGrades = findViewById(R.id.switchNotifGrades);
+        switchNotifFinance = findViewById(R.id.switchNotifFinance);
+        switchNotifFinanceDue = findViewById(R.id.switchNotifFinanceDue);
+        switchNotifFinanceBooked = findViewById(R.id.switchNotifFinanceBooked);
         switchNotifPlan = findViewById(R.id.switchNotifPlan);
         switchNotifPlanMoved = findViewById(R.id.switchNotifPlanMoved);
         switchNotifPlanCancelled = findViewById(R.id.switchNotifPlanCancelled);
         switchNotifPlanAdded = findViewById(R.id.switchNotifPlanAdded);
         switchNotifPlanRemoved = findViewById(R.id.switchNotifPlanRemoved);
+        layoutFinanceNotifCategories = findViewById(R.id.layoutFinanceNotifCategories);
         layoutPlanNotifCategories = findViewById(R.id.layoutPlanNotifCategories);
 
-        if (switchNotifMaster == null || switchNotifGrades == null || switchNotifPlan == null
+        if (switchNotifMaster == null || switchNotifGrades == null
+                || switchNotifFinance == null || switchNotifFinanceDue == null || switchNotifFinanceBooked == null
+                || switchNotifPlan == null
                 || switchNotifPlanMoved == null || switchNotifPlanCancelled == null
                 || switchNotifPlanAdded == null || switchNotifPlanRemoved == null) {
             return;
@@ -248,6 +258,9 @@ public class SettingsActivity extends PhoneAwareActivity {
         applyThemeAwareSwitchColors(
                 switchNotifMaster,
                 switchNotifGrades,
+                switchNotifFinance,
+                switchNotifFinanceDue,
+                switchNotifFinanceBooked,
                 switchNotifPlan,
                 switchNotifPlanMoved,
                 switchNotifPlanCancelled,
@@ -292,6 +305,43 @@ public class SettingsActivity extends PhoneAwareActivity {
             getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
                     .edit()
                     .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_GRADES_ENABLED, isChecked)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifFinance.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_ENABLED, isChecked)
+                    .apply();
+            updateNotificationSwitchEnabledState();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifFinanceDue.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_DUE_ENABLED, isChecked)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(this);
+            Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
+        });
+
+        switchNotifFinanceBooked.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_BOOKED_ENABLED, isChecked)
                     .apply();
             NotificationSyncManager.syncWorkerSchedule(this);
             Toast.makeText(this, R.string.settings_notifications_saved, Toast.LENGTH_SHORT).show();
@@ -369,6 +419,15 @@ public class SettingsActivity extends PhoneAwareActivity {
         switchNotifGrades.setChecked(prefs.getBoolean(
                 SettingsPrefs.KEY_NOTIFICATIONS_GRADES_ENABLED,
                 SettingsPrefs.DEFAULT_NOTIFICATIONS_GRADES_ENABLED));
+        switchNotifFinance.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_FINANCE_ENABLED));
+        switchNotifFinanceDue.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_DUE_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_FINANCE_DUE_ENABLED));
+        switchNotifFinanceBooked.setChecked(prefs.getBoolean(
+                SettingsPrefs.KEY_NOTIFICATIONS_FINANCE_BOOKED_ENABLED,
+                SettingsPrefs.DEFAULT_NOTIFICATIONS_FINANCE_BOOKED_ENABLED));
         switchNotifPlan.setChecked(prefs.getBoolean(
                 SettingsPrefs.KEY_NOTIFICATIONS_PLAN_ENABLED,
                 SettingsPrefs.DEFAULT_NOTIFICATIONS_PLAN_ENABLED));
@@ -396,9 +455,13 @@ public class SettingsActivity extends PhoneAwareActivity {
 
         boolean hasPermission = NotificationSyncManager.hasNotificationPermission(this);
         boolean masterEnabled = switchNotifMaster.isChecked() && hasPermission;
+        boolean financeEnabled = masterEnabled && switchNotifFinance.isChecked();
         boolean planEnabled = masterEnabled && switchNotifPlan.isChecked();
 
         switchNotifGrades.setEnabled(masterEnabled);
+        switchNotifFinance.setEnabled(masterEnabled);
+        switchNotifFinanceDue.setEnabled(financeEnabled);
+        switchNotifFinanceBooked.setEnabled(financeEnabled);
         switchNotifPlan.setEnabled(masterEnabled);
         switchNotifPlanMoved.setEnabled(planEnabled);
         switchNotifPlanCancelled.setEnabled(planEnabled);
@@ -411,6 +474,9 @@ public class SettingsActivity extends PhoneAwareActivity {
             internalNotifUiChange = false;
         }
 
+        if (layoutFinanceNotifCategories != null) {
+            layoutFinanceNotifCategories.setAlpha(financeEnabled ? 1f : 0.45f);
+        }
         if (layoutPlanNotifCategories != null) {
             layoutPlanNotifCategories.setAlpha(planEnabled ? 1f : 0.45f);
         }

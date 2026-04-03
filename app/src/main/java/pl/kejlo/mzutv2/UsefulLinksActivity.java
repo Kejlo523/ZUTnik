@@ -1,96 +1,86 @@
 package pl.kejlo.mzutv2;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-
 import com.google.android.material.navigation.NavigationView;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import android.os.Handler;
-import android.os.Looper;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import android.content.SharedPreferences;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.Toast;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/**
- * "Useful links" screen.
- *
- * Assumptions:
- * - Shows selected, most frequently used links (global + faculty + major).
- * - Links matched to the user's majors / faculties go to the top,
- * remaining links are below.
- * - No spinners / selectors – priority is based on data from MzutSession.
- *
- * Expected layout: res/layout/activity_useful_links.xml
- * - DrawerLayout @+id/drawerLayout
- * - NavigationView @+id/navigationView
- * - Toolbar @+id/toolbar
- * - RecyclerView @+id/listLinks
- * - TextView @+id/tvLinksEmpty (optional "no data" label)
- */
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class UsefulLinksActivity extends PhoneAwareActivity {
 
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleManager.wrap(newBase));
-    }
+    private static final String PREF_OG_CACHE = "useful_links_og_cache";
+    private static final String LINKS_SCREEN = "links";
+    private static final String USER_AGENT = "Mozilla/5.0 (compatible; mZUTv2/1.0)";
+    private static final Pattern TITLE_TAG_PATTERN = Pattern.compile(
+            "<title>(.*?)</title>",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+    private final ExecutorService bgExecutor = Executors.newFixedThreadPool(4);
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final OkHttpClient client = new OkHttpClient.Builder()
+            .callTimeout(Duration.ofSeconds(10))
+            .build();
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private Toolbar toolbar;
     private LinearLayout drawerContentRoot;
-
     private RecyclerView listLinks;
     private TextView tvEmpty;
-
-    private ExecutorService bgExecutor = Executors.newFixedThreadPool(4);
-    private Handler mainHandler = new Handler(Looper.getMainLooper());
-    private OkHttpClient client = new OkHttpClient.Builder()
-            .callTimeout(java.time.Duration.ofSeconds(10))
-            .build();
     private SharedPreferences ogCachePrefs;
-    private static final String PREF_OG_CACHE = "useful_links_og_cache";
-
     private LinksAdapter adapter;
-    private final List<LinkItem> items = new ArrayList<>();
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleManager.wrap(newBase));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,9 +100,9 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         listLinks = findViewById(R.id.listLinks);
         tvEmpty = findViewById(R.id.tvLinksEmpty);
 
-        ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+            view.setPadding(insets.left, insets.top, insets.right, insets.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
 
@@ -120,11 +110,10 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             toolbar.setTitle(R.string.nav_useful_links);
         }
 
-        // NavDrawer – use "links" menu item
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, "links");
+        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, LINKS_SCREEN);
 
         listLinks.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new LinksAdapter(items);
+        adapter = new LinksAdapter();
         listLinks.setAdapter(adapter);
 
         loadAndSortLinksForUser();
@@ -144,142 +133,114 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         }
     }
 
-    // Main logic
+    @Override
+    protected void onDestroy() {
+        bgExecutor.shutdownNow();
+        super.onDestroy();
+    }
 
     private void loadAndSortLinksForUser() {
-        // 1) Build full (but already trimmed) list of links
-        List<LinkItem> all = buildAllLinks();
-
-        if (all.isEmpty()) {
-            if (tvEmpty != null) {
-                tvEmpty.setVisibility(View.VISIBLE);
-                tvEmpty.setText(R.string.useful_links_empty);
-            }
+        List<LinkItem> links = buildAllLinks();
+        if (links.isEmpty()) {
+            adapter.replaceItems(links);
+            setEmptyState(true);
             return;
         }
 
-        // 2) Read user's majors and faculty codes
-        Set<String> majorCodesOfUser = new HashSet<>();
-        Set<String> facultyCodesOfUser = new HashSet<>();
-        detectUserCodes(majorCodesOfUser, facultyCodesOfUser);
+        Set<String> majorCodes = new HashSet<>();
+        Set<String> facultyCodes = new HashSet<>();
+        detectUserCodes(majorCodes, facultyCodes);
 
-        // 3) Compute "weight" of each link for this user
-        for (LinkItem li : all) {
-            li.priorityWeight = computeWeightForUser(li, majorCodesOfUser, facultyCodesOfUser);
+        for (LinkItem item : links) {
+            item.sortWeight = resolveSortWeight(item, majorCodes, facultyCodes);
         }
 
-        // 4) Sort: first links matching the user, then global, then the rest
-        Collections.sort(all, new Comparator<LinkItem>() {
-            @Override
-            public int compare(LinkItem a, LinkItem b) {
-                int w = Integer.compare(a.priorityWeight, b.priorityWeight);
-                if (w != 0) {
-                    return w;
-                }
-                return a.title.compareToIgnoreCase(b.title);
-            }
-        });
+        links.sort(Comparator
+                .comparingInt((LinkItem item) -> item.sortWeight)
+                .thenComparing(item -> item.title.toLowerCase(Locale.ROOT)));
 
-        items.clear();
-        items.addAll(all);
-        adapter.notifyDataSetChanged();
+        adapter.replaceItems(links);
+        setEmptyState(false);
+    }
 
-        if (tvEmpty != null) {
-            tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+    private void setEmptyState(boolean empty) {
+        if (tvEmpty == null) {
+            return;
+        }
+        tvEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+        if (empty) {
+            tvEmpty.setText(R.string.useful_links_empty);
         }
     }
 
-    /**
-     * Detects, based on current studies:
-     * - major codes (INF, EKO, ...),
-     * - faculty codes (WI, WNEIZ, ...).
-     */
     private void detectUserCodes(Set<String> majors, Set<String> faculties) {
-        MzutSession s = MzutSession.getInstance();
-        List<Study> studies = s.getStudies();
-
+        List<Study> studies = MzutSession.getInstance().getStudies();
         if (studies == null) {
             return;
         }
 
-        for (Study st : studies) {
-            if (st == null) {
+        for (Study study : studies) {
+            if (study == null) {
                 continue;
             }
-            String label = st.toString();
+
+            String label = study.toString();
             if (label == null) {
                 continue;
             }
-            String l = label.toLowerCase(Locale.ROOT);
 
-            // Computer Science (WI)
-            if (l.contains("informatyka")) {
+            String normalized = label.toLowerCase(Locale.ROOT);
+            if (normalized.contains("informatyka")) {
                 majors.add("INF");
                 faculties.add("WI");
             }
-
-            // Economics (WNEIZ)
-            if (l.contains("ekonomia")) {
+            if (normalized.contains("ekonomia")) {
                 majors.add("EKO");
                 faculties.add("WNEIZ");
             }
-
-            // Mechanical Engineering (WIMiM)
-            if (l.contains("mechanika") || l.contains("budowa maszyn")) {
+            if (normalized.contains("mechanika") || normalized.contains("budowa maszyn")) {
                 majors.add("MIB");
                 faculties.add("WIMIM");
             }
-
-            // Electrical Engineering (WE)
-            if (l.contains("elektrotechnika") || l.contains("automatyka")) {
+            if (normalized.contains("elektrotechnika") || normalized.contains("automatyka")) {
                 majors.add("ELE");
                 faculties.add("WE");
             }
-
-            // Architecture and Civil Engineering (WBiA)
-            if (l.contains("budownictwo") || l.contains("architektura")) {
+            if (normalized.contains("budownictwo") || normalized.contains("architektura")) {
                 majors.add("BUD");
                 faculties.add("WBIA");
             }
         }
     }
 
-    /**
-     * Link weight – lower value means higher position in the list.
-     * 0 – matches user's MAJOR,
-     * 1 – matches user's FACULTY,
-     * 2 – GLOBAL,
-     * 3 – everything else.
-     */
-    private int computeWeightForUser(LinkItem li,
-            Set<String> majors,
-            Set<String> faculties) {
-
-        if (li.scope == LinkScope.MAJOR && li.majorCode != null &&
-                majors.contains(li.majorCode)) {
-            li.highlight = true;
+    private int resolveSortWeight(LinkItem item, Set<String> majors, Set<String> faculties) {
+        if (item.scope == LinkScope.MAJOR
+                && item.majorCode != null
+                && majors.contains(item.majorCode)) {
+            item.highlighted = true;
             return 0;
         }
 
-        if (li.scope == LinkScope.FACULTY && li.facultyCode != null &&
-                faculties.contains(li.facultyCode)) {
-            li.highlight = true;
+        if (item.scope == LinkScope.FACULTY
+                && item.facultyCode != null
+                && faculties.contains(item.facultyCode)) {
+            item.highlighted = true;
             return 1;
         }
 
-        if (li.scope == LinkScope.GLOBAL) {
+        if (item.scope == LinkScope.GLOBAL) {
             return 2;
         }
 
         return 3;
     }
-    /** Builds the list of useful links. */
+
     private List<LinkItem> buildAllLinks() {
-        List<LinkItem> list = new ArrayList<>();
+        List<LinkItem> links = new ArrayList<>();
         try {
-            JSONArray links = new JSONArray(readRawTextResource(R.raw.useful_links));
-            for (int i = 0; i < links.length(); i++) {
-                JSONObject raw = links.optJSONObject(i);
+            JSONArray rawLinks = new JSONArray(readRawTextResource(R.raw.useful_links));
+            for (int i = 0; i < rawLinks.length(); i++) {
+                JSONObject raw = rawLinks.optJSONObject(i);
                 if (raw == null) {
                     continue;
                 }
@@ -287,34 +248,30 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
                 String id = raw.optString("id", "");
                 String title = raw.optString("title", "");
                 String url = raw.optString("url", "");
-                String description = raw.optString("description", "");
-                LinkScope scope = parseLinkScope(raw.optString("scope", ""));
-                String facultyCode = emptyToNull(raw.optString("facultyCode", null));
-                String majorCode = emptyToNull(raw.optString("majorCode", null));
-
                 if (id.isEmpty() || title.isEmpty() || url.isEmpty()) {
                     continue;
                 }
 
-                list.add(new LinkItem(
+                links.add(new LinkItem(
                         id,
                         title,
                         url,
-                        description,
-                        scope,
-                        facultyCode,
-                        majorCode));
+                        raw.optString("description", ""),
+                        parseLinkScope(raw.optString("scope", "")),
+                        emptyToNull(raw.optString("facultyCode", null)),
+                        emptyToNull(raw.optString("majorCode", null))));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return list;
+        return links;
     }
 
     private LinkScope parseLinkScope(String rawScope) {
         if (rawScope == null) {
             return LinkScope.OTHER;
         }
+
         try {
             return LinkScope.valueOf(rawScope.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ignored) {
@@ -330,104 +287,138 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
     }
 
     private String readRawTextResource(int resId) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (InputStream in = getResources().openRawResource(resId);
-                InputStreamReader isr = new InputStreamReader(in, StandardCharsets.UTF_8);
-                BufferedReader reader = new BufferedReader(isr)) {
+        StringBuilder builder = new StringBuilder();
+        try (InputStream input = getResources().openRawResource(resId);
+                InputStreamReader streamReader = new InputStreamReader(input, StandardCharsets.UTF_8);
+                BufferedReader reader = new BufferedReader(streamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                sb.append(line);
+                builder.append(line);
             }
         }
-        return sb.toString();
+        return builder.toString();
     }
 
-    private void fetchOgData(LinkItem item) {
-        if (item.fetched) return;
-        item.fetched = true; // Mark as started to avoid duplicate calls
+    private void fetchOpenGraphData(LinkItem item) {
+        if (item.metadataRequested) {
+            return;
+        }
+        item.metadataRequested = true;
 
-        // 1. Check SharedPreferences cache first
-        String cachedJson = ogCachePrefs.getString(item.url, null);
-        if (cachedJson != null) {
-            try {
-                JSONObject json = new JSONObject(cachedJson);
-                item.ogTitle = json.optString("title", null);
-                item.ogDescription = json.optString("description", null);
-                item.ogImageUrl = json.optString("image", null);
-                // Refresh item in adapter on main thread
-                mainHandler.post(() -> adapter.notifyDataSetChanged());
-                return;
-            } catch (Exception e) {
-                // cache corrupted
-            }
+        if (applyCachedPreview(item)) {
+            adapter.refreshItem(item);
+            return;
         }
 
         bgExecutor.submit(() -> {
             try {
                 Request request = new Request.Builder()
                         .url(item.url)
-                        .header("User-Agent", "Mozilla/5.0 (compatible; mZUTv2/1.0)")
+                        .header("User-Agent", USER_AGENT)
                         .build();
 
                 try (Response response = client.newCall(request).execute()) {
-                    if (!response.isSuccessful()) return;
+                    if (!response.isSuccessful() || response.body() == null) {
+                        markMetadataLoaded(item);
+                        return;
+                    }
+
                     String html = response.body().string();
+                    item.previewTitle = firstNonEmpty(
+                            extractMeta(html, "og:title"),
+                            extractTitle(html));
+                    item.previewImageUrl = emptyToNull(extractMeta(html, "og:image"));
+                    savePreviewToCache(item);
 
-                    // Simple Regex parsing for <meta property="og:..." content="..." />
-                    item.ogTitle = extractMeta(html, "og:title");
-                    item.ogDescription = extractMeta(html, "og:description");
-                    item.ogImageUrl = extractMeta(html, "og:image");
-
-                    // Fallback to <title> if og:title missing
-                    if (item.ogTitle == null) {
-                        Matcher m = Pattern.compile("<title>(.*?)</title>", Pattern.CASE_INSENSITIVE).matcher(html);
-                        if (m.find()) item.ogTitle = m.group(1);
+                    if (item.previewImageUrl != null) {
+                        downloadImageToCache(item.previewImageUrl);
                     }
-
-                    // Save to cache
-                    JSONObject json = new JSONObject();
-                    json.put("title", item.ogTitle);
-                    json.put("description", item.ogDescription);
-                    json.put("image", item.ogImageUrl);
-                    ogCachePrefs.edit().putString(item.url, json.toString()).apply();
-
-                    // If image URL found, pre-download it to cache
-                    if (item.ogImageUrl != null) {
-                        downloadImageToCache(item.ogImageUrl);
-                    }
-
-                    mainHandler.post(() -> adapter.notifyDataSetChanged());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            markMetadataLoaded(item);
         });
     }
 
-    private String extractMeta(String html, String property) {
-        // Matches <meta property="og:image" content="..." /> OR <meta content="..." property="og:image" />
-        // Simplistic approach but works for most sites
-        Pattern p = Pattern.compile("<meta\\s+(?:property=[\"']" + property + "[\"']\\s+content=[\"'](.*?)[\"']|content=[\"'](.*?)[\"']\\s+property=[\"']" + property + "[\"'])", Pattern.CASE_INSENSITIVE);
-        Matcher m = p.matcher(html);
-        if (m.find()) {
-            return m.group(1) != null ? m.group(1) : m.group(2);
+    private boolean applyCachedPreview(LinkItem item) {
+        String cachedJson = ogCachePrefs.getString(item.url, null);
+        if (cachedJson == null) {
+            return false;
         }
-        return null;
+
+        try {
+            JSONObject json = new JSONObject(cachedJson);
+            item.previewTitle = emptyToNull(json.optString("title", null));
+            item.previewImageUrl = emptyToNull(json.optString("image", null));
+            item.metadataLoaded = true;
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private void savePreviewToCache(LinkItem item) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("title", item.previewTitle);
+            json.put("image", item.previewImageUrl);
+            ogCachePrefs.edit().putString(item.url, json.toString()).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void markMetadataLoaded(LinkItem item) {
+        item.metadataLoaded = true;
+        mainHandler.post(() -> adapter.refreshItem(item));
+    }
+
+    private String extractTitle(String html) {
+        Matcher matcher = TITLE_TAG_PATTERN.matcher(html);
+        if (!matcher.find()) {
+            return null;
+        }
+        return emptyToNull(matcher.group(1));
+    }
+
+    private String extractMeta(String html, String property) {
+        String quotedProperty = Pattern.quote(property);
+        Pattern pattern = Pattern.compile(
+                "<meta\\s+(?:property=[\"']" + quotedProperty + "[\"']\\s+content=[\"'](.*?)[\"']"
+                        + "|content=[\"'](.*?)[\"']\\s+property=[\"']" + quotedProperty + "[\"'])",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(html);
+        if (!matcher.find()) {
+            return null;
+        }
+        return emptyToNull(matcher.group(1) != null ? matcher.group(1) : matcher.group(2));
+    }
+
+    private String firstNonEmpty(String first, String second) {
+        String firstValue = emptyToNull(first);
+        if (firstValue != null) {
+            return firstValue;
+        }
+        return emptyToNull(second);
     }
 
     private void downloadImageToCache(String url) {
-        if (url == null) return;
-        if (ImageCache.getInstance().getFromDisk(url) != null) return; // already cached
+        if (url == null || ImageCache.getInstance().getFromDisk(url) != null) {
+            return;
+        }
 
         try {
             Request request = new Request.Builder().url(url).build();
             try (Response response = client.newCall(request).execute()) {
-                if (response.isSuccessful() && response.body() != null) {
-                    byte[] bytes = response.body().bytes();
-                    Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                    if (bmp != null) {
-                        ImageCache.getInstance().put(url, bmp);
-                    }
+                if (!response.isSuccessful() || response.body() == null) {
+                    return;
+                }
+
+                byte[] bytes = response.body().bytes();
+                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                if (bitmap != null) {
+                    ImageCache.getInstance().put(url, bitmap);
                 }
             }
         } catch (Exception e) {
@@ -435,7 +426,29 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         }
     }
 
-    // Model + adapter
+    private String formatDomain(String url) {
+        String domain = url
+                .replace("https://", "")
+                .replace("http://", "")
+                .replace("www.", "");
+        if (domain.endsWith("/")) {
+            domain = domain.substring(0, domain.length() - 1);
+        }
+        return domain;
+    }
+
+    private void openLink(View source, LinkItem item) {
+        try {
+            Intent intent = new Intent(source.getContext(), WebLinkActivity.class);
+            intent.putExtra(
+                    WebLinkActivity.EXTRA_TITLE,
+                    item.previewTitle != null ? item.previewTitle : item.title);
+            intent.putExtra(WebLinkActivity.EXTRA_URL, item.url);
+            source.getContext().startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.web_link_open_external_error, Toast.LENGTH_SHORT).show();
+        }
+    }
 
     enum LinkScope {
         GLOBAL,
@@ -444,23 +457,21 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         OTHER
     }
 
-    static class LinkItem {
-        String id;
-        String title;
-        String url;
-        String description;
-        LinkScope scope;
-        String facultyCode; // e.g. WI, WNEIZ, WIMIM
-        String majorCode; // e.g. INF, EKO, MIB
+    static final class LinkItem {
+        final String id;
+        final String title;
+        final String url;
+        final String description;
+        final LinkScope scope;
+        final String facultyCode;
+        final String majorCode;
 
-        int priorityWeight = 3;
-        boolean highlight = false;
-
-        // Async fetched data
-        boolean fetched = false;
-        String ogTitle;
-        String ogDescription;
-        String ogImageUrl;
+        int sortWeight = 3;
+        boolean highlighted;
+        boolean metadataRequested;
+        boolean metadataLoaded;
+        String previewTitle;
+        String previewImageUrl;
 
         LinkItem(String id,
                 String title,
@@ -477,114 +488,141 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             this.facultyCode = facultyCode;
             this.majorCode = majorCode;
         }
+
+        boolean sameItem(@NonNull LinkItem other) {
+            return id.equals(other.id);
+        }
+
+        boolean sameContent(@NonNull LinkItem other) {
+            return title.equals(other.title)
+                    && url.equals(other.url)
+                    && Objects.equals(description, other.description)
+                    && scope == other.scope
+                    && Objects.equals(facultyCode, other.facultyCode)
+                    && Objects.equals(majorCode, other.majorCode)
+                    && sortWeight == other.sortWeight
+                    && highlighted == other.highlighted
+                    && metadataRequested == other.metadataRequested
+                    && metadataLoaded == other.metadataLoaded
+                    && Objects.equals(previewTitle, other.previewTitle)
+                    && Objects.equals(previewImageUrl, other.previewImageUrl);
+        }
     }
 
-    private class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.VH> {
+    private final class LinksAdapter extends RecyclerView.Adapter<LinksAdapter.ViewHolder> {
 
-        private final List<LinkItem> data;
+        private final List<LinkItem> data = new ArrayList<>();
 
-        LinksAdapter(List<LinkItem> data) {
-            this.data = data;
+        void replaceItems(List<LinkItem> newItems) {
+            List<LinkItem> updatedItems = newItems != null
+                    ? new ArrayList<>(newItems)
+                    : new ArrayList<>();
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+                @Override
+                public int getOldListSize() {
+                    return data.size();
+                }
+
+                @Override
+                public int getNewListSize() {
+                    return updatedItems.size();
+                }
+
+                @Override
+                public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                    return data.get(oldItemPosition).sameItem(updatedItems.get(newItemPosition));
+                }
+
+                @Override
+                public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                    return data.get(oldItemPosition).sameContent(updatedItems.get(newItemPosition));
+                }
+            });
+
+            data.clear();
+            data.addAll(updatedItems);
+            diffResult.dispatchUpdatesTo(this);
+        }
+
+        void refreshItem(LinkItem item) {
+            int index = data.indexOf(item);
+            if (index >= 0) {
+                notifyItemChanged(index);
+            }
         }
 
         @NonNull
         @Override
-        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = getLayoutInflater().inflate(R.layout.row_useful_link_card, parent, false);
-            return new VH(v);
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = getLayoutInflater().inflate(R.layout.row_useful_link_card, parent, false);
+            return new ViewHolder(view);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull VH h, int position) {
-            LinkItem li = data.get(position);
-
-            // Trigger fetch if not yet started
-            if (!li.fetched) {
-                fetchOgData(li);
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            LinkItem item = data.get(position);
+            if (!item.metadataRequested) {
+                fetchOpenGraphData(item);
             }
 
-            // Title: always use manual title
-            h.title.setText(li.title);
-
-            // Description: always use manual description
-            h.desc.setText(li.description != null ? li.description : "");
-
-            // Source URL (domain only)
-            String domain = li.url.replace("https://", "").replace("http://", "").replace("www.", "");
-            if (domain.endsWith("/")) domain = domain.substring(0, domain.length() - 1);
-            h.url.setText(domain);
-
-            // Badge
-            if (li.highlight) {
-                h.badge.setVisibility(View.VISIBLE);
-            } else {
-                h.badge.setVisibility(View.GONE);
-            }
-
-            // Image handling
-            h.loading.setVisibility(View.GONE);
-            h.image.setImageResource(R.drawable.bg_header_gradient); // default placeholder
-
-            if (li.ogImageUrl != null) {
-                Bitmap bmp = ImageCache.getInstance().getFromMemory(li.ogImageUrl);
-                if (bmp == null) {
-                    // Check disk async
-                    bgExecutor.submit(() -> {
-                        Bitmap diskBmp = ImageCache.getInstance().getFromDisk(li.ogImageUrl);
-                        if (diskBmp != null) {
-                             mainHandler.post(() -> {
-                                 int pos = h.getAdapterPosition();
-                                 if (pos != RecyclerView.NO_POSITION && pos < data.size() && data.get(pos) == li) {
-                                     h.image.setImageBitmap(diskBmp);
-                                 }
-                             });
-                        } else {
-                             // Not on disk, maybe downloading? show loading
-                             mainHandler.post(() -> {
-                                 int pos = h.getAdapterPosition();
-                                 if (pos != RecyclerView.NO_POSITION && pos < data.size() && data.get(pos) == li) {
-                                     h.loading.setVisibility(View.VISIBLE);
-                                 }
-                             });
-                        }
-                    });
-                } else {
-                    h.image.setImageBitmap(bmp);
-                }
-            } else {
-                // No image URL yet (or failed), show placeholder or hide image area?
-                // Keeping placeholder for consistent layout
-                if (!li.fetched) {
-                     h.loading.setVisibility(View.VISIBLE);
-                }
-            }
-
-            h.itemView.setOnClickListener(v -> {
-                try {
-                    Intent i = new Intent(v.getContext(), WebLinkActivity.class);
-                    i.putExtra(WebLinkActivity.EXTRA_TITLE, li.ogTitle != null ? li.ogTitle : li.title);
-                    i.putExtra(WebLinkActivity.EXTRA_URL, li.url);
-                    v.getContext().startActivity(i);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
+            holder.title.setText(item.title);
+            holder.desc.setText(item.description != null ? item.description : "");
+            holder.url.setText(formatDomain(item.url));
+            holder.badge.setVisibility(item.highlighted ? View.VISIBLE : View.GONE);
+            bindPreviewImage(holder, item);
+            holder.itemView.setOnClickListener(view -> openLink(view, item));
         }
 
         @Override
         public int getItemCount() {
-            return data != null ? data.size() : 0;
+            return data.size();
         }
 
-        class VH extends RecyclerView.ViewHolder {
-            TextView title;
-            TextView desc;
-            TextView url;
-            TextView badge;
-            ImageView image;
-            ProgressBar loading;
+        private void bindPreviewImage(@NonNull ViewHolder holder, @NonNull LinkItem item) {
+            holder.loading.setVisibility(View.GONE);
+            holder.image.setImageResource(R.drawable.bg_header_gradient);
 
-            VH(@NonNull View itemView) {
+            if (item.previewImageUrl == null) {
+                if (!item.metadataLoaded) {
+                    holder.loading.setVisibility(View.VISIBLE);
+                }
+                return;
+            }
+
+            Bitmap memoryBitmap = ImageCache.getInstance().getFromMemory(item.previewImageUrl);
+            if (memoryBitmap != null) {
+                holder.image.setImageBitmap(memoryBitmap);
+                return;
+            }
+
+            holder.loading.setVisibility(View.VISIBLE);
+            bgExecutor.submit(() -> {
+                Bitmap diskBitmap = ImageCache.getInstance().getFromDisk(item.previewImageUrl);
+                mainHandler.post(() -> {
+                    int adapterPosition = holder.getAdapterPosition();
+                    if (adapterPosition == RecyclerView.NO_POSITION
+                            || adapterPosition >= data.size()
+                            || data.get(adapterPosition) != item) {
+                        return;
+                    }
+
+                    holder.loading.setVisibility(View.GONE);
+                    if (diskBitmap != null) {
+                        holder.image.setImageBitmap(diskBitmap);
+                    }
+                });
+            });
+        }
+
+        final class ViewHolder extends RecyclerView.ViewHolder {
+            final TextView title;
+            final TextView desc;
+            final TextView url;
+            final TextView badge;
+            final ImageView image;
+            final ProgressBar loading;
+
+            ViewHolder(@NonNull View itemView) {
                 super(itemView);
                 title = itemView.findViewById(R.id.linkTitle);
                 desc = itemView.findViewById(R.id.linkDesc);

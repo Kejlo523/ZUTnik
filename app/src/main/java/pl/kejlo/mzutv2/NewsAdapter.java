@@ -11,23 +11,55 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
-    private final List<NewsItem> items;
-    private final Context ctx;
+    private final List<NewsItem> items = new ArrayList<>();
+    private final Context context;
 
-    // Static executor for image loading across all adapter instances
-    private static final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors
+    private static final java.util.concurrent.ExecutorService IMAGE_EXECUTOR = java.util.concurrent.Executors
             .newFixedThreadPool(4);
-    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
 
-    public NewsAdapter(Context ctx, List<NewsItem> items) {
-        this.ctx = ctx;
-        this.items = items;
+    public NewsAdapter(Context context) {
+        this.context = context;
+    }
+
+    public void replaceItems(List<NewsItem> newsItems) {
+        List<NewsItem> updatedItems = newsItems != null
+                ? new ArrayList<>(newsItems)
+                : new ArrayList<>();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() {
+                return items.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return updatedItems.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return sameItem(items.get(oldItemPosition), updatedItems.get(newItemPosition));
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                return sameContent(items.get(oldItemPosition), updatedItems.get(newItemPosition));
+            }
+        });
+
+        items.clear();
+        items.addAll(updatedItems);
+        diffResult.dispatchUpdatesTo(this);
     }
 
     @NonNull
@@ -44,38 +76,8 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         h.title.setText(n.title);
         h.date.setText(n.date);
         h.snippet.setText(n.snippet);
-
-        // Thumbnail on the right – try memory cache first
-        if (n.thumbUrl != null && !n.thumbUrl.trim().isEmpty()) {
-            h.thumb.setVisibility(View.VISIBLE);
-            h.thumb.setTag(n.thumbUrl);
-
-            // First, try to load from memory cache (FAST, safe for UI thread)
-            Bitmap cached = ImageCache.getInstance().getFromMemory(n.thumbUrl);
-            if (cached != null) {
-                h.thumb.setImageBitmap(cached);
-            } else {
-                // Not in memory – clear and load async (checks disk -> downloads)
-                h.thumb.setImageDrawable(null);
-                loadThumbnail(h.thumb, n.thumbUrl);
-            }
-        } else {
-            h.thumb.setVisibility(View.GONE);
-            h.thumb.setTag(null);
-            h.thumb.setImageDrawable(null);
-        }
-
-        // Click opens details screen in the app
-        h.itemView.setOnClickListener(v -> {
-            Intent i = new Intent(ctx, NewsDetailActivity.class);
-            i.putExtra("id", n.id);
-            i.putExtra("title", n.title);
-            i.putExtra("date", n.date);
-            i.putExtra("link", n.link);
-            i.putExtra("contentHtml", n.contentHtml);
-            i.putExtra("descriptionText", n.descriptionText);
-            ctx.startActivity(i);
-        });
+        bindThumbnail(h.thumb, n.thumbUrl);
+        h.itemView.setOnClickListener(v -> openDetails(n));
     }
 
     @Override
@@ -83,34 +85,93 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         return items.size();
     }
 
-    // Thumbnail loader with ImageCache integration
-    private void loadThumbnail(ImageView iv, String url) {
-        if (iv == null || url == null)
-            return;
+    private boolean sameItem(NewsItem oldItem, NewsItem newItem) {
+        if (oldItem == null || newItem == null) {
+            return oldItem == newItem;
+        }
+        if (oldItem.id > 0 && newItem.id > 0) {
+            return oldItem.id == newItem.id;
+        }
+        return Objects.equals(oldItem.link, newItem.link)
+                && Objects.equals(oldItem.title, newItem.title);
+    }
 
-        executor.execute(() -> {
+    private boolean sameContent(NewsItem oldItem, NewsItem newItem) {
+        if (oldItem == null || newItem == null) {
+            return oldItem == newItem;
+        }
+        return oldItem.id == newItem.id
+                && Objects.equals(oldItem.title, newItem.title)
+                && Objects.equals(oldItem.date, newItem.date)
+                && Objects.equals(oldItem.pubDateRaw, newItem.pubDateRaw)
+                && Objects.equals(oldItem.snippet, newItem.snippet)
+                && Objects.equals(oldItem.link, newItem.link)
+                && Objects.equals(oldItem.descriptionHtml, newItem.descriptionHtml)
+                && Objects.equals(oldItem.descriptionText, newItem.descriptionText)
+                && Objects.equals(oldItem.contentHtml, newItem.contentHtml)
+                && Objects.equals(oldItem.thumbUrl, newItem.thumbUrl);
+    }
+
+    private void bindThumbnail(ImageView imageView, String url) {
+        if (url == null || url.trim().isEmpty()) {
+            imageView.setVisibility(View.GONE);
+            imageView.setTag(null);
+            imageView.setImageDrawable(null);
+            return;
+        }
+
+        imageView.setVisibility(View.VISIBLE);
+        imageView.setTag(url);
+
+        Bitmap cached = ImageCache.getInstance().getFromMemory(url);
+        if (cached != null) {
+            imageView.setImageBitmap(cached);
+            return;
+        }
+
+        imageView.setImageDrawable(null);
+        loadThumbnail(imageView, url);
+    }
+
+    private void openDetails(NewsItem item) {
+        Intent intent = new Intent(context, NewsDetailActivity.class);
+        intent.putExtra("id", item.id);
+        intent.putExtra("title", item.title);
+        intent.putExtra("date", item.date);
+        intent.putExtra("link", item.link);
+        intent.putExtra("contentHtml", item.contentHtml);
+        intent.putExtra("descriptionText", item.descriptionText);
+        context.startActivity(intent);
+    }
+
+    private void loadThumbnail(ImageView iv, String url) {
+        if (iv == null || url == null) {
+            return;
+        }
+
+        IMAGE_EXECUTOR.execute(() -> {
             Bitmap bitmap = null;
 
-            // 1. Try Disk Cache (background thread is safe for IO)
             try {
                 Bitmap fromDisk = ImageCache.getInstance().getFromDisk(url);
                 if (fromDisk != null) {
                     bitmap = fromDisk;
                 } else {
-                    // 2. Download via NewsRepository (uses MzutNetwork for SSL)
                     bitmap = NewsRepository.downloadImage(url);
                 }
             } catch (Exception ignored) {
             }
 
             final Bitmap finalBitmap = bitmap;
-            handler.post(() -> {
-                if (finalBitmap == null)
+            mainHandler.post(() -> {
+                if (finalBitmap == null) {
                     return;
+                }
 
                 Object tag = iv.getTag();
-                if (!(tag instanceof String))
+                if (!(tag instanceof String)) {
                     return;
+                }
 
                 if (url.equals(tag)) {
                     iv.setImageBitmap(finalBitmap);

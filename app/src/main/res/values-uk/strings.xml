@@ -2,10 +2,6 @@
 <resources>
   <string name="app_name">mZUT v2</string>
   <string name="app_version">Версія %1$s</string>
-  <string name="battery_opt_dialog_title">Необхідні дозволи</string>
-  <string name="battery_opt_dialog_message">Програма повинна працювати у фоновому режимі, щоб віджети працювали коректно. Будь ласка, вимкніть оптимізацію батареї для цієї програми.</string>
-  <string name="battery_opt_button_settings">Налаштування</string>
-  <string name="battery_opt_button_cancel">Скасувати</string>
   <string name="nav_header_default_username">Студент</string>
   <string name="logout_success_message">Вихід виконано</string>
   <string name="nav_settings_label">Налаштування</string>
@@ -31,7 +27,6 @@
         Швидкий доступ до розкладу, оцінок, інформації про навчання та новин ZUT – усе в одному місці.
     </string>
   <string name="home_welcome_fallback">Вітаємо Студенте 👋</string>
-  <string name="home_grades_not_available">Екран оцінок ще не підключено.</string>
   <string name="home_shortcuts_title">Швидкі ярлики</string>
   <string name="home_side_panel_desc">Бічна панель</string>
   <string name="home_tile_plan_title">📅 Розклад занять</string>
@@ -74,7 +69,6 @@
   <string name="info_label_academic_year">Навчальний рік:</string>
   <string name="info_label_semester">Семестр:</string>
   <string name="plan_title">Розклад занять</string>
-  <string name="plan_filters_loading">Завантаження…</string>
   <string name="plan_filters_error">Помилка завантаження списку предметів: %1$s</string>
   <string name="plan_filters_empty">Немає предметів для фільтрування.</string>
   <string name="plan_filters_dialog_title">Фільтр предметів – виключити з відображення</string>
@@ -169,6 +163,7 @@
     </string>
   <string name="news_header_title">Канал оголошень для студентів</string>
   <string name="news_header_source_info">Джерело RSS: студенти ZUT</string>
+  <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">щойно</string>
   <string name="news_empty_state">
         Немає новин або сталася помилка під час отримання RSS-каналу.
@@ -282,7 +277,6 @@
   <string name="menu_home_add">Додати плитку</string>
   <string name="menu_home_cancel">Скасувати</string>
   <string name="menu_home_reset">Відновити стандартні</string>
-  <string name="home_cancel_toast">Зміни скасовано</string>
   <string name="home_reset_dialog_title">Відновити стандартні?</string>
   <string name="home_reset_dialog_message">Ви впевнені, що хочете відновити стандартний макет плиток? Ваші зміни буде втрачено.</string>
   <string name="home_reset_dialog_yes">Так</string>
@@ -298,7 +292,6 @@
   <string name="grades_grouping_toggle">Групувати оцінки</string>
   <string name="grades_final_grade_label">Підсумкова оцінка</string>
   <string name="grades_final_grade_missing">Немає підсумкової оцінки</string>
-  <string name="grades_group_items_count">Інші: %d</string>
   <string name="plan_type_label">Тип занять</string>
   <!-- Attendance / Відвідуваність -->
   <string name="attendance_title">Відвідуваність</string>
@@ -351,7 +344,6 @@
   <string name="theme_high_contrast">Високий контраст</string>
   <string name="theme_lime">Лайм</string>
   <string name="common_dash">-</string>
-  <string name="common_percent_zero">0%</string>
   <string name="common_percent_placeholder">--%</string>
   <string name="common_percent_format">%1$d%%</string>
   <string name="grades_placeholder_value">4.5</string>
@@ -397,7 +389,6 @@
   <string name="period_holiday_summer">літні канікули</string>
   <!-- Extracted Strings -->
   <string name="useful_links_badge_recommended">Рекомендовано</string>
-  <string name="about_version_prefix">v</string>
   <string name="about_section_support_project">Підтримка та Проект</string>
   <string name="about_footer_made_with">Зроблено з ❤️ Kejlo</string>
   <string name="about_rate_title">Оцініть додаток</string>
@@ -420,8 +411,6 @@
   <string name="wear_sync_status_error">Помилка синхронізації.</string>
   <string name="wear_sync_status_watch_received">Годинник отримав дані!</string>
   <string name="wear_main_status_syncing">Синхронізація…</string>
-  <string name="common_ok">ОК</string>
-  <string name="wear_sync_request_title">Запит на синхронізацію</string>
   <string name="wear_install_dialog_open_store">Відкрити Маркет</string>
   <string name="wear_install_sent_toast">Запит надіслано на годинник</string>
   <string name="settings_section_notifications">Notifications</string>

@@ -12,8 +12,6 @@
   <string name="complication_preview_title">Naechste</string>
   <string name="complication_preview_eta_short">in 2 Std.</string>
   <string name="complication_preview_long">Vorlesung\nin 2 Std. 10 Min. · 08:00–09:30</string>
-  <string name="watch_face_label">mZUT Plan</string>
-  <string name="watch_face_login_required">Am Telefon anmelden</string>
   <string name="wear_main_title">Synchronisierung mit Telefon</string>
   <string name="wear_main_sync">Synchronisieren</string>
   <string name="wear_main_sync_failed">Anfrage konnte nicht gesendet werden</string>
@@ -23,9 +21,8 @@
   <string name="wear_main_status_idle">Tippe auf Synchronisieren, um Daten zu laden</string>
   <string name="wear_main_status_received">Daten aktualisiert</string>
   <string name="wear_main_status_login_required">Am Telefon anmelden und erneut versuchen</string>
-  <string name="watch_face_next_label">Naechste Veranstaltungen</string>
-  <string name="watch_face_no_next">Keine Veranstaltungen</string>
   <string name="wear_device_default_name">Wear</string>
+  <string name="wear_event_meta_format">%1$s · %2$s</string>
   <string name="wear_eta_now">jetzt</string>
   <string name="wear_eta_minutes">in %1$d Min.</string>
   <string name="wear_eta_hours">in %1$d Std.</string>

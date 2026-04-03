@@ -26,7 +26,6 @@
     <color name="online_bar_bg">#3FAF6C</color>
 
     <color name="plan_time_column_text">@color/mz_muted</color>
-    <color name="plan_month_weekday_text">@color/mz_muted</color>
 
     <color name="plan_hour_line">#1A64748B</color>
 
@@ -37,10 +36,6 @@
     <color name="plan_now_line">#F43F5E</color>
     <color name="plan_event_text">#1E293B</color>
 
-    <color name="plan_month_cell_with_events_bg">#DBEAFE</color>
-    <color name="plan_month_cell_bg">@color/mz_card</color>
-    <color name="plan_month_day_number">@color/mz_text</color>
-    <color name="plan_month_day_hint">#94A3B8</color>
 
     <color name="plan_event_lecture_bg">#D1E0FF</color>
     <color name="plan_event_lab_bg">#E9D5FF</color>
@@ -69,6 +64,5 @@
     <color name="glass_border">#26000000</color>
     <color name="glass_text_primary">#1E293B</color>
     <color name="glass_text_secondary">#64748B</color>
-    <color name="glass_divider">#1A000000</color>
 
 </resources>

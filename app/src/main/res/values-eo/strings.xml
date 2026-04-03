@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="battery_opt_dialog_title">Kapitanie, problem!</string>
-  <string name="battery_opt_dialog_message">Łajba musi płynąć w tle, żeby widgety nie poszły na dno. Wyłącz oszczędzanie energii dla tej krypy.</string>
-  <string name="battery_opt_button_settings">Ustawienia Łajby</string>
-  <string name="battery_opt_button_cancel">Poddaj się</string>
   <string name="app_name">mZUT v2 (Pirate Ed.)</string>
   <string name="app_version">Wersja %1$s (Alpha &amp; Omega)</string>
   <string name="nav_header_default_username">Majtek</string>
@@ -31,7 +27,6 @@
         Tu masz mapę zajęć, swoje łupy (oceny) i wieści ze świata. Nie zgub się!
     </string>
   <string name="home_welcome_fallback">Ahoj Majtku 👋</string>
-  <string name="home_grades_not_available">Skrzynia ze skarbami jest zamknięta (Oceny niedostępne).</string>
   <string name="home_shortcuts_title">Szybka Szalupa</string>
   <string name="home_side_panel_desc">Burtowy panel</string>
   <string name="home_tile_plan_title">📅 Plan Rejsu</string>
@@ -74,7 +69,6 @@
   <string name="info_label_academic_year">Rok na morzu:</string>
   <string name="info_label_semester">Wachta (Semestr):</string>
   <string name="plan_title">Plan Rejsu</string>
-  <string name="plan_filters_loading">Rozwijam żagle…</string>
   <string name="plan_filters_error">Nie widać lądu (Błąd): %1$s</string>
   <string name="plan_filters_empty">Pusto na horyzoncie.</string>
   <string name="plan_filters_dialog_title">Wyrzuć za burtę (Filtr)</string>
@@ -169,6 +163,7 @@
     </string>
   <string name="news_header_title">Krzyki w Porcie</string>
   <string name="news_header_source_info">Źródło: Majtkowie ZUT</string>
+  <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">chwilę temu</string>
   <string name="news_empty_state">
         Cisza na morzu.
@@ -254,7 +249,6 @@
   <string name="menu_home_add">Dodaj coś</string>
   <string name="menu_home_cancel">Anuluj</string>
   <string name="menu_home_reset">Jak było na początku</string>
-  <string name="home_cancel_toast">Anulowano!</string>
   <string name="home_reset_dialog_title">Zrobić jak było?</string>
   <string name="home_reset_dialog_message">Na pewno chcesz zresetować układ? Twoje zmiany pójdą na dno.</string>
   <string name="home_reset_dialog_yes">Tak!</string>
@@ -277,7 +271,6 @@
   <string name="grades_grouping_toggle">Grupuj łupy</string>
   <string name="grades_final_grade_label">Wyrok (Ocena końcowa)</string>
   <string name="grades_final_grade_missing">Brak wyroku</string>
-  <string name="grades_group_items_count">Zostało: %d</string>
   <string name="plan_type_label">Rodzaj tortury</string>
   <!-- Attendance -->
   <string name="attendance_title">Obecność na pokładzie</string>
@@ -327,7 +320,6 @@
   <string name="plan_quick_time_range">%1$s - %2$s</string>
   <string name="common_zero">0</string>
   <string name="common_dash">-</string>
-  <string name="common_percent_zero">0%</string>
   <string name="common_percent_placeholder">--%</string>
   <string name="common_percent_format">%1$d%%</string>
   <string name="grades_placeholder_value">4.5</string>
@@ -364,7 +356,6 @@
   <string name="session_summer">letnia</string>
   <string name="session_retake">poprawkowa</string>
   <string name="useful_links_badge_recommended">Polecane łupy</string>
-  <string name="about_version_prefix">v</string>
   <string name="about_section_support_project">Wsparcie i Bractwo</string>
   <string name="about_footer_made_with">Zbudowane z ❤️ przez Kejlo</string>
   <string name="about_github_title">Plany okrętu</string>
@@ -385,8 +376,6 @@
   <string name="wear_sync_status_error">Błąd w sztuce!</string>
   <string name="wear_sync_status_watch_received">Kompas odebrał!</string>
   <string name="wear_main_status_syncing">Przeładowuję mapy…</string>
-  <string name="common_ok">Aye, kapitanie!</string>
-  <string name="wear_sync_request_title">Zwiad woła o mapy</string>
   <string name="wear_install_dialog_open_store">Otwórz Kram</string>
   <string name="wear_install_sent_toast">Posłano gołębia na zegarek</string>
   <string name="web_link_title">Mapa w sieci</string>

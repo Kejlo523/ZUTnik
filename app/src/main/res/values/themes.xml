@@ -190,15 +190,6 @@
         <item name="planWeekDaySelectedBg">#EEEEEE</item>
     </style>
 
-    <!-- Dialog Theme for Custom Event Wizard -->
-    <style name="Theme.MZUTv2.Dialog" parent="Theme.MZUTv2">
-        <item name="android:windowBackground">@drawable/bg_dialog_rounded_dark</item>
-        <item name="android:windowMinWidthMajor">60%</item>
-        <item name="android:windowMinWidthMinor">60%</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowAnimationStyle">@style/Animation.MZUTv2.Dialog</item>
-    </style>
-
     <!-- AlertDialog Theme Overlay -->
     <style name="ThemeOverlay.MZUTv2.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="android:windowBackground">@drawable/bg_dialog_rounded_dark</item>

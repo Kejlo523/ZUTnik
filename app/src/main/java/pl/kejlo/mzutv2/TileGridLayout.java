@@ -1,6 +1,5 @@
 package pl.kejlo.mzutv2;
 
-import android.animation.LayoutTransition;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -11,7 +10,6 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewConfiguration;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +38,6 @@ public class TileGridLayout extends ViewGroup {
     private TileView activeTileView;
     private float touchDownX, touchDownY;
     private float initialTileX, initialTileY;
-    private int touchSlop;
     private boolean isDragging = false;
     private boolean isResizing = false;
     private int resizeDirection = 0; // 1 = Right, -1 = Left
@@ -76,7 +73,6 @@ public class TileGridLayout extends ViewGroup {
 
     private void init(Context context) {
         // No LayoutTransition - we handle animations manually during drag
-        touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         setWillNotDraw(false); // To draw preview rect
 
         maxCellSizePx = context.getResources().getDimensionPixelSize(R.dimen.tile_cell_max);
@@ -495,11 +491,6 @@ public class TileGridLayout extends ViewGroup {
         return false;
     }
 
-    private boolean isPointInView(View view, int x, int y) {
-        return x >= view.getLeft() && x <= view.getRight() &&
-                y >= view.getTop() && y <= view.getBottom();
-    }
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -837,19 +828,6 @@ public class TileGridLayout extends ViewGroup {
         }
     }
 
-    private Point findFirstAvailableSlot(boolean[][] grid, int colSpan, int rowSpan) {
-        // Search for a gap that fits colSpan x rowSpan
-        for (int r = 0; r < grid.length - rowSpan; r++) {
-            for (int c = 0; c <= COLUMN_COUNT - colSpan; c++) {
-                if (isSlotFree(grid, c, r, colSpan, rowSpan)) {
-                    return new Point(c, r);
-                }
-            }
-        }
-        // Fallback if full (append to bottom)
-        return new Point(0, grid.length);
-    }
-
     private boolean isSlotFree(boolean[][] grid, int col, int row, int colSpan, int rowSpan) {
         for (int r = row; r < row + rowSpan; r++) {
             for (int c = col; c < col + colSpan; c++) {
@@ -878,67 +856,6 @@ public class TileGridLayout extends ViewGroup {
 
     private boolean tilesMatch(Tile t1, Tile t2) {
         return t1 == t2;
-    }
-
-    // Unified calculation method for WYSIWYG
-    private List<Tile> calculateSimulation() {
-        if (activeTileView == null)
-            return new ArrayList<>(); // Should not happen
-        Tile activeTile = activeTileView.getTile();
-
-        // 1. Create Deep Copy of Tiles
-        List<Tile> simulatedTiles = new ArrayList<>();
-        Tile simulatedActiveTile = null;
-
-        for (Tile t : tiles) {
-            Tile clone = new Tile();
-            clone.title = t.title;
-            clone.actionType = t.actionType;
-            clone.actionData = t.actionData;
-            clone.row = t.row;
-            clone.col = t.col;
-            clone.rowSpan = t.rowSpan;
-            clone.colSpan = t.colSpan;
-
-            if (t == activeTile) {
-                simulatedActiveTile = clone;
-            }
-            simulatedTiles.add(clone);
-        }
-
-        if (simulatedActiveTile == null)
-            return simulatedTiles;
-
-        // 2. Move Simulated Active Tile to Preview Position
-
-        // Calculate Snap-To-Grid
-        // Use Top-Left for snapping
-        int col = (previewRect.left - getPaddingLeft()) / (cellWidth + gap);
-        int row = (previewRect.top - getPaddingTop()) / (cellHeight + gap);
-
-        if (isResizing) {
-            int spanX = (previewRect.width() + gap) / (cellWidth + gap);
-            int spanY = (previewRect.height() + gap) / (cellHeight + gap);
-            simulatedActiveTile.colSpan = Math.min(COLUMN_COUNT, Math.max(1, spanX));
-            simulatedActiveTile.rowSpan = Math.max(1, spanY);
-        }
-
-        // Clamp Position
-        int maxCol = COLUMN_COUNT - simulatedActiveTile.colSpan;
-        if (col > maxCol)
-            col = maxCol;
-        if (col < 0)
-            col = 0; // Ensure 0 minimum
-        if (row < 0)
-            row = 0;
-
-        simulatedActiveTile.col = col;
-        simulatedActiveTile.row = row;
-
-        // 3. Run Physics on simulated list
-        resolveCollisions(simulatedTiles, simulatedActiveTile);
-
-        return simulatedTiles;
     }
 
     private void simulateLayout() {
@@ -1077,28 +994,6 @@ public class TileGridLayout extends ViewGroup {
 
         // Resolve collisions - only tiles that overlap will be moved
         resolveCollisions();
-        requestLayout();
-        if (tilesChangedListener != null)
-            tilesChangedListener.onTilesChanged(tiles);
-    }
-
-    private void applyFinalState(List<Tile> finalState) {
-        if (finalState.size() != tiles.size())
-            return; // Sanity check
-
-        // Copy state back to real tiles
-        for (int i = 0; i < tiles.size(); i++) {
-            Tile real = tiles.get(i);
-            Tile sim = finalState.get(i);
-
-            real.row = sim.row;
-            real.col = sim.col;
-            real.rowSpan = sim.rowSpan;
-            real.colSpan = sim.colSpan;
-        }
-
-        // We don't need to resolveCollisions() again because finalState is already
-        // resolved!
         requestLayout();
         if (tilesChangedListener != null)
             tilesChangedListener.onTilesChanged(tiles);

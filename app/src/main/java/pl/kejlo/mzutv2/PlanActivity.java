@@ -1006,7 +1006,7 @@ public class PlanActivity extends MzutBaseActivity {
             return;
         }
 
-        // Recover from interrupted entrance animations after returning from another screen.
+        // Reset any half-finished page animations after returning to the screen.
         viewPager.animate().cancel();
         viewPager.setAlpha(1f);
         viewPager.setScaleX(1f);
