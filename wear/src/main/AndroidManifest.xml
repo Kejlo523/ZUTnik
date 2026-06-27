@@ -29,7 +29,7 @@
             android:name="pl.kejlo.mzutv2.wear.tile.PlanTileService"
             android:exported="true"
             android:label="@string/tile_title"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@mipmap/ic_zut_logo_round"
             android:description="@string/tile_description"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>

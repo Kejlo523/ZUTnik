@@ -14,6 +14,24 @@ android {
         versionName = "1.6"
     }
 
+    sourceSets {
+        getByName("main") {
+            val appRes = rootProject.layout.projectDirectory.dir("app/src/main/res")
+            @Suppress("DEPRECATION")
+            res.setSrcDirs(
+                listOf(
+                    file("src/main/res"),
+                    appRes.dir("mipmap-anydpi-v26").asFile,
+                    appRes.dir("mipmap-mdpi").asFile,
+                    appRes.dir("mipmap-hdpi").asFile,
+                    appRes.dir("mipmap-xhdpi").asFile,
+                    appRes.dir("mipmap-xxhdpi").asFile,
+                    appRes.dir("mipmap-xxxhdpi").asFile,
+                ),
+            )
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
