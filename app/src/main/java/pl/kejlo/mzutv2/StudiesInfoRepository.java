@@ -5,12 +5,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 
 public class StudiesInfoRepository {
+
+    private static final String PROGRAMME_FIELDS =
+            "id|programme[id|name|description|faculty[id|name]|mode_of_studies|level_of_studies|level]|status|admission_date|is_primary|stages[id|name]";
+    private static final String PROGRAMME_FALLBACK_FIELDS =
+            "id|programme[id|name|description|mode_of_studies|level_of_studies|level]|status|admission_date|is_primary|stages[id|name]";
+    private static final String PROGRAMME_MIN_FIELDS =
+            "id|programme|status|admission_date|is_primary|stages";
+    private static final String STUDENT_PROGRAMME_FIELDS =
+            "id|programme[id|name|description|faculty[id|name]|mode_of_studies|level_of_studies|level]|status|admission_date|is_primary|stages[id|name]";
 
     public static class StudyDetails {
         public String album;
@@ -23,11 +33,16 @@ public class StudiesInfoRepository {
         public String status;
         public String rokAkademicki;
         public String semestrLabel;
+        public Double ectsProgramme;
+        public Double ectsOverall;
+        public String elsId;
+        public String elsExpirationDate;
+        public String elsStatus;
     }
 
     public static class StudyHistoryItem {
-        public String label;   // e.g. "1 zimowy - 2023/2024"
-        public String status;  // e.g. "zaliczony"
+        public String label;
+        public String status;
     }
 
     private String firstNonEmpty(String... args) {
@@ -42,20 +57,234 @@ public class StudiesInfoRepository {
         return "";
     }
 
-    private String extractLocalized(JSONObject obj, String key) {
-        if (obj == null) return "";
-        JSONObject localized = obj.optJSONObject(key);
-        if (localized != null) {
-            return localized.optString("pl", localized.optString("en", ""));
+    private String normalizeStudyId(String rawId) {
+        if (rawId == null) {
+            return null;
         }
-        return obj.optString(key, "");
+        String normalized = rawId.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private String localizedValue(Object value) {
+        if (value instanceof JSONObject) {
+            JSONObject obj = (JSONObject) value;
+            return firstNonEmpty(
+                    obj.optString("pl", ""),
+                    obj.optString("en", ""),
+                    obj.optString("name", ""));
+        }
+        if (value instanceof Number) {
+            return String.valueOf(value);
+        }
+        return firstNonEmpty(value instanceof String ? (String) value : "");
+    }
+
+    private String localizedField(JSONObject obj, String key) {
+        if (obj == null) {
+            return "";
+        }
+        return localizedValue(obj.opt(key));
+    }
+
+    private String normalizeStudyMode(Object value) {
+        String text = localizedValue(value);
+        if (!text.isEmpty()) {
+            return text;
+        }
+
+        if (value instanceof Number) {
+            int num = ((Number) value).intValue();
+            if (num == 1) return "Stacjonarne";
+            if (num == 2) return "Niestacjonarne";
+        }
+        return "";
+    }
+
+    private String mapStudyStatus(String status) {
+        switch (String.valueOf(status)) {
+            case "active":
+                return "Aktywny";
+            case "cancelled":
+                return "Anulowany";
+            case "graduated_diploma":
+                return "Absolwent";
+            case "graduated_end_of_study":
+            case "graduated_before_diploma":
+                return "Absolwent (ukończone)";
+            default:
+                return firstNonEmpty(status);
+        }
+    }
+
+    private JSONArray fetchStudentProgrammesRaw() throws IOException, JSONException {
+        String[] selectors = { PROGRAMME_FIELDS, PROGRAMME_FALLBACK_FIELDS, PROGRAMME_MIN_FIELDS };
+        for (String selector : selectors) {
+            try {
+                java.util.Map<String, String> params = new java.util.HashMap<>();
+                params.put("active_only", "false");
+                params.put("old_programs", "false");
+                params.put("fields", selector);
+                return UsosApi.getArray("services/progs/student", params);
+            } catch (IOException | JSONException ignored) {
+                // Some selectors are too rich for certain USOS deployments.
+            }
+        }
+        return new JSONArray();
+    }
+
+    private JSONObject fetchDetailedStudentProgramme(String studentProgrammeId) {
+        if (studentProgrammeId == null || studentProgrammeId.trim().isEmpty()
+                || "usos-profile".equals(studentProgrammeId)) {
+            return null;
+        }
+
+        try {
+            java.util.Map<String, String> params = new java.util.HashMap<>();
+            params.put("student_programme_id", studentProgrammeId);
+            params.put("fields", STUDENT_PROGRAMME_FIELDS);
+            return UsosApi.get("services/progs/student_programme", params);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private JSONObject pickSelectedProgramme(JSONArray programmes, String activeStudyId) {
+        if (programmes == null || programmes.length() == 0) {
+            return null;
+        }
+
+        String expectedId = normalizeStudyId(activeStudyId);
+        JSONObject first = null;
+        for (int i = 0; i < programmes.length(); i++) {
+            JSONObject row = programmes.optJSONObject(i);
+            if (row == null) {
+                continue;
+            }
+            if (first == null) {
+                first = row;
+            }
+            String candidateId = normalizeStudyId(row.optString("id", null));
+            if (expectedId != null && expectedId.equals(candidateId)) {
+                return row;
+            }
+        }
+        return first;
+    }
+
+    private String joinStages(JSONArray stages) {
+        if (stages == null || stages.length() == 0) {
+            return "";
+        }
+
+        List<String> values = new ArrayList<>();
+        for (int i = 0; i < stages.length(); i++) {
+            JSONObject stage = stages.optJSONObject(i);
+            if (stage == null) {
+                continue;
+            }
+            String label = firstNonEmpty(localizedField(stage, "name"), stage.optString("id", ""));
+            if (!label.isEmpty()) {
+                values.add(label);
+            }
+        }
+        return android.text.TextUtils.join(", ", values);
+    }
+
+    private JSONObject loadActiveTerm() {
+        try {
+            java.util.Map<String, String> params = new java.util.HashMap<>();
+            params.put("fields", "terms");
+            params.put("active_terms_only", "true");
+            JSONObject response = UsosApi.get("services/courses/user", params);
+            JSONArray terms = response != null ? response.optJSONArray("terms") : null;
+            if (terms != null && terms.length() > 0) {
+                return terms.optJSONObject(0);
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private void loadElsInfo(StudyDetails details) {
+        if (details == null) {
+            return;
+        }
+        try {
+            JSONArray cards = UsosApi.getArray("services/cards/user", null);
+            JSONObject selected = null;
+            for (int i = 0; i < cards.length(); i++) {
+                JSONObject card = cards.optJSONObject(i);
+                if (card == null) {
+                    continue;
+                }
+                String type = firstNonEmpty(card.optString("type", "")).toLowerCase(Locale.ROOT);
+                if (selected == null) {
+                    selected = card;
+                }
+                if ("student".equals(type) || "phd".equals(type)) {
+                    selected = card;
+                    break;
+                }
+            }
+            if (selected == null) {
+                return;
+            }
+
+            details.elsId = firstNonEmpty(
+                    selected.optString("id", ""),
+                    selected.optString("barcode_number", ""),
+                    selected.optString("number", ""));
+            details.elsExpirationDate = firstNonEmpty(selected.optString("expiration_date", ""));
+            if (details.elsExpirationDate.isEmpty()) {
+                details.elsStatus = "Aktywna";
+                return;
+            }
+            boolean active = !LocalDate.parse(details.elsExpirationDate).isBefore(LocalDate.now());
+            details.elsStatus = active ? "Aktywna" : "Nieaktywna";
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String termSeason(JSONObject term) {
+        String id = firstNonEmpty(term != null ? term.optString("id", "") : "").toUpperCase(Locale.ROOT);
+        String name = localizedField(term, "name").toLowerCase(Locale.ROOT);
+        if (id.endsWith("L") || name.contains("letni") || name.contains("summer")) {
+            return "letni";
+        }
+        if (id.endsWith("Z") || name.contains("zimowy") || name.contains("winter")) {
+            return "zimowy";
+        }
+        return "";
+    }
+
+    private String academicYearFromTerm(JSONObject term) {
+        String name = localizedField(term, "name");
+        java.util.regex.Matcher nameYear = java.util.regex.Pattern
+                .compile("20\\d{2}\\s*[/\\\\-]\\s*(?:20)?\\d{2}")
+                .matcher(name);
+        if (nameYear.find()) {
+            return nameYear.group().replaceAll("\\s+", "");
+        }
+
+        String id = firstNonEmpty(term != null ? term.optString("id", "") : "");
+        java.util.regex.Matcher idYear = java.util.regex.Pattern
+                .compile("(20\\d{2})\\D?(\\d{2})?")
+                .matcher(id);
+        if (idYear.find()) {
+            String start = idYear.group(1);
+            String end = idYear.group(2) != null
+                    ? "20" + idYear.group(2)
+                    : String.valueOf(Integer.parseInt(start) + 1);
+            return start + "/" + end;
+        }
+
+        return firstNonEmpty(name, id);
     }
 
     private String getActivePrzynaleznoscId() throws IOException, JSONException {
         MzutSession session = MzutSession.getInstance();
         List<Study> studies = session.getStudies();
         if (studies == null || studies.isEmpty()) {
-            // Reuse GradesRepository, which already fetches getMenuStudent
             GradesRepository repo = new GradesRepository();
             studies = repo.loadStudies();
         }
@@ -71,239 +300,91 @@ public class StudiesInfoRepository {
         if (active == null) {
             return null;
         }
-        if (active.przynaleznoscId == null) {
-            return null;
-        }
-        String id = active.przynaleznoscId.trim();
-        return id.isEmpty() ? null : id;
+        return normalizeStudyId(active.przynaleznoscId);
     }
 
     public StudyDetails loadCurrentStudyDetails() throws IOException, JSONException {
         MzutSession session = MzutSession.getInstance();
-        String userId = session.getUserId();
-        String authKey = session.getAuthKey();
-
-        if (userId == null || (!session.isUsosLogin() && authKey == null)) {
+        if (!session.isUsosLogin() || session.getUserId() == null) {
             return null;
         }
 
-        String przynaleznoscId = getActivePrzynaleznoscId();
-        if (przynaleznoscId == null) {
-            return null;
+        String activeStudyId = getActivePrzynaleznoscId();
+        JSONArray programmes = fetchStudentProgrammesRaw();
+        JSONObject selected = pickSelectedProgramme(programmes, activeStudyId);
+        JSONObject detailed = fetchDetailedStudentProgramme(selected != null ? selected.optString("id", null) : null);
+        JSONObject row = detailed != null ? detailed : selected;
+        JSONObject programme = row != null ? row.optJSONObject("programme") : null;
+
+        java.util.Map<String, String> userParams = new java.util.HashMap<>();
+        userParams.put("fields", "id|student_number");
+        JSONObject user = UsosApi.get("services/users/user", userParams);
+
+        StudyDetails details = new StudyDetails();
+        details.album = firstNonEmpty(
+                user != null ? user.optString("student_number", "") : "",
+                session.getStudentNumber(),
+                user != null ? user.optString("id", "") : "");
+        details.wydzial = localizedField(programme != null ? programme.optJSONObject("faculty") : null, "name");
+        details.kierunek = firstNonEmpty(
+                localizedField(programme, "name"),
+                localizedField(programme, "description"),
+                programme != null ? programme.optString("id", "") : "",
+                activeStudyId);
+        details.forma = normalizeStudyMode(programme != null ? programme.opt("mode_of_studies") : null);
+        details.poziom = firstNonEmpty(
+                localizedField(programme, "level_of_studies"),
+                programme != null ? programme.optString("level", "") : "");
+        details.specjalnosc = joinStages(row != null ? row.optJSONArray("stages") : null);
+        details.specjalizacja = "";
+        details.status = mapStudyStatus(row != null ? row.optString("status", "") : "");
+
+        JSONObject activeTerm = loadActiveTerm();
+        details.rokAkademicki = activeTerm != null ? academicYearFromTerm(activeTerm) : "";
+        details.semestrLabel = activeTerm != null ? termSeason(activeTerm) : "";
+
+        try {
+            GradesRepository.CreditSummary credits = new GradesRepository().loadCreditSummary();
+            details.ectsProgramme = credits != null ? credits.programmeUsed : null;
+            details.ectsOverall = credits != null ? credits.overallUsed : null;
+        } catch (Exception ignored) {
+            details.ectsProgramme = null;
+            details.ectsOverall = null;
         }
+        loadElsInfo(details);
 
-        if (session.isUsosLogin()) {
-            StudyDetails d = new StudyDetails();
-
-            // Album number — prefer session cache, then fresh API call
-            d.album = session.getStudentNumber();
-            if (d.album == null || d.album.isEmpty()) {
-                try {
-                    Map<String, String> userParams = new HashMap<>();
-                    userParams.put("fields", "student_number");
-                    JSONObject userObj = UsosApi.get("services/users/user", userParams);
-                    d.album = userObj.optString("student_number", "");
-                } catch (Exception ignored) {}
-            }
-
-            // Fetch student programmes — active_only=false to include past ones.
-            // przynaleznoscId is programme.id (e.g. "S1-INF"), so match on that.
-            Map<String, String> progsParams = new HashMap<>();
-            progsParams.put("fields", "programme[id|description|mode_of_studies|level_of_studies]|status");
-            progsParams.put("active_only", "false");
-            JSONArray progs = UsosApi.getArray("services/progs/student", progsParams);
-            for (int i = 0; i < progs.length(); i++) {
-                JSONObject row = progs.getJSONObject(i);
-                JSONObject prog = row.optJSONObject("programme");
-                if (prog == null) continue;
-
-                String pid = prog.optString("id", "");
-                // Match the selected study; fall back to first entry if nothing matches
-                if (!pid.equals(przynaleznoscId) && i < progs.length() - 1) continue;
-
-                JSONObject desc = prog.optJSONObject("description");
-                d.kierunek = desc != null
-                        ? desc.optString("pl", desc.optString("en", pid))
-                        : pid;
-
-                // Faculty — separate lightweight call (faculty[id|name] avoids subfield error)
-                try {
-                    Map<String, String> pParams = new HashMap<>();
-                    pParams.put("programme_id", pid);
-                    pParams.put("fields", "faculty[id|name]");
-                    JSONObject pObj = UsosApi.get("services/progs/programme", pParams);
-                    if (pObj != null) {
-                        JSONObject fac = pObj.optJSONObject("faculty");
-                        if (fac != null) {
-                            d.wydzial = extractLocalized(fac, "name");
-                        }
-                    }
-                } catch (Exception ignored) {}
-
-                int mode = prog.optInt("mode_of_studies", 0);
-                d.forma = mode == 1 ? "Stacjonarne" : "Niestacjonarne";
-                d.poziom = extractLocalized(prog, "level_of_studies");
-                d.specjalnosc = "";
-                d.specjalizacja = "";
-
-                // Status — API returns string like "active", "graduated_diploma" etc.
-                String statusRaw = row.optString("status", "");
-                switch (statusRaw) {
-                    case "active": d.status = "Aktywny"; break;
-                    case "cancelled": d.status = "Anulowany"; break;
-                    case "graduated_diploma": d.status = "Absolwent"; break;
-                    case "graduated_end_of_study":
-                    case "graduated_before_diploma": d.status = "Absolwent (ukończone)"; break;
-                    default: d.status = statusRaw;
-                }
-
-                // Active term → academic year + season
-                d.rokAkademicki = "";
-                d.semestrLabel = "";
-                try {
-                    Map<String, String> ceParams = new HashMap<>();
-                    ceParams.put("active_terms_only", "true");
-                    ceParams.put("fields", "course_editions");
-                    JSONObject ceResp = UsosApi.get("services/courses/user", ceParams);
-                    JSONObject editions = ceResp != null ? ceResp.optJSONObject("course_editions") : null;
-                    if (editions != null && editions.keys().hasNext()) {
-                        String tid = editions.keys().next(); // e.g. "2024/25Z"
-                        d.semestrLabel = tid.endsWith("Z") ? "zimowy"
-                                : (tid.endsWith("L") ? "letni" : "");
-                        if (tid.length() >= 7) {
-                            // "2024/25Z" → "2024/2025"
-                            d.rokAkademicki = tid.substring(0, 4) + "/20" + tid.substring(5, 7);
-                        } else {
-                            d.rokAkademicki = tid.replaceAll("[ZL]$", "");
-                        }
-                    }
-                } catch (Exception ignored) {}
-
-                break;
-            }
-            return d;
-        }
-
-        HashMap<String, String> params = new HashMap<>();
-        params.put("login", userId);
-        params.put("token", authKey);
-        params.put("przynaleznoscId", przynaleznoscId);
-
-        JSONObject study = MzutApi.callApi("getStudy", params);
-        if (study == null || !study.has("album")) {
-            return null;
-        }
-
-        StudyDetails d = new StudyDetails();
-        d.album = study.optString("album", "");
-        d.wydzial = firstNonEmpty(
-                study.optString("wydzial", ""),
-                study.optString("wydzialAng", "")
-        );
-        d.kierunek = firstNonEmpty(
-                study.optString("kierunek", ""),
-                study.optString("kierunekAng", "")
-        );
-        d.forma = firstNonEmpty(
-                study.optString("forma", ""),
-                study.optString("formaAng", "")
-        );
-        d.poziom = firstNonEmpty(
-                study.optString("poziom", ""),
-                study.optString("poziomAng", "")
-        );
-        d.specjalnosc = firstNonEmpty(
-                study.optString("specjalnosc", ""),
-                study.optString("specjalnoscO", "")
-        );
-        d.specjalizacja = firstNonEmpty(
-                study.optString("specjalizacja", ""),
-                study.optString("specjalizacjaO", "")
-        );
-        d.status = firstNonEmpty(
-                study.optString("status", ""),
-                study.optString("statusAng", "")
-        );
-        d.rokAkademicki = study.optString("rokAkademicki", "");
-
-        String nrSemestru = study.optString("nrSemestru", "");
-        String pora = study.optString("pora", "");
-        d.semestrLabel = (nrSemestru + " " + pora).trim();
-
-        return d;
+        return details;
     }
 
     public List<StudyHistoryItem> loadStudyHistory() throws IOException, JSONException {
         MzutSession session = MzutSession.getInstance();
-        String userId = session.getUserId();
-        String authKey = session.getAuthKey();
-        if (userId == null || (!session.isUsosLogin() && authKey == null)) {
+        if (!session.isUsosLogin() || session.getUserId() == null) {
             return new ArrayList<>();
         }
 
-        String przynaleznoscId = getActivePrzynaleznoscId();
-        if (przynaleznoscId == null) {
-            return new ArrayList<>();
-        }
-
-        if (session.isUsosLogin()) {
-             List<StudyHistoryItem> result = new ArrayList<>();
-             Map<String, String> params = new HashMap<>();
-             params.put("fields", "terms");
-             JSONObject termsObj = UsosApi.get("services/courses/user", params);
-             JSONArray termsArray = termsObj.optJSONArray("terms");
-             if (termsArray != null) {
-                 for (int i = 0; i < termsArray.length(); i++) {
-                     JSONObject termItem = termsArray.optJSONObject(i);
-                     if (termItem != null) {
-                         String termId = termItem.optString("id");
-                         if (termId != null && !termId.isEmpty()) {
-                             StudyHistoryItem item = new StudyHistoryItem();
-                             String pora = termId.endsWith("Z") ? "Zimowy" : (termId.endsWith("L") ? "Letni" : "");
-                             item.label = termId + " " + pora;
-                             item.status = "Zaliczone/Aktywne";
-                             result.add(item);
-                         }
-                     }
-                 }
-                 result.sort((a, b) -> b.label.compareTo(a.label));
-             }
-             return result;
-        }
-
-        HashMap<String, String> params = new HashMap<>();
-        params.put("login", userId);
-        params.put("token", authKey);
-        params.put("przynaleznoscId", przynaleznoscId);
-        params.put("oceny", "true");
-
-        JSONObject studies = MzutApi.callApi("getStudies", params);
-        if (studies == null || !studies.has("Przebieg")) {
-            return new ArrayList<>();
-        }
-
-        Object block = studies.get("Przebieg");
-        JSONArray arr = (block instanceof JSONArray)
-                ? (JSONArray) block
-                : new JSONArray().put(block);
-
+        JSONArray programmes = fetchStudentProgrammesRaw();
         List<StudyHistoryItem> result = new ArrayList<>();
-        for (int i = 0; i < arr.length(); i++) {
-            JSONObject row = arr.getJSONObject(i);
-            String nrSemestru = row.optString("nrSemestru", "");
-            String pora = row.optString("pora", "");
-            String rokAkademicki = row.optString("rokAkademicki", "");
-            String status = firstNonEmpty(
-                    row.optString("status", ""),
-                    row.optString("statusO", "")
-            );
+        for (int i = 0; i < programmes.length(); i++) {
+            JSONObject row = programmes.optJSONObject(i);
+            if (row == null) {
+                continue;
+            }
+
+            JSONObject programme = row.optJSONObject("programme");
+            String label = firstNonEmpty(
+                    localizedField(programme, "name"),
+                    localizedField(programme, "description"),
+                    programme != null ? programme.optString("id", "") : "",
+                    row.optString("id", ""));
+            if (label.isEmpty()) {
+                continue;
+            }
 
             StudyHistoryItem item = new StudyHistoryItem();
-            item.label = (nrSemestru + " " + pora + " - " + rokAkademicki).trim();
-            item.status = status;
+            item.label = label;
+            item.status = mapStudyStatus(row.optString("status", ""));
             result.add(item);
         }
-
         return result;
     }
 }

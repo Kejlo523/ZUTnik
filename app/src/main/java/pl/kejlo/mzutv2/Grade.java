@@ -31,6 +31,7 @@ public class Grade {
     public int gradeTypeId; // ID of grade type system
     
     // Utility field
+    public boolean isNew; // True only for grades detected after the previous local snapshot
     public java.util.List<String> gradeHistory = new java.util.ArrayList<>(); // History of grades
 
     @Override

@@ -96,7 +96,7 @@ public final class UsosOAuth {
                 .url(REQUEST_TOKEN_URL)
                 .post(bodyBuilder.build())
                 .header("Authorization", authHeader)
-                .header("User-Agent", "mZUT-ANDROID-V2/1.0")
+                .header("User-Agent", "ZUTnik-Android/2.0")
                 .build();
 
         try (Response resp = MzutNetwork.getClient().newCall(req).execute()) {
@@ -142,7 +142,7 @@ public final class UsosOAuth {
                 .url(ACCESS_TOKEN_URL)
                 .post(body)
                 .header("Authorization", authHeader)
-                .header("User-Agent", "mZUT-ANDROID-V2/1.0")
+                .header("User-Agent", "ZUTnik-Android/2.0")
                 .build();
 
         try (Response resp = MzutNetwork.getClient().newCall(req).execute()) {

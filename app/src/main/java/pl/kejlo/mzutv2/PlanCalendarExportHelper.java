@@ -53,7 +53,7 @@ public final class PlanCalendarExportHelper {
     private static final DateTimeFormatter YMD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final int CALENDAR_IMPORT_BATCH_SIZE = 40;
     private static final String IMPORT_MARKER_URI = "mzutv2://calendar-import";
-    private static final String IMPORT_MARKER_DESC = "[mZUTv2 import]";
+    private static final String IMPORT_MARKER_DESC = "[ZUTnik import]";
 
     private final Context appContext;
     private final PlanRepository planRepository;
@@ -381,7 +381,7 @@ public final class PlanCalendarExportHelper {
         StringBuilder sb = new StringBuilder();
         appendIcsLine(sb, "BEGIN:VCALENDAR");
         appendIcsLine(sb, "VERSION:2.0");
-        appendIcsLine(sb, "PRODID:-//mZUT v2//Plan Export//PL");
+        appendIcsLine(sb, "PRODID:-//ZUTnik//Plan Export//PL");
         appendIcsLine(sb, "CALSCALE:GREGORIAN");
         appendIcsLine(sb, "METHOD:PUBLISH");
         appendIcsLine(sb, "X-WR-CALNAME:" + escapeIcsText(appContext.getString(R.string.plan_title)));

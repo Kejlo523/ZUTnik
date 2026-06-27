@@ -1,15 +1,23 @@
 package pl.kejlo.mzutv2;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.text.Html;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,19 +33,18 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import android.content.Context;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-
 public class NewsRepository {
 
-    private Context context;
+    private static final String TAG = "ZUTnikNews";
     private static final String NEWS_CACHE_FILE = "news_cache.json";
+    private static final String RSS_URL = "https://www.zut.edu.pl/rssfeed-studenci";
+    private static final String USOS_NEWS_FIELDS =
+            "items[article[id|publication_date|title|headline_html|content_html|image_urls[720x405|360x203|original]]]|next_page|total";
+    private static final Pattern IMG_PATTERN = Pattern.compile(
+            "<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>",
+            Pattern.CASE_INSENSITIVE);
+
+    private Context context;
 
     public NewsRepository(Context context) {
         if (context != null) {
@@ -48,16 +55,6 @@ public class NewsRepository {
     public NewsRepository() {
     }
 
-    private static final String TAG = "mZUTv2-NEWS";
-
-    // Same RSS feed as in news.php
-    private static final String RSS_URL = "https://www.zut.edu.pl/rssfeed-studenci";
-
-    // Pattern for extracting <img src="...">
-    private static final Pattern IMG_PATTERN = Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>",
-            Pattern.CASE_INSENSITIVE);
-
-    // Fetch news list from RSS
     public List<NewsItem> loadNews() throws Exception {
         Exception networkError = null;
         try {
@@ -67,7 +64,6 @@ public class NewsRepository {
             Log.w(TAG, "Network failed, trying cache: " + e.getMessage());
         }
 
-        // Fallback to cache
         List<NewsItem> cached = loadFromDisk();
         if (cached != null && !cached.isEmpty()) {
             return cached;
@@ -80,9 +76,21 @@ public class NewsRepository {
     }
 
     private List<NewsItem> fetchFromNetwork() throws Exception {
+        List<NewsItem> rssItems = fetchFromRss();
+        if (!rssItems.isEmpty()) {
+            saveToDisk(rssItems);
+            return rssItems;
+        }
+
+        List<NewsItem> usosItems = fetchFromUsos();
+        saveToDisk(usosItems);
+        return usosItems;
+    }
+
+    private List<NewsItem> fetchFromRss() throws Exception {
         Request request = new Request.Builder()
                 .url(RSS_URL)
-                .header("User-Agent", "mZUTv2-Android-News/1.2-RSS")
+                .header("User-Agent", "ZUTnik-Android-News/2.0-RSS")
                 .build();
 
         try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
@@ -94,7 +102,6 @@ public class NewsRepository {
             }
 
             InputStream is = response.body().byteStream();
-
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -103,7 +110,6 @@ public class NewsRepository {
 
             NodeList itemNodes = doc.getElementsByTagName("item");
             List<NewsItem> items = new ArrayList<>();
-
             for (int i = 0; i < itemNodes.getLength(); i++) {
                 Node itemNode = itemNodes.item(i);
                 if (itemNode.getNodeType() != Node.ELEMENT_NODE) {
@@ -113,91 +119,101 @@ public class NewsRepository {
                 String title = getChildText(itemNode, "title");
                 String link = getChildText(itemNode, "link");
                 String pub = getChildText(itemNode, "pubDate");
-                String descHtml = getChildText(itemNode, "description");
-
-                String contentHtml = getChildTextNs(
+                String descHtml = fixImageUrls(getChildText(itemNode, "description"));
+                String contentHtml = fixImageUrls(getChildTextNs(
                         itemNode,
                         "http://purl.org/rss/1.0/modules/content/",
-                        "encoded");
+                        "encoded"));
 
-                String descText = "";
-                if (descHtml != null && !descHtml.trim().isEmpty()) {
-                    descText = Html.fromHtml(descHtml, Html.FROM_HTML_MODE_LEGACY)
-                            .toString()
-                            .trim();
-                }
+                String descriptionText = htmlToText(firstNonEmpty(descHtml, contentHtml));
+                String snippet = buildSnippet(descriptionText);
+                String thumbUrl = extractFirstImageUrl(firstNonEmpty(contentHtml, descHtml));
 
-                String snippetSource = descText;
-                if (snippetSource == null || snippetSource.trim().isEmpty()) {
-                    snippetSource = "";
-                }
-                String snippet = snippetSource;
-                if (snippet.length() > 220) {
-                    snippet = snippet.substring(0, 217) + "…";
-                }
-
-                String thumbUrl = null;
-                if (contentHtml != null && !contentHtml.trim().isEmpty()) {
-                    Matcher m = IMG_PATTERN.matcher(contentHtml);
-                    if (m.find()) {
-                        String src = m.group(1);
-                        thumbUrl = fixImageUrl(src);
-                    }
-                }
-
-                String dateFmt = formatRssDate(pub);
-
-                NewsItem ni = new NewsItem();
-                ni.id = i;
-                ni.title = title != null ? title : "";
-                ni.link = link;
-                ni.pubDateRaw = pub;
-                ni.date = dateFmt;
-                ni.snippet = snippet;
-                ni.descriptionHtml = descHtml;
-                ni.descriptionText = descText;
-                ni.contentHtml = contentHtml;
-                ni.thumbUrl = thumbUrl;
-
-                items.add(ni);
+                NewsItem item = new NewsItem();
+                item.id = i;
+                item.title = firstNonEmpty(title);
+                item.link = firstNonEmpty(link);
+                item.pubDateRaw = firstNonEmpty(pub);
+                item.date = formatRssDate(pub);
+                item.snippet = snippet;
+                item.descriptionHtml = sanitizeHtmlFragment(descHtml);
+                item.descriptionText = descriptionText;
+                item.contentHtml = sanitizeHtmlFragment(contentHtml);
+                item.thumbUrl = thumbUrl;
+                items.add(item);
             }
-
-            saveToDisk(items);
             return items;
         }
     }
 
-    // Image download
+    private List<NewsItem> fetchFromUsos() throws Exception {
+        java.util.Map<String, String> params = new java.util.HashMap<>();
+        params.put("num", "30");
+        params.put("fields", USOS_NEWS_FIELDS);
+        JSONObject response = UsosApi.get("services/news/search", null, null, params);
+        JSONArray itemsArray = response != null ? response.optJSONArray("items") : null;
+        List<NewsItem> items = new ArrayList<>();
+        if (itemsArray == null) {
+            return items;
+        }
+
+        for (int i = 0; i < itemsArray.length(); i++) {
+            JSONObject wrapper = itemsArray.optJSONObject(i);
+            JSONObject article = wrapper != null ? wrapper.optJSONObject("article") : null;
+            if (article == null) {
+                article = wrapper;
+            }
+            if (article == null) {
+                continue;
+            }
+
+            String idText = firstNonEmpty(article.optString("id", String.valueOf(i)));
+            String descriptionHtml = sanitizeHtmlFragment(localizedField(article, "headline_html"));
+            String contentHtml = sanitizeHtmlFragment(localizedField(article, "content_html"));
+            String descriptionText = htmlToText(firstNonEmpty(descriptionHtml, contentHtml));
+
+            NewsItem item = new NewsItem();
+            item.id = safeInt(idText, i);
+            item.title = firstNonEmpty(localizedField(article, "title"), "Aktualność " + idText);
+            item.pubDateRaw = firstNonEmpty(article.optString("publication_date", ""));
+            item.date = formatUsosDate(item.pubDateRaw);
+            item.snippet = buildSnippet(descriptionText);
+            item.link = "https://usosweb.zut.edu.pl/kontroler.php?_action=news/default&article_id=" + idText;
+            item.descriptionHtml = descriptionHtml;
+            item.descriptionText = descriptionText;
+            item.contentHtml = contentHtml;
+            item.thumbUrl = pickImageUrl(article.optJSONObject("image_urls"));
+            items.add(item);
+        }
+        return items;
+    }
+
     public static Bitmap downloadImage(String url) {
         if (url == null || url.isEmpty()) {
             return null;
         }
 
-        // 1. Check cache
         Bitmap cached = ImageMemoryCache.get(url);
         if (cached != null) {
             return cached;
         }
 
-        // 2. Fetch via MzutNetwork (bypasses SSL error)
         Request request = new Request.Builder()
                 .url(url)
-                .header("User-Agent", "mZUTv2-Android-Images/1.0")
+                .header("User-Agent", "ZUTnik-Android-Images/2.0")
                 .build();
 
         try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
-                // 3. Read bytes to allow double-decoding (bounds checks + actual decode)
                 byte[] data = response.body().bytes();
-                if (data.length == 0)
+                if (data.length == 0) {
                     return null;
+                }
 
-                // 4. Decode bounds only
                 BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inJustDecodeBounds = true;
                 BitmapFactory.decodeByteArray(data, 0, data.length, options);
 
-                // 5. Calculate inSampleSize (Resize to max ~480px height)
                 int reqHeight = 480;
                 int inSampleSize = 1;
                 if (options.outHeight > reqHeight) {
@@ -207,13 +223,10 @@ public class NewsRepository {
                     }
                 }
 
-                // 6. Decode with sample size (RAM optimization)
                 options.inSampleSize = inSampleSize;
                 options.inJustDecodeBounds = false;
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
-
                 if (bitmap != null) {
-                    // 7. Save to cache (ImageCache saves to disk as JPG now)
                     ImageMemoryCache.put(url, bitmap);
                     return bitmap;
                 }
@@ -224,14 +237,12 @@ public class NewsRepository {
         return null;
     }
 
-    // Helpers
-
     private String getChildText(Node parent, String tagName) {
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node n = children.item(i);
-            if (n.getNodeType() == Node.ELEMENT_NODE &&
-                    tagName.equalsIgnoreCase(n.getNodeName())) {
+            if (n.getNodeType() == Node.ELEMENT_NODE
+                    && tagName.equalsIgnoreCase(n.getNodeName())) {
                 return n.getTextContent();
             }
         }
@@ -249,9 +260,9 @@ public class NewsRepository {
             String ns = n.getNamespaceURI();
             String loc = n.getLocalName();
             String nn = n.getNodeName();
-
             boolean matchesNs = namespaceUri.equals(ns) && localName.equals(loc);
-            boolean matchesFallback = "content:encoded".equalsIgnoreCase(nn) || "encoded".equalsIgnoreCase(nn);
+            boolean matchesFallback =
+                    "content:encoded".equalsIgnoreCase(nn) || "encoded".equalsIgnoreCase(nn);
 
             if (matchesNs || matchesFallback) {
                 return n.getTextContent();
@@ -260,35 +271,171 @@ public class NewsRepository {
         return "";
     }
 
-    private String formatRssDate(String pubDateRaw) {
-        if (pubDateRaw == null || pubDateRaw.trim().isEmpty()) {
+    private String localizedField(JSONObject obj, String key) {
+        if (obj == null) {
+            return "";
+        }
+        Object value = obj.opt(key);
+        if (value instanceof JSONObject) {
+            JSONObject localized = (JSONObject) value;
+            return firstNonEmpty(
+                    localized.optString("pl", ""),
+                    localized.optString("en", ""),
+                    localized.optString("name", ""));
+        }
+        return firstNonEmpty(value instanceof String ? (String) value : "");
+    }
+
+    private String firstNonEmpty(String... values) {
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
+
+    private String formatRssDate(String rawValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
             return "";
         }
         SimpleDateFormat inFmt = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
         SimpleDateFormat outFmt = new SimpleDateFormat("dd.MM.yyyy HH:mm", new Locale("pl", "PL"));
         try {
-            Date d = inFmt.parse(pubDateRaw.trim());
+            Date d = inFmt.parse(rawValue.trim());
             return outFmt.format(d);
         } catch (ParseException e) {
-            return pubDateRaw;
+            return rawValue;
         }
     }
 
-    private String fixImageUrl(String src) {
-        if (src == null || src.isEmpty())
+    private String formatUsosDate(String rawValue) {
+        String normalized = firstNonEmpty(rawValue);
+        if (normalized.isEmpty()) {
+            return "";
+        }
+
+        String[] patterns = {
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+                "yyyy-MM-dd'T'HH:mm:ss",
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd"
+        };
+
+        for (String pattern : patterns) {
+            try {
+                SimpleDateFormat inFmt = new SimpleDateFormat(pattern, Locale.US);
+                Date d = inFmt.parse(normalized);
+                if (d != null) {
+                    return new SimpleDateFormat("dd.MM.yyyy HH:mm", new Locale("pl", "PL")).format(d);
+                }
+            } catch (ParseException ignored) {
+            }
+        }
+        return normalized;
+    }
+
+    private String fixImageUrls(String html) {
+        if (html == null || html.isEmpty()) {
+            return "";
+        }
+        Matcher matcher = Pattern.compile(
+                "<img([^>]*?)src=[\"']([^\"']+)[\"']([^>]*?)>",
+                Pattern.CASE_INSENSITIVE)
+                .matcher(html);
+        StringBuffer out = new StringBuffer();
+        while (matcher.find()) {
+            String normalized = normalizeAssetUrl(matcher.group(2));
+            if (normalized == null) {
+                normalized = matcher.group(2);
+            }
+            String replacement = "<img" + matcher.group(1) + "src=\"" + normalized + "\"" + matcher.group(3) + ">";
+            matcher.appendReplacement(out, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(out);
+        return out.toString();
+    }
+
+    private String extractFirstImageUrl(String html) {
+        if (html == null || html.trim().isEmpty()) {
+            return null;
+        }
+        Matcher matcher = IMG_PATTERN.matcher(html);
+        if (!matcher.find()) {
+            return null;
+        }
+        return normalizeAssetUrl(matcher.group(1));
+    }
+
+    private String normalizeAssetUrl(String src) {
+        if (src == null || src.trim().isEmpty()) {
+            return null;
+        }
+        if (src.startsWith("http")) {
             return src;
-        if (src.startsWith("http"))
-            return src;
-        if (src.startsWith("/"))
+        }
+        if (src.startsWith("/")) {
             return "https://www.zut.edu.pl" + src;
+        }
         return "https://www.zut.edu.pl/" + src;
     }
 
-    // Cache
+    private String pickImageUrl(JSONObject imageUrls) {
+        if (imageUrls == null) {
+            return null;
+        }
+        return firstNonEmpty(
+                normalizeAssetUrl(imageUrls.optString("720x405", "")),
+                normalizeAssetUrl(imageUrls.optString("360x203", "")),
+                normalizeAssetUrl(imageUrls.optString("original", "")));
+    }
+
+    private String sanitizeHtmlFragment(String html) {
+        if (html == null || html.trim().isEmpty()) {
+            return "";
+        }
+        String out = html
+                .replaceAll("(?is)<script[\\s\\S]*?</script>", " ")
+                .replaceAll("(?is)<style[\\s\\S]*?</style>", " ")
+                .replaceAll("(?is)<(iframe|object|embed|form|input|button|svg|math)[\\s\\S]*?</\\1>", " ")
+                .replaceAll("(?is)<(iframe|object|embed|form|input|button|svg|math)\\b[^>]*>", " ");
+        return out;
+    }
+
+    private String htmlToText(String html) {
+        if (html == null || html.trim().isEmpty()) {
+            return "";
+        }
+        CharSequence text = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
+        return String.valueOf(text)
+                .replace('\u00A0', ' ')
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private String buildSnippet(String descriptionText) {
+        String source = firstNonEmpty(descriptionText);
+        if (source.length() > 220) {
+            return source.substring(0, 217) + "...";
+        }
+        return source;
+    }
+
+    private int safeInt(String rawValue, int fallback) {
+        try {
+            return Integer.parseInt(rawValue);
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
 
     private void saveToDisk(List<NewsItem> items) {
-        if (context == null || items == null)
+        if (context == null || items == null) {
             return;
+        }
         try {
             JSONArray arr = new JSONArray();
             for (NewsItem ni : items) {
@@ -314,21 +461,24 @@ public class NewsRepository {
     }
 
     private List<NewsItem> loadFromDisk() {
-        if (context == null)
+        if (context == null) {
             return null;
+        }
         try (FileInputStream fis = context.openFileInput(NEWS_CACHE_FILE)) {
             BufferedReader br = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = br.readLine()) != null)
+            while ((line = br.readLine()) != null) {
                 sb.append(line);
+            }
 
             JSONArray arr = new JSONArray(sb.toString());
             List<NewsItem> meta = new ArrayList<>();
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject o = arr.optJSONObject(i);
-                if (o == null)
+                if (o == null) {
                     continue;
+                }
                 NewsItem ni = new NewsItem();
                 ni.id = o.optInt("id");
                 ni.title = o.optString("title");

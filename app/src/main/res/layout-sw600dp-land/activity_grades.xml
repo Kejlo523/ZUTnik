@@ -165,14 +165,16 @@
                     android:text="@string/info_study_switch_label"
                     android:textColor="?attr/mzMuted"
                     android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
                 <Spinner
                     android:id="@+id/spinnerStudies"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
                     android:background="@drawable/bg_spinner_dark"
-                    android:spinnerMode="dropdown" />
+                    android:spinnerMode="dropdown"
+                    android:visibility="gone" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -182,14 +184,16 @@
                     android:text="@string/info_label_semester"
                     android:textColor="?attr/mzMuted"
                     android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
                 <Spinner
                     android:id="@+id/spinnerSemesters"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
                     android:background="@drawable/bg_spinner_dark"
-                    android:spinnerMode="dropdown" />
+                    android:spinnerMode="dropdown"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <FrameLayout

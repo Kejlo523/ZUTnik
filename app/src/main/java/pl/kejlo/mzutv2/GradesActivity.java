@@ -11,7 +11,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.text.format.DateUtils;
 import android.text.style.RelativeSizeSpan;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -34,10 +33,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class GradesActivity extends MzutBaseActivity {
 
@@ -51,7 +52,8 @@ public class GradesActivity extends MzutBaseActivity {
     private static final long SEMESTERS_CACHE_TTL_MS = CachePolicy.SEMESTERS_TTL_MS;
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
     private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
-    private static final String KEY_TOTAL_ECTS_CACHE_PREFIX = "total_ects_";
+    private static final String ACTIVE_GRADES_CACHE_SEMESTER_ID = "active_terms_v4";
+    private static final String KEY_CREDIT_SUMMARY_CACHE_PREFIX = "credit_summary_";
     private static final String KEY_GRADES_LAST_NETWORK_TS_PREFIX = "grades_last_network_ts_";
 
     private Spinner spinnerStudies;
@@ -74,9 +76,7 @@ public class GradesActivity extends MzutBaseActivity {
     private final List<Study> studies = new ArrayList<>();
     private final List<Semester> semesters = new ArrayList<>();
 
-    private ArrayAdapter<String> studiesAdapter;
     private ArrayAdapter<String> semestersAdapter;
-    private AdapterView.OnItemSelectedListener studiesSpinnerListener;
 
     private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newCachedThreadPool();
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -84,10 +84,7 @@ public class GradesActivity extends MzutBaseActivity {
     private java.util.concurrent.Future<?> currentSemestersFuture;
     private java.util.concurrent.Future<?> currentGradesFuture;
     private java.util.concurrent.Future<?> currentInitFuture;
-    private java.util.concurrent.Future<?> currentTotalEctsFuture;
-
-    // Flag mirroring InfoActivity behavior
-    private boolean studiesSpinnerInitialized = false;
+    private java.util.concurrent.Future<?> currentCreditSummaryFuture;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -197,8 +194,8 @@ public class GradesActivity extends MzutBaseActivity {
         if (currentInitFuture != null) {
             currentInitFuture.cancel(true);
         }
-        if (currentTotalEctsFuture != null) {
-            currentTotalEctsFuture.cancel(true);
+        if (currentCreditSummaryFuture != null) {
+            currentCreditSummaryFuture.cancel(true);
         }
         executeInitTask();
     }
@@ -308,19 +305,10 @@ public class GradesActivity extends MzutBaseActivity {
 
                 // 2) Studies spinner based on MzutSession
                 setupStudiesSpinner();
-                refreshTotalEctsForActiveStudyAsync();
+                refreshCreditSummaryForActiveStudyAsync();
 
-                // 3) If we have semesters - select the last one and load grades (from cache if
-                // fresh)
-                if (!semesters.isEmpty()) {
-                    int indexCurrent = semesters.size() - 1;
-                    spinnerSemesters.setSelection(indexCurrent);
-
-                    Semester selected = semesters.get(indexCurrent);
-                    reloadGrades(selected, false);
-                } else {
-                    showEmptyState(true);
-                }
+                // 3) Grades are loaded from active USOS terms; semester choices stay hidden.
+                reloadCurrentGrades(false);
             });
         });
     }
@@ -330,108 +318,28 @@ public class GradesActivity extends MzutBaseActivity {
         MzutSession session = MzutSession.getInstance();
         List<Study> sessionStudies = session.getStudies();
 
-        // No studies -> hide the spinner
+        // Grades are account-level in the USOS flow, so the visible study selector only
+        // suggests precision that the grades endpoint does not reliably provide.
+        spinnerStudies.setVisibility(View.GONE);
         if (sessionStudies == null || sessionStudies.isEmpty()) {
-            spinnerStudies.setVisibility(View.GONE);
-            setTotalEctsValue(0.0);
+            setEctsSummary(null, null);
             updateGradesDataFreshness(false);
             return;
         }
 
-        spinnerStudies.setVisibility(View.VISIBLE);
-
         studies.clear();
         studies.addAll(sessionStudies);
-
-        List<String> labels = new ArrayList<>();
-        for (Study st : studies) {
-            labels.add(st.toString()); // Label same as in InfoActivity
-        }
-
-        if (!studiesSpinnerInitialized) {
-            // First time - create adapter and listener
-            studiesAdapter = new ArrayAdapter<>(
-                    this,
-                    R.layout.spinner_item_dark,
-                    labels);
-            studiesAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
-            spinnerStudies.setAdapter(studiesAdapter);
-            studiesSpinnerInitialized = true;
-
-            int activeIndex = session.getActiveStudyIndex();
-            if (activeIndex < 0 || activeIndex >= labels.size()) {
-                activeIndex = 0;
-            }
-            spinnerStudies.setSelection(activeIndex);
-
-            studiesSpinnerListener = new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    MzutSession s = MzutSession.getInstance();
-                    if (position == s.getActiveStudyIndex()) {
-                        return; // Nothing changed
-                    }
-                    s.setActiveStudyIndex(position);
-                    s.saveToPreferences(GradesActivity.this);
-                    setTotalEctsValue(0.0);
-                    updateGradesDataFreshness(false);
-                    // Study changed => reload semesters (repository itself will use getStudies
-                    // cache)
-                    reloadSemesters(false);
-                }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
-                }
-            };
-            spinnerStudies.setOnItemSelectedListener(studiesSpinnerListener);
-        } else {
-            // Subsequent calls - refresh contents / selection
-            int activeIndex = session.getActiveStudyIndex();
-            if (activeIndex < 0 || activeIndex >= labels.size()) {
-                activeIndex = 0;
-            }
-
-            spinnerStudies.setOnItemSelectedListener(null);
-            try {
-                studiesAdapter.clear();
-                studiesAdapter.addAll(labels);
-                studiesAdapter.notifyDataSetChanged();
-                spinnerStudies.setSelection(activeIndex);
-            } finally {
-                spinnerStudies.setOnItemSelectedListener(studiesSpinnerListener);
-            }
-        }
     }
 
     // Semester spinner
     private void setupSemestersSpinner() {
+        spinnerSemesters.setVisibility(View.GONE);
         semestersAdapter = new ArrayAdapter<>(
                 this,
                 R.layout.spinner_item_dark,
                 new ArrayList<>());
         semestersAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerSemesters.setAdapter(semestersAdapter);
-
-        spinnerSemesters.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(
-                    AdapterView<?> parent,
-                    View view,
-                    int position,
-                    long id) {
-                if (position >= 0 && position < semesters.size()) {
-                    Semester selected = semesters.get(position);
-                    // Normal semester switch - use cache if it is still fresh
-                    reloadGrades(selected, false);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // No-op
-            }
-        });
     }
 
     // Loading semesters
@@ -446,8 +354,8 @@ public class GradesActivity extends MzutBaseActivity {
         if (currentGradesFuture != null) {
             currentGradesFuture.cancel(true);
         }
-        if (currentTotalEctsFuture != null) {
-            currentTotalEctsFuture.cancel(true);
+        if (currentCreditSummaryFuture != null) {
+            currentCreditSummaryFuture.cancel(true);
         }
 
         executeLoadSemestersTask(forceNetwork);
@@ -526,7 +434,7 @@ public class GradesActivity extends MzutBaseActivity {
                     applyGradesView();
                     updateSummaryCards();
                     updateGradesDataFreshness(false);
-                    refreshTotalEctsForActiveStudyAsync();
+                    refreshCreditSummaryForActiveStudyAsync();
                     return;
                 }
 
@@ -565,15 +473,10 @@ public class GradesActivity extends MzutBaseActivity {
                 // Refresh studies spinner from session (in case repository changed
                 // studies/activeStudyIndex)
                 setupStudiesSpinner();
-                refreshTotalEctsForActiveStudyAsync();
+                refreshCreditSummaryForActiveStudyAsync();
 
-                // By default select the last (most recent) semester
-                int indexCurrent = semesters.size() - 1;
-                spinnerSemesters.setSelection(indexCurrent);
-
-                // Immediately load grades (here: using cache if available)
-                Semester selected = semesters.get(indexCurrent);
-                reloadGrades(selected, forceNetwork);
+                // Grades are shown for active USOS terms, not from manual semester selection.
+                reloadCurrentGrades(forceNetwork);
             });
         });
     }
@@ -598,6 +501,9 @@ public class GradesActivity extends MzutBaseActivity {
                 group = new GroupedGradesAdapter.GradeGroup(subject);
                 map.put(subject, group);
             }
+            if (g.isNew) {
+                group.hasNew = true;
+            }
 
             if (isFinalGrade(g)) {
                 if (group.finalGrade == null) {
@@ -618,11 +524,7 @@ public class GradesActivity extends MzutBaseActivity {
                     && g.finalGrade.grade != null
                     && !g.finalGrade.grade.trim().isEmpty();
 
-            // Show subject even if there are no entered grades yet.
-            // Mark as missing when final grade is absent OR empty.
-            if (!hasFinal || !finalHasValue) {
-                g.finalMissing = true;
-            }
+            g.finalMissing = hasFinal && !finalHasValue;
 
             if (hasOthers || hasFinal) {
                 result.add(g);
@@ -661,6 +563,116 @@ public class GradesActivity extends MzutBaseActivity {
             return GradesTextUtils.isFinalGradeLabel(g.subjectName);
         }
         return false;
+    }
+
+    private Semester activeGradesCacheScope() {
+        Semester scope = new Semester();
+        scope.listaSemestrowId = ACTIVE_GRADES_CACHE_SEMESTER_ID;
+        scope.nrSemestru = "";
+        scope.rokAkademicki = "";
+        scope.status = "Aktywny";
+        return scope;
+    }
+
+    private void reloadCurrentGrades(boolean forceNetwork) {
+        int expectedStudyIndex = MzutSession.getInstance().getActiveStudyIndex();
+        Study activeStudy = getActiveStudySnapshot();
+        String expectedStudyId = activeStudy != null ? normalizeStudyId(activeStudy.przynaleznoscId) : null;
+        if (expectedStudyId == null) {
+            showEmptyState(true);
+            return;
+        }
+
+        Semester cacheScope = activeGradesCacheScope();
+        if (!forceNetwork) {
+            List<Grade> cached = loadGradesFromCache(expectedStudyId, cacheScope, false);
+            if (cached != null) {
+                currentGradesRaw.clear();
+                currentGradesRaw.addAll(cached);
+                applyGradesView();
+                updateSummaryCards();
+                updateGradesDataFreshness(false);
+                return;
+            }
+        }
+
+        if (currentGradesFuture != null) {
+            currentGradesFuture.cancel(true);
+        }
+        executeLoadCurrentGradesTask(expectedStudyIndex, expectedStudyId, cacheScope, forceNetwork);
+    }
+
+    private void executeLoadCurrentGradesTask(
+            int expectedStudyIndex,
+            String expectedStudyId,
+            Semester cacheScope,
+            boolean forceNetwork) {
+        showLoading(true);
+        currentGradesRaw.clear();
+        applyGradesView();
+
+        currentGradesFuture = executor.submit(() -> {
+            List<Grade> grades = null;
+            Exception error = null;
+            List<Grade> previousSnapshot = loadGradesFromCache(expectedStudyId, cacheScope, true);
+            try {
+                grades = new GradesRepository().loadCurrentGrades();
+                markNewGrades(previousSnapshot, grades);
+            } catch (Exception e) {
+                error = e;
+            }
+
+            final List<Grade> finalGrades = grades;
+            final Exception finalError = error;
+            handler.post(() -> {
+                showLoading(false);
+                if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
+                    return;
+                }
+
+                if (finalError != null) {
+                    List<Grade> cached = loadGradesFromCache(expectedStudyId, cacheScope, true);
+                    if (cached != null) {
+                        currentGradesRaw.clear();
+                        currentGradesRaw.addAll(cached);
+                        applyGradesView();
+                        updateSummaryCards();
+                        updateGradesDataFreshness(false);
+
+                        int msgId = forceNetwork
+                                ? R.string.grades_refresh_network_failed_using_cache
+                                : R.string.grades_load_network_failed_using_cache;
+                        Toast.makeText(GradesActivity.this, msgId, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    String message = finalError.getMessage() != null ? finalError.getMessage() : "";
+                    String normalizedMessage = message.toLowerCase(Locale.ROOT);
+                    boolean isDnsError = message.contains("Unable to resolve host");
+                    boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
+                    boolean isInterruption = finalError instanceof java.io.InterruptedIOException
+                            || normalizedMessage.contains("interrupted");
+                    if (!(isOffline || isDnsError || isInterruption)) {
+                        Toast.makeText(
+                                GradesActivity.this,
+                                getString(R.string.grades_error_loading_grades, message),
+                                Toast.LENGTH_LONG).show();
+                    }
+                    showEmptyState(true);
+                    updateGradesDataFreshness(false);
+                    return;
+                }
+
+                currentGradesRaw.clear();
+                if (finalGrades != null) {
+                    currentGradesRaw.addAll(finalGrades);
+                    saveGradesToCache(expectedStudyId, cacheScope, finalGrades);
+                }
+                applyGradesView();
+                updateSummaryCards();
+                updateGradesDataFreshness(true);
+            });
+        });
     }
 
     private void reloadGrades(Semester semester, boolean forceNetwork) {
@@ -779,11 +791,50 @@ public class GradesActivity extends MzutBaseActivity {
         });
     }
 
+    private void markNewGrades(List<Grade> previous, List<Grade> current) {
+        if (current == null || current.isEmpty()) {
+            return;
+        }
+        if (previous == null || previous.isEmpty()) {
+            for (Grade grade : current) {
+                if (grade != null) {
+                    grade.isNew = false;
+                }
+            }
+            return;
+        }
+
+        Set<String> previousKeys = new HashSet<>();
+        for (Grade grade : previous) {
+            String key = buildGradeStableKey(grade);
+            if (!key.isEmpty()) {
+                previousKeys.add(key);
+            }
+        }
+        for (Grade grade : current) {
+            String key = buildGradeStableKey(grade);
+            grade.isNew = !key.isEmpty() && !previousKeys.contains(key);
+        }
+    }
+
+    private String buildGradeStableKey(Grade grade) {
+        if (grade == null) {
+            return "";
+        }
+        return (
+                GradesTextUtils.clean(grade.courseId) + "|" +
+                GradesTextUtils.clean(grade.subjectName) + "|" +
+                GradesTextUtils.clean(grade.type) + "|" +
+                GradesTextUtils.clean(grade.grade) + "|" +
+                GradesTextUtils.clean(grade.date) + "|" +
+                GradesTextUtils.clean(grade.gradeDescription)
+        ).toLowerCase(Locale.ROOT);
+    }
+
     // Summary calculations
     private void updateSummaryCards() {
         double sumWeighted = 0.0;
         double sumWeights = 0.0;
-        double sumEcts = calculateEctsForGrades(currentGradesRaw);
         boolean usedFinal = false;
 
         for (Grade g : currentGradesRaw) {
@@ -875,46 +926,6 @@ public class GradesActivity extends MzutBaseActivity {
                 tvAverageValue.setText(R.string.grades_average_placeholder);
             }
         }
-
-        if (tvEctsValue != null) {
-            tvEctsValue.setText(String.valueOf((int) Math.round(sumEcts)));
-        }
-    }
-
-    private double calculateEctsForGrades(List<Grade> grades) {
-        if (grades == null || grades.isEmpty()) {
-            return 0.0;
-        }
-
-        double sumFinal = 0.0;
-        boolean hasFinal = false;
-        for (Grade g : grades) {
-            if (!isFinalGrade(g)) {
-                continue;
-            }
-            hasFinal = true;
-            if (g.weight > 0) {
-                sumFinal += g.weight;
-            }
-        }
-        if (hasFinal) {
-            return sumFinal;
-        }
-
-        double sumAll = 0.0;
-        for (Grade g : grades) {
-            if (g.weight > 0) {
-                sumAll += g.weight;
-            }
-        }
-        return sumAll;
-    }
-
-    private void setTotalEctsValue(double totalEcts) {
-        if (tvEctsTotalValue != null) {
-            int rounded = (int) Math.round(Math.max(0.0, totalEcts));
-            tvEctsTotalValue.setText(String.valueOf(rounded));
-        }
     }
 
     private String buildGradesLastSyncKey(Study study) {
@@ -973,7 +984,7 @@ public class GradesActivity extends MzutBaseActivity {
         }
     }
 
-    private String buildTotalEctsCacheKey(Study study) {
+    private String buildCreditSummaryCacheKey(Study study) {
         if (study == null || study.przynaleznoscId == null) {
             return null;
         }
@@ -982,28 +993,11 @@ public class GradesActivity extends MzutBaseActivity {
         if (userId == null) {
             userId = "unknown";
         }
-        return KEY_TOTAL_ECTS_CACHE_PREFIX + userId + "_" + study.przynaleznoscId;
+        return KEY_CREDIT_SUMMARY_CACHE_PREFIX + userId + "_" + study.przynaleznoscId;
     }
 
-    private String buildSemestersFingerprint(List<Semester> semList) {
-        if (semList == null || semList.isEmpty()) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        for (Semester sem : semList) {
-            if (sem == null || sem.listaSemestrowId == null || sem.listaSemestrowId.isEmpty()) {
-                continue;
-            }
-            if (sb.length() > 0) {
-                sb.append('|');
-            }
-            sb.append(sem.listaSemestrowId);
-        }
-        return sb.toString();
-    }
-
-    private Double loadTotalEctsFromCache(Study study, List<Semester> semList) {
-        String key = buildTotalEctsCacheKey(study);
+    private GradesRepository.CreditSummary loadCreditSummaryFromCache(Study study) {
+        String key = buildCreditSummaryCacheKey(study);
         if (key == null) {
             return null;
         }
@@ -1024,27 +1018,29 @@ public class GradesActivity extends MzutBaseActivity {
                 return null;
             }
 
-            String cachedFingerprint = wrapper.optString("semesters", "");
-            String currentFingerprint = buildSemestersFingerprint(semList);
-            if (!currentFingerprint.equals(cachedFingerprint)) {
-                return null;
+            Double programme = wrapper.has("programme")
+                    ? wrapper.optDouble("programme", Double.NaN)
+                    : null;
+            if (programme != null && (Double.isNaN(programme) || programme < 0.0)) {
+                programme = null;
             }
-
-            if (!wrapper.has("total")) {
-                return null;
+            Double overall = wrapper.has("overall")
+                    ? wrapper.optDouble("overall", Double.NaN)
+                    : null;
+            if (overall != null && (Double.isNaN(overall) || overall < 0.0)) {
+                overall = null;
             }
-            double total = wrapper.optDouble("total", Double.NaN);
-            if (Double.isNaN(total) || total < 0.0) {
-                return null;
-            }
-            return total;
+            return new GradesRepository.CreditSummary(
+                    wrapper.optString("studentProgrammeId", ""),
+                    programme,
+                    overall);
         } catch (JSONException e) {
             return null;
         }
     }
 
-    private void saveTotalEctsToCache(Study study, List<Semester> semList, double totalEcts) {
-        String key = buildTotalEctsCacheKey(study);
+    private void saveCreditSummaryToCache(Study study, GradesRepository.CreditSummary summary) {
+        String key = buildCreditSummaryCacheKey(study);
         if (key == null) {
             return;
         }
@@ -1052,8 +1048,13 @@ public class GradesActivity extends MzutBaseActivity {
         try {
             JSONObject wrapper = new JSONObject();
             wrapper.put("timestamp", System.currentTimeMillis());
-            wrapper.put("semesters", buildSemestersFingerprint(semList));
-            wrapper.put("total", Math.max(0.0, totalEcts));
+            wrapper.put("studentProgrammeId", summary != null ? summary.studentProgrammeId : "");
+            if (summary != null && summary.programmeUsed != null) {
+                wrapper.put("programme", Math.max(0.0, summary.programmeUsed));
+            }
+            if (summary != null && summary.overallUsed != null) {
+                wrapper.put("overall", Math.max(0.0, summary.overallUsed));
+            }
             getGradesCachePrefs()
                     .edit()
                     .putString(key, wrapper.toString())
@@ -1062,77 +1063,65 @@ public class GradesActivity extends MzutBaseActivity {
         }
     }
 
-    private void refreshTotalEctsForActiveStudyAsync() {
+    private void refreshCreditSummaryForActiveStudyAsync() {
         final Study activeStudy = getActiveStudySnapshot();
-        final List<Semester> semSnapshot = new ArrayList<>(semesters);
         final int expectedStudyIndex = MzutSession.getInstance().getActiveStudyIndex();
 
-        if (activeStudy == null || activeStudy.przynaleznoscId == null || semSnapshot.isEmpty()) {
-            setTotalEctsValue(0.0);
+        if (activeStudy == null || activeStudy.przynaleznoscId == null) {
+            setEctsSummary(null, null);
             return;
         }
 
         final String expectedStudyId = normalizeStudyId(activeStudy.przynaleznoscId);
-        final Double cachedTotal = loadTotalEctsFromCache(activeStudy, semSnapshot);
-        if (cachedTotal != null) {
-            setTotalEctsValue(cachedTotal);
+        GradesRepository.CreditSummary cached = loadCreditSummaryFromCache(activeStudy);
+        if (cached != null) {
+            setEctsSummary(cached.programmeUsed, cached.overallUsed);
         } else {
-            setTotalEctsValue(0.0);
+            setEctsSummary(null, null);
         }
 
-        if (currentTotalEctsFuture != null) {
-            currentTotalEctsFuture.cancel(true);
+        if (currentCreditSummaryFuture != null) {
+            currentCreditSummaryFuture.cancel(true);
         }
 
-        currentTotalEctsFuture = executor.submit(() -> {
-            double total = 0.0;
-            boolean complete = true;
-            GradesRepository repo = new GradesRepository();
-
-            for (Semester sem : semSnapshot) {
-                if (Thread.currentThread().isInterrupted()) {
-                    return;
-                }
-                if (sem == null || sem.listaSemestrowId == null || sem.listaSemestrowId.isEmpty()) {
-                    continue;
-                }
-
-                List<Grade> semGrades = loadGradesFromCache(expectedStudyId, sem, false);
-                if (semGrades == null) {
-                    try {
-                        semGrades = repo.loadGradesForSemester(sem);
-                        if (semGrades != null) {
-                            saveGradesToCache(expectedStudyId, sem, semGrades);
-                        }
-                    } catch (Exception e) {
-                        semGrades = loadGradesFromCache(expectedStudyId, sem, true);
-                    }
-                }
-
-                if (semGrades == null) {
-                    complete = false;
-                    continue;
-                }
-                total += calculateEctsForGrades(semGrades);
+        currentCreditSummaryFuture = executor.submit(() -> {
+            GradesRepository.CreditSummary summary = null;
+            try {
+                summary = new GradesRepository().loadCreditSummary();
+            } catch (Exception ignored) {
             }
 
-            final double finalTotal = total;
-            final boolean finalComplete = complete;
+            final GradesRepository.CreditSummary finalSummary = summary;
             handler.post(() -> {
                 if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
                     return;
                 }
-
-                if (!finalComplete && cachedTotal != null) {
+                if (finalSummary == null) {
                     return;
                 }
-
-                setTotalEctsValue(finalTotal);
-                if (finalComplete) {
-                    saveTotalEctsToCache(activeStudy, semSnapshot, finalTotal);
-                }
+                setEctsSummary(finalSummary.programmeUsed, finalSummary.overallUsed);
+                saveCreditSummaryToCache(activeStudy, finalSummary);
             });
         });
+    }
+
+    private void setEctsSummary(Double programmeUsed, Double overallUsed) {
+        if (tvEctsValue != null) {
+            tvEctsValue.setText(formatSummaryNumber(programmeUsed));
+        }
+        if (tvEctsTotalValue != null) {
+            tvEctsTotalValue.setText(formatSummaryNumber(overallUsed));
+        }
+    }
+
+    private String formatSummaryNumber(Double value) {
+        if (value == null || value < 0.0 || Double.isNaN(value)) {
+            return getString(R.string.grades_average_placeholder);
+        }
+        if (Math.abs(value - Math.rint(value)) < 0.0001) {
+            return String.format(Locale.getDefault(), "%.0f", value);
+        }
+        return String.format(Locale.getDefault(), "%.1f", value);
     }
 
     // Grades cache
@@ -1206,9 +1195,11 @@ public class GradesActivity extends MzutBaseActivity {
             for (Grade g : grades) {
                 JSONObject o = new JSONObject();
                 o.put("subjectName", g.subjectName);
+                o.put("courseId", g.courseId);
                 o.put("grade", g.grade);
                 o.put("weight", g.weight);
                 o.put("type", g.type);
+                o.put("gradeDescription", g.gradeDescription);
                 o.put("teacher", g.teacher);
                 o.put("date", g.date);
                 arr.put(o);
@@ -1278,9 +1269,11 @@ public class GradesActivity extends MzutBaseActivity {
                 JSONObject o = arr.getJSONObject(i);
                 Grade g = new Grade();
                 g.subjectName = o.optString("subjectName", "");
+                g.courseId = o.optString("courseId", "");
                 g.grade = o.optString("grade", "");
                 g.weight = o.optDouble("weight", 0.0);
                 g.type = o.optString("type", "");
+                g.gradeDescription = o.optString("gradeDescription", "");
                 g.teacher = o.optString("teacher", "");
                 g.date = o.optString("date", "");
                 result.add(g);

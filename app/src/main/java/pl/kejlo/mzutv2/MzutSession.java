@@ -414,10 +414,13 @@ public final class MzutSession {
      */
     public boolean isLoggedIn() {
         if (userId == null || userId.isEmpty()) return false;
-        if (isUsosLogin()) {
-            return usosAccessToken != null && !usosAccessToken.isEmpty();
+        if (!isUsosLogin()) {
+            return false;
         }
-        return authKey != null && !authKey.isEmpty();
+        return usosAccessToken != null
+                && !usosAccessToken.isEmpty()
+                && usosAccessTokenSecret != null
+                && !usosAccessTokenSecret.isEmpty();
     }
 
     public List<Study> getStudies() {

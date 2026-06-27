@@ -57,7 +57,7 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
 
     private static final String PREF_OG_CACHE = "useful_links_og_cache";
     private static final String LINKS_SCREEN = "links";
-    private static final String USER_AGENT = "Mozilla/5.0 (compatible; mZUTv2/1.0)";
+    private static final String USER_AGENT = "Mozilla/5.0 (compatible; ZUTnik-Android/2.0)";
     private static final Pattern TITLE_TAG_PATTERN = Pattern.compile(
             "<title>(.*?)</title>",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -439,11 +439,16 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
 
     private void openLink(View source, LinkItem item) {
         try {
+            String url = WebLinkActivity.normalizeUrl(item.url);
+            if (url == null) {
+                Toast.makeText(this, R.string.web_link_no_url, Toast.LENGTH_SHORT).show();
+                return;
+            }
             Intent intent = new Intent(source.getContext(), WebLinkActivity.class);
             intent.putExtra(
                     WebLinkActivity.EXTRA_TITLE,
                     item.previewTitle != null ? item.previewTitle : item.title);
-            intent.putExtra(WebLinkActivity.EXTRA_URL, item.url);
+            intent.putExtra(WebLinkActivity.EXTRA_URL, url);
             source.getContext().startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(this, R.string.web_link_open_external_error, Toast.LENGTH_SHORT).show();

@@ -169,7 +169,8 @@
                     android:background="@drawable/bg_card_soft"
                     android:layout_marginBottom="12dp"
                     android:paddingStart="4dp"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:visibility="gone">
 
                     <Spinner
                         android:id="@+id/spinnerStudies"
@@ -184,7 +185,8 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card_soft"
                     android:paddingStart="4dp"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:visibility="gone">
 
                     <Spinner
                         android:id="@+id/spinnerSemesters"

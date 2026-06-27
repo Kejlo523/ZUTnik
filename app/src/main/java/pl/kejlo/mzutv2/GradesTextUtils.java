@@ -11,7 +11,11 @@ final class GradesTextUtils {
     }
 
     static String clean(String value) {
-        return value == null ? "" : value.trim();
+        if (value == null) {
+            return "";
+        }
+        String trimmed = value.trim();
+        return ("null".equalsIgnoreCase(trimmed) || "undefined".equalsIgnoreCase(trimmed)) ? "" : trimmed;
     }
 
     static String normalizeKey(String value) {

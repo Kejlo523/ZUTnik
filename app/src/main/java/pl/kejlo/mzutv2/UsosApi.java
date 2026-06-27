@@ -39,6 +39,19 @@ public final class UsosApi {
     }
 
     /**
+     * Signed GET request that returns the raw response body.
+     * Some USOS endpoints return a scalar JSON value instead of an object/array.
+     */
+    public static String getRaw(String endpoint, Map<String, String> queryParams)
+            throws IOException {
+        MzutSession session = MzutSession.getInstance();
+        return getRaw(endpoint,
+                session.getUsosAccessToken(),
+                session.getUsosAccessTokenSecret(),
+                queryParams);
+    }
+
+    /**
      * Signed GET that expects a JSON **array** response (e.g. payments/user_payments).
      */
     public static JSONArray getArray(String endpoint, Map<String, String> queryParams)
@@ -70,7 +83,7 @@ public final class UsosApi {
                 .url(fullUrl)
                 .get()
                 .header("Authorization", authHeader)
-                .header("User-Agent", "mZUT-ANDROID-V2/1.0")
+                .header("User-Agent", "ZUTnik-Android/2.0")
                 .build();
 
         try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
@@ -121,7 +134,7 @@ public final class UsosApi {
                 .url(fullUrl)
                 .get()
                 .header("Authorization", authHeader)
-                .header("User-Agent", "mZUT-ANDROID-V2/1.0")
+                .header("User-Agent", "ZUTnik-Android/2.0")
                 .build();
 
         try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
@@ -130,6 +143,38 @@ public final class UsosApi {
                 throw new IOException("USOS API HTTP " + response.code() + ": " + body);
             }
             return body.isEmpty() ? new JSONObject() : new JSONObject(body);
+        }
+    }
+
+    public static String getRaw(
+            String endpoint,
+            String accessToken, String accessTokenSecret,
+            Map<String, String> queryParams) throws IOException {
+
+        String baseUrl = BuildConfig.USOS_BASE_URL + endpoint;
+        String fullUrl = buildUrl(baseUrl, queryParams);
+        Map<String, String> paramsForSig = queryParams != null
+                ? new TreeMap<>(queryParams) : new TreeMap<>();
+
+        String authHeader = UsosOAuth.buildAuthHeader(
+                "GET", baseUrl,
+                BuildConfig.USOS_CONSUMER_KEY, BuildConfig.USOS_CONSUMER_SECRET,
+                accessToken, accessTokenSecret,
+                paramsForSig);
+
+        Request request = new Request.Builder()
+                .url(fullUrl)
+                .get()
+                .header("Authorization", authHeader)
+                .header("User-Agent", "ZUTnik-Android/2.0")
+                .build();
+
+        try (Response response = MzutNetwork.getClient().newCall(request).execute()) {
+            String body = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new IOException("USOS API HTTP " + response.code() + ": " + body);
+            }
+            return body;
         }
     }
 

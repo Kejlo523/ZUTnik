@@ -11,6 +11,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.ActivityNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -65,7 +66,7 @@ public class WebLinkActivity extends PhoneAwareActivity {
 
         Intent intent = getIntent();
         String title = intent.getStringExtra(EXTRA_TITLE);
-        currentUrl = intent.getStringExtra(EXTRA_URL);
+        currentUrl = normalizeUrl(intent.getStringExtra(EXTRA_URL));
 
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(!TextUtils.isEmpty(title)
@@ -75,6 +76,11 @@ public class WebLinkActivity extends PhoneAwareActivity {
 
         if (TextUtils.isEmpty(currentUrl)) {
             Toast.makeText(this, R.string.web_link_no_url, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        if (!isHttpUrl(currentUrl)) {
+            openExternalUrl(currentUrl);
             finish();
             return;
         }
@@ -145,17 +151,13 @@ public class WebLinkActivity extends PhoneAwareActivity {
                     return false;
                 }
                 String url = request.getUrl().toString();
-                if (url.startsWith("http://") || url.startsWith("https://")) {
-                    currentUrl = url;
+                String normalized = normalizeUrl(url);
+                if (normalized != null && isHttpUrl(normalized)) {
+                    currentUrl = normalized;
                     return false;
                 }
-                try {
-                    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    startActivity(i);
-                    return true;
-                } catch (Exception ignored) {
-                    return false;
-                }
+                openExternalUrl(url);
+                return true;
             }
         });
 
@@ -181,11 +183,50 @@ public class WebLinkActivity extends PhoneAwareActivity {
         if (TextUtils.isEmpty(currentUrl)) {
             return;
         }
+        openExternalUrl(currentUrl);
+    }
+
+    private void openExternalUrl(String url) {
+        String safeUrl = normalizeUrl(url);
+        if (TextUtils.isEmpty(safeUrl)) {
+            Toast.makeText(this, R.string.web_link_no_url, Toast.LENGTH_SHORT).show();
+            return;
+        }
         try {
-            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(currentUrl));
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(safeUrl));
             startActivity(i);
-        } catch (Exception e) {
+        } catch (ActivityNotFoundException | SecurityException e) {
             Toast.makeText(this, R.string.web_link_open_external_error, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public static String normalizeUrl(String rawUrl) {
+        if (rawUrl == null) {
+            return null;
+        }
+        String url = rawUrl.trim();
+        if (url.isEmpty()) {
+            return null;
+        }
+        Uri parsed = Uri.parse(url);
+        String scheme = parsed.getScheme();
+        if (TextUtils.isEmpty(scheme)) {
+            url = "https://" + url;
+            parsed = Uri.parse(url);
+            scheme = parsed.getScheme();
+        }
+        if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+            return url;
+        }
+        return url;
+    }
+
+    private static boolean isHttpUrl(String url) {
+        if (TextUtils.isEmpty(url)) {
+            return false;
+        }
+        Uri parsed = Uri.parse(url);
+        String scheme = parsed.getScheme();
+        return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
     }
 }

@@ -64,7 +64,7 @@
                             android:clipToOutline="true"
                             android:padding="2dp"
                             android:scaleType="centerCrop"
-                            android:src="@mipmap/ic_launcher_round" />
+                            android:src="@mipmap/ic_zut_logo_round" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -105,6 +105,167 @@
                             android:padding="8dp"
                             android:src="@android:drawable/ic_popup_sync"
                             app:tint="?attr/mzMuted" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:text="@string/info_ects_title"
+                        android:textColor="?attr/mzText"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_ects_programme"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoEctsProgramme"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_ects_overall"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoEctsOverall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_soft"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:text="@string/info_els_title"
+                        android:textColor="?attr/mzText"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_els_status"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoElsStatus"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_els_valid_until"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoElsExpiration"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="6dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/info_label_els_number"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvInfoElsId"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="@string/common_dash"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
 

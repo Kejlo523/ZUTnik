@@ -162,30 +162,20 @@ public class BackgroundSyncWorker extends Worker {
 
     private void checkGrades(Context context) throws IOException, org.json.JSONException {
         GradesRepository repo = new GradesRepository();
-        List<Semester> semesters = repo.loadSemesters();
-        if (semesters == null) {
-            semesters = Collections.emptyList();
+        List<Grade> grades = repo.loadCurrentGrades();
+        if (grades == null) {
+            grades = Collections.emptyList();
         }
-
+        Semester gradeScope = new Semester();
+        gradeScope.listaSemestrowId = "active_terms";
         Map<String, String> current = new LinkedHashMap<>();
-        int fetchedSemesters = 0;
-        for (Semester semester : semesters) {
-            if (semester == null || semester.listaSemestrowId == null || semester.listaSemestrowId.trim().isEmpty()) {
+        for (Grade grade : grades) {
+            if (grade == null || safe(grade.grade).isEmpty()) {
                 continue;
             }
-            fetchedSemesters++;
-            List<Grade> grades = repo.loadGradesForSemester(semester.listaSemestrowId);
-            if (grades == null) {
-                continue;
-            }
-            for (Grade grade : grades) {
-                if (grade == null || safe(grade.grade).isEmpty()) {
-                    continue;
-                }
-                String key = buildGradeKey(semester, grade);
-                String label = buildGradeLabel(grade);
-                current.put(key, label);
-            }
+            String key = buildGradeKey(gradeScope, grade);
+            String label = buildGradeLabel(grade);
+            current.put(key, label);
         }
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
@@ -198,12 +188,13 @@ public class BackgroundSyncWorker extends Worker {
         Set<String> previous = readStringSetJson(prefs.getString(gradesBaselineJsonKey, "[]"));
 
         if (!baselineReady) {
-            if (fetchedSemesters == 0) {
-                Log.d(TAG, "Skipping grades baseline init: no semesters loaded yet.");
-                return;
-            }
             saveStringSetJson(prefs, gradesBaselineJsonKey, current.keySet());
             prefs.edit().putBoolean(gradesBaselineReadyKey, true).apply();
+            return;
+        }
+
+        if (current.isEmpty() && !previous.isEmpty()) {
+            Log.d(TAG, "Skipping grades baseline overwrite: USOS returned empty grades after a non-empty baseline.");
             return;
         }
 

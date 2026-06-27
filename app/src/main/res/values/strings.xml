@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:locale="pl"
     tools:ignore="MissingTranslation">
-  <string name="app_name">mZUT v2</string>
+  <string name="app_name">ZUTnik</string>
   <string name="app_version">Wersja %1$s</string>
   <string name="nav_header_default_username">Student</string>
   <string name="logout_success_message">Wylogowano</string>
@@ -41,12 +41,12 @@
   <string name="wear_sync_status_error">Błąd wysyłki danych</string>
   <string name="wear_sync_status_watch_received">100% Zegarek odebrał dane!</string>
   <string name="wear_main_status_syncing">Synchronizuję z zegarkiem…</string>
-  <string name="login_card_title">Zaloguj się do mZUT</string>
+  <string name="login_card_title">Zaloguj się do ZUTnika</string>
   <string name="login_hint">Login</string>
   <string name="login_password_hint">Hasło</string>
   <string name="login_button">Zaloguj</string>
   <string name="login_info_text">
-        Dane logowania są wysyłane przez oficjalne API mZUT. Login zostanie zapamiętany na tym urządzeniu.
+        Logowanie hasłem zostało wyłączone. Użyj autoryzacji przez USOS.
     </string>
   <string name="login_enter_credentials">Wpisz login i hasło!</string>
   <string name="login_error_generic">Błąd: %1$s</string>
@@ -64,7 +64,10 @@
   <string name="login_usos_reason_missing_request_secret">brak request token secret</string>
   <string name="login_usos_error_missing_user_id">Brak ID użytkownika w odpowiedzi USOS</string>
   <string name="login_usos_info_text">
-        Logowanie wymaga autoryzacji w przeglądarce. Zostaniesz przekierowany na stronę USOS.
+        Logowanie odbywa się wyłącznie przez USOS. Po chwili otworzy się okno autoryzacji.
+    </string>
+  <string name="login_usos_scope_hint">
+        ZUTnik poprosi o dostęp do ocen, płatności, zdjęcia i danych studenta potrzebnych do działania aplikacji.
     </string>
   <string name="login_usos_exchanging_token">Autoryzacja USOS…</string>
   <string name="login_usos_fetching_user">Pobieram dane użytkownika…</string>
@@ -75,7 +78,7 @@
   <string name="home_toolbar_title">Strona główna</string>
   <string name="home_welcome_message">Witaj %1$s</string>
   <string name="home_welcome_subtitle">
-        Szybki dostęp do planu, ocen, informacji o studiach i aktualności z ZUT – w jednym miejscu.
+        Lekki podgląd planu, ocen, danych studenta i aktualności z ZUT w jednym miejscu.
     </string>
   <string name="home_welcome_fallback">Witaj Student 👋</string>
   <string name="home_shortcuts_title">Szybkie skróty</string>
@@ -94,7 +97,7 @@
     </string>
   <string name="home_tile_news_title">📰 Aktualności ZUT</string>
   <string name="home_tile_news_desc">
-        Komunikaty i ogłoszenia z kanału RSS dla studentów.
+        Komunikaty z RSS ZUT z fallbackiem do aktualności USOS.
     </string>
   <string name="home_footer_meta">
         Dane są pobierane z systemów ZUT i cache’owane lokalnie. Jeśli coś wygląda podejrzanie, zawsze zweryfikuj też w oficjalnych panelach.
@@ -166,6 +169,13 @@
   <string name="info_label_status">Status:</string>
   <string name="info_label_academic_year">Rok akademicki:</string>
   <string name="info_label_semester">Semestr:</string>
+  <string name="info_ects_title">Postęp ECTS</string>
+  <string name="info_label_ects_programme">Na kierunku:</string>
+  <string name="info_label_ects_overall">Łącznie:</string>
+  <string name="info_els_title">Legitymacja ELS</string>
+  <string name="info_label_els_status">Status:</string>
+  <string name="info_label_els_valid_until">Ważna do:</string>
+  <string name="info_label_els_number">Numer:</string>
   <string name="plan_title">Plan zajęć</string>
   <string name="plan_filters_error">Błąd ładowania listy przedmiotów: %1$s</string>
   <string name="plan_filters_empty">Brak przedmiotów do filtrowania.</string>
@@ -254,19 +264,20 @@
   <string name="grades_summary_ects_total_label">ECTS Łącznie</string>
   <string name="grades_grouping_toggle">Grupuj oceny</string>
   <string name="grades_final_grade_label">Ocena końcowa</string>
-  <string name="grades_final_grade_missing">Brak oceny końcowej</string>
+  <string name="grades_new_badge">Nowe</string>
+  <string name="grades_new_badge_label">Ostatnio dodane</string>
   <string name="plan_type_label">Typ zajęć</string>
-  <string name="grades_empty_state">Brak ocen dla wybranego semestru.</string>
+  <string name="grades_empty_state">Brak ocen w aktualnym okresie.</string>
   <string name="news_title">Aktualności ZUT</string>
-  <string name="news_refresh_toast">Pobieram najnowsze dane…</string>
-  <string name="news_error_rss">Błąd pobierania RSS: %1$s</string>
+  <string name="news_refresh_toast">Pobieram najnowsze aktualności…</string>
+  <string name="news_error_rss">Błąd pobierania aktualności: %1$s</string>
   <string name="news_detail_title">Wpis</string>
   <string name="news_detail_source_label">Źródło: zut.edu.pl</string>
   <string name="news_detail_no_content">
         Brak treści w kanale RSS dla tego wpisu.
     </string>
   <string name="news_header_title">Kanał ogłoszeń dla studentów</string>
-  <string name="news_header_source_info">Źródło RSS: studenci ZUT</string>
+  <string name="news_header_source_info">Źródło: RSS ZUT / USOS</string>
   <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">przed chwilą</string>
   <string name="news_empty_state">
@@ -286,7 +297,7 @@
   <string name="plan_widget_subtitle_tomorrow">Jutrzejsze zajęcia</string>
   <string name="plan_widget_subtitle_no_classes_until">%1$s · brak zajęć do %2$s</string>
   <string name="plan_widget_subtitle_login_required">
-        Zaloguj się w aplikacji mZUT
+        Zaloguj się w aplikacji ZUTnik
     </string>
   <string name="plan_widget_refreshed_prefix">Odświeżono: </string>
   <string name="plan_widget_refresh_desc">Odśwież widget</string>
@@ -298,13 +309,13 @@
   <string name="plan_widget_empty_state">Brak zajęć do wyświetlenia</string>
   <string name="about_title">O aplikacji</string>
   <string name="about_rate_title">Oceń aplikację</string>
-  <string name="about_rate_desc">Twoja opinia pomaga nam rozwijać mZUT!</string>
+  <string name="about_rate_desc">Twoja opinia pomaga nam rozwijać ZUTnika!</string>
   <string name="about_project_description_1">
-        mZUT v2 został stworzony jako nieoficjalna, lekka alternatywa do szybkiego podglądu planu, ocen i informacji o studiach na ZUT, bez konieczności przeklikiwania się przez ciężkie panele www.
+        ZUTnik to nieoficjalny, lekki asystent studenta ZUT do szybkiego podglądu planu, ocen, danych studenta i aktualności bez przeklikiwania się przez ciężkie panele www.
     </string>
   <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
   <string name="about_contact_website">Strona autora: endozero.pl</string>
-  <string name="about_contact_app_website">Strona projektu: mzut.endozero.pl</string>
+  <string name="about_contact_app_website">Strona projektu: ZUTnik</string>
   <string name="about_privacy_policy_url">Polityka prywatności</string>
   <string name="settings_title">Ustawienia</string>
   <string name="settings_section_appearance">Wygląd i język</string>
@@ -438,7 +449,7 @@
   <string name="calendar_export_device_title">Import do kalendarza w telefonie</string>
   <string name="calendar_export_device_desc">Pozwala dodać wydarzenia bezpośrednio do jednego z dostępnych kalendarzy na urządzeniu, np. Google, Samsung albo innego konta.</string>
   <string name="calendar_export_device_action">Wybierz kalendarz i importuj</string>
-  <string name="calendar_export_device_clear_action">Wybierz kalendarz i wyczyść wpisy mZUT</string>
+  <string name="calendar_export_device_clear_action">Wybierz kalendarz i wyczyść wpisy ZUTnika</string>
   <string name="calendar_export_permission_denied">Bez uprawnień do kalendarza nie można zaimportować wydarzeń do kalendarza urządzenia</string>
   <string name="calendar_export_no_device_calendars">Nie znaleziono żadnych dostępnych kalendarzy do zapisu</string>
   <string name="calendar_export_pick_calendar">Wybierz kalendarz docelowy</string>
@@ -450,10 +461,10 @@
   <string name="calendar_export_calendar_no_sync">bez synchronizacji</string>
   <string name="calendar_export_import_success">Dodano wydarzenia do kalendarza: %1$d</string>
   <string name="calendar_export_import_error">Nie udało się zaimportować wydarzeń do kalendarza urządzenia</string>
-  <string name="calendar_export_clear_title">Wyczyścić wpisy mZUT?</string>
-  <string name="calendar_export_clear_message">Z wybranego kalendarza zostaną usunięte tylko wydarzenia wcześniej dodane przez eksport mZUT v2.\n\nKalendarz: %1$s</string>
+  <string name="calendar_export_clear_title">Wyczyścić wpisy ZUTnika?</string>
+  <string name="calendar_export_clear_message">Z wybranego kalendarza zostaną usunięte tylko wydarzenia wcześniej dodane przez eksport ZUTnika.\n\nKalendarz: %1$s</string>
   <string name="calendar_export_clear_action">Wyczyść</string>
-  <string name="calendar_export_clear_success">Usunięto wpisy mZUT z kalendarza: %1$d</string>
+  <string name="calendar_export_clear_success">Usunięto wpisy ZUTnika z kalendarza: %1$d</string>
   <string name="useful_links_empty">
         Brak zdefiniowanych linków.\nDodaj coś w ustawieniach lub sprawdź domyślne propozycje.
     </string>
@@ -597,6 +608,6 @@
   <string name="about_link_title_project">Strona projektu</string>
   <string name="about_link_title_author">Strona autora</string>
   <string name="about_link_title_privacy">Polityka prywatności</string>
-  <string name="about_logo_desc">Logo mZUT v2</string>
+  <string name="about_logo_desc">Logo ZUTnika</string>
   <string name="common_close">Zamknij</string>
 </resources>

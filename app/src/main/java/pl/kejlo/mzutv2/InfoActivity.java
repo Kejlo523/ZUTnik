@@ -73,6 +73,11 @@ public class InfoActivity extends MzutBaseActivity {
     private TextView tvStatus;
     private TextView tvRok;
     private TextView tvSemestr;
+    private TextView tvEctsProgramme;
+    private TextView tvEctsOverall;
+    private TextView tvElsStatus;
+    private TextView tvElsExpiration;
+    private TextView tvElsId;
 
     private LinearLayout historyContainer;
     private View progress;
@@ -136,6 +141,11 @@ public class InfoActivity extends MzutBaseActivity {
         tvStatus = findViewById(R.id.tvInfoStatus);
         tvRok = findViewById(R.id.tvInfoRok);
         tvSemestr = findViewById(R.id.tvInfoSemestr);
+        tvEctsProgramme = findViewById(R.id.tvInfoEctsProgramme);
+        tvEctsOverall = findViewById(R.id.tvInfoEctsOverall);
+        tvElsStatus = findViewById(R.id.tvInfoElsStatus);
+        tvElsExpiration = findViewById(R.id.tvInfoElsExpiration);
+        tvElsId = findViewById(R.id.tvInfoElsId);
 
         historyContainer = findViewById(R.id.infoHistoryContainer);
         progress = findViewById(R.id.infoProgress);
@@ -386,6 +396,11 @@ public class InfoActivity extends MzutBaseActivity {
         setOrHide(tvStatus, obj.optString("status", null));
         setOrHide(tvRok, obj.optString("rokAkademicki", null));
         setOrHide(tvSemestr, obj.optString("semestrLabel", null));
+        setOrHide(tvEctsProgramme, obj.optString("ectsProgramme", null));
+        setOrHide(tvEctsOverall, obj.optString("ectsOverall", null));
+        setOrHide(tvElsStatus, obj.optString("elsStatus", null));
+        setOrHide(tvElsExpiration, obj.optString("elsExpirationDate", null));
+        setOrHide(tvElsId, obj.optString("elsId", null));
     }
 
     // Saves the data fetched from the API into cache.
@@ -408,6 +423,11 @@ public class InfoActivity extends MzutBaseActivity {
                 detailsObj.put("status", d.status != null ? d.status : "");
                 detailsObj.put("rokAkademicki", d.rokAkademicki != null ? d.rokAkademicki : "");
                 detailsObj.put("semestrLabel", d.semestrLabel != null ? d.semestrLabel : "");
+                detailsObj.put("ectsProgramme", formatEcts(d.ectsProgramme));
+                detailsObj.put("ectsOverall", formatEcts(d.ectsOverall));
+                detailsObj.put("elsStatus", d.elsStatus != null ? d.elsStatus : "");
+                detailsObj.put("elsExpirationDate", d.elsExpirationDate != null ? d.elsExpirationDate : "");
+                detailsObj.put("elsId", d.elsId != null ? d.elsId : "");
             }
 
             if (history != null) {
@@ -589,6 +609,22 @@ public class InfoActivity extends MzutBaseActivity {
         
         // Semester Label (Semestr) - e.g., "1 zimowy" or full USOS term name
         setOrHide(tvSemestr, d.semestrLabel);
+
+        setOrHide(tvEctsProgramme, formatEcts(d.ectsProgramme));
+        setOrHide(tvEctsOverall, formatEcts(d.ectsOverall));
+        setOrHide(tvElsStatus, d.elsStatus);
+        setOrHide(tvElsExpiration, d.elsExpirationDate);
+        setOrHide(tvElsId, d.elsId);
+    }
+
+    private String formatEcts(Double value) {
+        if (value == null || value < 0.0 || Double.isNaN(value)) {
+            return "";
+        }
+        if (Math.abs(value - Math.rint(value)) < 0.0001) {
+            return String.format(java.util.Locale.getDefault(), "%.0f ECTS", value);
+        }
+        return String.format(java.util.Locale.getDefault(), "%.1f ECTS", value);
     }
 
     /**
@@ -614,6 +650,9 @@ public class InfoActivity extends MzutBaseActivity {
      * Shows or hides a TextView based on whether the value is empty.
      */
     private void setOrHide(TextView tv, String value) {
+        if (tv == null) {
+            return;
+        }
         if (value == null || value.trim().isEmpty()) {
             tv.setVisibility(View.GONE);
         } else {
@@ -674,7 +713,7 @@ public class InfoActivity extends MzutBaseActivity {
             try {
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(url)
-                        .header("User-Agent", "mZUTv2-Android-Info/1.0")
+                        .header("User-Agent", "ZUTnik-Android-Info/2.0")
                         .build();
 
                 try (okhttp3.Response response = MzutNetwork.getClient().newCall(request).execute()) {

@@ -22,6 +22,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         public final String subject;
         public Grade finalGrade;
         public boolean finalMissing = false;
+        public boolean hasNew = false;
         public final List<Grade> others = new ArrayList<>();
         public boolean expanded = false;
 
@@ -159,8 +160,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         Context ctx = h.itemView.getContext();
         if (g == null) {
             h.subject.setText((CharSequence) null);
-            h.finalPill.setText(ctx.getString(R.string.common_dash));
-            h.finalLabel.setText(R.string.grades_final_grade_missing);
+            h.finalRow.setVisibility(View.GONE);
             h.previewRow.removeAllViews();
             h.expandIcon.setRotation(0f);
             return;
@@ -179,24 +179,26 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             h.expandIcon.setRotation(target);
         }
 
-        String finalLabel;
-        if (g.finalMissing || g.finalGrade == null) {
-            finalLabel = ctx.getString(R.string.grades_final_grade_missing);
-            String dash = ctx.getString(R.string.common_dash);
-            h.finalPill.setText(dash);
-            styleGradePill(ctx, h.finalPill, dash, true);
-        } else {
-            finalLabel = ctx.getString(R.string.grades_final_grade_label);
+        if (g.hasNew && (g.finalGrade == null || g.finalMissing)) {
+            h.finalRow.setVisibility(View.VISIBLE);
+            h.finalPill.setText(R.string.grades_new_badge);
+            h.finalPill.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f);
+            h.finalPill.setBackgroundResource(R.drawable.bg_grade_type_chip);
+            h.finalPill.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzPrimary));
+            h.finalLabel.setText(R.string.grades_new_badge_label);
+        } else if (!(g.finalMissing || g.finalGrade == null)) {
+            h.finalRow.setVisibility(View.VISIBLE);
+            h.finalPill.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+            String finalLabel = ctx.getString(R.string.grades_final_grade_label);
             String raw = GradesTextUtils.clean(g.finalGrade.grade);
             h.finalPill.setText(raw.isEmpty() ? ctx.getString(R.string.common_dash) : raw);
             styleGradePill(ctx, h.finalPill, raw, raw.isEmpty());
-        }
-
-        if (!(g.finalMissing || g.finalGrade == null)) {
             double ects = resolveGroupEcts(g);
             finalLabel = finalLabel + "\n" + ctx.getString(R.string.grades_ects_format, ects);
+            h.finalLabel.setText(finalLabel);
+        } else {
+            h.finalRow.setVisibility(View.GONE);
         }
-        h.finalLabel.setText(finalLabel);
 
         bindPreview(ctx, h.previewRow, g);
 
@@ -359,6 +361,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     static class GroupViewHolder extends RecyclerView.ViewHolder {
         TextView subject;
+        LinearLayout finalRow;
         TextView finalPill;
         TextView finalLabel;
         LinearLayout previewRow;
@@ -369,6 +372,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             super(v);
             root = v.findViewById(R.id.groupRoot);
             subject = v.findViewById(R.id.groupSubject);
+            finalRow = v.findViewById(R.id.groupFinalRow);
             finalPill = v.findViewById(R.id.groupFinalPill);
             finalLabel = v.findViewById(R.id.groupFinalLabel);
             previewRow = v.findViewById(R.id.groupPreviewRow);

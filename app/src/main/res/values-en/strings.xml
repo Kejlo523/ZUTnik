@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">mZUT v2</string>
+  <string name="app_name">ZUTnik</string>
   <string name="app_version">Version %1$s</string>
   <string name="nav_header_default_username">Student</string>
   <string name="logout_success_message">Logged out</string>
   <string name="nav_settings_label">Settings</string>
   <string name="nav_useful_links">Useful links</string>
   <string name="nav_logout_label">Log out</string>
-  <string name="login_card_title">Log in to mZUT</string>
+  <string name="login_card_title">Log in to ZUTnik</string>
   <string name="login_hint">Login</string>
   <string name="login_password_hint">Password</string>
   <string name="login_button">Log in</string>
   <string name="login_info_text">
-        Login data is sent via the official mZUT API. The login will be remembered on this device.
+        Password login has been disabled. Use USOS authorization instead.
     </string>
   <string name="login_enter_credentials">Enter login and password!</string>
   <string name="login_error_generic">Error: %1$s</string>
@@ -20,11 +20,18 @@
   <string name="login_system_error">ZUT system error (SYSTEM ERROR).</string>
   <string name="login_invalid_credentials">Invalid login or password.</string>
   <string name="login_success">Logged in as %1$s</string>
+  <string name="login_usos_button">Log in with USOS</string>
+  <string name="login_usos_info_text">
+        Login is handled only through USOS. The authorization page will open in a moment.
+    </string>
+  <string name="login_usos_scope_hint">
+        ZUTnik will request access to grades, payments, photo, and student data needed by the app.
+    </string>
   <string name="home_title">Main dashboard</string>
   <string name="home_toolbar_title">Home page</string>
   <string name="home_welcome_message">Hello %1$s</string>
   <string name="home_welcome_subtitle">
-        Quick access to timetable, grades, study info and ZUT news – in one place.
+        Lightweight access to timetable, grades, student data, and ZUT news in one place.
     </string>
   <string name="home_welcome_fallback">Hello Student 👋</string>
   <string name="home_shortcuts_title">Quick shortcuts</string>
@@ -43,7 +50,7 @@
     </string>
   <string name="home_tile_news_title">📰 ZUT news</string>
   <string name="home_tile_news_desc">
-        Announcements from the RSS channel for students.
+        Announcements from the ZUT RSS feed with a USOS news fallback.
     </string>
   <string name="home_footer_meta">
         Data is fetched from ZUT systems and cached locally. If something looks suspicious, always verify it in the official panels as well.
@@ -229,7 +236,7 @@
   <string name="plan_widget_subtitle_tomorrow">Tomorrow classes</string>
   <string name="plan_widget_subtitle_no_classes_until">%1$s · no classes until %2$s</string>
   <string name="plan_widget_subtitle_login_required">
-        Log in to the mZUT app
+        Log in to the ZUTnik app
     </string>
   <string name="plan_widget_refreshed_prefix">Refreshed: </string>
   <string name="plan_widget_refresh_desc">Refresh widget</string>
@@ -241,11 +248,11 @@
   <string name="plan_widget_empty_state">No classes to display</string>
   <string name="about_title">About the app</string>
   <string name="about_project_description_1">
-        mZUT v2 was created as an unofficial, lightweight alternative for quickly viewing timetable, grades and study information at ZUT, without having to click through heavy web panels.
+        ZUTnik is an unofficial, lightweight ZUT student assistant for quick access to timetable, grades, student data, and news without clicking through heavy web panels.
     </string>
   <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
   <string name="about_contact_website">Website: endozero.pl</string>
-  <string name="about_contact_app_website">App website: mzut.endozero.pl</string>
+  <string name="about_contact_app_website">Project website: ZUTnik</string>
   <string name="settings_title">Settings</string>
   <string name="settings_section_appearance">Appearance and language</string>
   <string name="settings_section_widget">Widget</string>
@@ -388,7 +395,6 @@
   <string name="data_status_syncing">Refreshing…</string>
   <string name="grades_grouping_toggle">Group grades</string>
   <string name="grades_final_grade_label">Final grade</string>
-  <string name="grades_final_grade_missing">No final grade</string>
   <string name="plan_type_label">Class type</string>
   <!-- Attendance -->
   <string name="attendance_title">Attendance</string>
@@ -499,7 +505,7 @@
   <string name="about_link_title_project">Project website</string>
   <string name="about_link_title_author">Author website</string>
   <string name="about_link_title_privacy">Privacy policy</string>
-  <string name="about_logo_desc">mZUT v2 logo</string>
+  <string name="about_logo_desc">ZUTnik logo</string>
   <string name="common_close">Close</string>
   <!-- Missing Strings -->
   <string name="nav_watch_searching">Searching for watch…</string>
