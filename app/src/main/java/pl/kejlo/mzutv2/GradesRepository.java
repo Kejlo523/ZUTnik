@@ -739,6 +739,130 @@ public class GradesRepository {
         return UsosApi.get("services/grades/terms2", params);
     }
 
+    private boolean isUsosGatewayError(IOException error) {
+        String message = error != null ? error.getMessage() : null;
+        if (message == null || message.isEmpty()) {
+            return false;
+        }
+        return message.contains("HTTP 502")
+                || message.contains("HTTP 503")
+                || message.contains("HTTP 504")
+                || message.contains("HTTP 500");
+    }
+
+    private void sleepBeforeRetry() {
+        try {
+            Thread.sleep(750L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private JSONObject tryFetchGradesTerms2(String termIds, List<String> courseIds) {
+        if (Thread.currentThread().isInterrupted()) {
+            return new JSONObject();
+        }
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            if (attempt > 0) {
+                sleepBeforeRetry();
+                if (Thread.currentThread().isInterrupted()) {
+                    return new JSONObject();
+                }
+            }
+            try {
+                return fetchGradesTerms2(termIds, courseIds);
+            } catch (IOException e) {
+                if (!isUsosGatewayError(e)) {
+                    break;
+                }
+            } catch (JSONException e) {
+                return new JSONObject();
+            }
+        }
+
+        if (courseIds != null && !courseIds.isEmpty()) {
+            for (int attempt = 0; attempt < 2; attempt++) {
+                if (attempt > 0) {
+                    sleepBeforeRetry();
+                    if (Thread.currentThread().isInterrupted()) {
+                        return new JSONObject();
+                    }
+                }
+                try {
+                    return fetchGradesTerms2(termIds, Collections.emptyList());
+                } catch (IOException e) {
+                    if (!isUsosGatewayError(e)) {
+                        break;
+                    }
+                } catch (JSONException e) {
+                    return new JSONObject();
+                }
+            }
+        }
+
+        return new JSONObject();
+    }
+
+    private JSONObject resolveGradesForTerm(String termId, List<String> courseIds) {
+        if (termId == null || termId.trim().isEmpty()) {
+            return new JSONObject();
+        }
+
+        JSONObject gradesResponse = tryFetchGradesTerms2(termId, courseIds);
+        if (countGradesForTerm(gradesResponse, termId) > 0) {
+            return gradesResponse;
+        }
+
+        if (courseIds != null && !courseIds.isEmpty()) {
+            try {
+                JSONObject byCourse = fetchCourseEditionGradesByCourse(termId, courseIds);
+                if (countGradesForTerm(byCourse, termId) > 0) {
+                    return byCourse;
+                }
+            } catch (IOException | JSONException ignored) {
+                // Fall back to embedded grades from courses/user when available.
+            }
+        }
+
+        return gradesResponse;
+    }
+
+    private JSONObject resolveGradesForTerms(List<String> termIds, JSONObject coursesResponse) {
+        if (termIds == null || termIds.isEmpty()) {
+            return new JSONObject();
+        }
+
+        List<String> courseIds = getCourseIdsForTerms(coursesResponse, termIds);
+        JSONObject gradesResponse = tryFetchGradesTerms2(joinWithPipe(termIds), courseIds);
+        if (countGradesForTerms(gradesResponse, termIds) > 0) {
+            return gradesResponse;
+        }
+
+        JSONObject merged = new JSONObject();
+        for (String termId : termIds) {
+            List<String> termCourseIds = getCourseIdsForTerm(coursesResponse, termId);
+            if (termCourseIds.isEmpty()) {
+                continue;
+            }
+            try {
+                JSONObject byCourse = fetchCourseEditionGradesByCourse(termId, termCourseIds);
+                JSONObject termData = byCourse.optJSONObject(termId);
+                if (termData != null && termData.length() > 0) {
+                    merged.put(termId, termData);
+                }
+            } catch (IOException | JSONException ignored) {
+                // Try remaining terms.
+            }
+        }
+
+        if (countGradesForTerms(merged, termIds) > 0) {
+            return merged;
+        }
+
+        return gradesResponse.length() > 0 ? gradesResponse : merged;
+    }
+
     private JSONObject fetchCourseEditionGradesByCourse(String termId, List<String> courseIds)
             throws IOException, JSONException {
         JSONObject termData = new JSONObject();
@@ -823,6 +947,7 @@ public class GradesRepository {
                 ects = course.ects;
             }
 
+            int beforeCount = grades.size();
             if (courseGradeData != null) {
                 for (JSONObject entry : flattenGradeEntries(courseGradeData.opt("course_grades"))) {
                     pushGrade(grades, seen, mapSingleGrade(entry, course,
@@ -840,12 +965,11 @@ public class GradesRepository {
                 }
             }
 
-            if (course.embeddedGrades.isEmpty()) {
-                continue;
-            }
-            for (JSONObject entry : course.embeddedGrades) {
-                pushGrade(grades, seen, mapSingleGrade(entry, course,
-                        course.activityType.isEmpty() ? "Ocena końcowa" : course.activityType, ects));
+            if (grades.size() == beforeCount && !course.embeddedGrades.isEmpty()) {
+                for (JSONObject entry : course.embeddedGrades) {
+                    pushGrade(grades, seen, mapSingleGrade(entry, course,
+                            course.activityType.isEmpty() ? "Ocena końcowa" : course.activityType, ects));
+                }
             }
         }
 
@@ -1112,8 +1236,6 @@ public class GradesRepository {
         if (termIds.isEmpty()) {
             return Collections.emptyList();
         }
-        List<String> courseIds = getCourseIdsForTerms(coursesResponse, termIds);
-
         JSONObject ectsResponse;
         try {
             ectsResponse = UsosApi.get("services/courses/user_ects_points", null);
@@ -1121,7 +1243,7 @@ public class GradesRepository {
             ectsResponse = new JSONObject();
         }
 
-        JSONObject gradesTermsResponse = fetchGradesTerms2(joinWithPipe(termIds), courseIds);
+        JSONObject gradesTermsResponse = resolveGradesForTerms(termIds, coursesResponse);
         JSONArray latestGrades = countGradesForTerms(gradesTermsResponse, termIds) > 0
                 ? new JSONArray()
                 : fetchLatestGradesForTerms(termIds);
@@ -1203,7 +1325,7 @@ public class GradesRepository {
             return Collections.emptyList();
         }
 
-        JSONObject coursesResponse = fetchCoursesResponse(true, "false");
+        JSONObject coursesResponse = fetchCoursesResponse(false, "false");
         List<String> courseIds = getCourseIdsForTerm(coursesResponse, listaSemestrowId);
 
         JSONObject ectsResponse;
@@ -1213,13 +1335,18 @@ public class GradesRepository {
             ectsResponse = new JSONObject();
         }
 
-        JSONObject gradesTermsResponse = fetchGradesTerms2(listaSemestrowId, courseIds);
-        JSONObject gradesResponse = gradesTermsResponse;
-
-        if (countGradesForTerm(gradesTermsResponse, listaSemestrowId) == 0 && !courseIds.isEmpty()) {
-            gradesResponse = fetchCourseEditionGradesByCourse(listaSemestrowId, courseIds);
+        JSONObject gradesResponse = resolveGradesForTerm(listaSemestrowId, courseIds);
+        List<Grade> grades = mapGrades(listaSemestrowId, coursesResponse, ectsResponse, gradesResponse);
+        if (!grades.isEmpty()) {
+            return grades;
         }
 
-        return mapGrades(listaSemestrowId, coursesResponse, ectsResponse, gradesResponse);
+        try {
+            JSONObject coursesWithEmbeddedGrades = fetchCoursesResponse(true, "false");
+            grades = mapGrades(listaSemestrowId, coursesWithEmbeddedGrades, ectsResponse, gradesResponse);
+        } catch (IOException | JSONException ignored) {
+            // Keep the lightweight courses response result.
+        }
+        return grades;
     }
 }

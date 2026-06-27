@@ -306,7 +306,6 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         item.metadataRequested = true;
 
         if (applyCachedPreview(item)) {
-            adapter.refreshItem(item);
             return;
         }
 
@@ -550,10 +549,15 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         }
 
         void refreshItem(LinkItem item) {
-            int index = data.indexOf(item);
-            if (index >= 0) {
-                notifyItemChanged(index);
+            if (listLinks == null) {
+                return;
             }
+            listLinks.post(() -> {
+                int index = data.indexOf(item);
+                if (index >= 0) {
+                    notifyItemChanged(index);
+                }
+            });
         }
 
         @NonNull

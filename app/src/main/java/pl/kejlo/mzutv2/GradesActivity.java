@@ -252,7 +252,7 @@ public class GradesActivity extends MzutBaseActivity {
                 }
 
                 if (finalError != null) {
-                    String message = finalError.getMessage() != null ? finalError.getMessage() : "";
+                    String message = friendlyUsosErrorMessage(finalError);
                     // Support suppression of "Unable to resolve host" toast
                     boolean isDnsError = message.contains("Unable to resolve host");
                     boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
@@ -413,7 +413,7 @@ public class GradesActivity extends MzutBaseActivity {
 
                 if (finalError != null) {
                     android.util.Log.e("mZUTv2-GRADES", "Failed to load semesters", finalError);
-                    String message = finalError.getMessage() != null ? finalError.getMessage() : "";
+                    String message = friendlyUsosErrorMessage(finalError);
                     Toast.makeText(
                             GradesActivity.this,
                             getString(R.string.grades_error_loading_semesters, message),
@@ -646,7 +646,7 @@ public class GradesActivity extends MzutBaseActivity {
                         return;
                     }
 
-                    String message = finalError.getMessage() != null ? finalError.getMessage() : "";
+                    String message = friendlyUsosErrorMessage(finalError);
                     String normalizedMessage = message.toLowerCase(Locale.ROOT);
                     boolean isDnsError = message.contains("Unable to resolve host");
                     boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
@@ -760,7 +760,7 @@ public class GradesActivity extends MzutBaseActivity {
                     }
 
                     android.util.Log.e("mZUTv2-GRADES", "Failed to load grades for semester", finalError);
-                    String message = finalError.getMessage() != null ? finalError.getMessage() : "";
+                    String message = friendlyUsosErrorMessage(finalError);
                     String normalizedMessage = message.toLowerCase(Locale.ROOT);
                     boolean isDnsError = message.contains("Unable to resolve host");
                     boolean isOffline = !NetworkStatusHelper.isNetworkAvailable(GradesActivity.this);
@@ -1375,6 +1375,11 @@ public class GradesActivity extends MzutBaseActivity {
         if (gradesProgress != null) {
             gradesProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
         }
+    }
+
+    private String friendlyUsosErrorMessage(Exception error) {
+        String raw = error != null && error.getMessage() != null ? error.getMessage() : "";
+        return UsosApi.friendlyErrorMessage(raw);
     }
 
     private void showEmptyState(boolean empty) {

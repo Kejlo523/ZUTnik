@@ -5,8 +5,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import okhttp3.Request;
 import okhttp3.Response;
@@ -176,6 +178,36 @@ public final class UsosApi {
             }
             return body;
         }
+    }
+
+    private static final Pattern HTML_TAG = Pattern.compile("<[^>]+>");
+
+    /**
+     * Converts raw USOS API error bodies (often HTML gateway pages) into a short user-facing message.
+     */
+    public static String friendlyErrorMessage(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return "";
+        }
+        String lower = message.toLowerCase(Locale.ROOT);
+        if (lower.contains("<html") || lower.contains("<!doctype")) {
+            return "USOS zwrócił nieczytelną odpowiedź. Spróbuj ponownie za chwilę.";
+        }
+        if (message.contains("HTTP 502")
+                || message.contains("HTTP 503")
+                || message.contains("HTTP 504")
+                || lower.contains("service unavailable")
+                || lower.contains("bad gateway")) {
+            return "USOS jest teraz chwilowo niedostępny. Spróbuj ponownie za chwilę.";
+        }
+        String cleaned = HTML_TAG.matcher(message).replaceAll(" ")
+                .replace("&nbsp;", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (cleaned.length() > 220) {
+            return cleaned.substring(0, 217).trim() + "...";
+        }
+        return cleaned;
     }
 
     /** Appends query parameters to baseUrl as a plain string (no encoding of values). */
