@@ -54,12 +54,7 @@ public class InfoTabFragment extends MzutTabFragment {
     private TextView tvUserId;
 
     private TextView tvAlbum;
-    private TextView tvWydzial;
     private TextView tvKierunek;
-    private TextView tvForma;
-    private TextView tvPoziom;
-    private TextView tvSpecjalnosc;
-    private TextView tvSpecjalizacja;
     private TextView tvStatus;
     private TextView tvRok;
     private TextView tvSemestr;
@@ -115,12 +110,7 @@ public class InfoTabFragment extends MzutTabFragment {
         btnInfoRefresh = view.findViewById(R.id.btnInfoRefresh);
 
         tvAlbum = view.findViewById(R.id.tvInfoAlbum);
-        tvWydzial = view.findViewById(R.id.tvInfoWydzial);
         tvKierunek = view.findViewById(R.id.tvInfoKierunek);
-        tvForma = view.findViewById(R.id.tvInfoForma);
-        tvPoziom = view.findViewById(R.id.tvInfoPoziom);
-        tvSpecjalnosc = view.findViewById(R.id.tvInfoSpecjalnosc);
-        tvSpecjalizacja = view.findViewById(R.id.tvInfoSpecjalizacja);
         tvStatus = view.findViewById(R.id.tvInfoStatus);
         tvRok = view.findViewById(R.id.tvInfoRok);
         tvSemestr = view.findViewById(R.id.tvInfoSemestr);
@@ -389,12 +379,7 @@ public class InfoTabFragment extends MzutTabFragment {
         }
         
         setOrHide(tvAlbum, obj.optString("album", null));
-        setOrHide(tvWydzial, obj.optString("wydzial", null));
         setOrHide(tvKierunek, obj.optString("kierunek", null));
-        setOrHide(tvForma, obj.optString("forma", null));
-        setOrHide(tvPoziom, obj.optString("poziom", null));
-        setOrHide(tvSpecjalnosc, obj.optString("specjalnosc", null));
-        setOrHide(tvSpecjalizacja, obj.optString("specjalizacja", null));
         setOrHide(tvStatus, obj.optString("status", null));
         setOrHide(tvRok, obj.optString("rokAkademicki", null));
         setOrHide(tvSemestr, obj.optString("semestrLabel", null));
@@ -416,12 +401,7 @@ public class InfoTabFragment extends MzutTabFragment {
         try {
             if (d != null) {
                 detailsObj.put("album", d.album != null ? d.album : "");
-                detailsObj.put("wydzial", d.wydzial != null ? d.wydzial : "");
                 detailsObj.put("kierunek", d.kierunek != null ? d.kierunek : "");
-                detailsObj.put("forma", d.forma != null ? d.forma : "");
-                detailsObj.put("poziom", d.poziom != null ? d.poziom : "");
-                detailsObj.put("specjalnosc", d.specjalnosc != null ? d.specjalnosc : "");
-                detailsObj.put("specjalizacja", d.specjalizacja != null ? d.specjalizacja : "");
                 detailsObj.put("status", d.status != null ? d.status : "");
                 detailsObj.put("rokAkademicki", d.rokAkademicki != null ? d.rokAkademicki : "");
                 detailsObj.put("semestrLabel", d.semestrLabel != null ? d.semestrLabel : "");
@@ -585,23 +565,8 @@ public class InfoTabFragment extends MzutTabFragment {
         // Album (Student Number) - from USOS user data
         setOrHide(tvAlbum, d.album);
         
-        // Faculty (Wydział)
-        setOrHide(tvWydzial, d.wydzial);
-        
         // Direction/Programme (Kierunek)
         setOrHide(tvKierunek, d.kierunek);
-        
-        // Form of study (Forma) - stacjonarne/niestacjonarne
-        setOrHide(tvForma, d.forma);
-        
-        // Level of study (Poziom) - first/second degree, etc.
-        setOrHide(tvPoziom, d.poziom);
-        
-        // Specialty (Specjalność)
-        setOrHide(tvSpecjalnosc, d.specjalnosc);
-        
-        // Specialization (Specjalizacja)
-        setOrHide(tvSpecjalizacja, d.specjalizacja);
         
         // Status (Aktywny/Nieaktywny)
         setOrHide(tvStatus, d.status);

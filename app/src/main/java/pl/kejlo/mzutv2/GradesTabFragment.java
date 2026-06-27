@@ -31,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,6 +66,7 @@ public class GradesTabFragment extends MzutTabFragment {
     private GroupedGradesAdapter groupedAdapter;
     private boolean groupingEnabled = true;
     private final List<Grade> currentGradesRaw = new ArrayList<>();
+    private final List<PlanRepository.SubjectFilterItem> planFilterItems = new ArrayList<>();
 
     private final List<Study> studies = new ArrayList<>();
     private final List<Semester> semesters = new ArrayList<>();
@@ -76,6 +78,7 @@ public class GradesTabFragment extends MzutTabFragment {
 
     private java.util.concurrent.Future<?> currentSemestersFuture;
     private java.util.concurrent.Future<?> currentGradesFuture;
+    private java.util.concurrent.Future<?> currentPlanFilterFuture;
     private java.util.concurrent.Future<?> currentInitFuture;
     private java.util.concurrent.Future<?> currentCreditSummaryFuture;
 
@@ -176,6 +179,16 @@ public class GradesTabFragment extends MzutTabFragment {
         }, getViewLifecycleOwner());
 
         runInitialLoad();
+        loadPlanFilterItemsAsync(false);
+    }
+
+    @Override
+    protected void onTabActivated() {
+        super.onTabActivated();
+        applyGradesView();
+        if (planFilterItems.isEmpty()) {
+            loadPlanFilterItemsAsync(false);
+        }
     }
 
     @Override
@@ -189,6 +202,9 @@ public class GradesTabFragment extends MzutTabFragment {
         }
         if (currentGradesFuture != null) {
             currentGradesFuture.cancel(true);
+        }
+        if (currentPlanFilterFuture != null) {
+            currentPlanFilterFuture.cancel(true);
         }
         if (currentCreditSummaryFuture != null) {
             currentCreditSummaryFuture.cancel(true);
@@ -490,12 +506,60 @@ public class GradesTabFragment extends MzutTabFragment {
 
     // Loading grades
     // Grade grouping for expandable subject view
+    private List<PlanRepository.SubjectFilterItem> getVisiblePlanFilterItems() {
+        Set<String> hidden = PlanSubjectFilterHelper.loadHiddenSubjectKeys(requireContext());
+        return PlanSubjectFilterHelper.filterVisibleItems(planFilterItems, hidden);
+    }
+
     private List<GroupedGradesAdapter.GradeGroup> buildGradeGroups(List<Grade> source) {
-        if (source == null || source.isEmpty()) {
-            return new ArrayList<>();
+        List<PlanRepository.SubjectFilterItem> visibleItems = getVisiblePlanFilterItems();
+        List<Grade> filtered = filterGradesForDisplay(source, visibleItems);
+        Map<String, GroupedGradesAdapter.GradeGroup> grouped = buildGradeGroupMap(filtered);
+
+        if (visibleItems.isEmpty()) {
+            List<GroupedGradesAdapter.GradeGroup> result = new ArrayList<>();
+            for (GroupedGradesAdapter.GradeGroup group : grouped.values()) {
+                finalizeGradeGroup(group);
+                if (!group.others.isEmpty() || group.finalGrade != null) {
+                    result.add(group);
+                }
+            }
+            return result;
         }
 
+        List<GroupedGradesAdapter.GradeGroup> result = new ArrayList<>();
+        List<GroupedGradesAdapter.GradeGroup> emptyGroups = new ArrayList<>();
+        Set<String> addedSubjects = new HashSet<>();
+        for (PlanRepository.SubjectFilterItem item : visibleItems) {
+            String normalized = PlanSubjectFilterHelper.normalizeFilterString(item.label);
+            if (normalized.isEmpty() || addedSubjects.contains(normalized)) {
+                continue;
+            }
+            addedSubjects.add(normalized);
+
+            GroupedGradesAdapter.GradeGroup group = findGroupByNormalizedSubject(grouped, normalized);
+            if (group != null) {
+                finalizeGradeGroup(group);
+                result.add(group);
+            } else {
+                String label = GradesTextUtils.clean(item.label);
+                if (label.isEmpty()) {
+                    label = item.label;
+                }
+                group = new GroupedGradesAdapter.GradeGroup(label);
+                finalizeGradeGroup(group);
+                emptyGroups.add(group);
+            }
+        }
+        result.addAll(emptyGroups);
+        return result;
+    }
+
+    private Map<String, GroupedGradesAdapter.GradeGroup> buildGradeGroupMap(List<Grade> source) {
         Map<String, GroupedGradesAdapter.GradeGroup> map = new LinkedHashMap<>();
+        if (source == null || source.isEmpty()) {
+            return map;
+        }
 
         for (Grade g : source) {
             String subject = GradesTextUtils.extractBaseSubject(g.subjectName);
@@ -522,23 +586,57 @@ public class GradesTabFragment extends MzutTabFragment {
                 group.others.add(g);
             }
         }
+        return map;
+    }
 
-        List<GroupedGradesAdapter.GradeGroup> result = new ArrayList<>();
-        for (GroupedGradesAdapter.GradeGroup g : map.values()) {
-            boolean hasOthers = !g.others.isEmpty();
-            boolean hasFinal = g.finalGrade != null;
-            boolean finalHasValue = hasFinal
-                    && g.finalGrade.grade != null
-                    && !g.finalGrade.grade.trim().isEmpty();
-
-            g.finalMissing = hasFinal && !finalHasValue;
-
-            if (hasOthers || hasFinal) {
-                result.add(g);
+    @Nullable
+    private GroupedGradesAdapter.GradeGroup findGroupByNormalizedSubject(
+            Map<String, GroupedGradesAdapter.GradeGroup> grouped,
+            String normalizedSubject) {
+        if (grouped == null || grouped.isEmpty() || normalizedSubject == null || normalizedSubject.isEmpty()) {
+            return null;
+        }
+        for (GroupedGradesAdapter.GradeGroup group : grouped.values()) {
+            String subject = GradesTextUtils.extractBaseSubject(group.subject);
+            if (subject.isEmpty()) {
+                subject = GradesTextUtils.clean(group.subject);
+            }
+            if (PlanSubjectFilterHelper.normalizeFilterString(subject).equals(normalizedSubject)) {
+                return group;
             }
         }
+        return null;
+    }
 
-        return result;
+    private void finalizeGradeGroup(GroupedGradesAdapter.GradeGroup group) {
+        boolean hasFinal = group.finalGrade != null;
+        boolean finalHasValue = hasFinal
+                && group.finalGrade.grade != null
+                && !group.finalGrade.grade.trim().isEmpty();
+        group.finalMissing = hasFinal && !finalHasValue;
+    }
+
+    private List<Grade> filterGradesForDisplay(List<Grade> source) {
+        return filterGradesForDisplay(source, getVisiblePlanFilterItems());
+    }
+
+    private List<Grade> filterGradesForDisplay(
+            List<Grade> source,
+            List<PlanRepository.SubjectFilterItem> visibleItems) {
+        if (visibleItems.isEmpty()) {
+            return source != null ? new ArrayList<>(source) : new ArrayList<>();
+        }
+        if (source == null || source.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Grade> filtered = new ArrayList<>();
+        for (Grade grade : source) {
+            if (PlanSubjectFilterHelper.gradeMatchesVisiblePlan(grade, visibleItems)) {
+                filtered.add(grade);
+            }
+        }
+        return filtered;
     }
 
     private void applyGradesView() {
@@ -550,12 +648,42 @@ public class GradesTabFragment extends MzutTabFragment {
             }
             showEmptyState(groups.isEmpty());
         } else {
+            List<PlanRepository.SubjectFilterItem> visibleItems = getVisiblePlanFilterItems();
+            List<Grade> filteredGrades = filterGradesForDisplay(currentGradesRaw, visibleItems);
+            flatAdapter.setGrades(filteredGrades);
             if (listGrades.getAdapter() != flatAdapter) {
                 listGrades.setAdapter(flatAdapter);
+            } else {
+                flatAdapter.notifyDataSetChanged();
             }
-            flatAdapter.notifyDataSetChanged();
-            showEmptyState(currentGradesRaw.isEmpty());
+            showEmptyState(filteredGrades.isEmpty() && visibleItems.isEmpty());
         }
+    }
+
+    private void loadPlanFilterItemsAsync(boolean forceRefresh) {
+        if (currentPlanFilterFuture != null) {
+            currentPlanFilterFuture.cancel(true);
+        }
+        Context appContext = requireContext().getApplicationContext();
+        currentPlanFilterFuture = executor.submit(() -> {
+            List<PlanRepository.SubjectFilterItem> loaded = Collections.emptyList();
+            try {
+                loaded = PlanSubjectFilterHelper.loadAllFilterItems(appContext, forceRefresh);
+            } catch (Exception ignored) {
+                loaded = Collections.emptyList();
+            }
+            final List<PlanRepository.SubjectFilterItem> finalLoaded = loaded;
+            handler.post(() -> {
+                if (!isAdded()) {
+                    return;
+                }
+                planFilterItems.clear();
+                if (finalLoaded != null && !finalLoaded.isEmpty()) {
+                    planFilterItems.addAll(finalLoaded);
+                }
+                applyGradesView();
+            });
+        });
     }
 
     private boolean isFinalGrade(Grade g) {
@@ -599,6 +727,9 @@ public class GradesTabFragment extends MzutTabFragment {
                 applyGradesView();
                 updateSummaryCards();
                 updateGradesDataFreshness(false);
+                if (planFilterItems.isEmpty()) {
+                    loadPlanFilterItemsAsync(false);
+                }
                 return;
             }
         }
@@ -622,16 +753,29 @@ public class GradesTabFragment extends MzutTabFragment {
             List<Grade> grades = null;
             Exception error = null;
             List<Grade> previousSnapshot = loadGradesFromCache(expectedStudyId, cacheScope, true);
+            List<PlanRepository.SubjectFilterItem> loadedPlanFilterItems = Collections.emptyList();
             try {
                 grades = new GradesRepository().loadCurrentGrades();
                 markNewGrades(previousSnapshot, grades);
             } catch (Exception e) {
                 error = e;
             }
+            try {
+                loadedPlanFilterItems = PlanSubjectFilterHelper.loadAllFilterItems(
+                        requireContext().getApplicationContext(),
+                        forceNetwork);
+            } catch (Exception ignored) {
+                loadedPlanFilterItems = Collections.emptyList();
+            }
 
             final List<Grade> finalGrades = grades;
             final Exception finalError = error;
+            final List<PlanRepository.SubjectFilterItem> finalPlanFilterItems = loadedPlanFilterItems;
             handler.post(() -> {
+                planFilterItems.clear();
+                if (finalPlanFilterItems != null && !finalPlanFilterItems.isEmpty()) {
+                    planFilterItems.addAll(finalPlanFilterItems);
+                }
                 showLoading(false);
                 if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
                     return;
@@ -703,6 +847,9 @@ public class GradesTabFragment extends MzutTabFragment {
                 applyGradesView();
                 updateSummaryCards();
                 updateGradesDataFreshness(false);
+                if (planFilterItems.isEmpty()) {
+                    loadPlanFilterItemsAsync(false);
+                }
                 // Fresh cache -> skip network request
                 return;
             }
@@ -729,17 +876,30 @@ public class GradesTabFragment extends MzutTabFragment {
         currentGradesFuture = executor.submit(() -> {
             List<Grade> grades = null;
             Exception error = null;
+            List<PlanRepository.SubjectFilterItem> loadedPlanFilterItems = Collections.emptyList();
             try {
                 GradesRepository repo = new GradesRepository();
                 grades = repo.loadGradesForSemester(semester);
             } catch (Exception e) {
                 error = e;
             }
+            try {
+                loadedPlanFilterItems = PlanSubjectFilterHelper.loadAllFilterItems(
+                        requireContext().getApplicationContext(),
+                        forceNetwork);
+            } catch (Exception ignored) {
+                loadedPlanFilterItems = Collections.emptyList();
+            }
 
             final List<Grade> finalGrades = grades;
             final Exception finalError = error;
+            final List<PlanRepository.SubjectFilterItem> finalPlanFilterItems = loadedPlanFilterItems;
 
             handler.post(() -> {
+                planFilterItems.clear();
+                if (finalPlanFilterItems != null && !finalPlanFilterItems.isEmpty()) {
+                    planFilterItems.addAll(finalPlanFilterItems);
+                }
                 showLoading(false);
                 if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
                     return;

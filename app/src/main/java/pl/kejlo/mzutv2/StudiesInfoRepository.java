@@ -14,22 +14,17 @@ import java.util.Locale;
 public class StudiesInfoRepository {
 
     private static final String PROGRAMME_FIELDS =
-            "id|programme[id|name|description|faculty[id|name]|mode_of_studies|level_of_studies|level]|status|admission_date|is_primary|stages[id|name]";
+            "id|programme[id|name|description]|status|admission_date|is_primary";
     private static final String PROGRAMME_FALLBACK_FIELDS =
-            "id|programme[id|name|description|mode_of_studies|level_of_studies|level]|status|admission_date|is_primary|stages[id|name]";
+            "id|programme[id|name|description]|status|admission_date|is_primary";
     private static final String PROGRAMME_MIN_FIELDS =
-            "id|programme|status|admission_date|is_primary|stages";
+            "id|programme|status|admission_date|is_primary";
     private static final String STUDENT_PROGRAMME_FIELDS =
-            "id|programme[id|name|description|faculty[id|name]|mode_of_studies|level_of_studies|level]|status|admission_date|is_primary|stages[id|name]";
+            "id|programme[id|name|description]|status|admission_date|is_primary";
 
     public static class StudyDetails {
         public String album;
-        public String wydzial;
         public String kierunek;
-        public String forma;
-        public String poziom;
-        public String specjalnosc;
-        public String specjalizacja;
         public String status;
         public String rokAkademicki;
         public String semestrLabel;
@@ -84,20 +79,6 @@ public class StudiesInfoRepository {
             return "";
         }
         return localizedValue(obj.opt(key));
-    }
-
-    private String normalizeStudyMode(Object value) {
-        String text = localizedValue(value);
-        if (!text.isEmpty()) {
-            return text;
-        }
-
-        if (value instanceof Number) {
-            int num = ((Number) value).intValue();
-            if (num == 1) return "Stacjonarne";
-            if (num == 2) return "Niestacjonarne";
-        }
-        return "";
     }
 
     private String mapStudyStatus(String status) {
@@ -169,25 +150,6 @@ public class StudiesInfoRepository {
             }
         }
         return first;
-    }
-
-    private String joinStages(JSONArray stages) {
-        if (stages == null || stages.length() == 0) {
-            return "";
-        }
-
-        List<String> values = new ArrayList<>();
-        for (int i = 0; i < stages.length(); i++) {
-            JSONObject stage = stages.optJSONObject(i);
-            if (stage == null) {
-                continue;
-            }
-            String label = firstNonEmpty(localizedField(stage, "name"), stage.optString("id", ""));
-            if (!label.isEmpty()) {
-                values.add(label);
-            }
-        }
-        return android.text.TextUtils.join(", ", values);
     }
 
     private JSONObject loadActiveTerm() {
@@ -325,18 +287,11 @@ public class StudiesInfoRepository {
                 user != null ? user.optString("student_number", "") : "",
                 session.getStudentNumber(),
                 user != null ? user.optString("id", "") : "");
-        details.wydzial = localizedField(programme != null ? programme.optJSONObject("faculty") : null, "name");
         details.kierunek = firstNonEmpty(
                 localizedField(programme, "name"),
                 localizedField(programme, "description"),
                 programme != null ? programme.optString("id", "") : "",
                 activeStudyId);
-        details.forma = normalizeStudyMode(programme != null ? programme.opt("mode_of_studies") : null);
-        details.poziom = firstNonEmpty(
-                localizedField(programme, "level_of_studies"),
-                programme != null ? programme.optString("level", "") : "");
-        details.specjalnosc = joinStages(row != null ? row.optJSONArray("stages") : null);
-        details.specjalizacja = "";
         details.status = mapStudyStatus(row != null ? row.optString("status", "") : "");
 
         JSONObject activeTerm = loadActiveTerm();
