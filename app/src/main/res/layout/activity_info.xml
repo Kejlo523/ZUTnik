@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/drawerLayout"
+    android:id="@+id/mainShellRoot"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
-    android:fitsSystemWindows="false"
-    app:statusBarBackground="@android:color/transparent">
+    android:fitsSystemWindows="false">
 
     <LinearLayout
         android:id="@+id/drawerContentRoot"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <androidx.appcompat.widget.Toolbar
@@ -22,7 +23,7 @@
             android:elevation="0dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:titleTextColor="?attr/mzText" />
+            android:titleTextColor="?attr/mzNavHeaderText" />
 
         <ScrollView
             android:layout_width="match_parent"
@@ -38,17 +39,17 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingStart="16dp"
-                android:paddingTop="8dp"
+                android:paddingTop="12dp"
                 android:paddingEnd="16dp"
-                android:paddingBottom="10dp">
+                android:paddingBottom="20dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:background="@drawable/bg_card_soft"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_card_modern"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="18dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -58,61 +59,97 @@
 
                         <ImageView
                             android:id="@+id/imageInfoAvatar"
-                            android:layout_width="72dp"
-                            android:layout_height="72dp"
+                            android:layout_width="76dp"
+                            android:layout_height="76dp"
                             android:background="@drawable/bg_avatar_round"
                             android:clipToOutline="true"
                             android:padding="2dp"
                             android:scaleType="centerCrop"
-                            android:src="@mipmap/ic_zut_logo_round" />
+                            android:src="@drawable/ic_zut_logo_inapp" />
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
+                            android:layout_marginStart="16dp"
                             android:layout_weight="1"
                             android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.04"
+                                android:text="@string/nav_tab_studies"
+                                android:textAllCaps="true"
+                                android:textColor="?attr/mzPrimary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/tvInfoName"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
                                 android:ellipsize="end"
                                 android:maxLines="2"
                                 android:text="@string/nav_header_default_username"
                                 android:textColor="?attr/mzText"
-                                android:textSize="20sp"
+                                android:textSize="22sp"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/tvInfoUserId"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
+                                android:layout_marginTop="6dp"
                                 android:text="@string/info_user_id_placeholder"
                                 android:textColor="?attr/mzMuted"
-                                android:textSize="13sp" />
+                                android:textSize="14sp" />
                         </LinearLayout>
 
                         <ImageView
                             android:id="@+id/btnInfoRefresh"
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
                             android:layout_marginStart="8dp"
-                            android:alpha="0.8"
                             android:background="@drawable/bg_circle_soft"
                             android:contentDescription="@string/plan_button_refresh"
-                            android:padding="8dp"
+                            android:padding="9dp"
                             android:src="@android:drawable/ic_popup_sync"
-                            app:tint="?attr/mzMuted" />
+                            app:tint="?attr/mzPrimary" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_card_modern"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/info_study_selector_label"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/spinnerStudies"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:background="@drawable/bg_spinner_dark"
+                        android:popupBackground="?attr/mzBg"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:background="@drawable/bg_card_soft"
+                    android:background="@drawable/bg_card_modern"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -180,7 +217,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:background="@drawable/bg_card_soft"
+                    android:background="@drawable/bg_card_modern"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -272,25 +309,8 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:background="@drawable/bg_card_soft"
-                    android:orientation="vertical"
-                    android:padding="8dp">
-
-                    <Spinner
-                        android:id="@+id/spinnerStudies"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_spinner_dark"
-                        android:popupBackground="?attr/mzBg"
-                        android:spinnerMode="dropdown" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:background="@drawable/bg_card_soft"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_card_modern"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -552,7 +572,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:background="@drawable/bg_card_soft"
+                    android:background="@drawable/bg_card_modern"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -602,15 +622,5 @@
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
-
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/navigationView"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="?attr/mzBg"
-        android:fitsSystemWindows="true">
-        <include layout="@layout/nav_header" />
-    </com.google.android.material.navigation.NavigationView>
-
-</androidx.drawerlayout.widget.DrawerLayout>
+    <include layout="@layout/include_bottom_navigation" />
+</LinearLayout>

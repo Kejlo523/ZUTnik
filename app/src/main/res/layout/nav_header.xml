@@ -34,7 +34,7 @@
                 android:layout_height="46dp"
                 android:layout_gravity="center_vertical"
                 android:contentDescription="@string/app_name"
-                android:src="@mipmap/ic_zut_logo_round" />
+                android:src="@drawable/ic_zut_logo_inapp" />
 
             <LinearLayout
                 android:layout_width="0dp"

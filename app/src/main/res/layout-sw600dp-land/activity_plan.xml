@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.drawerlayout.widget.DrawerLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/drawerLayout"
+    android:id="@+id/mainShellRoot"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/mzBg"
@@ -12,7 +13,8 @@
     <LinearLayout
         android:id="@+id/drawerContentRoot"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <androidx.appcompat.widget.Toolbar
@@ -21,7 +23,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
-            android:titleTextColor="?attr/mzText" />
+            android:titleTextColor="?attr/mzNavHeaderText" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -271,21 +273,11 @@
                     android:layout_margin="10dp"
                     android:contentDescription="@string/plan_custom_add_event"
                     android:src="@drawable/ic_plus"
+                    android:visibility="gone"
                     app:backgroundTint="?attr/mzPrimary"
                     app:tint="@android:color/white" />
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>
-
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/navigationView"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="?attr/mzBg"
-        android:fitsSystemWindows="true">
-
-        <include layout="@layout/nav_header" />
-    </com.google.android.material.navigation.NavigationView>
-
-</androidx.drawerlayout.widget.DrawerLayout>
+    <include layout="@layout/include_bottom_navigation" />
+</LinearLayout>

@@ -103,6 +103,7 @@
         Dane są pobierane z systemów ZUT i cache’owane lokalnie. Jeśli coś wygląda podejrzanie, zawsze zweryfikuj też w oficjalnych panelach.
     </string>
   <string name="info_title">Dane Studenta</string>
+  <string name="info_study_selector_label">Kierunek studiów</string>
   <string name="info_user_id">ID użytkownika: %1$s</string>
   <string name="info_user_id_placeholder">ID użytkownika: -</string>
   <string name="info_sync_in_progress">Synchronizuję…</string>
@@ -208,6 +209,7 @@
   <string name="plan_view_mode_label">Widok</string>
   <string name="plan_actions_label">Akcje</string>
   <string name="plan_button_today">Dziś</string>
+  <string name="plan_button_add_event">Dodaj zdarzenie</string>
   <string name="plan_button_refresh">Odśwież</string>
   <string name="plan_button_filters">Filtr przedmiotów</string>
   <string name="plan_button_history">Historia zmian w planie</string>
@@ -341,13 +343,13 @@
         Ustaw jak często widget ma odświeżać dane w tle.
     </string>
   <string name="settings_theme_changed">Zmieniono motyw</string>
-  <string name="settings_widget_refresh_entry_15m">1 godz. 15 min</string>
-  <string name="settings_widget_refresh_entry_30m_default">1 godz. 30 min (domyślnie)</string>
-  <string name="settings_widget_refresh_entry_45m">1 godz. 45 min</string>
-  <string name="settings_widget_refresh_entry_1h">2 godz.</string>
-  <string name="settings_widget_refresh_entry_2h">3 godz.</string>
-  <string name="settings_widget_refresh_entry_3h">4 godz.</string>
-  <string name="settings_widget_refresh_entry_4h">5 godz.</string>
+  <string name="settings_widget_refresh_entry_15m">15 min</string>
+  <string name="settings_widget_refresh_entry_30m_default">30 min (domyślnie)</string>
+  <string name="settings_widget_refresh_entry_45m">45 min</string>
+  <string name="settings_widget_refresh_entry_1h">1 godz.</string>
+  <string name="settings_widget_refresh_entry_2h">2 godz.</string>
+  <string name="settings_widget_refresh_entry_3h">3 godz.</string>
+  <string name="settings_widget_refresh_entry_4h">4 godz.</string>
   <string name="settings_widget_refresh_entry_manual">Nigdy (ręcznie)</string>
   <string name="settings_section_notifications">Powiadomienia</string>
   <string name="settings_notifications_master_label">Włącz powiadomienia</string>
@@ -610,4 +612,9 @@
   <string name="about_link_title_privacy">Polityka prywatności</string>
   <string name="about_logo_desc">Logo ZUTnika</string>
   <string name="common_close">Zamknij</string>
+  <string name="nav_tab_home">Start</string>
+  <string name="nav_tab_plan">Plan zajęć</string>
+  <string name="nav_tab_studies">Moje studia</string>
+  <string name="nav_tab_grades">Oceny</string>
+  <string name="nav_tab_more">Więcej</string>
 </resources>

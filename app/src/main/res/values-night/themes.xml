@@ -23,6 +23,10 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.MZUTv2.AlertDialog</item>
         <item name="popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
         <item name="android:popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+
+        <item name="mzNavHeader">@color/mz_nav_header</item>
+        <item name="mzNavHeaderText">@color/mz_nav_header_text</item>
+        <item name="toolbarStyle">@style/Widget.MZUTv2.Toolbar</item>
     </style>
 
     <!-- Default Theme (Night/Reference) uses colors.xml (Night resource resolution) -->
@@ -52,6 +56,8 @@
         <item name="mzDangerSoft">@color/mz_danger_soft</item>
         <item name="mzToolbarGradStart">@color/mz_toolbar_grad_start</item>
         <item name="mzToolbarGradEnd">@color/mz_toolbar_grad_end</item>
+        <item name="mzNavHeader">@color/mz_nav_header</item>
+        <item name="mzNavHeaderText">@color/mz_nav_header_text</item>
         
         <item name="planWeekHeaderSelectedBg">@color/plan_week_header_selected_bg</item>
         <item name="planWeekDaySelectedBg">@color/plan_week_day_selected_bg</item>
@@ -90,6 +96,8 @@
         <item name="mzSuccess">#22C55E</item>
         <item name="mzDanger">#F87171</item>
         <item name="mzDangerSoft">#3B1C1C</item>
+        <item name="mzNavHeader">#0F172A</item>
+        <item name="mzNavHeaderText">#FFFFFF</item>
         
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
@@ -131,6 +139,8 @@
         <item name="mzSuccess">#22C55E</item>
         <item name="mzDanger">#F87171</item>
         <item name="mzDangerSoft">#3B1C1C</item>
+        <item name="mzNavHeader">#1B3A1E</item>
+        <item name="mzNavHeaderText">#FFFFFF</item>
 
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
@@ -172,6 +182,8 @@
         <item name="mzDangerSoft">#330000</item>
         <item name="mzToolbarGradStart">#000000</item>
         <item name="mzToolbarGradEnd">#000000</item>
+        <item name="mzNavHeader">#111111</item>
+        <item name="mzNavHeaderText">#FFFFFF</item>
 
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>

@@ -62,8 +62,8 @@ public class LoginActivity extends PhoneAwareActivity {
         }
 
         if (session.isLoggedIn()) {
-            Intent i = new Intent(LoginActivity.this, HomeActivity.class);
-            i.putExtra(HomeActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
+            Intent i = new Intent(LoginActivity.this, MainShellActivity.class);
+            i.putExtra(MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
             startActivity(i);
             finish();
             return;

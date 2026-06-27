@@ -4,9 +4,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import android.content.Context;
 import android.content.Intent;
@@ -20,8 +20,6 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.material.navigation.NavigationView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,8 +40,6 @@ public class NewsActivity extends MzutBaseActivity {
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
     private static final long NEWS_CACHE_TTL_MS = CachePolicy.NEWS_TTL_MS;
 
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
     private Toolbar toolbar;
     private LinearLayout drawerContentRoot;
 
@@ -77,24 +73,17 @@ public class NewsActivity extends MzutBaseActivity {
         openLatestOnLoad = getIntent().getBooleanExtra("EXTRA_OPEN_LATEST", false);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
         toolbar = findViewById(R.id.toolbar);
-
-        ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
 
         toolbar.setTitle(R.string.news_title);
 
-        NavDrawerHelper.setupNavigation(
+        MainNavHelper.setup(
                 this,
-                drawerLayout,
-                navigationView,
+                drawerContentRoot,
+                bottomNavigation,
                 toolbar,
-                NavDrawerHelper.Screen.NEWS);
+                MainNavHelper.Screen.NEWS);
 
         listNews = findViewById(R.id.listNews);
         progress = findViewById(R.id.newsProgress);

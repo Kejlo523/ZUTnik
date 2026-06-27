@@ -39,7 +39,7 @@
                 android:layout_width="46dp"
                 android:layout_height="46dp"
                 android:contentDescription="@string/app_name"
-                android:src="@mipmap/ic_zut_logo_round"
+                android:src="@drawable/ic_zut_logo_inapp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

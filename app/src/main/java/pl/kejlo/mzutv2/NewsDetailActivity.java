@@ -5,7 +5,6 @@ import androidx.appcompat.widget.Toolbar;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -17,9 +16,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import java.util.Locale;
 
@@ -90,13 +86,10 @@ public class NewsDetailActivity extends PhoneAwareActivity {
         tvFallback = findViewById(R.id.tvNewsDetailFallback);
         webView = findViewById(R.id.webNewsDetail);
 
-        ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
+        MainNavHelper.applyRootContentInsets(contentRoot);
 
         setSupportActionBar(toolbar);
+        MainNavHelper.styleToolbarPublic(this, toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.news_detail_title);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -135,7 +128,11 @@ public class NewsDetailActivity extends PhoneAwareActivity {
             String cleaned = cleanHtmlStyles(fixed);
             String styled = wrapInThemedTemplate(cleaned);
 
-            webView.setBackgroundColor(Color.TRANSPARENT);
+            int cardBg = ThemeManager.resolveColor(this, R.attr.mzCard);
+            webView.setBackgroundColor(cardBg);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                webView.setForceDarkAllowed(false);
+            }
             webView.setWebViewClient(new WebViewClient() {
                 @Override
                 public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view,
@@ -300,34 +297,38 @@ public class NewsDetailActivity extends PhoneAwareActivity {
 
         String out = html;
 
-        // Remove all backgrounds
-        out = out.replaceAll("background[^:>]*:\\s*[^;\"']+;?", "");
-        out = out.replaceAll("background-color:\\s*[^;\"']+;?", "");
+        out = out.replaceAll("(?i)\\sbgcolor\\s*=\\s*\"[^\"]*\"", "");
+        out = out.replaceAll("(?i)\\sbgcolor\\s*=\\s*'[^']*'", "");
+        out = out.replaceAll("(?i)background-color\\s*:\\s*[^;\"']+;?", "");
+        out = out.replaceAll("(?i)background\\s*:\\s*[^;\"']+;?", "");
+        out = out.replaceAll("(?i)background\\s*:\\s*[^;\"']+\\s+[^;\"']+\\s+[^;\"']+;?", "");
 
-        // Remove white text color
-        out = out.replaceAll("color:\\s*#?fff[^;>]*;?", "");
-        out = out.replaceAll("color:\\s*white[^;>]*;?", "");
+        out = out.replaceAll("(?i)color\\s*:\\s*#?fff[^;>]*;?", "");
+        out = out.replaceAll("(?i)color\\s*:\\s*white[^;>]*;?", "");
+        out = out.replaceAll("(?i)color\\s*:\\s*#000[^;>]*;?", "");
+        out = out.replaceAll("(?i)color\\s*:\\s*black[^;>]*;?", "");
 
-        // Remove empty style attributes
         out = out.replaceAll("style=\"\\s*\"", "");
+        out = out.replaceAll("style='\\s*'", "");
 
         return out;
     }
 
-    // Wrap content in a simple dark-themed HTML template
+    // Wrap content in a simple themed HTML template
     private String wrapInThemedTemplate(String innerHtml) {
         if (innerHtml == null) {
             innerHtml = "";
         }
 
-        // Get colors from resources (will automatically use -night in dark mode)
-        int bg = ThemeManager.resolveColor(this, R.attr.mzBg);
+        int cardBg = ThemeManager.resolveColor(this, R.attr.mzCard);
         int text = ThemeManager.resolveColor(this, R.attr.mzText);
+        int muted = ThemeManager.resolveColor(this, R.attr.mzMuted);
         int link = ThemeManager.resolveColor(this, R.attr.mzPrimary);
-        int border = ThemeManager.resolveColor(this, R.attr.mzBorderStrong);
+        int border = ThemeManager.resolveColor(this, R.attr.mzBorderSoft);
 
-        String bgHex = toHtmlColor(bg);
+        String cardHex = toHtmlColor(cardBg);
         String textHex = toHtmlColor(text);
+        String mutedHex = toHtmlColor(muted);
         String linkHex = toHtmlColor(link);
         String borderHex = toHtmlColor(border);
 
@@ -335,30 +336,40 @@ public class NewsDetailActivity extends PhoneAwareActivity {
         sb.append("<!DOCTYPE html><html><head>")
                 .append("<meta charset=\"utf-8\"/>")
                 .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>")
+                .append("<meta name=\"color-scheme\" content=\"light dark\"/>")
                 .append("<style>")
-                .append("body{margin:0;padding:10px 10px 20px 10px;")
-                .append("background:").append(bgHex).append(";")
+                .append("html,body{margin:0;padding:0;background:").append(cardHex).append(";")
                 .append("color:").append(textHex).append(";")
                 .append("font-family:sans-serif;font-size:15px;line-height:1.62;word-wrap:break-word;}")
+                .append(".content{padding:4px 2px 12px 2px;}")
+                .append("div,span,p,section,article,aside,main,header,footer,table,tbody,tr,td,th{")
+                .append("background:transparent!important;background-color:transparent!important;")
+                .append("color:inherit!important;}")
                 .append("p{margin:0 0 12px 0;}")
+                .append("strong,b{font-weight:700;color:").append(textHex).append(";}")
+                .append("em,i{color:").append(mutedHex).append(";}")
                 .append("a{color:").append(linkHex).append(";text-decoration:none;font-weight:600;}")
                 .append("a:hover{text-decoration:underline;}")
                 .append("img{max-width:100%;height:auto;border-radius:14px;")
-                .append("border:1px solid ").append(borderHex).append(";margin:10px 0;}")
+                .append("border:1px solid ").append(borderHex).append(";margin:10px 0;display:block;}")
                 .append("ul,ol{margin:0 0 12px 22px;padding:0;}")
                 .append("li{margin-bottom:6px;}")
                 .append("table{border-collapse:collapse;width:100%;margin:10px 0;")
-                .append("border:1px solid ").append(borderHex).append(";}")
+                .append("border:1px solid ").append(borderHex).append(";")
+                .append("border-radius:12px;overflow:hidden;}")
                 .append("td,th{border:1px solid ").append(borderHex)
-                .append(";padding:6px;font-size:13px;}")
-                .append("blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid ")
-                .append(linkHex).append(";}")
-                .append("h1,h2,h3,h4{margin:0 0 10px 0;font-weight:700;line-height:1.28;color:")
+                .append(";padding:8px;font-size:13px;vertical-align:top;}")
+                .append("blockquote{margin:10px 0;padding:10px 14px;border-left:3px solid ")
+                .append(linkHex).append(";border-radius:0 12px 12px 0;")
+                .append("background:").append(toHtmlColor(ThemeManager.resolveColor(this, R.attr.mzCardSoft)))
+                .append("!important;}")
+                .append("h1,h2,h3,h4{margin:14px 0 10px 0;font-weight:700;line-height:1.28;color:")
                 .append(textHex).append(";}")
+                .append("hr{border:0;border-top:1px solid ").append(borderHex).append(";margin:14px 0;}")
                 .append("</style>")
-                .append("</head><body>")
+                .append("</head><body><div class=\"content\">")
                 .append(innerHtml)
-                .append("</body></html>");
+                .append("</div></body></html>");
 
         return sb.toString();
     }

@@ -3,7 +3,6 @@ package pl.kejlo.mzutv2;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
 import android.view.WindowManager;
@@ -58,7 +57,7 @@ public class ThemeManager {
             window.setStatusBarContrastEnforced(false);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setStatusBarColor(bg);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowManager.LayoutParams attrs = window.getAttributes();
@@ -70,11 +69,11 @@ public class ThemeManager {
             }
         }
 
-        boolean light = ColorUtils.calculateLuminance(bg) > 0.5;
+        boolean lightBars = ColorUtils.calculateLuminance(bg) > 0.5;
         WindowInsetsControllerCompat controller =
                 WindowCompat.getInsetsController(window, window.getDecorView());
-        controller.setAppearanceLightStatusBars(light);
-        controller.setAppearanceLightNavigationBars(light);
+        controller.setAppearanceLightStatusBars(lightBars);
+        controller.setAppearanceLightNavigationBars(lightBars);
     }
 
     public static void applyRootWindowInsets(View root) {

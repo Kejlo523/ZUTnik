@@ -357,17 +357,12 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
         cancelPeriodicRefresh(context);
 
-        String intervalStr = context.getSharedPreferences(
-                SettingsPrefs.PREFS_SETTINGS,
-                Context.MODE_PRIVATE)
-                .getString(
-                        SettingsPrefs.KEY_WIDGET_REFRESH_INTERVAL,
-                        SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL);
+        String intervalStr = SettingsPrefs.getWidgetRefreshInterval(context);
         long intervalMin;
         try {
             intervalMin = Long.parseLong(intervalStr);
         } catch (NumberFormatException e) {
-            intervalMin = 90;
+            intervalMin = Long.parseLong(SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL);
         }
 
         if (intervalMin <= 0) {

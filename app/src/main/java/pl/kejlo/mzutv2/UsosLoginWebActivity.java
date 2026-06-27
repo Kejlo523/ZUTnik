@@ -219,8 +219,8 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
                             getString(R.string.login_success, displayName),
                             Toast.LENGTH_LONG).show();
 
-                    Intent i = new Intent(UsosLoginWebActivity.this, HomeActivity.class);
-                    i.putExtra(HomeActivity.EXTRA_REQUEST_NOTIF_PERMISSION, true);
+                    Intent i = new Intent(UsosLoginWebActivity.this, MainShellActivity.class);
+                    i.putExtra(MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION, true);
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(i);
                     finish();

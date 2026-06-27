@@ -396,13 +396,13 @@
   <string name="settings_widget_refresh_description">
         Lege fest, wie oft das Widget Daten im Hintergrund aktualisieren soll.
     </string>
-  <string name="settings_widget_refresh_entry_15m">1 Std. 15 Min.</string>
-  <string name="settings_widget_refresh_entry_30m_default">1 Std. 30 Min. (Standard)</string>
-  <string name="settings_widget_refresh_entry_45m">1 Std. 45 Min.</string>
-  <string name="settings_widget_refresh_entry_1h">2 Std.</string>
-  <string name="settings_widget_refresh_entry_2h">3 Std.</string>
-  <string name="settings_widget_refresh_entry_3h">4 Std.</string>
-  <string name="settings_widget_refresh_entry_4h">5 Std.</string>
+  <string name="settings_widget_refresh_entry_15m">15 Min.</string>
+  <string name="settings_widget_refresh_entry_30m_default">30 Min. (Standard)</string>
+  <string name="settings_widget_refresh_entry_45m">45 Min.</string>
+  <string name="settings_widget_refresh_entry_1h">1 Std.</string>
+  <string name="settings_widget_refresh_entry_2h">2 Std.</string>
+  <string name="settings_widget_refresh_entry_3h">3 Std.</string>
+  <string name="settings_widget_refresh_entry_4h">4 Std.</string>
   <string name="settings_widget_refresh_entry_manual">Nie (manuell)</string>
   <!-- Einstellungen: Benachrichtigungen -->
   <string name="settings_section_notifications">Benachrichtigungen</string>

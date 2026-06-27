@@ -50,17 +50,11 @@ public class PlanChangeHistoryActivity extends MzutBaseActivity {
         ThemeManager.applySystemBars(this);
 
         View contentRoot = findViewById(R.id.contentRoot);
-        if (contentRoot != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
-                Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-                return WindowInsetsCompat.CONSUMED;
-            });
-            ViewCompat.requestApplyInsets(contentRoot);
-        }
+        MainNavHelper.applyRootContentInsets(contentRoot);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        MainNavHelper.styleToolbarPublic(this, toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.plan_change_history_title);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_tab_home" />
+    <item
+        android:id="@+id/nav_plan"
+        android:icon="@drawable/ic_calendar"
+        android:title="@string/nav_tab_plan" />
+    <item
+        android:id="@+id/nav_studies"
+        android:icon="@drawable/ic_school"
+        android:title="@string/nav_tab_studies" />
+    <item
+        android:id="@+id/nav_grades"
+        android:icon="@drawable/ic_star"
+        android:title="@string/nav_tab_grades" />
+    <item
+        android:id="@+id/nav_more"
+        android:icon="@drawable/ic_more_horiz"
+        android:title="@string/nav_tab_more" />
+</menu>

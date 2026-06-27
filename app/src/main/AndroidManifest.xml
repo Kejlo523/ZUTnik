@@ -29,6 +29,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".MainShellActivity" />
+
         <activity android:name=".HomeActivity" />
 
         <activity
