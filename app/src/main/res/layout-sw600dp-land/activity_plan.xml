@@ -20,10 +20,19 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="wrap_content"
+            android:minHeight="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
-            android:titleTextColor="?attr/mzNavHeaderText" />
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            app:contentInsetStart="0dp"
+            app:contentInsetEnd="0dp"
+            app:contentInsetStartWithNavigation="0dp"
+            android:titleTextColor="?attr/mzNavHeaderText">
+
+            <include layout="@layout/include_plan_toolbar_content" />
+        </androidx.appcompat.widget.Toolbar>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -40,16 +49,6 @@
                 android:background="@drawable/bg_tablet_surface"
                 android:orientation="vertical"
                 android:padding="14dp">
-
-                <TextView
-                    android:id="@+id/tvHeaderLabel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="14dp"
-                    android:text="@string/common_dash"
-                    android:textColor="?attr/mzText"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -115,50 +114,6 @@
                         android:textSize="12sp"
                         android:textStyle="bold"
                         app:backgroundTint="@null" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/plan_actions_label"
-                    android:textColor="?attr/mzMuted"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <ImageButton
-                        android:id="@+id/btnSearch"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginEnd="6dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_tablet_action"
-                        android:src="@drawable/ic_search"
-                        app:tint="?attr/mzText" />
-
-                    <ImageButton
-                        android:id="@+id/btnRefresh"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginEnd="6dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_tablet_action"
-                        android:src="@drawable/ic_refresh"
-                        app:tint="?attr/mzText" />
-
-                    <ImageButton
-                        android:id="@+id/btnMenu"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_tablet_action"
-                        android:src="@drawable/ic_more_vert"
-                        app:tint="?attr/mzText" />
                 </LinearLayout>
             </LinearLayout>
 

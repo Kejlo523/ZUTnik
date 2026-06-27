@@ -145,6 +145,7 @@ public class PlanTabFragment extends MzutTabFragment {
     private ImageButton btnMenu;
 
     private TextView tvHeaderLabel;
+    private TextView tvPlanToolbarSubtitle;
     private Toolbar toolbar;
 
     private LinearLayout layoutTimeColumn;
@@ -455,7 +456,8 @@ public class PlanTabFragment extends MzutTabFragment {
             ViewCompat.requestApplyInsets(insetHost);
         }
 
-        toolbar.setTitle(R.string.plan_title);
+        toolbar.setTitle("");
+        toolbar.setSubtitle(null);
 
         btnViewDay = tabFind(R.id.btnViewDay);
         btnViewWeek = tabFind(R.id.btnViewWeek);
@@ -465,6 +467,7 @@ public class PlanTabFragment extends MzutTabFragment {
         btnMenu = tabFind(R.id.btnMenu);
 
         tvHeaderLabel = tabFind(R.id.tvHeaderLabel);
+        tvPlanToolbarSubtitle = tabFind(R.id.tvPlanToolbarSubtitle);
         updatePlanDataFreshness(false);
 
         layoutTimeColumn = tabFind(R.id.layoutTimeColumn);
@@ -1095,8 +1098,12 @@ public class PlanTabFragment extends MzutTabFragment {
     }
 
     private void updatePlanDataFreshnessText(String text) {
+        String safe = text != null ? text : "";
+        if (tvPlanToolbarSubtitle != null) {
+            tvPlanToolbarSubtitle.setText(safe);
+            return;
+        }
         if (toolbar != null) {
-            String safe = text != null ? text : "";
             SpannableString subtitle = new SpannableString(safe);
             if (!safe.isEmpty()) {
                 subtitle.setSpan(
