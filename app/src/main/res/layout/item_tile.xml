@@ -28,7 +28,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_launcher_foreground"
+                android:src="@mipmap/ic_zut_logo_round"
                 android:visibility="gone"
                 app:tint="?attr/mzPrimary" />
 

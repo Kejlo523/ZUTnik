@@ -42,7 +42,7 @@
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/app_name"
                     android:scaleType="fitCenter"
-                    android:src="@mipmap/ic_zut_logo_foreground" />
+                    android:src="@mipmap/ic_zut_logo_round" />
             </FrameLayout>
 
             <TextView

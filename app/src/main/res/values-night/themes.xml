@@ -15,7 +15,7 @@
 
         <!-- Splash -->
         <item name="android:windowSplashScreenBackground" tools:targetApi="31">?attr/mzBg</item>
-        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_zut_logo</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_zut_logo_round</item>
         <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="31">200</item>
         <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@android:color/transparent</item>
 
