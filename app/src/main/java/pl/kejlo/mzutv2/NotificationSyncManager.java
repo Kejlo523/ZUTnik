@@ -28,8 +28,8 @@ public final class NotificationSyncManager {
 
     public static final String UNIQUE_WORK_NAME = "mzut_background_sync";
     public static final String UNIQUE_BOOTSTRAP_WORK_NAME = "mzut_background_sync_bootstrap";
-    public static final long SYNC_INTERVAL_MINUTES = 30L;
-    private static final long SYNC_FLEX_MINUTES = 10L;
+    public static final long SYNC_INTERVAL_MINUTES = 90L;
+    private static final long SYNC_FLEX_MINUTES = 20L;
     private static final String PREFS_RUNTIME = "mzut_sync_runtime";
     private static final String KEY_BOOTSTRAP_SYNC_SCOPE = "bootstrap_sync_scope_v2";
     private static final String PREFS_BG = "mzut_background_sync_cache";

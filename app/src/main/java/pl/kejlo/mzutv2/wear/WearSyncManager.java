@@ -44,7 +44,7 @@ public class WearSyncManager {
     private static final long WATCH_STATUS_STALE_MS = 90_000L;
     private static final long PING_TIMEOUT_MS = 800L;
     private static final long PING_POLL_MS = 100L;
-    private static final long DEFAULT_AUTO_SYNC_INTERVAL_MIN = 60L;
+    private static final long DEFAULT_AUTO_SYNC_INTERVAL_MIN = 120L;
     private static final long DEFAULT_POLL_INTERVAL_MS = 10_000L;
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private static final AtomicBoolean syncInProgress = new AtomicBoolean(false);

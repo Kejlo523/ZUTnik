@@ -341,19 +341,19 @@
         Ustaw jak często widget ma odświeżać dane w tle.
     </string>
   <string name="settings_theme_changed">Zmieniono motyw</string>
-  <string name="settings_widget_refresh_entry_15m">15 min</string>
-  <string name="settings_widget_refresh_entry_30m_default">30 min (domyślnie)</string>
-  <string name="settings_widget_refresh_entry_45m">45 min</string>
-  <string name="settings_widget_refresh_entry_1h">1 godz.</string>
-  <string name="settings_widget_refresh_entry_2h">2 godz.</string>
-  <string name="settings_widget_refresh_entry_3h">3 godz.</string>
-  <string name="settings_widget_refresh_entry_4h">4 godz.</string>
+  <string name="settings_widget_refresh_entry_15m">1 godz. 15 min</string>
+  <string name="settings_widget_refresh_entry_30m_default">1 godz. 30 min (domyślnie)</string>
+  <string name="settings_widget_refresh_entry_45m">1 godz. 45 min</string>
+  <string name="settings_widget_refresh_entry_1h">2 godz.</string>
+  <string name="settings_widget_refresh_entry_2h">3 godz.</string>
+  <string name="settings_widget_refresh_entry_3h">4 godz.</string>
+  <string name="settings_widget_refresh_entry_4h">5 godz.</string>
   <string name="settings_widget_refresh_entry_manual">Nigdy (ręcznie)</string>
   <string name="settings_section_notifications">Powiadomienia</string>
   <string name="settings_notifications_master_label">Włącz powiadomienia</string>
   <string name="settings_notifications_master_desc">Powiadomienia o ocenach, finansach i zmianach w planie zajęć.</string>
   <string name="settings_notifications_grades_label">Powiadomienia o ocenach</string>
-  <string name="settings_notifications_grades_desc">Sprawdzaj nowe oceny cyklicznie (co 30 min).</string>
+  <string name="settings_notifications_grades_desc">Sprawdzaj nowe oceny cyklicznie (co 90 min).</string>
   <string name="settings_notifications_finance_label">Powiadomienia o finansach</string>
   <string name="settings_notifications_finance_desc">Monitoruj terminy płatności i nowe zaksięgowane wpłaty.</string>
   <string name="settings_notifications_finance_categories">Kategorie finansów</string>

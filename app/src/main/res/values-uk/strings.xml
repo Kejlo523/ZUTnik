@@ -224,13 +224,13 @@
   <string name="settings_language_changed_toast">
         Мову змінено. Інтерфейс було перезавантажено.
     </string>
-  <string name="settings_widget_refresh_entry_15m">15 хв</string>
-  <string name="settings_widget_refresh_entry_30m_default">30 хв (типово)</string>
-  <string name="settings_widget_refresh_entry_45m">45 хв</string>
-  <string name="settings_widget_refresh_entry_1h">1 год</string>
-  <string name="settings_widget_refresh_entry_2h">2 год</string>
-  <string name="settings_widget_refresh_entry_3h">3 год</string>
-  <string name="settings_widget_refresh_entry_4h">4 год</string>
+  <string name="settings_widget_refresh_entry_15m">1 год 15 хв</string>
+  <string name="settings_widget_refresh_entry_30m_default">1 год 30 хв (типово)</string>
+  <string name="settings_widget_refresh_entry_45m">1 год 45 хв</string>
+  <string name="settings_widget_refresh_entry_1h">2 год</string>
+  <string name="settings_widget_refresh_entry_2h">3 год</string>
+  <string name="settings_widget_refresh_entry_3h">4 год</string>
+  <string name="settings_widget_refresh_entry_4h">5 год</string>
   <string name="settings_widget_refresh_entry_manual">Ніколи (вручну)</string>
   <string name="useful_links_empty">
         Немає визначених посилань.\nДодайте щось у налаштуваннях або перевірте стандартні пропозиції.
@@ -416,7 +416,7 @@
   <string name="settings_notifications_master_label">Enable notifications</string>
   <string name="settings_notifications_master_desc">Notifications about grades and timetable changes.</string>
   <string name="settings_notifications_grades_label">Grade notifications</string>
-  <string name="settings_notifications_grades_desc">Check new grades periodically (every 30 min).</string>
+  <string name="settings_notifications_grades_desc">Check new grades periodically (every 90 min).</string>
   <string name="settings_notifications_plan_label">Timetable change notifications</string>
   <string name="settings_notifications_plan_desc">Monitor timetable changes up to 2 weeks ahead.</string>
   <string name="settings_notifications_plan_categories">Timetable change categories</string>

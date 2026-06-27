@@ -39,7 +39,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
 
     private static final String PREFS_PLAN = "mzut_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
-    private static final long NO_CLASSES_WIDGET_REFRESH_MINUTES = 3L * 60L;
+    private static final long NO_CLASSES_WIDGET_REFRESH_MINUTES = 4L * 60L;
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -367,7 +367,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         try {
             intervalMin = Long.parseLong(intervalStr);
         } catch (NumberFormatException e) {
-            intervalMin = 30;
+            intervalMin = 90;
         }
 
         if (intervalMin <= 0) {

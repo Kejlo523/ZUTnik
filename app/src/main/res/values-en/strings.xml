@@ -278,19 +278,19 @@
         Set how often the widget should refresh in the background.
     </string>
   <string name="settings_theme_changed">Theme changed</string>
-  <string name="settings_widget_refresh_entry_15m">15 min</string>
-  <string name="settings_widget_refresh_entry_30m_default">30 min (default)</string>
-  <string name="settings_widget_refresh_entry_45m">45 min</string>
-  <string name="settings_widget_refresh_entry_1h">1 hour</string>
-  <string name="settings_widget_refresh_entry_2h">2 hours</string>
-  <string name="settings_widget_refresh_entry_3h">3 hours</string>
-  <string name="settings_widget_refresh_entry_4h">4 hours</string>
+  <string name="settings_widget_refresh_entry_15m">1 h 15 min</string>
+  <string name="settings_widget_refresh_entry_30m_default">1 h 30 min (default)</string>
+  <string name="settings_widget_refresh_entry_45m">1 h 45 min</string>
+  <string name="settings_widget_refresh_entry_1h">2 hours</string>
+  <string name="settings_widget_refresh_entry_2h">3 hours</string>
+  <string name="settings_widget_refresh_entry_3h">4 hours</string>
+  <string name="settings_widget_refresh_entry_4h">5 hours</string>
   <string name="settings_widget_refresh_entry_manual">Never (manual)</string>
   <string name="settings_section_notifications">Notifications</string>
   <string name="settings_notifications_master_label">Enable notifications</string>
   <string name="settings_notifications_master_desc">Notifications about grades, finance and timetable changes.</string>
   <string name="settings_notifications_grades_label">Grade notifications</string>
-  <string name="settings_notifications_grades_desc">Check new grades periodically (every 30 min).</string>
+  <string name="settings_notifications_grades_desc">Check new grades periodically (every 90 min).</string>
   <string name="settings_notifications_finance_label">Finance notifications</string>
   <string name="settings_notifications_finance_desc">Monitor payment due dates and newly booked payments.</string>
   <string name="settings_notifications_finance_categories">Finance categories</string>

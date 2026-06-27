@@ -396,20 +396,20 @@
   <string name="settings_widget_refresh_description">
         Lege fest, wie oft das Widget Daten im Hintergrund aktualisieren soll.
     </string>
-  <string name="settings_widget_refresh_entry_15m">15 min</string>
-  <string name="settings_widget_refresh_entry_30m_default">30 min (Standard)</string>
-  <string name="settings_widget_refresh_entry_45m">45 min</string>
-  <string name="settings_widget_refresh_entry_1h">1 Std.</string>
-  <string name="settings_widget_refresh_entry_2h">2 Std.</string>
-  <string name="settings_widget_refresh_entry_3h">3 Std.</string>
-  <string name="settings_widget_refresh_entry_4h">4 Std.</string>
+  <string name="settings_widget_refresh_entry_15m">1 Std. 15 Min.</string>
+  <string name="settings_widget_refresh_entry_30m_default">1 Std. 30 Min. (Standard)</string>
+  <string name="settings_widget_refresh_entry_45m">1 Std. 45 Min.</string>
+  <string name="settings_widget_refresh_entry_1h">2 Std.</string>
+  <string name="settings_widget_refresh_entry_2h">3 Std.</string>
+  <string name="settings_widget_refresh_entry_3h">4 Std.</string>
+  <string name="settings_widget_refresh_entry_4h">5 Std.</string>
   <string name="settings_widget_refresh_entry_manual">Nie (manuell)</string>
   <!-- Einstellungen: Benachrichtigungen -->
   <string name="settings_section_notifications">Benachrichtigungen</string>
   <string name="settings_notifications_master_label">Benachrichtigungen aktivieren</string>
   <string name="settings_notifications_master_desc">Benachrichtigungen ueber Noten und Stundenplanaenderungen.</string>
   <string name="settings_notifications_grades_label">Benachrichtigungen zu Noten</string>
-  <string name="settings_notifications_grades_desc">Neue Noten zyklisch pruefen (alle 30 Min.).</string>
+  <string name="settings_notifications_grades_desc">Neue Noten zyklisch pruefen (alle 90 Min.).</string>
   <string name="settings_notifications_plan_label">Benachrichtigungen zu Stundenplanaenderungen</string>
   <string name="settings_notifications_plan_desc">Aenderungen im Stundenplan bis 2 Wochen im Voraus ueberwachen.</string>
   <string name="settings_notifications_plan_categories">Kategorien der Stundenplanaenderungen</string>
