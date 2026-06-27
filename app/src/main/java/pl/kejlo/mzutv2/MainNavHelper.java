@@ -92,6 +92,14 @@ public class MainNavHelper {
         activeMoreSheet = null;
     }
 
+    public static boolean dismissMoreSheetIfShowing() {
+        if (activeMoreSheet == null || !activeMoreSheet.isShowing()) {
+            return false;
+        }
+        dismissMoreSheet();
+        return true;
+    }
+
     public static void setupShell(
             MainShellActivity activity,
             View contentRoot,

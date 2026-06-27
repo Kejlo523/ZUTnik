@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -42,6 +43,7 @@ public class MainShellActivity extends MzutBaseActivity {
 
         bottomNavigation = findViewById(R.id.bottomNavigation);
         MainNavHelper.setupShell(this, findViewById(R.id.mainShellRoot), bottomNavigation);
+        setupBackNavigation();
 
         if (savedInstanceState != null) {
             currentTabId = savedInstanceState.getString("current_tab", currentTabId);
@@ -55,6 +57,30 @@ public class MainShellActivity extends MzutBaseActivity {
             switchToTab(start, true);
             initialTabApplied = true;
         }
+    }
+
+    private void setupBackNavigation() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (MainNavHelper.dismissMoreSheetIfShowing()) {
+                    return;
+                }
+                if (navigateBackToHome()) {
+                    return;
+                }
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        });
+    }
+
+    private boolean navigateBackToHome() {
+        if (MainNavHelper.Screen.HOME.getId().equals(currentTabId)) {
+            return false;
+        }
+        switchToTab(MainNavHelper.Screen.HOME, false);
+        return true;
     }
 
     @Override
