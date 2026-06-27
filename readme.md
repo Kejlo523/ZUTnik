@@ -1,6 +1,6 @@
-# mZUT v2
+# ZUTnik
 
-Mobilna, nieoficjalna aplikacja dla studentów Zachodniopomorskiego Uniwersytetu Technologicznego, ułatwiająca korzystanie z systemu mZUT na Androidzie.
+Mobilna, nieoficjalna aplikacja kliencka dla studentów Zachodniopomorskiego Uniwersytetu Technologicznego. Integruje się z **USOS API** (`usosapi.zut.edu.pl`) i udostępnia dane akademiowania na Androidzie.
 <br>
 <img width="auto" height="500" alt="mzut_promotional_banner_v2" src="https://github.com/user-attachments/assets/facda314-2843-4ea4-ab95-7722bdc3d1bf" />
 
@@ -10,7 +10,7 @@ Aplikacja skupia się na:
 - szybkim dostępie do kluczowych danych (plan, oceny, studia, aktualności),
 - wygodnej nawigacji gestami i menu bocznym.
 
-Więcej informacji o projekcie: https://mzut.endozero.pl
+Więcej informacji o projekcie: https://zutnik.endozero.pl
 
 ---
 
@@ -42,20 +42,20 @@ Więcej informacji o projekcie: https://mzut.endozero.pl
 - Podsumowanie łącznej liczby nieobecności.
 
 ### Oceny
-- Zestawienie ocen w podziale na semestry.
+- Zestawienie ocen w podziale na semestry (USOS: `services/grades/terms2`, `services/courses/user`).
 - Wyświetlanie: nazwy przedmiotu, rodzaju zaliczenia, oceny, daty.
 - Liczenie średniej ważonej (w oparciu o ECTS).
 - Sumowanie punktów ECTS dla wybranego semestru.
 - Prosty, tabelaryczny widok dopasowany do ekranu telefonu.
 
 ### Dane studenta
-- Dane bieżących studiów: wydział, kierunek, forma, poziom, specjalność, rok akademicki, semestr, status.
-- Numer albumu i identyfikator użytkownika.
-- Przebieg studiów, jeśli jest dostępny.
-- Obsługa wielu kierunków studiów tak jak w mZUT.
+- Dane bieżących studiów z USOS: wydział, kierunek, forma, poziom, specjalność, rok akademicki, semestr, status.
+- Numer albumu i identyfikator użytkownika (`services/users/user`).
+- Przebieg studiów (`services/progs/student`, `services/progs/student_programme`).
+- Obsługa wielu kierunków studiów zgodnie z profilem USOS.
 
 ### Aktualności ZUT
-- Pobieranie komunikatów z oficjalnego kanału RSS dla studentów.
+- Pobieranie komunikatów z modułu news USOS (`services/news/search`).
 - Lista artykułów z tytułem, datą, krótkim opisem i miniaturą.
 - Szczegółowy widok treści ogłoszenia.
 
@@ -80,15 +80,16 @@ Więcej informacji o projekcie: https://mzut.endozero.pl
 ## Architektura i technikalia
 
 - Język: Java (Android).
+- Autoryzacja: OAuth 1.0a wobec USOS API (`UsosOAuth`, `UsosApi`).
 - Warstwa danych:
-  - zapamiętywanie sesji użytkownika i danych studiów (`MzutSession`),
+  - zapamiętywanie tokenów sesji i danych studiów (`MzutSession`),
   - repozytoria do obsługi planu, ocen i aktualności (`PlanRepository`, `GradesRepository`, `NewsRepository`),
-  - lokalne cache’owanie odpowiedzi.
+  - lokalne cache’owanie odpowiedzi API.
 - Widoki:
-  - osobne ekrany dla planu, ocen, danych i aktualności,
+  - osobne Activity dla planu, ocen, danych i aktualności,
   - wspólny układ nawigacji i stylów.
 - Widget:
-  - widżet planu dnia, pobierający dane bezpośrednio z cache’u oraz z API,
+  - widżet planu dnia, pobierający dane z cache’u oraz z API,
   - filtruje po tych samych ustawieniach, co główny widok planu,
   - pokazuje tylko nadchodzące lub trwające zajęcia.
 
@@ -96,9 +97,9 @@ Więcej informacji o projekcie: https://mzut.endozero.pl
 
 ## Wymagania
 
-- Android 8.0 lub nowszy.
-- Aktywne konto w systemach ZUT (e-dziekanat / wirtualna uczelnia).
-- Połączenie z internetem do synchronizacji danych z mZUT i plan.zut.edu.pl.
+- Android 8.0 (API 26) lub nowszy.
+- Aktywne konto studenta w USOS ZUT.
+- Połączenie z internetem do synchronizacji danych z USOS API i plan.zut.edu.pl.
 
 ---
 
