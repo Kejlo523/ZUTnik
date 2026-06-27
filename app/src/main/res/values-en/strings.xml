@@ -154,6 +154,7 @@
   <string name="plan_view_mode_label">View</string>
   <string name="plan_actions_label">Actions</string>
   <string name="plan_button_today">Today</string>
+  <string name="plan_button_add_event">Add event</string>
   <string name="plan_button_refresh">Refresh</string>
   <string name="plan_button_filters">Subject filter</string>
   <string name="plan_toast_resetting_search">Resetting search…</string>
@@ -278,13 +279,13 @@
         Set how often the widget should refresh in the background.
     </string>
   <string name="settings_theme_changed">Theme changed</string>
-  <string name="settings_widget_refresh_entry_15m">1 h 15 min</string>
-  <string name="settings_widget_refresh_entry_30m_default">1 h 30 min (default)</string>
-  <string name="settings_widget_refresh_entry_45m">1 h 45 min</string>
-  <string name="settings_widget_refresh_entry_1h">2 hours</string>
-  <string name="settings_widget_refresh_entry_2h">3 hours</string>
-  <string name="settings_widget_refresh_entry_3h">4 hours</string>
-  <string name="settings_widget_refresh_entry_4h">5 hours</string>
+  <string name="settings_widget_refresh_entry_15m">15 min</string>
+  <string name="settings_widget_refresh_entry_30m_default">30 min (default)</string>
+  <string name="settings_widget_refresh_entry_45m">45 min</string>
+  <string name="settings_widget_refresh_entry_1h">1 hour</string>
+  <string name="settings_widget_refresh_entry_2h">2 hours</string>
+  <string name="settings_widget_refresh_entry_3h">3 hours</string>
+  <string name="settings_widget_refresh_entry_4h">4 hours</string>
   <string name="settings_widget_refresh_entry_manual">Never (manual)</string>
   <string name="settings_section_notifications">Notifications</string>
   <string name="settings_notifications_master_label">Enable notifications</string>

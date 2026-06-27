@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -21,10 +22,18 @@ import java.util.Locale;
 public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder> {
 
     private static final int MAX_VISIBLE_GRADE_PILLS = 3;
-    private final List<Grade> grades;
+    private final List<Grade> grades = new ArrayList<>();
 
     public GradesAdapter(List<Grade> grades) {
-        this.grades = grades;
+        setGrades(grades);
+    }
+
+    public void setGrades(List<Grade> source) {
+        grades.clear();
+        if (source != null) {
+            grades.addAll(source);
+        }
+        notifyDataSetChanged();
     }
 
     @NonNull

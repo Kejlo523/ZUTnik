@@ -68,17 +68,11 @@ public class CalendarExportActivity extends MzutBaseActivity {
         exportHelper = PlanCalendarExportHelper.fromIntent(this, getIntent());
 
         android.view.View contentRoot = findViewById(R.id.contentRoot);
-        if (contentRoot != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
-                Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-                return WindowInsetsCompat.CONSUMED;
-            });
-            ViewCompat.requestApplyInsets(contentRoot);
-        }
+        MainNavHelper.applyRootContentInsets(contentRoot);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        MainNavHelper.styleToolbarPublic(this, toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.calendar_export_title);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);

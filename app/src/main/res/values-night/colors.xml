@@ -10,7 +10,9 @@
     <color name="mz_border_soft">#333333</color>
     <color name="mz_border_strong">#4D4D4D</color>
 
-    <color name="mz_primary">#2196F3</color>
+    <color name="mz_primary">#4A90D9</color>
+    <color name="mz_nav_header">#0F172A</color>
+    <color name="mz_nav_header_text">#FFFFFF</color>
     <color name="mz_primary_alt">#7C4DFF</color>
     <color name="mz_accent">#00E676</color>
     <color name="mz_lime">#8FD94A</color>

@@ -30,9 +30,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-
-import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -51,8 +49,6 @@ public class AboutActivity extends PhoneAwareActivity {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
 
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
     private Toolbar toolbar;
     private android.widget.LinearLayout drawerContentRoot;
 
@@ -86,28 +82,21 @@ public class AboutActivity extends PhoneAwareActivity {
         ThemeManager.applySystemBars(this);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
         toolbar = findViewById(R.id.toolbar);
         textPlayStoreStats = findViewById(R.id.textPlayStoreStats);
         aboutVersion = findViewById(R.id.aboutVersion);
         aboutLogo = findViewById(R.id.aboutLogo);
         easterTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
-        ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
-
         toolbar.setTitle(R.string.about_title);
 
-        NavDrawerHelper.setupNavigation(
+        MainNavHelper.setup(
                 this,
-                drawerLayout,
-                navigationView,
+                drawerContentRoot,
+                bottomNavigation,
                 toolbar,
-                NavDrawerHelper.Screen.ABOUT);
+                MainNavHelper.Screen.ABOUT);
 
         setupUI();
         loadPlayStoreStats();

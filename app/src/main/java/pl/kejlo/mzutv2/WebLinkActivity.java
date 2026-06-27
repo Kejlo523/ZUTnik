@@ -53,13 +53,10 @@ public class WebLinkActivity extends PhoneAwareActivity {
         progressBar = findViewById(R.id.progressBar);
         webView = findViewById(R.id.webView);
 
-        ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
+        MainNavHelper.applyRootContentInsets(contentRoot);
 
         setSupportActionBar(toolbar);
+        MainNavHelper.styleToolbarPublic(this, toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }

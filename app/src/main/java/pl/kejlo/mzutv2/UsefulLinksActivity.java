@@ -21,12 +21,10 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -56,7 +54,6 @@ import okhttp3.Response;
 public class UsefulLinksActivity extends PhoneAwareActivity {
 
     private static final String PREF_OG_CACHE = "useful_links_og_cache";
-    private static final String LINKS_SCREEN = "links";
     private static final String USER_AGENT = "Mozilla/5.0 (compatible; ZUTnik-Android/2.0)";
     private static final Pattern TITLE_TAG_PATTERN = Pattern.compile(
             "<title>(.*?)</title>",
@@ -68,8 +65,6 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             .callTimeout(Duration.ofSeconds(10))
             .build();
 
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
     private Toolbar toolbar;
     private LinearLayout drawerContentRoot;
     private RecyclerView listLinks;
@@ -94,25 +89,24 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         ogCachePrefs = getSharedPreferences(PREF_OG_CACHE, MODE_PRIVATE);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
         toolbar = findViewById(R.id.toolbar);
         listLinks = findViewById(R.id.listLinks);
         tvEmpty = findViewById(R.id.tvLinksEmpty);
-
-        ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (view, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            view.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
 
         if (toolbar != null) {
             toolbar.setTitle(R.string.nav_useful_links);
         }
 
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, LINKS_SCREEN);
+        MainNavHelper.setup(
+                this,
+                drawerContentRoot,
+                bottomNavigation,
+                toolbar,
+                MainNavHelper.Screen.USEFUL);
 
         listLinks.setLayoutManager(new LinearLayoutManager(this));
+        listLinks.setItemAnimator(null);
         adapter = new LinksAdapter();
         listLinks.setAdapter(adapter);
 
@@ -430,10 +424,27 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
                 .replace("https://", "")
                 .replace("http://", "")
                 .replace("www.", "");
+        int slash = domain.indexOf('/');
+        if (slash >= 0) {
+            domain = domain.substring(0, slash);
+        }
         if (domain.endsWith("/")) {
             domain = domain.substring(0, domain.length() - 1);
         }
         return domain;
+    }
+
+    private String getDomainInitial(String url) {
+        String domain = formatDomain(url);
+        if (domain.isEmpty()) {
+            return "?";
+        }
+        int dot = domain.indexOf('.');
+        String host = dot > 0 ? domain.substring(0, dot) : domain;
+        if (host.isEmpty()) {
+            return domain.substring(0, 1).toUpperCase(Locale.ROOT);
+        }
+        return host.substring(0, 1).toUpperCase(Locale.ROOT);
     }
 
     private void openLink(View source, LinkItem item) {
@@ -575,7 +586,13 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             }
 
             holder.title.setText(item.title);
-            holder.desc.setText(item.description != null ? item.description : "");
+            String description = item.description != null ? item.description.trim() : "";
+            if (description.isEmpty()) {
+                holder.desc.setVisibility(View.GONE);
+            } else {
+                holder.desc.setVisibility(View.VISIBLE);
+                holder.desc.setText(description);
+            }
             holder.url.setText(formatDomain(item.url));
             holder.badge.setVisibility(item.highlighted ? View.VISIBLE : View.GONE);
             bindPreviewImage(holder, item);
@@ -589,38 +606,68 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
 
         private void bindPreviewImage(@NonNull ViewHolder holder, @NonNull LinkItem item) {
             holder.loading.setVisibility(View.GONE);
-            holder.image.setImageResource(R.drawable.bg_header_gradient);
+            holder.image.setVisibility(View.GONE);
+            holder.placeholder.setVisibility(View.GONE);
 
-            if (item.previewImageUrl == null) {
-                if (!item.metadataLoaded) {
-                    holder.loading.setVisibility(View.VISIBLE);
+            if (item.previewImageUrl != null) {
+                Bitmap memoryBitmap = ImageCache.getInstance().getFromMemory(item.previewImageUrl);
+                if (memoryBitmap != null) {
+                    showPreviewImage(holder, memoryBitmap);
+                    return;
                 }
-                return;
-            }
 
-            Bitmap memoryBitmap = ImageCache.getInstance().getFromMemory(item.previewImageUrl);
-            if (memoryBitmap != null) {
-                holder.image.setImageBitmap(memoryBitmap);
-                return;
-            }
+                holder.loading.setVisibility(View.VISIBLE);
+                bgExecutor.submit(() -> {
+                    Bitmap loadedBitmap = ImageCache.getInstance().getFromDisk(item.previewImageUrl);
+                    mainHandler.post(() -> {
+                        int adapterPosition = holder.getAdapterPosition();
+                        if (adapterPosition == RecyclerView.NO_POSITION
+                                || adapterPosition >= data.size()
+                                || data.get(adapterPosition) != item) {
+                            return;
+                        }
 
-            holder.loading.setVisibility(View.VISIBLE);
-            bgExecutor.submit(() -> {
-                Bitmap diskBitmap = ImageCache.getInstance().getFromDisk(item.previewImageUrl);
-                mainHandler.post(() -> {
-                    int adapterPosition = holder.getAdapterPosition();
-                    if (adapterPosition == RecyclerView.NO_POSITION
-                            || adapterPosition >= data.size()
-                            || data.get(adapterPosition) != item) {
-                        return;
-                    }
-
-                    holder.loading.setVisibility(View.GONE);
-                    if (diskBitmap != null) {
-                        holder.image.setImageBitmap(diskBitmap);
-                    }
+                        if (loadedBitmap != null) {
+                            showPreviewImage(holder, loadedBitmap);
+                        } else if (item.metadataLoaded) {
+                            showPreviewPlaceholder(holder, item);
+                        } else {
+                            holder.loading.setVisibility(View.VISIBLE);
+                        }
+                    });
                 });
-            });
+                return;
+            }
+
+            if (!item.metadataLoaded) {
+                holder.loading.setVisibility(View.VISIBLE);
+                return;
+            }
+
+            showPreviewPlaceholder(holder, item);
+        }
+
+        private void showPreviewImage(@NonNull ViewHolder holder, @NonNull Bitmap bitmap) {
+            holder.loading.setVisibility(View.GONE);
+            holder.placeholder.setVisibility(View.GONE);
+            holder.image.setVisibility(View.VISIBLE);
+            holder.image.setImageBitmap(bitmap);
+        }
+
+        private void showPreviewPlaceholder(@NonNull ViewHolder holder, @NonNull LinkItem item) {
+            holder.loading.setVisibility(View.GONE);
+            holder.image.setVisibility(View.GONE);
+            holder.placeholder.setVisibility(View.VISIBLE);
+
+            String initial = getDomainInitial(item.url);
+            if (initial.isEmpty() || "?".equals(initial)) {
+                holder.placeholderLetter.setVisibility(View.GONE);
+                holder.placeholderIcon.setVisibility(View.VISIBLE);
+            } else {
+                holder.placeholderLetter.setVisibility(View.VISIBLE);
+                holder.placeholderLetter.setText(initial);
+                holder.placeholderIcon.setVisibility(View.GONE);
+            }
         }
 
         final class ViewHolder extends RecyclerView.ViewHolder {
@@ -629,6 +676,9 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             final TextView url;
             final TextView badge;
             final ImageView image;
+            final View placeholder;
+            final TextView placeholderLetter;
+            final ImageView placeholderIcon;
             final ProgressBar loading;
 
             ViewHolder(@NonNull View itemView) {
@@ -638,6 +688,9 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
                 url = itemView.findViewById(R.id.linkUrl);
                 badge = itemView.findViewById(R.id.linkBadge);
                 image = itemView.findViewById(R.id.linkImage);
+                placeholder = itemView.findViewById(R.id.linkPlaceholder);
+                placeholderLetter = itemView.findViewById(R.id.linkPlaceholderLetter);
+                placeholderIcon = itemView.findViewById(R.id.linkPlaceholderIcon);
                 loading = itemView.findViewById(R.id.linkImageLoading);
             }
         }

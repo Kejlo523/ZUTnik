@@ -16,7 +16,7 @@
         android:elevation="0dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:titleTextColor="?attr/mzText" />
+        android:titleTextColor="?attr/mzNavHeaderText" />
 
     <FrameLayout
         android:layout_width="match_parent"

@@ -23,6 +23,8 @@
 
     <attr name="mzToolbarGradStart" format="color|reference" />
     <attr name="mzToolbarGradEnd" format="color|reference" />
+    <attr name="mzNavHeader" format="color|reference" />
+    <attr name="mzNavHeaderText" format="color|reference" />
 
     <!-- Plan Specifics (mapped to attributes to allow theming) -->
     <attr name="planWeekHeaderSelectedBg" format="color|reference" />

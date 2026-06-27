@@ -5,13 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
-    android:fitsSystemWindows="true"
+    android:fitsSystemWindows="false"
     android:orientation="vertical">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarDetail"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
         android:background="@drawable/bg_toolbar"
         android:elevation="0dp"
         android:paddingStart="16dp"
@@ -85,7 +86,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:background="@drawable/bg_news_content_card"
-            android:padding="10dp">
+            android:padding="12dp">
 
             <TextView
                 android:id="@+id/tvNewsDetailFallback"

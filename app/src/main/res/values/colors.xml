@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="mz_bg">#F8F9FC</color>
-    <color name="mz_bg_soft">#F1F5F9</color>
+    <color name="mz_bg">#F2F2F7</color>
+    <color name="mz_bg_soft">#ECECF1</color>
     <color name="mz_card">#FFFFFF</color>
-    <color name="mz_card_soft">#E2E8F0</color>
+    <color name="mz_card_soft">#F7F7FA</color>
     <color name="mz_bg_surface">#FFFFFF</color>
 
     <color name="mz_text">#334155</color>
@@ -11,7 +11,9 @@
     <color name="mz_border_soft">#E2E8F0</color>
     <color name="mz_border_strong">#CBD5E1</color>
 
-    <color name="mz_primary">#3B82F6</color>
+    <color name="mz_primary">#1B3A6B</color>
+    <color name="mz_nav_header">#1B3A6B</color>
+    <color name="mz_nav_header_text">#FFFFFF</color>
     <color name="mz_primary_alt">#8B5CF6</color>
     <color name="mz_accent">#10B981</color>
     <color name="mz_lime">#A3E635</color>
@@ -19,8 +21,8 @@
     <color name="mz_danger">#F43F5E</color>
     <color name="mz_danger_soft">#FFE4E6</color>
 
-    <color name="mz_toolbar_grad_start">#FFFFFF</color>
-    <color name="mz_toolbar_grad_end">#F8F9FC</color>
+    <color name="mz_toolbar_grad_start">#1B3A6B</color>
+    <color name="mz_toolbar_grad_end">#1B3A6B</color>
 
     <color name="offline_bar_bg">#F25F2A</color>
     <color name="online_bar_bg">#3FAF6C</color>

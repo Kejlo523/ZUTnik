@@ -2,6 +2,8 @@ package pl.kejlo.mzutv2;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,25 +17,21 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class AttendanceActivity extends PhoneAwareActivity {
 
-    private DrawerLayout drawerLayout;
     private LinearLayout drawerContentRoot;
     private RecyclerView listSubjects;
     private TextView tvAbsenceTotal;
@@ -43,8 +41,12 @@ public class AttendanceActivity extends PhoneAwareActivity {
     private ImageView btnRefresh;
 
     private AttendanceRepository repository;
-    private List<Absence> absenceList = new ArrayList<>();
+    private final List<Absence> absenceList = new ArrayList<>();
     private AttendanceAdapter adapter;
+
+    private final ExecutorService loadExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Future<?> loadFuture;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -59,27 +61,21 @@ public class AttendanceActivity extends PhoneAwareActivity {
         setContentView(R.layout.activity_attendance);
         ThemeManager.applySystemBars(this);
 
-        // EdgeToEdge insets
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        ViewCompat.setOnApplyWindowInsetsListener(drawerContentRoot, (v, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
 
-        // Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+
+        MainNavHelper.setup(
+                this,
+                drawerContentRoot,
+                bottomNavigation,
+                toolbar,
+                MainNavHelper.Screen.ATTENDANCE);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.attendance_title);
         }
 
-        // Navigation
-        drawerLayout = findViewById(R.id.drawerLayout);
-        NavigationView navigationView = findViewById(R.id.navigationView);
-        NavDrawerHelper.setupNavigation(this, drawerLayout, navigationView, toolbar, NavDrawerHelper.Screen.ATTENDANCE);
-
-        // Views
         listSubjects = findViewById(R.id.listSubjects);
         tvAbsenceTotal = findViewById(R.id.tvAbsenceTotal);
         tvAttendanceSubtitle = findViewById(R.id.tvAttendanceSubtitle);
@@ -87,22 +83,27 @@ public class AttendanceActivity extends PhoneAwareActivity {
         attendanceProgress = findViewById(R.id.attendanceProgress);
         btnRefresh = findViewById(R.id.btnAttendanceRefresh);
 
-        // Setup RecyclerView
         listSubjects.setLayoutManager(new LinearLayoutManager(this));
         adapter = new AttendanceAdapter();
         listSubjects.setAdapter(adapter);
 
-        // Repository
         repository = new AttendanceRepository(this);
 
-        // Refresh button
         btnRefresh.setOnClickListener(v -> {
             Toast.makeText(this, R.string.attendance_refreshing, Toast.LENGTH_SHORT).show();
-            loadData();
+            loadData(true);
         });
 
-        // Initial load
-        loadData();
+        loadData(false);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (loadFuture != null) {
+            loadFuture.cancel(true);
+        }
+        loadExecutor.shutdownNow();
+        super.onDestroy();
     }
 
     @Override
@@ -113,12 +114,19 @@ public class AttendanceActivity extends PhoneAwareActivity {
         }
     }
 
-    private void loadData() {
+    private void loadData(boolean forceRefresh) {
+        if (loadFuture != null) {
+            loadFuture.cancel(true);
+        }
+
         showLoading(true);
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            List<Absence> data = repository.loadSubjectsWithAbsences();
-            runOnUiThread(() -> {
+        loadFuture = loadExecutor.submit(() -> {
+            List<Absence> data = repository.loadSubjectsWithAbsences(forceRefresh);
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
                 absenceList.clear();
                 absenceList.addAll(data);
                 adapter.notifyDataSetChanged();
@@ -148,7 +156,10 @@ public class AttendanceActivity extends PhoneAwareActivity {
 
     private void showLoading(boolean loading) {
         attendanceProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
-        listSubjects.setVisibility(loading ? View.GONE : View.VISIBLE);
+        if (loading) {
+            listSubjects.setVisibility(View.GONE);
+            tvEmpty.setVisibility(View.GONE);
+        }
     }
 
     private void showEmptyState(boolean empty) {
@@ -169,16 +180,18 @@ public class AttendanceActivity extends PhoneAwareActivity {
                 .setView(input)
                 .setPositiveButton(R.string.dialog_add_edit_tile_btn_save, (dialog, which) -> {
                     String text = input.getText().toString().trim();
-                    int newHours = 0;
+                    int newHours;
                     try {
                         newHours = Integer.parseInt(text);
                     } catch (NumberFormatException e) {
                         newHours = 0;
                     }
-                    if (newHours < 0)
+                    if (newHours < 0) {
                         newHours = 0;
-                    if (newHours > 999)
+                    }
+                    if (newHours > 999) {
                         newHours = 999;
+                    }
 
                     absence.totalHours = newHours;
                     if (absence.absenceCount > newHours) {
@@ -193,7 +206,6 @@ public class AttendanceActivity extends PhoneAwareActivity {
                 .show();
     }
 
-    // Adapter
     private class AttendanceAdapter extends RecyclerView.Adapter<AttendanceAdapter.ViewHolder> {
 
         @NonNull
@@ -206,8 +218,7 @@ public class AttendanceActivity extends PhoneAwareActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Absence absence = absenceList.get(position);
-            holder.bind(absence);
+            holder.bind(absenceList.get(position));
         }
 
         @Override
@@ -235,7 +246,6 @@ public class AttendanceActivity extends PhoneAwareActivity {
                 tvSubjectName.setText(absence.subjectName);
                 tvSubjectType.setText(absence.subjectType);
 
-                // Show hours with hint if not set
                 if (absence.totalHours > 0) {
                     tvHours.setText(getString(R.string.attendance_hours_format, absence.totalHours));
                 } else {
@@ -244,26 +254,23 @@ public class AttendanceActivity extends PhoneAwareActivity {
 
                 tvAbsenceCount.setText(String.valueOf(absence.absenceCount));
 
-                // Click hours to edit
-                hoursContainer.setOnClickListener(v -> {
-                    showEditHoursDialog(absence, getAdapterPosition());
-                });
+                hoursContainer.setOnClickListener(v ->
+                        showEditHoursDialog(absence, getBindingAdapterPosition()));
 
                 btnMinus.setOnClickListener(v -> {
                     if (absence.absenceCount > 0) {
                         absence.absenceCount--;
                         repository.saveAbsence(absence.subjectKey, absence.absenceCount);
-                        notifyItemChanged(getAdapterPosition());
+                        notifyItemChanged(getBindingAdapterPosition());
                         updateSummary();
                     }
                 });
 
                 btnPlus.setOnClickListener(v -> {
-                    // Allow adding absences even if hours not set
                     if (absence.totalHours == 0 || absence.absenceCount < absence.totalHours) {
                         absence.absenceCount++;
                         repository.saveAbsence(absence.subjectKey, absence.absenceCount);
-                        notifyItemChanged(getAdapterPosition());
+                        notifyItemChanged(getBindingAdapterPosition());
                         updateSummary();
                     }
                 });

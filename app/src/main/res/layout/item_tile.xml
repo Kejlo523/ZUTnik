@@ -10,8 +10,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_margin="10dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
         app:cardBackgroundColor="?attr/mzBgSurface"
         xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -28,7 +28,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_gravity="center"
-                android:src="@mipmap/ic_zut_logo_round"
+                android:src="@drawable/ic_zut_logo_inapp"
                 android:visibility="gone"
                 app:tint="?attr/mzPrimary" />
 
@@ -100,30 +100,35 @@
     <!-- Resize Handle Right (Bottom Right) -->
     <ImageView
         android:id="@+id/btnResizeRight"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:layout_gravity="bottom|end"
-        android:src="@drawable/ic_resize_handle"
-        android:padding="8dp"
+        android:layout_margin="2dp"
+        android:background="@drawable/bg_circle_soft"
+        android:backgroundTint="?attr/mzCard"
+        android:contentDescription="@null"
+        android:elevation="4dp"
+        android:padding="5dp"
+        android:src="@drawable/ic_tile_resize_br"
         android:visibility="gone"
-        app:tint="?attr/mzMuted"
-        android:background="@drawable/bg_resize_handle"
-        android:backgroundTint="@null"
-        xmlns:app="http://schemas.android.com/apk/res-auto"/>
+        app:tint="?attr/mzPrimary"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 
     <!-- Resize Handle Left (Bottom Left) -->
     <ImageView
         android:id="@+id/btnResizeLeft"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:layout_gravity="bottom|start"
-        android:src="@drawable/ic_resize_handle"
-        android:rotation="90"
-        android:padding="8dp"
+        android:layout_margin="2dp"
+        android:background="@drawable/bg_circle_soft"
+        android:backgroundTint="?attr/mzCard"
+        android:contentDescription="@null"
+        android:elevation="4dp"
+        android:padding="5dp"
+        android:src="@drawable/ic_tile_resize_bl"
         android:visibility="gone"
-        app:tint="?attr/mzMuted"
-        android:background="@drawable/bg_resize_handle"
-        android:backgroundTint="@null"
-        xmlns:app="http://schemas.android.com/apk/res-auto"/>
+        app:tint="?attr/mzPrimary"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 
 </FrameLayout>

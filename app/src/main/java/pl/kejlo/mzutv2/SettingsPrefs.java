@@ -1,5 +1,8 @@
 package pl.kejlo.mzutv2;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 public final class SettingsPrefs {
 
     private SettingsPrefs() {
@@ -13,7 +16,35 @@ public final class SettingsPrefs {
     public static final String KEY_APP_THEME = "app_theme";
 
     public static final String KEY_WIDGET_REFRESH_INTERVAL = "widget_refresh_interval";
-    public static final String DEFAULT_WIDGET_REFRESH_INTERVAL = "90";
+    public static final String DEFAULT_WIDGET_REFRESH_INTERVAL = "30";
+
+    public static String normalizeWidgetRefreshInterval(String intervalStr) {
+        if (intervalStr == null) {
+            return DEFAULT_WIDGET_REFRESH_INTERVAL;
+        }
+        switch (intervalStr) {
+            case "75":
+                return "15";
+            case "90":
+                return "30";
+            case "105":
+                return "45";
+            case "300":
+                return "240";
+            default:
+                return intervalStr;
+        }
+    }
+
+    public static String getWidgetRefreshInterval(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE);
+        String stored = prefs.getString(KEY_WIDGET_REFRESH_INTERVAL, DEFAULT_WIDGET_REFRESH_INTERVAL);
+        String normalized = normalizeWidgetRefreshInterval(stored);
+        if (!normalized.equals(stored)) {
+            prefs.edit().putString(KEY_WIDGET_REFRESH_INTERVAL, normalized).apply();
+        }
+        return normalized;
+    }
 
     public static final String KEY_NOTIFICATIONS_PERMISSION_ASKED = "notifications_permission_asked";
     public static final String KEY_NOTIFICATIONS_MASTER_ENABLED = "notifications_master_enabled";

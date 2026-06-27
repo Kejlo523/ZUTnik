@@ -62,16 +62,12 @@ public class SettingsActivity extends PhoneAwareActivity {
 
         View contentRoot = findViewById(R.id.contentRoot);
         if (contentRoot != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (v, windowInsets) -> {
-                Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-                return WindowInsetsCompat.CONSUMED;
-            });
-            ViewCompat.requestApplyInsets(contentRoot);
+            MainNavHelper.applyRootContentInsets(contentRoot);
         }
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        MainNavHelper.styleToolbarPublic(this, toolbar);
         toolbar.setTitle(R.string.settings_title);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(true);
@@ -126,10 +122,7 @@ public class SettingsActivity extends PhoneAwareActivity {
         adapterRefresh.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerRefresh.setAdapter(adapterRefresh);
 
-        SharedPreferences prefs = getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, MODE_PRIVATE);
-        String currentRefreshVal = prefs.getString(
-                SettingsPrefs.KEY_WIDGET_REFRESH_INTERVAL,
-                SettingsPrefs.DEFAULT_WIDGET_REFRESH_INTERVAL);
+        String currentRefreshVal = SettingsPrefs.getWidgetRefreshInterval(this);
 
         String[] refreshValues = getResources().getStringArray(R.array.settings_widget_refresh_values);
         int refreshPos = findValuePosition(

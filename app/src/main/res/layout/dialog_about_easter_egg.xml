@@ -164,7 +164,7 @@
                 android:background="@drawable/bg_easter_egg_logo_core"
                 android:contentDescription="@string/about_logo_desc"
                 android:padding="14dp"
-                android:src="@mipmap/ic_zut_logo_round" />
+                android:src="@drawable/ic_zut_logo_inapp" />
         </FrameLayout>
     </LinearLayout>
 
