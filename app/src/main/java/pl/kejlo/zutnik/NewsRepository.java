@@ -193,7 +193,7 @@ public class NewsRepository {
             return null;
         }
 
-        Bitmap cached = ImageMemoryCache.get(url);
+        Bitmap cached = ImageCache.getInstance().getFromMemory(url);
         if (cached != null) {
             return cached;
         }
@@ -227,7 +227,7 @@ public class NewsRepository {
                 options.inJustDecodeBounds = false;
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
                 if (bitmap != null) {
-                    ImageMemoryCache.put(url, bitmap);
+                    ImageCache.getInstance().put(url, bitmap);
                     return bitmap;
                 }
             }

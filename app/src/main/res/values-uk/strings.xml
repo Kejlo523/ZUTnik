@@ -7,24 +7,18 @@
   <string name="nav_settings_label">Налаштування</string>
   <string name="nav_useful_links">Корисні сторінки</string>
   <string name="nav_logout_label">Вийти</string>
+  <string name="nav_tab_home">Старт</string>
+  <string name="nav_tab_plan">План</string>
+  <string name="nav_tab_studies">Навчання</string>
+  <string name="nav_tab_grades">Оцінки</string>
+  <string name="nav_tab_more">Ще</string>
   <string name="login_card_title">Увійдіть до ZUTnik</string>
-  <string name="login_hint">Логін</string>
-  <string name="login_password_hint">Пароль</string>
-  <string name="login_button">Увійти</string>
-  <string name="login_info_text">
-        Дані для входу надсилаються через офіційний API ZUTnik. Логін буде збережено на цьому пристрої.
-    </string>
-  <string name="login_enter_credentials">Введіть логін і пароль!</string>
-  <string name="login_error_generic">Помилка: %1$s</string>
-  <string name="login_no_server_response">Немає відповіді від сервера</string>
-  <string name="login_system_error">Помилка системи ZUT (SYSTEM ERROR).</string>
-  <string name="login_invalid_credentials">Неправильний логін або пароль.</string>
   <string name="login_success">Увійшли як %1$s</string>
   <string name="home_title">Головна панель</string>
   <string name="home_toolbar_title">Головна сторінка</string>
   <string name="home_welcome_message">Вітаємо %1$s</string>
   <string name="home_welcome_subtitle">
-        Швидкий доступ до розкладу, оцінок, інформації про навчання та новин ZUT – усе в одному місці.
+        Швидкий доступ до розкладу, оцінок, інформації про навчання та новин університету – усе в одному місці.
     </string>
   <string name="home_welcome_fallback">Вітаємо Студенте 👋</string>
   <string name="home_shortcuts_title">Швидкі ярлики</string>
@@ -41,12 +35,12 @@
   <string name="home_tile_info_desc">
         Напрям, факультет, статус студента, історія навчання.
     </string>
-  <string name="home_tile_news_title">📰 Новини ZUT</string>
+  <string name="home_tile_news_title">📰 Новини університету</string>
   <string name="home_tile_news_desc">
         Повідомлення й оголошення з RSS-каналу для студентів.
     </string>
   <string name="home_footer_meta">
-        Дані отримуються з систем ZUT і кешуються локально. Якщо щось виглядає підозріло, завжди перевіряйте це також в офіційних панелях.
+        Дані отримуються з систем університету і кешуються локально. Якщо щось виглядає підозріло, завжди перевіряйте це також в офіційних панелях.
     </string>
   <string name="info_title">Дані студента</string>
   <string name="info_user_id">ID користувача: %1$s</string>
@@ -153,7 +147,7 @@
   <string name="grades_summary_ects_label">Сума ECTS</string>
   <string name="grades_summary_ects_total_label">Total in program</string>
   <string name="grades_empty_state">Немає оцінок для вибраного семестру.</string>
-  <string name="news_title">Новини ZUT</string>
+  <string name="news_title">Новини університету</string>
   <string name="news_refresh_toast">Отримую найновіші дані…</string>
   <string name="news_error_rss">Помилка отримання RSS: %1$s</string>
   <string name="news_detail_title">Запис</string>
@@ -162,13 +156,13 @@
         У RSS-каналі немає вмісту для цього запису.
     </string>
   <string name="news_header_title">Канал оголошень для студентів</string>
-  <string name="news_header_source_info">Джерело RSS: студенти ZUT</string>
+  <string name="news_header_source_info">Джерело RSS: студенти університету</string>
   <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">щойно</string>
   <string name="news_empty_state">
         Немає новин або сталася помилка під час отримання RSS-каналу.
     </string>
-  <string name="news_detail_tag">📰 Новина ZUT</string>
+  <string name="news_detail_tag">📰 Новина університету</string>
   <string name="plan_widget_subtitle_today">Сьогоднішні заняття</string>
   <string name="plan_widget_subtitle_in_progress">Заняття тривають</string>
   <string name="plan_widget_subtitle_next_prefix">Найближчі за </string>
@@ -194,7 +188,7 @@
   <string name="plan_widget_empty_state">Немає занять для відображення</string>
   <string name="about_title">Про застосунок</string>
   <string name="about_project_description_1">
-        ZUTnik створено як неофіційну, легку альтернативу для швидкого перегляду розкладу, оцінок та інформації про навчання в ZUT без необхідності переходити через важкі веб-панелі.
+        ZUTnik створено як неофіційну, легку альтернативу для швидкого перегляду розкладу, оцінок та інформації про навчання в університеті без необхідності переходити через важкі веб-панелі.
     </string>
   <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
   <string name="about_contact_website">Сайт: endozero.pl</string>

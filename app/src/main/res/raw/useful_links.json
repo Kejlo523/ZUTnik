@@ -22,21 +22,21 @@
   },
   {
     "id": "global_elearning",
-    "title": "E-learning ZUT (Moodle)",
+    "title": "E-learning uczelni (Moodle)",
     "url": "https://e-edukacja.zut.edu.pl",
     "description": "Kursy online, materiały wykładowe i przesyłanie prac.",
     "scope": "GLOBAL"
   },
   {
     "id": "global_zut_home",
-    "title": "Strona główna ZUT",
+    "title": "Strona główna uczelni",
     "url": "https://www.zut.edu.pl",
     "description": "Aktualności uczelniane i komunikaty.",
     "scope": "GLOBAL"
   },
   {
     "id": "global_konto_zut",
-    "title": "Zarządzanie kontem ZUT",
+    "title": "Zarządzanie kontem uczelni",
     "url": "https://konto.zut.edu.pl",
     "description": "Zmiana hasła, odzyskiwanie dostępu i konfiguracja Wi-Fi (Eduroam).",
     "scope": "GLOBAL"

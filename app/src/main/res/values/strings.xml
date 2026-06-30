@@ -11,21 +11,8 @@
   <string name="nav_useful_links">Przydatne strony</string>
   <string name="nav_logout_label">Wyloguj się</string>
   <string name="login_card_title">Zaloguj się do ZUTnika</string>
-  <string name="login_hint">Login</string>
-  <string name="login_password_hint">Hasło</string>
-  <string name="login_button">Zaloguj</string>
-  <string name="login_info_text">
-        Logowanie hasłem zostało wyłączone. Użyj autoryzacji przez USOS.
-    </string>
-  <string name="login_enter_credentials">Wpisz login i hasło!</string>
-  <string name="login_error_generic">Błąd: %1$s</string>
-  <string name="login_no_server_response">Brak odpowiedzi z serwera</string>
-  <string name="login_system_error">Błąd systemu ZUT (SYSTEM ERROR).</string>
-  <string name="login_invalid_credentials">Nieprawidłowy login lub hasło.</string>
   <string name="login_success">Zalogowano jako %1$s</string>
   <!-- USOS login -->
-  <string name="login_method_old_system">System ZUT</string>
-  <string name="login_method_usos">USOS</string>
   <string name="login_usos_button">Zaloguj przez USOS</string>
   <string name="login_usos_web_title">Logowanie USOS</string>
   <string name="login_usos_missing_auth_url">Brak URL autoryzacji</string>
@@ -36,13 +23,20 @@
         Logowanie odbywa się przez oficjalne okno USOS. Po kliknięciu otworzy się ekran autoryzacji.
     </string>
   <string name="login_usos_scope_hint">
-        ZUTnik jest nieoficjalną aplikacją do wygodnego podglądu danych z systemów USOS/ZUT. Korzystasz z niej dobrowolnie; ważne informacje zawsze warto potwierdzić w oficjalnym panelu.
+        ZUTnik jest nieoficjalną aplikacją do wygodnego podglądu danych z systemów USOS/uczelni. Korzystasz z niej dobrowolnie; ważne informacje zawsze warto potwierdzić w oficjalnym panelu.
     </string>
   <string name="login_usos_exchanging_token">Autoryzacja USOS…</string>
   <string name="login_usos_fetching_user">Pobieram dane użytkownika…</string>
   <string name="login_usos_error_request_token">Błąd połączenia z USOS: %1$s</string>
   <string name="login_usos_error_auth">Błąd autoryzacji USOS: %1$s</string>
   <string name="login_usos_keys_not_configured">Klucze USOS API nie są skonfigurowane.</string>
+  <string name="login_usos_open_external">Otwórz w przeglądarce</string>
+  <string name="login_usos_external_fallback_title">Problem z wbudowanym logowaniem</string>
+  <string name="login_usos_external_fallback_message">USOS nie otwiera się poprawnie w aplikacji (%1$s). Możesz dokończyć logowanie w przeglądarce systemowej.</string>
+  <string name="login_usos_external_started">Otwieram logowanie USOS w przeglądarce…</string>
+  <string name="login_usos_webview_load_error">błąd ładowania strony</string>
+  <string name="login_usos_webview_timeout">strona długo nie odpowiada</string>
+  <string name="login_usos_webview_crash">proces WebView został zamknięty</string>
   <string name="login_demo_hint">tryb demo</string>
   <string name="login_demo_content_description">Uruchom tryb demo</string>
   <string name="login_demo_username">Student (tryb demo)</string>
@@ -51,7 +45,7 @@
   <string name="home_toolbar_title">Strona główna</string>
   <string name="home_welcome_message">Witaj %1$s</string>
   <string name="home_welcome_subtitle">
-        Lekki podgląd planu, ocen, danych studenta i aktualności z ZUT w jednym miejscu.
+        Lekki podgląd planu, ocen, danych studenta i aktualności z uczelni w jednym miejscu.
     </string>
   <string name="home_welcome_fallback">Witaj Student 👋</string>
   <string name="home_shortcuts_title">Szybkie skróty</string>
@@ -68,12 +62,12 @@
   <string name="home_tile_info_desc">
         Kierunek, status studenta, przebieg studiów.
     </string>
-  <string name="home_tile_news_title">📰 Aktualności ZUT</string>
+  <string name="home_tile_news_title">📰 Aktualności uczelni</string>
   <string name="home_tile_news_desc">
-        Komunikaty z RSS ZUT z fallbackiem do aktualności USOS.
+        Komunikaty z RSS uczelni z fallbackiem do aktualności USOS.
     </string>
   <string name="home_footer_meta">
-        Dane są pobierane z systemów ZUT i cache’owane lokalnie. Jeśli coś wygląda podejrzanie, zawsze zweryfikuj też w oficjalnych panelach.
+        Dane są pobierane z systemów uczelni i cache’owane lokalnie. Jeśli coś wygląda podejrzanie, zawsze zweryfikuj też w oficjalnych panelach.
     </string>
   <string name="info_title">Dane Studenta</string>
   <string name="info_study_selector_label">Kierunek studiów</string>
@@ -248,7 +242,7 @@
   <string name="grades_new_badge_label">Ostatnio dodane</string>
   <string name="plan_type_label">Typ zajęć</string>
   <string name="grades_empty_state">Brak ocen w aktualnym okresie.</string>
-  <string name="news_title">Aktualności ZUT</string>
+  <string name="news_title">Aktualności uczelni</string>
   <string name="news_refresh_toast">Pobieram najnowsze aktualności…</string>
   <string name="news_error_rss">Błąd pobierania aktualności: %1$s</string>
   <string name="news_detail_title">Wpis</string>
@@ -257,13 +251,13 @@
         Brak treści w kanale RSS dla tego wpisu.
     </string>
   <string name="news_header_title">Kanał ogłoszeń dla studentów</string>
-  <string name="news_header_source_info">Źródło: RSS ZUT / USOS</string>
+  <string name="news_header_source_info">Źródło: RSS uczelni / USOS</string>
   <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">przed chwilą</string>
   <string name="news_empty_state">
         Brak aktualności lub problem z pobraniem kanału RSS.
     </string>
-  <string name="news_detail_tag">📰 Aktualność ZUT</string>
+  <string name="news_detail_tag">📰 Aktualność uczelni</string>
   <string name="plan_widget_subtitle_today">Dzisiejsze zajęcia</string>
   <string name="plan_widget_subtitle_in_progress">Zajęcia w trakcie</string>
   <string name="plan_widget_subtitle_next_prefix">Najbliższe za </string>
@@ -291,7 +285,7 @@
   <string name="about_rate_title">Oceń aplikację</string>
   <string name="about_rate_desc">Twoja opinia pomaga nam rozwijać ZUTnika!</string>
   <string name="about_project_description_1">
-        ZUTnik to nieoficjalny, lekki asystent studenta ZUT do szybkiego podglądu planu, ocen, danych studenta i aktualności bez przeklikiwania się przez ciężkie panele www.
+        ZUTnik to nieoficjalny, lekki asystent studenta uczelni do szybkiego podglądu planu, ocen, danych studenta i aktualności bez przeklikiwania się przez ciężkie panele www.
     </string>
   <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
   <string name="about_contact_website">Strona autora: endozero.pl</string>
@@ -588,8 +582,8 @@
   <string name="about_logo_desc">Logo ZUTnika</string>
   <string name="common_close">Zamknij</string>
   <string name="nav_tab_home">Start</string>
-  <string name="nav_tab_plan">Plan zajęć</string>
-  <string name="nav_tab_studies">Moje studia</string>
+  <string name="nav_tab_plan">Plan</string>
+  <string name="nav_tab_studies">Studia</string>
   <string name="nav_tab_grades">Oceny</string>
   <string name="nav_tab_more">Więcej</string>
 </resources>

@@ -33,10 +33,7 @@ final class ShellLayoutInflater {
         if (inflated == null) {
             return null;
         }
-        View content = inflated.findViewById(R.id.drawerContentRoot);
-        if (content == null) {
-            content = inflated.findViewById(R.id.planCoordinatorRoot);
-        }
+        View content = findLegacyContentRoot(inflated);
         if (content == null || content == inflated) {
             return inflated;
         }
@@ -59,10 +56,7 @@ final class ShellLayoutInflater {
     }
 
     private static void expandMainContent(View root) {
-        View content = root.findViewById(R.id.drawerContentRoot);
-        if (content == null) {
-            content = root.findViewById(R.id.planCoordinatorRoot);
-        }
+        View content = findLegacyContentRoot(root);
         if (content == null) {
             return;
         }
@@ -76,5 +70,28 @@ final class ShellLayoutInflater {
             lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             content.setLayoutParams(lp);
         }
+    }
+
+    private static View findLegacyContentRoot(View root) {
+        if (root == null) {
+            return null;
+        }
+
+        if (root.getId() == R.id.mainShellRoot && root instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View child = group.getChildAt(i);
+                if (child == null || child.getId() == R.id.bottomNavigation) {
+                    continue;
+                }
+                return child;
+            }
+        }
+
+        View content = root.findViewById(R.id.planCoordinatorRoot);
+        if (content == null) {
+            content = root.findViewById(R.id.drawerContentRoot);
+        }
+        return content;
     }
 }

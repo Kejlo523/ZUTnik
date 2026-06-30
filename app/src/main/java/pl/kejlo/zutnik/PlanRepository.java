@@ -247,7 +247,7 @@ public class PlanRepository {
         return dt.getHour() * 60 + dt.getMinute();
     }
 
-    // Helpers - ZUT API
+    // Helpers - plan.zut.edu.pl API
 
     private JSONArray httpGetJsonArray(String urlStr, PlanDebug debug) throws IOException, JSONException {
         PlanDebug.RequestDebug rd = new PlanDebug.RequestDebug();
@@ -312,79 +312,7 @@ public class PlanRepository {
             return sn;
         }
 
-        String authKey = session.getAuthKey();
-        if (userId == null || authKey == null) {
-            return null;
-        }
-
-        List<Study> studies = session.getStudies();
-        if (studies == null || studies.isEmpty()) {
-            GradesRepository gr = new GradesRepository();
-            studies = gr.loadStudies();
-        }
-        if (studies == null || studies.isEmpty()) {
-            return null;
-        }
-
-        Study active = session.getActiveStudy();
-        if (active == null && !studies.isEmpty()) {
-            session.setActiveStudyIndex(0);
-            active = session.getActiveStudy();
-        }
-        if (active == null) {
-            return null;
-        }
-        if (active.przynaleznoscId == null) {
-            return null;
-        }
-        String activeStudyId = active.przynaleznoscId.trim();
-        if (activeStudyId.isEmpty()) {
-            return null;
-        }
-
-        if (sCachedAlbum != null
-                && sCachedAlbumStudyId != null
-                && sCachedAlbumStudyId.equals(activeStudyId)
-                && (now - sCachedAlbumTs) < ALBUM_TTL_MS) {
-            return sCachedAlbum;
-        }
-
-        // Disk cache fallback is safe only when user has exactly one direction.
-        if (studies.size() == 1) {
-            if (sFullPlanCache == null) {
-                FullPlanCache fromDisk = readCacheFromDisk();
-                if (fromDisk != null) {
-                    sFullPlanCache = fromDisk;
-                }
-            }
-            if (sFullPlanCache != null && sFullPlanCache.album != null && !sFullPlanCache.album.isEmpty()) {
-                sCachedAlbum = sFullPlanCache.album;
-                sCachedAlbumTs = now;
-                sCachedAlbumStudyId = activeStudyId;
-                return sCachedAlbum;
-            }
-        }
-
-        HashMap<String, String> params = new HashMap<>();
-        params.put("login", userId);
-        params.put("token", authKey);
-        params.put("przynaleznoscId", activeStudyId);
-
-        JSONObject resp = ZutnikApi.callApi("getStudy", params);
-        if (resp == null) {
-            return null;
-        }
-
-        String album = resp.optString("album", "").trim();
-        if (album.isEmpty()) {
-            return null;
-        }
-
-        sCachedAlbum = album;
-        sCachedAlbumTs = now;
-        sCachedAlbumStudyId = activeStudyId;
-
-        return album;
+        return null;
     }
     // Search functionality
 

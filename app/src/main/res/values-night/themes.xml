@@ -67,8 +67,8 @@
         <item name="mzPlanNowLine">@color/plan_now_line</item>
         <item name="mzPlanColumnText">@color/mz_muted</item>
         <item name="mzPlanHeaderText">@color/mz_text</item>
-        <item name="mzPlanGridBg">@color/mz_bg</item>
-        <item name="mzPlanGridBgSelected">#1AFFFFFF</item>
+        <item name="mzPlanGridBg">@android:color/transparent</item>
+        <item name="mzPlanGridBgSelected">#12FFFFFF</item>
         <item name="mzPlanEventTextColor">#E2E8F0</item>
     </style>
 

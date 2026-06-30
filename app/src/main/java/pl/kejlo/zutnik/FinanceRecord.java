@@ -179,18 +179,6 @@ public class FinanceRecord {
         return normalized.isEmpty() ? null : normalized;
     }
 
-    public static String normalizeLegacyTitle(String value) {
-        String normalized = normalizeText(value);
-        if (normalized == null) {
-            return null;
-        }
-        String lowered = normalized.toLowerCase(Locale.getDefault());
-        if (lowered.isEmpty()) {
-            return lowered;
-        }
-        return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
-    }
-
     public JSONObject toJson() throws JSONException {
         JSONObject obj = new JSONObject();
         obj.put("recordId", recordId);

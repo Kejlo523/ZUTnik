@@ -384,7 +384,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         i.setAction(ACTION_REFRESH);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, i,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + intervalMs,
+        am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + intervalMs,
                 intervalMs, pi);
     }
 

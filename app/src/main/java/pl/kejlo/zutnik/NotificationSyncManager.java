@@ -202,8 +202,6 @@ public final class NotificationSyncManager {
 
         ZutnikSession.initializeFromPreferences(appContext);
         ZutnikSession session = ZutnikSession.getInstance();
-        String userId = session.getUserId();
-        String authKey = session.getAuthKey();
 
         if (!session.isLoggedIn() || session.isDemoLogin()) {
             return;

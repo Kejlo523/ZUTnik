@@ -18,6 +18,9 @@
         android:minWidth="80dp"
         app:itemIconTint="@color/bottom_nav_item_color"
         app:itemTextColor="@color/bottom_nav_item_color"
+        app:itemIconSize="22dp"
+        app:itemPaddingTop="8dp"
+        app:itemPaddingBottom="8dp"
         app:itemActiveIndicatorStyle="@null"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />

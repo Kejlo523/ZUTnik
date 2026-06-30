@@ -460,12 +460,14 @@ public class HomeTabFragment extends ZutnikTabFragment {
                     shellActivity().switchToTab(MainNavHelper.Screen.INFO, false);
                     return;
                 case Tile.ACTION_NEWS:
-                    intent = new Intent(requireContext(), NewsActivity.class);
-                    break;
+                    MainNavHelper.navigateFrom(shellActivity(), MainNavHelper.Screen.NEWS);
+                    return;
                 case Tile.ACTION_NEWS_LATEST:
-                    intent = new Intent(requireContext(), NewsActivity.class);
-                    intent.putExtra("EXTRA_OPEN_LATEST", true);
-                    break;
+                    Intent latestIntent = new Intent(requireContext(), NewsActivity.class);
+                    latestIntent.putExtra("EXTRA_OPEN_LATEST", true);
+                    startActivity(latestIntent);
+                    requireActivity().overridePendingTransition(0, 0);
+                    return;
                 case Tile.ACTION_PLAN_SEARCH:
                     shellActivity().switchToTab(MainNavHelper.Screen.PLAN, false);
                     return;

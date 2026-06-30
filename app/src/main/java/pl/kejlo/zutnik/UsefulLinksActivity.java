@@ -17,7 +17,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -64,7 +63,6 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             .callTimeout(Duration.ofSeconds(10))
             .build();
 
-    private Toolbar toolbar;
     private LinearLayout drawerContentRoot;
     private RecyclerView listLinks;
     private TextView tvEmpty;
@@ -92,13 +90,8 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         View content = shell.contentRoot;
 
         drawerContentRoot = content.findViewById(R.id.drawerContentRoot);
-        toolbar = content.findViewById(R.id.toolbar);
         listLinks = content.findViewById(R.id.listLinks);
         tvEmpty = content.findViewById(R.id.tvLinksEmpty);
-
-        if (toolbar != null) {
-            toolbar.setTitle(R.string.nav_useful_links);
-        }
 
         listLinks.setLayoutManager(new LinearLayoutManager(this));
         listLinks.setItemAnimator(null);

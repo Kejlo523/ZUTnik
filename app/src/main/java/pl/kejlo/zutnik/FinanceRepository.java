@@ -62,10 +62,8 @@ public class FinanceRepository {
             List<FinanceRecord> records;
             if (session.isDemoLogin()) {
                 records = DemoDataProvider.loadFinanceRecords();
-            } else if (session.isUsosLogin()) {
-                records = loadUsosPayments();
             } else {
-                records = loadLegacyPayments(forceRefresh);
+                records = loadUsosPayments();
             }
             long fetchedAt = System.currentTimeMillis();
             saveSnapshot(cacheKey, records, fetchedAt);
@@ -76,36 +74,6 @@ public class FinanceRepository {
             }
             throw e;
         }
-    }
-
-    private List<FinanceRecord> loadLegacyPayments(boolean forceRefreshStudies)
-            throws Exception {
-        LegacyPaymentRepository legacyRepo = new LegacyPaymentRepository();
-        List<LegacyPaymentRepository.LegacyPayment> legacyItems =
-                legacyRepo.loadPaymentsForActiveStudy(forceRefreshStudies);
-
-        List<FinanceRecord> records = new ArrayList<>();
-        for (LegacyPaymentRepository.LegacyPayment item : legacyItems) {
-            if (item == null) {
-                continue;
-            }
-
-            FinanceRecord record = new FinanceRecord();
-            record.recordId = null;
-            record.title = FinanceRecord.normalizeLegacyTitle(item.name);
-            record.amountText = FinanceRecord.normalizeText(item.chargeAmount);
-            record.paidText = FinanceRecord.normalizeText(item.paidAmount);
-            record.dueDateText = FinanceRecord.normalizeText(item.dueDate);
-            record.paidDateText = FinanceRecord.normalizeText(item.paidDate);
-            record.balanceText = FinanceRecord.normalizeText(item.balance);
-            record.accountText = FinanceRecord.normalizeText(item.account);
-
-            record.amountValue = FinanceRecord.parseAmount(record.amountText);
-            record.paidValue = FinanceRecord.parseAmount(record.paidText);
-            record.balanceValue = FinanceRecord.parseAmount(record.balanceText);
-            records.add(record);
-        }
-        return records;
     }
 
     private List<FinanceRecord> loadUsosPayments() throws Exception {
@@ -193,8 +161,7 @@ public class FinanceRepository {
     private String buildFinanceCacheKey() {
         ZutnikSession session = ZutnikSession.getInstance();
         StringBuilder sb = new StringBuilder(KEY_FINANCE_CACHE_PREFIX);
-        sb.append(session.isDemoLogin() ? "demo"
-                : session.isUsosLogin() ? "usos" : "legacy").append('_');
+        sb.append(session.isDemoLogin() ? "demo" : "usos").append('_');
 
         String activeId = session.getActiveStudyId();
         if (activeId != null && !activeId.trim().isEmpty()) {

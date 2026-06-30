@@ -26,6 +26,11 @@ abstract class ZutnikTabFragment extends Fragment {
         return null;
     }
 
+    @Nullable
+    protected MainNavHelper.Screen getTabScreen() {
+        return null;
+    }
+
     protected void onTabActivated() {
         if (!isTabCurrentlyVisible()) {
             return;
@@ -34,6 +39,10 @@ abstract class ZutnikTabFragment extends Fragment {
         if (toolbar != null) {
             hostActivity().setSupportActionBar(toolbar);
             MainNavHelper.styleToolbarPublic(hostActivity(), toolbar);
+            MainNavHelper.Screen screen = getTabScreen();
+            if (screen != null) {
+                MainNavHelper.applyToolbarTitle(hostActivity(), toolbar, screen);
+            }
         }
         invalidateActivityMenu();
     }

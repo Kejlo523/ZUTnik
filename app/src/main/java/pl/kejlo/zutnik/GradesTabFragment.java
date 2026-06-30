@@ -91,6 +91,12 @@ public class GradesTabFragment extends ZutnikTabFragment {
 
     @Nullable
     @Override
+    protected MainNavHelper.Screen getTabScreen() {
+        return MainNavHelper.Screen.GRADES;
+    }
+
+    @Nullable
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         return ShellLayoutInflater.inflateTabContent(inflater, R.layout.activity_grades, container);
@@ -101,9 +107,6 @@ public class GradesTabFragment extends ZutnikTabFragment {
         super.onViewCreated(view, savedInstanceState);
 
         toolbar = view.findViewById(R.id.toolbar);
-        hostActivity().setSupportActionBar(toolbar);
-        MainNavHelper.styleToolbarPublic(hostActivity(), toolbar);
-        toolbar.setTitle(R.string.grades_title);
 
         spinnerStudies = view.findViewById(R.id.spinnerStudies);
         spinnerSemesters = view.findViewById(R.id.spinnerSemesters);
@@ -126,6 +129,8 @@ public class GradesTabFragment extends ZutnikTabFragment {
         flatAdapter = new GradesAdapter(currentGradesRaw);
         groupedAdapter = new GroupedGradesAdapter();
         listGrades.setAdapter(groupingEnabled ? groupedAdapter : flatAdapter);
+
+        onTabActivated();
 
         setupSemestersSpinner();
 
@@ -180,6 +185,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
             }
         }, getViewLifecycleOwner());
 
+        showCachedCurrentGradesIfAvailable();
         runInitialLoad();
         loadPlanFilterItemsAsync(false);
     }
@@ -290,7 +296,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
                                 getString(R.string.grades_error_initial_load, message),
                                 Toast.LENGTH_LONG).show();
                     }
-                    showEmptyState(true);
+                    showEmptyState(currentGradesRaw.isEmpty());
                     return;
                 }
 
@@ -669,6 +675,9 @@ public class GradesTabFragment extends ZutnikTabFragment {
     }
 
     private void applyGradesView() {
+        if (listGrades == null || flatAdapter == null || groupedAdapter == null) {
+            return;
+        }
         if (groupingEnabled) {
             List<GroupedGradesAdapter.GradeGroup> groups = buildGradeGroups(currentGradesRaw);
             groupedAdapter.setGroups(groups);
@@ -737,6 +746,32 @@ public class GradesTabFragment extends ZutnikTabFragment {
         return scope;
     }
 
+    private void showCachedCurrentGradesIfAvailable() {
+        Study activeStudy = getActiveStudySnapshot();
+        String expectedStudyId = activeStudy != null ? normalizeStudyId(activeStudy.przynaleznoscId) : null;
+        if (expectedStudyId == null) {
+            return;
+        }
+        showCachedGradesIfAvailable(expectedStudyId, activeGradesCacheScope(), true);
+    }
+
+    private boolean showCachedGradesIfAvailable(String studyId, Semester scope, boolean ignoreTtl) {
+        List<Grade> cached = loadGradesFromCache(studyId, scope, ignoreTtl);
+        if (cached == null) {
+            return false;
+        }
+
+        currentGradesRaw.clear();
+        currentGradesRaw.addAll(cached);
+        applyGradesView();
+        updateSummaryCards();
+        updateGradesDataFreshness(false);
+        if (planFilterItems.isEmpty()) {
+            loadPlanFilterItemsAsync(false);
+        }
+        return true;
+    }
+
     private void reloadCurrentGrades(boolean forceNetwork) {
         int expectedStudyIndex = ZutnikSession.getInstance().getActiveStudyIndex();
         Study activeStudy = getActiveStudySnapshot();
@@ -748,16 +783,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
 
         Semester cacheScope = activeGradesCacheScope();
         if (!forceNetwork) {
-            List<Grade> cached = loadGradesFromCache(expectedStudyId, cacheScope, false);
-            if (cached != null) {
-                currentGradesRaw.clear();
-                currentGradesRaw.addAll(cached);
-                applyGradesView();
-                updateSummaryCards();
-                updateGradesDataFreshness(false);
-                if (planFilterItems.isEmpty()) {
-                    loadPlanFilterItemsAsync(false);
-                }
+            if (showCachedGradesIfAvailable(expectedStudyId, cacheScope, false)) {
                 return;
             }
         }
@@ -765,45 +791,36 @@ public class GradesTabFragment extends ZutnikTabFragment {
         if (currentGradesFuture != null) {
             currentGradesFuture.cancel(true);
         }
-        executeLoadCurrentGradesTask(expectedStudyIndex, expectedStudyId, cacheScope, forceNetwork);
+        boolean showingCached = showCachedGradesIfAvailable(expectedStudyId, cacheScope, true);
+        executeLoadCurrentGradesTask(expectedStudyIndex, expectedStudyId, cacheScope, forceNetwork, showingCached);
     }
 
     private void executeLoadCurrentGradesTask(
             int expectedStudyIndex,
             String expectedStudyId,
             Semester cacheScope,
-            boolean forceNetwork) {
+            boolean forceNetwork,
+            boolean keepExistingWhileLoading) {
         showLoading(true);
-        currentGradesRaw.clear();
-        applyGradesView();
+        if (!keepExistingWhileLoading) {
+            currentGradesRaw.clear();
+            applyGradesView();
+        }
 
         currentGradesFuture = executor.submit(() -> {
             List<Grade> grades = null;
             Exception error = null;
             List<Grade> previousSnapshot = loadGradesFromCache(expectedStudyId, cacheScope, true);
-            List<PlanRepository.SubjectFilterItem> loadedPlanFilterItems = Collections.emptyList();
             try {
                 grades = new GradesRepository().loadCurrentGrades();
                 markNewGrades(previousSnapshot, grades);
             } catch (Exception e) {
                 error = e;
             }
-            try {
-                loadedPlanFilterItems = PlanSubjectFilterHelper.loadAllFilterItems(
-                        requireContext().getApplicationContext(),
-                        forceNetwork);
-            } catch (Exception ignored) {
-                loadedPlanFilterItems = Collections.emptyList();
-            }
 
             final List<Grade> finalGrades = grades;
             final Exception finalError = error;
-            final List<PlanRepository.SubjectFilterItem> finalPlanFilterItems = loadedPlanFilterItems;
             handler.post(() -> {
-                planFilterItems.clear();
-                if (finalPlanFilterItems != null && !finalPlanFilterItems.isEmpty()) {
-                    planFilterItems.addAll(finalPlanFilterItems);
-                }
                 showLoading(false);
                 if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
                     return;
@@ -850,6 +867,9 @@ public class GradesTabFragment extends ZutnikTabFragment {
                 applyGradesView();
                 updateSummaryCards();
                 updateGradesDataFreshness(true);
+                if (planFilterItems.isEmpty()) {
+                    loadPlanFilterItemsAsync(forceNetwork);
+                }
             });
         });
     }
@@ -868,16 +888,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
         // 1) Normal mode (no force) - try cache first. If it is fresh -> do NOT hit the
         // network.
         if (!forceNetwork) {
-            List<Grade> cached = loadGradesFromCache(expectedStudyId, semester, false);
-            if (cached != null) {
-                currentGradesRaw.clear();
-                currentGradesRaw.addAll(cached);
-                applyGradesView();
-                updateSummaryCards();
-                updateGradesDataFreshness(false);
-                if (planFilterItems.isEmpty()) {
-                    loadPlanFilterItemsAsync(false);
-                }
+            if (showCachedGradesIfAvailable(expectedStudyId, semester, false)) {
                 // Fresh cache -> skip network request
                 return;
             }
@@ -888,46 +899,36 @@ public class GradesTabFragment extends ZutnikTabFragment {
             currentGradesFuture.cancel(true);
         }
 
-        executeLoadGradesTask(expectedStudyIndex, expectedStudyId, semester, forceNetwork);
+        boolean showingCached = showCachedGradesIfAvailable(expectedStudyId, semester, true);
+        executeLoadGradesTask(expectedStudyIndex, expectedStudyId, semester, forceNetwork, showingCached);
     }
 
     private void executeLoadGradesTask(
             int expectedStudyIndex,
             String expectedStudyId,
             Semester semester,
-            boolean forceNetwork) {
+        boolean forceNetwork,
+        boolean keepExistingWhileLoading) {
         showLoading(true);
-        // Clear stale data immediately so the previous semester's grades are not
-        // still visible while the new semester's grades are loading.
-        currentGradesRaw.clear();
-        applyGradesView();
+        // Keep cached grades on screen while the network refresh runs.
+        if (!keepExistingWhileLoading) {
+            currentGradesRaw.clear();
+            applyGradesView();
+        }
         currentGradesFuture = executor.submit(() -> {
             List<Grade> grades = null;
             Exception error = null;
-            List<PlanRepository.SubjectFilterItem> loadedPlanFilterItems = Collections.emptyList();
             try {
                 GradesRepository repo = new GradesRepository();
                 grades = repo.loadGradesForSemester(semester);
             } catch (Exception e) {
                 error = e;
             }
-            try {
-                loadedPlanFilterItems = PlanSubjectFilterHelper.loadAllFilterItems(
-                        requireContext().getApplicationContext(),
-                        forceNetwork);
-            } catch (Exception ignored) {
-                loadedPlanFilterItems = Collections.emptyList();
-            }
 
             final List<Grade> finalGrades = grades;
             final Exception finalError = error;
-            final List<PlanRepository.SubjectFilterItem> finalPlanFilterItems = loadedPlanFilterItems;
 
             handler.post(() -> {
-                planFilterItems.clear();
-                if (finalPlanFilterItems != null && !finalPlanFilterItems.isEmpty()) {
-                    planFilterItems.addAll(finalPlanFilterItems);
-                }
                 showLoading(false);
                 if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
                     return;
@@ -982,6 +983,9 @@ public class GradesTabFragment extends ZutnikTabFragment {
                 applyGradesView();
                 updateSummaryCards();
                 updateGradesDataFreshness(true);
+                if (planFilterItems.isEmpty()) {
+                    loadPlanFilterItemsAsync(forceNetwork);
+                }
             });
         });
     }
@@ -1477,19 +1481,6 @@ public class GradesTabFragment extends ZutnikTabFragment {
         return userId + "_" + safeStudyId + "_" + semId;
     }
 
-    private String buildLegacyCacheKey(String studyId, Semester semester) {
-        ZutnikSession s = ZutnikSession.getInstance();
-        String userId = s.getUserId();
-        if (userId == null) {
-            userId = "unknown";
-        }
-        String semId = semester != null ? semester.listaSemestrowId : null;
-        if (semId == null) {
-            semId = "no_sem";
-        }
-        return userId + "_" + semId;
-    }
-
     private void saveGradesToCache(String studyId, Semester semester, List<Grade> grades) {
         if (semester == null || grades == null) {
             return;
@@ -1518,7 +1509,6 @@ public class GradesTabFragment extends ZutnikTabFragment {
             getGradesCachePrefs()
                     .edit()
                     .putString(key, wrapper.toString())
-                    .remove(buildLegacyCacheKey(studyId, semester))
                     .apply();
         } catch (JSONException e) {
             // Ignore - cache is optional
@@ -1537,16 +1527,6 @@ public class GradesTabFragment extends ZutnikTabFragment {
         String key = buildCacheKey(studyId, semester);
         SharedPreferences prefs = getGradesCachePrefs();
         String json = prefs.getString(key, null);
-        if (json == null) {
-            String legacyKey = buildLegacyCacheKey(studyId, semester);
-            json = prefs.getString(legacyKey, null);
-            if (json != null) {
-                prefs.edit()
-                        .putString(key, json)
-                        .remove(legacyKey)
-                        .apply();
-            }
-        }
         if (json == null) {
             return null;
         }

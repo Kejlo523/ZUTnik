@@ -32,24 +32,30 @@ public class MainNavHelper {
     private static com.google.android.material.bottomsheet.BottomSheetDialog activeMoreSheet;
 
     public enum Screen {
-        HOME("home"),
-        INFO("info"),
-        FINANCE("finance"),
-        PLAN("plan"),
-        GRADES("grades"),
-        ATTENDANCE("attendance"),
-        NEWS("news"),
-        USEFUL("useful"),
-        ABOUT("about");
+        HOME("home", R.string.home_toolbar_title),
+        INFO("info", R.string.info_title),
+        FINANCE("finance", R.string.finance_title),
+        PLAN("plan", R.string.plan_title),
+        GRADES("grades", R.string.grades_title),
+        ATTENDANCE("attendance", R.string.attendance_title),
+        NEWS("news", R.string.news_title),
+        USEFUL("useful", R.string.nav_useful_links),
+        ABOUT("about", R.string.about_title);
 
         private final String id;
+        private final int titleResId;
 
-        Screen(String id) {
+        Screen(String id, int titleResId) {
             this.id = id;
+            this.titleResId = titleResId;
         }
 
         public String getId() {
             return id;
+        }
+
+        public int getTitleResId() {
+            return titleResId;
         }
 
         public static Screen fromId(String id) {
@@ -179,6 +185,7 @@ public class MainNavHelper {
             activity.setSupportActionBar(toolbar);
         }
         styleToolbar(activity, toolbar);
+        applyToolbarTitle(activity, toolbar, Screen.fromId(currentScreen));
         applyWindowInsets(contentRoot, shellNav);
 
         suppressNavCallback = true;
@@ -233,7 +240,18 @@ public class MainNavHelper {
         if (shellNav == null) {
             return;
         }
-        shellNav.setVisibility(visible ? View.VISIBLE : View.GONE);
+        int nextVisibility = visible ? View.VISIBLE : View.GONE;
+        if (!visible) {
+            dismissMoreSheet();
+        }
+        if (shellNav.getVisibility() == nextVisibility) {
+            return;
+        }
+        shellNav.setVisibility(nextVisibility);
+        ViewCompat.requestApplyInsets(shellNav);
+        if (shellNav.getParent() instanceof View) {
+            ViewCompat.requestApplyInsets((View) shellNav.getParent());
+        }
     }
 
     public static int bottomNavigationInset(NavigationBarView shellNav) {
@@ -244,10 +262,6 @@ public class MainNavHelper {
             return 0;
         }
         return shellNav.getHeight();
-    }
-
-    private static void styleToolbar(AppCompatActivity activity, Toolbar toolbar) {
-        styleToolbarPublic(activity, toolbar);
     }
 
     public static void styleToolbarPublic(AppCompatActivity activity, Toolbar toolbar) {
@@ -268,6 +282,35 @@ public class MainNavHelper {
         }
         ensureToolbarFitsSubtitle(activity, toolbar);
         applyStatusBarInsetToToolbar(toolbar);
+    }
+
+    private static void styleToolbar(AppCompatActivity activity, Toolbar toolbar) {
+        styleToolbarPublic(activity, toolbar);
+    }
+
+    public static void applyToolbarTitle(
+            AppCompatActivity activity,
+            Toolbar toolbar,
+            Screen screen) {
+        if (screen == null || screen.getTitleResId() == 0) {
+            return;
+        }
+        if (toolbar != null) {
+            toolbar.setTitle(screen.getTitleResId());
+        }
+        if (activity.getSupportActionBar() != null) {
+            activity.getSupportActionBar().setTitle(screen.getTitleResId());
+        }
+    }
+
+    public static void navigateFrom(AppCompatActivity activity, Screen target) {
+        if (activity == null || target == null) {
+            return;
+        }
+        String currentScreen = activity instanceof MainShellActivity
+                ? ((MainShellActivity) activity).getCurrentTabId()
+                : null;
+        navigateTo(activity, target, currentScreen);
     }
 
     private static void ensureToolbarFitsSubtitle(AppCompatActivity activity, Toolbar toolbar) {
@@ -582,6 +625,8 @@ public class MainNavHelper {
             return;
         }
 
+        bottomSheet.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+
         BottomSheetBehavior<android.widget.FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
         behavior.setSkipCollapsed(true);
         behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -611,7 +656,6 @@ public class MainNavHelper {
     private static void doLogout(AppCompatActivity activity) {
         Context appContext = activity.getApplicationContext();
         ZutnikSession.clearSessionData(appContext);
-        SessionExpiryManager.clearSessionExpiredNotice(appContext);
         NotificationSyncManager.cancelWorker(appContext);
 
         Toast.makeText(activity, R.string.logout_success_message, Toast.LENGTH_SHORT).show();

@@ -17,7 +17,6 @@ import java.util.List;
  * - Can load/save itself to SharedPreferences
  * - After process kill we still have:
  * - userId
- * - authKey
  * - username
  * - imageUrl
  * - activeStudyIndex
@@ -107,7 +106,6 @@ public final class ZutnikSession {
         SharedPreferences prefs = getPreferences(context);
         prefs.edit()
                 .remove(KEY_USER_ID)
-                .remove(KEY_AUTH_KEY)
                 .remove(KEY_USERNAME)
                 .remove(KEY_IMAGE_URL)
                 .remove(KEY_ACTIVE_STUDY_INDEX)
@@ -131,8 +129,6 @@ public final class ZutnikSession {
 
     // region Login-type constants
 
-    /** Legacy ZUT proxy authentication. */
-    public static final String LOGIN_TYPE_ZUT = "zutnik";
     /** USOS API OAuth 1.0a authentication. */
     public static final String LOGIN_TYPE_USOS = "usos";
     /** Local preview mode without external API credentials. */
@@ -145,7 +141,6 @@ public final class ZutnikSession {
     private static final String PREFS_NAME = "zutnik_prefs";
 
     private static final String KEY_USER_ID               = "user_id";
-    private static final String KEY_AUTH_KEY              = "auth_key";
     private static final String KEY_USERNAME              = "username";
     private static final String KEY_IMAGE_URL             = "image_url";
     private static final String KEY_ACTIVE_STUDY_INDEX    = "active_study_idx";
@@ -174,11 +169,10 @@ public final class ZutnikSession {
     // User data
     private String userId;
     private String username;
-    private String authKey;
     private String imageUrl;
 
     // USOS OAuth tokens (populated only when loginType == LOGIN_TYPE_USOS)
-    private String loginType = LOGIN_TYPE_ZUT;
+    private String loginType;
     private String usosAccessToken;
     private String usosAccessTokenSecret;
     private String studentNumber;
@@ -209,12 +203,11 @@ public final class ZutnikSession {
         SharedPreferences prefs = getPreferences(context);
 
         this.userId               = prefs.getString(KEY_USER_ID, null);
-        this.authKey              = prefs.getString(KEY_AUTH_KEY, null);
         this.username             = prefs.getString(KEY_USERNAME, null);
         this.imageUrl             = prefs.getString(KEY_IMAGE_URL, null);
         this.activeStudyIndex     = prefs.getInt(KEY_ACTIVE_STUDY_INDEX, 0);
         this.activeStudyId        = prefs.getString(KEY_ACTIVE_STUDY_ID, null);
-        this.loginType            = prefs.getString(KEY_LOGIN_TYPE, LOGIN_TYPE_ZUT);
+        this.loginType            = prefs.getString(KEY_LOGIN_TYPE, null);
         this.usosAccessToken      = prefs.getString(KEY_USOS_ACCESS_TOKEN, null);
         this.usosAccessTokenSecret = prefs.getString(KEY_USOS_ACCESS_TOKEN_SEC, null);
         this.studentNumber        = prefs.getString(KEY_USOS_STUDENT_NUMBER, null);
@@ -274,10 +267,13 @@ public final class ZutnikSession {
 
         SharedPreferences.Editor e = prefs.edit();
         e.putString(KEY_USER_ID, userId);
-        e.putString(KEY_AUTH_KEY, authKey);
         e.putString(KEY_USERNAME, username);
         e.putString(KEY_IMAGE_URL, imageUrl);
-        e.putString(KEY_LOGIN_TYPE, loginType != null ? loginType : LOGIN_TYPE_ZUT);
+        if (loginType != null) {
+            e.putString(KEY_LOGIN_TYPE, loginType);
+        } else {
+            e.remove(KEY_LOGIN_TYPE);
+        }
         if (usosAccessToken != null) {
             e.putString(KEY_USOS_ACCESS_TOKEN, usosAccessToken);
         } else {
@@ -321,26 +317,7 @@ public final class ZutnikSession {
     }
 
     /**
-     * Sets the ZUTnik (legacy proxy) user session.
-     * Clears any previously stored USOS tokens.
-     */
-    public void updateUser(String userId, String username, String authKey, String imageUrl) {
-        this.userId = userId;
-        this.username = username;
-        this.authKey = authKey;
-        this.imageUrl = imageUrl;
-        this.loginType = LOGIN_TYPE_ZUT;
-        this.usosAccessToken = null;
-        this.usosAccessTokenSecret = null;
-        this.studies = null;
-        this.activeStudyIndex = 0;
-        this.activeStudyId = null;
-        this.loaded = true;
-    }
-
-    /**
      * Sets the USOS OAuth user session.
-     * Clears the legacy ZUTnik authKey.
      */
     public void updateUsosUser(
             String userId, String username,
@@ -348,7 +325,6 @@ public final class ZutnikSession {
             String imageUrl, String studentNumber) {
         this.userId = userId;
         this.username = username;
-        this.authKey = null;
         this.imageUrl = imageUrl;
         this.loginType = LOGIN_TYPE_USOS;
         this.usosAccessToken = accessToken;
@@ -361,13 +337,11 @@ public final class ZutnikSession {
     }
 
     /**
-     * Sets a local demo session. Demo mode intentionally does not carry USOS
-     * tokens or the removed legacy API token.
+     * Sets a local demo session.
      */
     public void updateDemoUser(String userId, String username, String imageUrl) {
         this.userId = userId;
         this.username = username;
-        this.authKey = null;
         this.imageUrl = imageUrl;
         this.loginType = LOGIN_TYPE_DEMO;
         this.usosAccessToken = null;
@@ -377,6 +351,14 @@ public final class ZutnikSession {
         this.activeStudyIndex = 0;
         this.activeStudyId = null;
         this.loaded = true;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     // endregion
@@ -399,24 +381,8 @@ public final class ZutnikSession {
         this.username = username;
     }
 
-    public String getAuthKey() {
-        return authKey;
-    }
-
-    public void setAuthKey(String authKey) {
-        this.authKey = authKey;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
     public String getLoginType() {
-        return loginType != null ? loginType : LOGIN_TYPE_ZUT;
+        return loginType;
     }
 
     public String getUsosAccessToken() {

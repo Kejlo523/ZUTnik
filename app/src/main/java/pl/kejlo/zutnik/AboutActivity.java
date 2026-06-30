@@ -26,7 +26,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -48,7 +47,6 @@ public class AboutActivity extends PhoneAwareActivity {
         super.attachBaseContext(LocaleManager.wrap(newBase));
     }
 
-    private Toolbar toolbar;
     private android.widget.LinearLayout drawerContentRoot;
 
     private TextView textPlayStoreStats;
@@ -84,13 +82,10 @@ public class AboutActivity extends PhoneAwareActivity {
                 MainNavHelper.Screen.ABOUT);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        toolbar = findViewById(R.id.toolbar);
         textPlayStoreStats = findViewById(R.id.textPlayStoreStats);
         aboutVersion = findViewById(R.id.aboutVersion);
         aboutLogo = findViewById(R.id.aboutLogo);
         easterTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
-
-        toolbar.setTitle(R.string.about_title);
 
         setupUI();
         loadPlayStoreStats();

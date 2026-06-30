@@ -14,7 +14,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -45,8 +49,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.text.Editable;
+import android.text.Layout;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextWatcher;
 import android.text.TextUtils;
@@ -176,7 +182,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     private android.animation.ObjectAnimator mRefreshAnimator;
 
-    private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newCachedThreadPool();
+    private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(3);
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     private volatile List<PlanRepository.SessionPeriod> sessionDates = new ArrayList<>();
@@ -295,6 +301,9 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     private final Handler nowLineHandler = new Handler(Looper.getMainLooper());
     private final Runnable nowLineRunnable = () -> {
+        if (!isAdded() || getView() == null || isMonthMode()) {
+            return;
+        }
         updateNowLineInVisiblePage();
         scheduleNextNowLineUpdate();
     };
@@ -433,15 +442,13 @@ public class PlanTabFragment extends ZutnikTabFragment {
         if (insetHost != null && fabAddEvent != null) {
             ViewCompat.setOnApplyWindowInsetsListener(insetHost, (v, windowInsets) -> {
                 Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-                NavigationBarView shellNav = shellActivity().getShellNavigation();
-                int bottomNavExtra = MainNavHelper.bottomNavigationInset(shellNav);
                 if (fabAddEvent.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
                     ViewGroup.MarginLayoutParams lp =
                             (ViewGroup.MarginLayoutParams) fabAddEvent.getLayoutParams();
                     lp.leftMargin = fabMarginLeft + insets.left;
                     lp.topMargin = fabMarginTop;
                     lp.rightMargin = fabMarginRight + insets.right;
-                    lp.bottomMargin = fabMarginBottom + insets.bottom + bottomNavExtra;
+                    lp.bottomMargin = fabMarginBottom + insets.bottom;
                     fabAddEvent.setLayoutParams(lp);
                 }
                 return windowInsets;
@@ -728,6 +735,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
             mRefreshAnimator.cancel();
             mRefreshAnimator = null;
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdownNow();
     }
 
     @Override
@@ -1726,7 +1739,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                         0,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         1f);
-                dayLp.setMargins(dpToPx(2), 0, dpToPx(2), 0);
+                dayLp.setMargins(dpToPx(1), 0, dpToPx(1), 0);
                 dayColumn.setLayoutParams(dayLp);
 
                 FrameLayoutWithChildren dayBody = new FrameLayoutWithChildren(context);
@@ -1734,9 +1747,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         columnHeight);
                 dayBody.setLayoutParams(bodyLp);
-                dayBody.setBackgroundColor(ThemeManager.resolveColor(
-                        context,
-                        highlight ? R.attr.mzPlanGridBgSelected : R.attr.mzPlanGridBg));
+                dayBody.setBackground(buildPlanDayBackground(context, highlight));
 
                 addHourLines(dayBody);
                 attachEmptySlotAdd(dayBody, col.date);
@@ -1956,9 +1967,10 @@ public class PlanTabFragment extends ZutnikTabFragment {
             }
 
             final PlanRepository.PlanResult finalRes = res;
-            requireActivity().runOnUiThread(() -> {
+            handler.post(() -> {
                 activePageLoads.remove(request);
-                if (!isAdded() || getActivity() == null || requireActivity().isFinishing())
+                androidx.fragment.app.FragmentActivity activity = getActivity();
+                if (!isAdded() || activity == null || activity.isFinishing())
                     return;
                 if (request.renderContextVersion != planRenderContextVersion) {
                     return;
@@ -2038,8 +2050,9 @@ public class PlanTabFragment extends ZutnikTabFragment {
             final List<PlanRepository.SubjectFilterItem> finalRes = result;
             final Exception finalErr = error;
             final boolean finalPendingForcedRefresh = pendingForcedRefresh;
-            requireActivity().runOnUiThread(() -> {
-                if (!isAdded() || getActivity() == null || requireActivity().isFinishing())
+            handler.post(() -> {
+                androidx.fragment.app.FragmentActivity activity = getActivity();
+                if (!isAdded() || activity == null || activity.isFinishing())
                     return;
 
                 if (progress != null) {
@@ -2376,6 +2389,16 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
     }
 
+    private GradientDrawable buildPlanDayBackground(Context context, boolean highlight) {
+        GradientDrawable bg = new GradientDrawable();
+        int fill = ThemeManager.resolveColor(
+                context,
+                highlight ? R.attr.mzPlanGridBgSelected : R.attr.mzPlanGridBg);
+        bg.setColor(fill);
+        bg.setCornerRadius(dpToPx(12));
+        return bg;
+    }
+
     private void updateNowLineInVisiblePage() {
         if (viewPager == null)
             return;
@@ -2415,24 +2438,37 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
 
         if (line == null) {
-            line = new View(requireContext());
+            line = new NowLineView(requireContext());
             line.setTag("NOW_LINE");
-            line.setBackgroundColor(ThemeManager.resolveColor(requireContext(), R.attr.mzPlanNowLine));
+            parent.addView(line);
+        } else if (!(line instanceof NowLineView)) {
+            parent.removeView(line);
+            line = new NowLineView(requireContext());
+            line.setTag("NOW_LINE");
             parent.addView(line);
         }
 
         line.setVisibility(View.VISIBLE);
         float topPx = ((minNow - minStart) / 60f) * dpToPx(HOUR_HEIGHT_DP);
+        int lineHeight = dpToPx(18);
+        int maxTop = parent.getHeight() > 0 ? Math.max(0, parent.getHeight() - lineHeight) : (int) topPx;
+        int topMargin = Math.max(0, Math.min((int) topPx - lineHeight / 2, maxTop));
 
         FrameLayoutWithChildren.LayoutParams lp = new FrameLayoutWithChildren.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dpToPx(2));
-        lp.topMargin = (int) topPx;
+                lineHeight);
+        lp.topMargin = topMargin;
         line.setLayoutParams(lp);
+        ((NowLineView) line).bind(
+                ThemeManager.resolveColor(requireContext(), R.attr.mzPlanNowLine),
+                now.format(DateTimeFormatter.ofPattern("HH:mm")));
         line.bringToFront();
     }
 
     private void scheduleNextNowLineUpdate() {
+        if (!isAdded() || getView() == null || isMonthMode()) {
+            return;
+        }
         LocalTime now = LocalTime.now();
         int msToNextMinute = (60 - now.getSecond()) * 1000 - (now.getNano() / 1_000_000);
         if (msToNextMinute < 200)
@@ -2479,8 +2515,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
             float offsetMinutes = startClamped - calStart;
             float topPx = (offsetMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP);
             float heightPx = (duration / 60f) * dpToPx(HOUR_HEIGHT_DP);
-            if (heightPx < dpToPx(22))
-                heightPx = dpToPx(22);
+            if (heightPx < dpToPx(28))
+                heightPx = dpToPx(28);
 
             float safeLeftPct = Math.max(0f, Math.min(100f, re.ev.leftPct));
             float safeWidthPct = re.ev.widthPct > 0f ? re.ev.widthPct : 100f;
@@ -3459,9 +3495,13 @@ public class PlanTabFragment extends ZutnikTabFragment {
         PlanEventBlockView eventView = new PlanEventBlockView(requireContext());
         eventView.setTag(ev);
         int color = ThemeManager.resolveEventColor(requireContext(), ev.typeClass);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(color);
-        bg.setCornerRadius(dpToPx(6));
+        int surface = ThemeManager.resolveColor(requireContext(), R.attr.mzCard);
+        int bgStart = ColorUtils.blendARGB(color, surface, 0.08f);
+        int bgEnd = ColorUtils.blendARGB(color, surface, 0.20f);
+        GradientDrawable bg = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[] { bgStart, bgEnd });
+        bg.setCornerRadius(dpToPx(11));
 
         int danger = ThemeManager.resolveColor(requireContext(), R.attr.mzDanger);
         int dangerSoft = ThemeManager.resolveColor(requireContext(), R.attr.mzDangerSoft);
@@ -3469,19 +3509,17 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
         // Handle custom event overlay (exam/test on top of official event)
         if (ev.hasCustomOverlay && !TextUtils.isEmpty(ev.customOverlayLabel)) {
-            bg.setStroke(dpToPx(3), danger);
             textColor = danger;
         }
 
         // Handle standalone custom events (not matching any official event)
         if (ev.isCustomEvent) {
             bg.setColor(dangerSoft);
-            bg.setStroke(dpToPx(2), danger);
             textColor = danger;
         }
 
         List<String> displayLines = buildEventDisplayLines(ev);
-        eventView.bind(displayLines, textColor, bg, buildEventContentDescription(displayLines));
+        eventView.bind(ev, textColor, bg, buildEventContentDescription(displayLines));
 
         FrameLayoutWithChildren.LayoutParams lp = new FrameLayoutWithChildren.LayoutParams(
                 FrameLayoutWithChildren.LayoutParams.MATCH_PARENT,
@@ -3546,34 +3584,116 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
     }
 
+    private class NowLineView extends View {
+        private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint labelPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF rect = new RectF();
+        private int lineColor = 0xFFF43F5E;
+        private String timeText = "";
+
+        NowLineView(Context context) {
+            super(context);
+            setWillNotDraw(false);
+            labelPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            labelPaint.setTextSize(spToPx(9f));
+        }
+
+        void bind(int color, String time) {
+            lineColor = color != 0 ? color : 0xFFF43F5E;
+            timeText = safe(time);
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            int width = getWidth();
+            int height = getHeight();
+            if (width <= 0 || height <= 0) {
+                return;
+            }
+
+            float centerY = height / 2f;
+            int faint = ColorUtils.setAlphaComponent(lineColor, 32);
+            int strong = ColorUtils.setAlphaComponent(lineColor, 230);
+            int tail = ColorUtils.setAlphaComponent(lineColor, 92);
+            linePaint.setShader(new LinearGradient(
+                    0f,
+                    centerY,
+                    width,
+                    centerY,
+                    new int[] { faint, strong, tail },
+                    new float[] { 0f, 0.22f, 1f },
+                    Shader.TileMode.CLAMP));
+            rect.set(dpToPx(8), centerY - dpToPx(1), width - dpToPx(6), centerY + dpToPx(1));
+            canvas.drawRoundRect(rect, dpToPx(999), dpToPx(999), linePaint);
+            linePaint.setShader(null);
+
+            linePaint.setColor(strong);
+            canvas.drawCircle(dpToPx(7), centerY, dpToPx(4), linePaint);
+            linePaint.setColor(ColorUtils.setAlphaComponent(Color.WHITE, 220));
+            canvas.drawCircle(dpToPx(7), centerY, dpToPx(1.7f), linePaint);
+
+            if (width < dpToPx(76) || timeText.isEmpty()) {
+                return;
+            }
+
+            float labelPadH = dpToPx(5);
+            float labelHeight = dpToPx(15);
+            float labelWidth = labelPaint.measureText(timeText) + labelPadH * 2f;
+            float labelLeft = width - labelWidth - dpToPx(4);
+            float labelTop = centerY - labelHeight / 2f;
+            rect.set(labelLeft, labelTop, width - dpToPx(4), labelTop + labelHeight);
+            linePaint.setColor(lineColor);
+            canvas.drawRoundRect(rect, labelHeight / 2f, labelHeight / 2f, linePaint);
+
+            Paint.FontMetrics fm = labelPaint.getFontMetrics();
+            labelPaint.setColor(Color.WHITE);
+            float baseline = labelTop + (labelHeight - fm.ascent - fm.descent) / 2f;
+            canvas.drawText(timeText, labelLeft + labelPadH, baseline, labelPaint);
+        }
+    }
+
     private class PlanEventBlockView extends View {
-        private final TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        private final List<String> sourceLines = new ArrayList<>(4);
-        private final List<String> renderedLines = new ArrayList<>(4);
-        private final int horizontalPaddingPx = dpToPx(4);
-        private final int verticalPaddingPx = dpToPx(3);
-        private final int lineHeightPx;
-        private boolean linesDirty = true;
+        private final TextPaint timePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint titlePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint metaPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint badgePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint overlayPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint decorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF rect = new RectF();
+
+        private PlanRepository.PlanEventUi event;
+        private String timeText = "";
+        private String titleText = "";
+        private String footerText = "";
+        private String badgeText = "";
+        private String overlayText = "";
+        private StaticLayout titleLayout;
+        private int textColor = 0xFF1E293B;
+        private int secondaryTextColor = 0xAA1E293B;
+        private boolean textDirty = true;
 
         PlanEventBlockView(Context context) {
             super(context);
-            textPaint.setTextSize(TypedValue.applyDimension(
-                    TypedValue.COMPLEX_UNIT_SP,
-                    11f,
-                    getResources().getDisplayMetrics()));
-            Paint.FontMetricsInt metrics = textPaint.getFontMetricsInt();
-            lineHeightPx = Math.max(dpToPx(12), metrics.descent - metrics.ascent + dpToPx(1));
+            setWillNotDraw(false);
+            timePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            badgePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            overlayPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         }
 
-        void bind(List<String> lines, int textColor, GradientDrawable background, CharSequence contentDescription) {
-            sourceLines.clear();
-            if (lines != null) {
-                sourceLines.addAll(lines);
-            }
-            textPaint.setColor(textColor);
+        void bind(
+                PlanRepository.PlanEventUi event,
+                int textColor,
+                GradientDrawable background,
+                CharSequence contentDescription) {
+            this.event = event;
+            this.textColor = textColor != 0 ? textColor : this.textColor;
+            this.secondaryTextColor = ColorUtils.setAlphaComponent(this.textColor, Math.min(190, Color.alpha(this.textColor)));
             setBackground(background);
             setContentDescription(contentDescription);
-            linesDirty = true;
+            textDirty = true;
             invalidate();
         }
 
@@ -3581,110 +3701,367 @@ public class PlanTabFragment extends ZutnikTabFragment {
         protected void onSizeChanged(int w, int h, int oldw, int oldh) {
             super.onSizeChanged(w, h, oldw, oldh);
             if (w != oldw || h != oldh) {
-                linesDirty = true;
+                textDirty = true;
             }
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
-            if (sourceLines.isEmpty()) {
+            if (event == null) {
                 return;
             }
 
-            ensureRenderedLines();
-            if (renderedLines.isEmpty()) {
+            ensureTextLayout();
+            int width = getWidth();
+            int height = getHeight();
+            if (width <= 0 || height <= 0) {
                 return;
             }
 
-            Paint.FontMetrics metrics = textPaint.getFontMetrics();
-            float baseline = verticalPaddingPx - metrics.top;
-            for (int i = 0; i < renderedLines.size(); i++) {
-                if (baseline > getHeight() - verticalPaddingPx + lineHeightPx) {
-                    break;
-                }
-                canvas.drawText(renderedLines.get(i), horizontalPaddingPx, baseline, textPaint);
-                baseline += lineHeightPx;
+            boolean compactWidth = width < dpToPx(82);
+            boolean compactHeight = height < dpToPx(44);
+            int padX = dpToPx(compactWidth ? 4 : 7);
+            int padTop = dpToPx(compactHeight ? 4 : 6);
+            int padBottom = dpToPx(5);
+
+            Paint.FontMetrics timeFm = timePaint.getFontMetrics();
+            float baseline = padTop - timeFm.ascent;
+            timePaint.setColor(textColor);
+            canvas.save();
+            canvas.clipRect(padX, 0, Math.max(padX, width - padX), Math.min(height, baseline + timeFm.descent + dpToPx(2)));
+            canvas.drawText(timeText, padX, baseline, timePaint);
+            canvas.restore();
+
+            if (!overlayText.isEmpty() && width > dpToPx(96) && height > dpToPx(52)) {
+                drawOverlayPill(canvas, width, padTop);
+            }
+
+            if (titleLayout != null) {
+                titlePaint.setColor(textColor);
+                float titleTop = baseline + dpToPx(compactHeight ? 4 : 6);
+                canvas.save();
+                canvas.translate(padX, titleTop);
+                titleLayout.draw(canvas);
+                canvas.restore();
+            }
+
+            if (height >= dpToPx(38) && (!footerText.isEmpty() || !badgeText.isEmpty())) {
+                drawFooter(canvas, width, height, padX, padBottom);
             }
         }
 
-        private void ensureRenderedLines() {
-            if (!linesDirty) {
+        private void drawOverlayPill(Canvas canvas, int width, int padTop) {
+            float padH = dpToPx(5);
+            float pillHeight = dpToPx(15);
+            float pillWidth = overlayPaint.measureText(overlayText) + padH * 2f;
+            float left = width - pillWidth - dpToPx(6);
+            if (left < dpToPx(46)) {
                 return;
             }
-            linesDirty = false;
-            renderedLines.clear();
+            rect.set(left, padTop, width - dpToPx(6), padTop + pillHeight);
+            decorPaint.setColor(ColorUtils.setAlphaComponent(ThemeManager.resolveColor(getContext(), R.attr.mzDanger), 34));
+            canvas.drawRoundRect(rect, pillHeight / 2f, pillHeight / 2f, decorPaint);
+            overlayPaint.setColor(ThemeManager.resolveColor(getContext(), R.attr.mzDanger));
+            Paint.FontMetrics fm = overlayPaint.getFontMetrics();
+            float baseline = padTop + (pillHeight - fm.ascent - fm.descent) / 2f;
+            canvas.drawText(overlayText, left + padH, baseline, overlayPaint);
+        }
 
-            int availableWidth = getWidth() - horizontalPaddingPx * 2;
-            int availableHeight = getHeight() - verticalPaddingPx * 2;
-            if (availableWidth <= 0 || availableHeight <= 0) {
-                return;
+        private void drawFooter(Canvas canvas, int width, int height, int padX, int padBottom) {
+            Paint.FontMetrics metaFm = metaPaint.getFontMetrics();
+            Paint.FontMetrics badgeFm = badgePaint.getFontMetrics();
+            float footerBaseline = height - padBottom - Math.max(metaFm.descent, badgeFm.descent);
+            float badgeWidth = 0f;
+            float badgeGap = dpToPx(5);
+
+            if (!badgeText.isEmpty()) {
+                badgeWidth = badgePaint.measureText(badgeText);
+                float badgeLeft = width - padX - badgeWidth;
+                badgePaint.setColor(textColor);
+                canvas.drawText(badgeText, badgeLeft, footerBaseline, badgePaint);
             }
 
-            int maxLines = Math.max(1, availableHeight / lineHeightPx);
-            for (int lineIndex = 0; lineIndex < sourceLines.size(); lineIndex++) {
-                String remaining = safe(sourceLines.get(lineIndex));
-                if (remaining.isEmpty()) {
-                    continue;
-                }
-                while (!remaining.isEmpty()) {
-                    if (renderedLines.size() >= maxLines - 1) {
-                        renderedLines.add(TextUtils.ellipsize(
-                                buildTrailingText(lineIndex, remaining),
-                                textPaint,
-                                availableWidth,
-                                TextUtils.TruncateAt.END).toString());
-                        return;
-                    }
-
-                    int count = textPaint.breakText(remaining, true, availableWidth, null);
-                    if (count <= 0) {
-                        return;
-                    }
-                    int split = findWrapPosition(remaining, count);
-                    String chunk = remaining.substring(0, split).trim();
-                    if (chunk.isEmpty()) {
-                        chunk = remaining.substring(0, Math.min(remaining.length(), count)).trim();
-                        split = Math.min(remaining.length(), count);
-                    }
-                    if (!chunk.isEmpty()) {
-                        renderedLines.add(chunk);
-                    }
-                    remaining = remaining.substring(Math.min(split, remaining.length())).trim();
-                    if (renderedLines.size() >= maxLines) {
-                        return;
-                    }
+            if (!footerText.isEmpty()) {
+                float footerRight = width - padX - (badgeWidth > 0f ? badgeWidth + badgeGap : 0f);
+                float footerWidth = Math.max(0f, footerRight - padX);
+                if (footerWidth > dpToPx(10)) {
+                    CharSequence clipped = TextUtils.ellipsize(
+                            footerText,
+                            metaPaint,
+                            footerWidth,
+                            TextUtils.TruncateAt.MIDDLE);
+                    metaPaint.setColor(secondaryTextColor);
+                    canvas.drawText(clipped.toString(), padX, footerBaseline, metaPaint);
                 }
             }
         }
 
-        private CharSequence buildTrailingText(int lineIndex, String currentRemainder) {
-            StringBuilder sb = new StringBuilder(currentRemainder);
-            for (int i = lineIndex + 1; i < sourceLines.size(); i++) {
-                String next = safe(sourceLines.get(i));
-                if (next.isEmpty()) {
-                    continue;
-                }
-                if (sb.length() > 0) {
-                    sb.append(" • ");
-                }
-                sb.append(next);
+        private void ensureTextLayout() {
+            if (!textDirty) {
+                return;
             }
-            return sb;
+            textDirty = false;
+            titleLayout = null;
+
+            int width = getWidth();
+            int height = getHeight();
+            if (event == null || width <= 0 || height <= 0) {
+                return;
+            }
+
+            boolean compactWidth = width < dpToPx(82);
+            boolean compactHeight = height < dpToPx(44);
+            int padX = dpToPx(compactWidth ? 4 : 7);
+            int padTop = dpToPx(compactHeight ? 4 : 6);
+            int padBottom = dpToPx(5);
+            int contentWidth = Math.max(0, width - padX * 2);
+
+            overlayPaint.setTextSize(spToPx(8f));
+
+            timeText = buildEventTimeText(event);
+            String rawTitle = safe(event.title);
+            titleText = stripTrailingTypeBadge(rawTitle);
+            if (titleText.isEmpty()) {
+                titleText = rawTitle;
+            }
+            footerText = buildFooterText(event);
+            badgeText = buildTypeBadge(event, rawTitle);
+            overlayText = safe(event.customOverlayLabel);
+
+            timeText = fitEventTimeText(event, contentWidth, compactWidth ? 7.4f : 8.6f, compactWidth ? 9.3f : 10.5f);
+            badgePaint.setTextSize(spToPx(compactWidth ? 8.2f : 9.0f));
+
+            float badgeWidth = badgeText.isEmpty() ? 0f : badgePaint.measureText(badgeText);
+            float footerWidth = contentWidth - (badgeWidth > 0f ? badgeWidth + dpToPx(5) : 0f);
+            fitSingleLineText(metaPaint, footerText, Math.max(0f, footerWidth), compactWidth ? 6.1f : 6.6f, compactWidth ? 8.0f : 8.8f);
+
+            int timeReserve = textLineHeight(timePaint) + dpToPx(3);
+            int footerLineHeight = Math.max(textLineHeight(metaPaint), textLineHeight(badgePaint));
+            int footerReserve = (height >= dpToPx(38) && (!footerText.isEmpty() || !badgeText.isEmpty()))
+                    ? footerLineHeight + dpToPx(6)
+                    : 0;
+            int titleArea = Math.max(
+                    dpToPx(10),
+                    height - padTop - padBottom - timeReserve - footerReserve);
+            titleLayout = buildBestTitleLayout(titleText, contentWidth, titleArea, compactWidth, compactHeight);
         }
 
-        private int findWrapPosition(String text, int maxChars) {
-            int limit = Math.min(text.length(), Math.max(1, maxChars));
-            if (limit >= text.length()) {
-                return text.length();
+        private StaticLayout buildBestTitleLayout(
+                String text,
+                int availableWidth,
+                int availableHeight,
+                boolean compactWidth,
+                boolean compactHeight) {
+            if (TextUtils.isEmpty(text) || availableWidth <= 0 || availableHeight <= 0) {
+                return null;
             }
-            for (int i = limit; i > 0; i--) {
-                char c = text.charAt(i - 1);
-                if (Character.isWhitespace(c) || c == '-' || c == '/' || c == '•') {
-                    return i;
+
+            float maxSp = compactWidth ? 10.4f : 12.0f;
+            float minSp = compactWidth ? 7.2f : 7.8f;
+            StaticLayout fallback = null;
+
+            for (float sp = maxSp; sp >= minSp; sp -= 0.35f) {
+                titlePaint.setTextSize(spToPx(sp));
+                int lineHeight = Math.max(1, titleLineHeight());
+                int maxLines = Math.max(1, Math.min(compactHeight ? 1 : 6, availableHeight / lineHeight));
+                StaticLayout candidate = makeTitleLayout(text, availableWidth, maxLines);
+                fallback = candidate;
+                if (candidate != null && candidate.getHeight() <= availableHeight && !hasEllipsis(candidate)) {
+                    return candidate;
                 }
             }
-            return limit;
+
+            titlePaint.setTextSize(spToPx(minSp));
+            int lineHeight = Math.max(1, titleLineHeight());
+            int maxLines = Math.max(1, Math.min(compactHeight ? 1 : 6, availableHeight / lineHeight));
+            StaticLayout clipped = makeTitleLayout(text, availableWidth, maxLines);
+            return clipped != null ? clipped : fallback;
+        }
+
+        private StaticLayout makeTitleLayout(String text, int availableWidth, int maxLines) {
+            return StaticLayout.Builder
+                    .obtain(text, 0, text.length(), titlePaint, availableWidth)
+                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setIncludePad(false)
+                    .setLineSpacing(0f, 0.96f)
+                    .setMaxLines(Math.max(1, maxLines))
+                    .setEllipsize(TextUtils.TruncateAt.END)
+                    .setEllipsizedWidth(availableWidth)
+                    .build();
+        }
+
+        private boolean hasEllipsis(StaticLayout layout) {
+            if (layout == null) {
+                return false;
+            }
+            for (int i = 0; i < layout.getLineCount(); i++) {
+                if (layout.getEllipsisCount(i) > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void fitSingleLineText(
+                TextPaint paint,
+                String text,
+                float availableWidth,
+                float minSp,
+                float maxSp) {
+            String value = safe(text);
+            if (value.isEmpty() || availableWidth <= 0f) {
+                paint.setTextSize(spToPx(minSp));
+                return;
+            }
+            for (float sp = maxSp; sp >= minSp; sp -= 0.25f) {
+                paint.setTextSize(spToPx(sp));
+                if (paint.measureText(value) <= availableWidth) {
+                    return;
+                }
+            }
+            paint.setTextSize(spToPx(minSp));
+        }
+
+        private String fitEventTimeText(
+                PlanRepository.PlanEventUi ev,
+                float availableWidth,
+                float minSp,
+                float maxSp) {
+            String full = buildEventTimeText(ev);
+            String start = safe(ev != null ? ev.startStr : "");
+            String end = safe(ev != null ? ev.endStr : "");
+            String compact = !start.isEmpty() ? start : end;
+            if (compact.isEmpty()) {
+                compact = full;
+            }
+
+            if (full.isEmpty() || availableWidth <= 0f) {
+                timePaint.setTextSize(spToPx(minSp));
+                return "";
+            }
+
+            String fittedFull = tryFitEventTimeCandidate(full, availableWidth, minSp, maxSp);
+            if (!fittedFull.isEmpty()) {
+                return fittedFull;
+            }
+
+            String fittedCompact = tryFitEventTimeCandidate(compact, availableWidth, minSp, maxSp);
+            if (!fittedCompact.isEmpty()) {
+                return fittedCompact;
+            }
+
+            timePaint.setTextSize(spToPx(minSp));
+            return TextUtils.ellipsize(
+                    compact,
+                    timePaint,
+                    Math.max(0f, availableWidth),
+                    TextUtils.TruncateAt.END).toString();
+        }
+
+        private String tryFitEventTimeCandidate(
+                String text,
+                float availableWidth,
+                float minSp,
+                float maxSp) {
+            String value = safe(text);
+            if (value.isEmpty()) {
+                return "";
+            }
+            for (float sp = maxSp; sp >= minSp; sp -= 0.25f) {
+                timePaint.setTextSize(spToPx(sp));
+                if (timePaint.measureText(value) <= availableWidth) {
+                    return value;
+                }
+            }
+            return "";
+        }
+
+        private String buildEventTimeText(PlanRepository.PlanEventUi ev) {
+            String start = safe(ev.startStr);
+            String end = safe(ev.endStr);
+            if (start.isEmpty()) {
+                return end;
+            }
+            if (end.isEmpty()) {
+                return start;
+            }
+            return start + "-" + end;
+        }
+
+        private String buildFooterText(PlanRepository.PlanEventUi ev) {
+            String room = safe(ev.room);
+            String group = safe(ev.group);
+            if (!room.isEmpty() && !group.isEmpty()) {
+                return room + " / " + group;
+            }
+            if (!room.isEmpty()) {
+                return room;
+            }
+            return group;
+        }
+
+        private String buildTypeBadge(PlanRepository.PlanEventUi ev, String rawTitle) {
+            String trailing = extractTrailingTypeBadge(rawTitle);
+            if (!trailing.isEmpty()) {
+                return "(" + trailing + ")";
+            }
+
+            String type = safe(ev.typeClass).toLowerCase(java.util.Locale.ROOT);
+            if (type.contains("lecture")) {
+                return "(W)";
+            }
+            if (type.contains("lab")) {
+                return "(L)";
+            }
+            if (type.contains("auditory")) {
+                return "(A)";
+            }
+            if (type.contains("lectorate")) {
+                return "(Lek)";
+            }
+            if (type.contains("exam")) {
+                return "(E)";
+            }
+            if (type.contains("pass")) {
+                return "(Zal)";
+            }
+            return "";
+        }
+
+        private String stripTrailingTypeBadge(String text) {
+            String badge = extractTrailingTypeBadge(text);
+            if (badge.isEmpty()) {
+                return safe(text);
+            }
+            String trimmed = safe(text);
+            int open = trimmed.lastIndexOf('(');
+            return open > 0 ? trimmed.substring(0, open).trim() : trimmed;
+        }
+
+        private String extractTrailingTypeBadge(String text) {
+            String trimmed = safe(text);
+            if (!trimmed.endsWith(")")) {
+                return "";
+            }
+            int open = trimmed.lastIndexOf('(');
+            if (open < 0 || open >= trimmed.length() - 2) {
+                return "";
+            }
+            String inside = trimmed.substring(open + 1, trimmed.length() - 1).trim();
+            if (inside.isEmpty() || inside.length() > 5 || inside.contains(" ")) {
+                return "";
+            }
+            return inside;
+        }
+
+        private int titleLineHeight() {
+            return textLineHeight(titlePaint) + dpToPx(1);
+        }
+
+        private int textLineHeight(TextPaint paint) {
+            Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
+            return Math.max(dpToPx(10), metrics.descent - metrics.ascent);
         }
     }
 
@@ -3729,6 +4106,13 @@ public class PlanTabFragment extends ZutnikTabFragment {
         bg.setCornerRadius(dpToPx(radiusDp));
         bg.setStroke(dpToPx(1), strokeColor);
         return bg;
+    }
+
+    private float spToPx(float sp) {
+        return TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_SP,
+                sp,
+                getResources().getDisplayMetrics());
     }
 
     private int dpToPx(float dp) {
