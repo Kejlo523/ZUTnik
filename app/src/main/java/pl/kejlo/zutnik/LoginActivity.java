@@ -57,11 +57,6 @@ public class LoginActivity extends PhoneAwareActivity {
 
         ZutnikSession.initializeFromPreferences(this);
         ZutnikSession session = ZutnikSession.getInstance(this);
-        if (session.getUserId() != null && !session.isUsosLogin() && !session.isDemoLogin()) {
-            ZutnikSession.clearSessionData(this);
-            ZutnikSession.initializeFromPreferences(this);
-            session = ZutnikSession.getInstance(this);
-        }
 
         if (session.isLoggedIn()) {
             Intent i = new Intent(LoginActivity.this, MainShellActivity.class);
@@ -85,8 +80,7 @@ public class LoginActivity extends PhoneAwareActivity {
 
         applyLoginWindowInsets();
 
-        if (getIntent().getBooleanExtra(EXTRA_SESSION_EXPIRED, false)
-                || SessionExpiryManager.consumeSessionExpiredNotice(this)) {
+        if (getIntent().getBooleanExtra(EXTRA_SESSION_EXPIRED, false)) {
             Toast.makeText(this, R.string.session_expired_toast, Toast.LENGTH_LONG).show();
         }
 

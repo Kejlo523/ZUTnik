@@ -134,6 +134,8 @@ public class MainShellActivity extends ZutnikBaseActivity {
             return;
         }
 
+        MainNavHelper.setShellNavigationVisible(shellNavigation, true);
+
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction tx = fm.beginTransaction();
 
@@ -200,6 +202,12 @@ public class MainShellActivity extends ZutnikBaseActivity {
 
     private void postHandleNotificationPermission() {
         findViewById(R.id.fragmentContainer).post(this::handleNotificationPermissionFlow);
+    }
+
+    @Override
+    protected void onDestroy() {
+        MainNavHelper.dismissMoreSheetIfShowing();
+        super.onDestroy();
     }
 
     public static Intent createIntent(Context context, @NonNull MainNavHelper.Screen tab) {

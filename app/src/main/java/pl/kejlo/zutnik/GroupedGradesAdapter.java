@@ -2,6 +2,7 @@ package pl.kejlo.zutnik;
 
 import android.content.Context;
 import android.graphics.Typeface;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -271,16 +272,76 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             boolean missing = raw.isEmpty();
             String label = missing ? ctx.getString(R.string.common_dash) : raw;
 
-            TextView pill = createPreviewPill(ctx, label, false);
-            styleGradePill(ctx, pill, raw, missing);
-            container.addView(pill);
+            container.addView(createPreviewGradeItem(ctx, label, raw, missing, g));
         }
 
         if (total > show) {
             int remaining = total - show;
-            TextView more = createPreviewPill(ctx, "+" + remaining, true);
-            container.addView(more);
+            container.addView(createPreviewCountItem(ctx, remaining));
         }
+    }
+
+    private View createPreviewGradeItem(Context ctx, String label, String raw, boolean missing, Grade grade) {
+        LinearLayout item = createPreviewItemContainer(ctx);
+        addTypeSlot(ctx, item, resolveTypeChipText(grade));
+
+        TextView pill = createPreviewPill(ctx, label, false);
+        styleGradePill(ctx, pill, raw, missing);
+        String typeDisplay = resolveTypeDisplay(ctx, grade);
+        pill.setContentDescription(typeDisplay.isEmpty() ? label : label + ", " + typeDisplay);
+        item.addView(pill);
+        return item;
+    }
+
+    private View createPreviewCountItem(Context ctx, int remaining) {
+        LinearLayout item = createPreviewItemContainer(ctx);
+        addTypeSlot(ctx, item, "");
+
+        TextView more = createPreviewPill(ctx, "+" + remaining, true);
+        item.addView(more);
+        return item;
+    }
+
+    private LinearLayout createPreviewItemContainer(Context ctx) {
+        LinearLayout item = new LinearLayout(ctx);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMarginEnd(dp(ctx, 8));
+        item.setLayoutParams(lp);
+        return item;
+    }
+
+    private void addTypeSlot(Context ctx, LinearLayout item, String typeText) {
+        String label = GradesTextUtils.clean(typeText);
+        if (label.isEmpty()) {
+            View spacer = new View(ctx);
+            spacer.setLayoutParams(new LinearLayout.LayoutParams(dp(ctx, 1), dp(ctx, 18)));
+            item.addView(spacer);
+            return;
+        }
+
+        TextView chip = new TextView(ctx);
+        chip.setText(label);
+        chip.setGravity(android.view.Gravity.CENTER);
+        chip.setIncludeFontPadding(false);
+        chip.setSingleLine(true);
+        chip.setEllipsize(TextUtils.TruncateAt.END);
+        chip.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzMuted));
+        chip.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 8.5f);
+        chip.setTypeface(null, Typeface.BOLD);
+        chip.setBackgroundResource(R.drawable.bg_grade_preview_type_chip);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(ctx, 18));
+        lp.bottomMargin = dp(ctx, 4);
+        chip.setMinWidth(dp(ctx, 34));
+        chip.setMaxWidth(dp(ctx, 56));
+        chip.setLayoutParams(lp);
+        item.addView(chip);
     }
 
     private TextView createPreviewPill(Context ctx, String text, boolean isCount) {
@@ -289,10 +350,13 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         pill.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isCount ? 10f : 11f);
         pill.setTypeface(null, Typeface.BOLD);
         pill.setGravity(android.view.Gravity.CENTER);
+        pill.setIncludeFontPadding(false);
+        pill.setSingleLine(true);
+        pill.setMaxLines(1);
+        pill.setEllipsize(TextUtils.TruncateAt.END);
 
         int size = dp(ctx, isCount ? 30 : 34);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
-        lp.setMarginEnd(dp(ctx, 6));
         pill.setLayoutParams(lp);
 
         if (isCount) {
@@ -302,6 +366,69 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             pill.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzText));
         }
         return pill;
+    }
+
+    private String resolveTypeDisplay(Context ctx, Grade grade) {
+        String type = GradesTextUtils.clean(grade != null ? grade.type : "");
+        if (type.isEmpty()) {
+            type = GradesTextUtils.extractTypeFromSubject(grade != null ? grade.subjectName : "");
+        }
+        return GradesTextUtils.formatTypeDisplay(ctx, type);
+    }
+
+    private String resolveTypeChipText(Grade grade) {
+        String typeKey = PlanSubjectFilterHelper.resolveGradeTypeKey(grade);
+        if ("lec".equals(typeKey)) {
+            return "Wykład";
+        }
+        if ("lab".equals(typeKey)) {
+            return "Lab";
+        }
+        if ("aud".equals(typeKey)) {
+            return "\u0106w.";
+        }
+        if ("lek".equals(typeKey)) {
+            return "Lek.";
+        }
+
+        String type = GradesTextUtils.clean(grade != null ? grade.type : "");
+        if (type.isEmpty()) {
+            type = GradesTextUtils.extractTypeFromSubject(grade != null ? grade.subjectName : "");
+        }
+
+        String normalized = GradesTextUtils.normalizeKey(type);
+        if (normalized.isEmpty()) {
+            return "Ocena";
+        }
+        if (normalized.contains("zaliczen") || normalized.contains("pass")) {
+            return "Zal.";
+        }
+        if (normalized.contains("egzamin") || normalized.contains("exam")) {
+            return "Egz.";
+        }
+        if (normalized.contains("koncowa") || normalized.contains("final")) {
+            return "Ocena";
+        }
+        if (normalized.contains("wyklad")
+                || normalized.contains("lecture")
+                || normalized.contains("vorlesung")
+                || normalized.contains("lekcija")) {
+            return "Wykład";
+        }
+        if (normalized.contains("laboratorium")
+                || normalized.contains("laboratory")
+                || normalized.contains("labor")
+                || normalized.contains("lab")) {
+            return "Lab";
+        }
+        if (normalized.contains("cwiczen")
+                || normalized.contains("audytoryjne")
+                || normalized.contains("auditory")
+                || normalized.contains("ubung")
+                || normalized.contains("zanyat")) {
+            return "\u0106w.";
+        }
+        return "Ocena";
     }
 
     private void styleGradePill(Context ctx, TextView pill, String raw, boolean missing) {

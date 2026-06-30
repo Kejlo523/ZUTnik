@@ -1,17 +1,22 @@
 package pl.kejlo.zutnik;
 
 import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -20,8 +25,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.json.JSONObject;
 
@@ -46,14 +51,28 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
 
     private static final String TAG       = "UsosLoginWeb";
     private static final String PREFS_NAME = "zutnik_prefs";
+    private static final int MENU_OPEN_EXTERNAL = 1001;
+    private static final long WEBVIEW_STALL_TIMEOUT_MS = 15000L;
 
     private WebView     webView;
     private ProgressBar progressBar;
     private View        loadingOverlay;
     private TextView    loadingText;
+    private String      authUrl;
+    private boolean     fallbackDialogShown = false;
+    private boolean     openedExternalBrowser = false;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler         handler  = new Handler(Looper.getMainLooper());
+    private final Runnable webViewStallFallbackRunnable = () -> {
+        if (isFinishing() || openedExternalBrowser || webView == null) {
+            return;
+        }
+        int progress = webView.getProgress();
+        if (progress < 100) {
+            showExternalBrowserFallback(getString(R.string.login_usos_webview_timeout));
+        }
+    };
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -65,7 +84,21 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
-        setContentView(R.layout.activity_usos_login_web);
+
+        authUrl = getIntent().getStringExtra(EXTRA_AUTH_URL);
+        if (authUrl == null || authUrl.isEmpty()) {
+            Toast.makeText(this, R.string.login_usos_missing_auth_url, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        try {
+            setContentView(R.layout.activity_usos_login_web);
+        } catch (RuntimeException e) {
+            Log.e(TAG, "WebView layout inflation failed", e);
+            openExternalBrowser();
+            return;
+        }
         ThemeManager.applySystemBars(this);
         ThemeManager.applyRootWindowInsets(findViewById(R.id.contentRoot));
 
@@ -81,15 +114,14 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
             getSupportActionBar().setTitle(R.string.login_usos_web_title);
         }
 
-        String authUrl = getIntent().getStringExtra(EXTRA_AUTH_URL);
-        if (authUrl == null || authUrl.isEmpty()) {
-            Toast.makeText(this, R.string.login_usos_missing_auth_url, Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+        try {
+            setupWebView();
+            webView.loadUrl(authUrl);
+            handler.postDelayed(webViewStallFallbackRunnable, WEBVIEW_STALL_TIMEOUT_MS);
+        } catch (RuntimeException e) {
+            Log.e(TAG, "WebView startup failed", e);
+            openExternalBrowser();
         }
-
-        setupWebView();
-        webView.loadUrl(authUrl);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -102,16 +134,49 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                handler.removeCallbacks(webViewStallFallbackRunnable);
+                handler.postDelayed(webViewStallFallbackRunnable, WEBVIEW_STALL_TIMEOUT_MS);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                handler.removeCallbacks(webViewStallFallbackRunnable);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (url == null) {
+                    return false;
+                }
+                return handleWebUri(Uri.parse(url));
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (request == null || request.getUrl() == null) return false;
-                Uri uri = request.getUrl();
+                return handleWebUri(request.getUrl());
+            }
 
-                // Intercept the OAuth callback
-                if ("zutnik".equals(uri.getScheme())) {
-                    handleOAuthCallback(uri);
-                    return true;
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                if (request != null && !request.isForMainFrame()) {
+                    return;
                 }
-                return false; // let WebView handle http/https normally
+                String reason = getString(R.string.login_usos_webview_load_error);
+                if (error != null && error.getDescription() != null) {
+                    reason = error.getDescription().toString();
+                }
+                showExternalBrowserFallback(reason);
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                showExternalBrowserFallback(getString(R.string.login_usos_webview_crash));
+                return true;
             }
         });
 
@@ -127,6 +192,84 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
                 }
             }
         });
+    }
+
+    private boolean handleWebUri(Uri uri) {
+        if (uri == null) {
+            return false;
+        }
+
+        if ("zutnik".equals(uri.getScheme())) {
+            handler.removeCallbacks(webViewStallFallbackRunnable);
+            handleOAuthCallback(uri);
+            return true;
+        }
+
+        String scheme = uri.getScheme();
+        if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+            return false;
+        }
+
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            startActivity(intent);
+            return true;
+        } catch (ActivityNotFoundException e) {
+            Log.w(TAG, "No handler for WebView URI: " + uri, e);
+            return true;
+        }
+    }
+
+    private void showExternalBrowserFallback(String reason) {
+        if (fallbackDialogShown || openedExternalBrowser || isFinishing()) {
+            return;
+        }
+        fallbackDialogShown = true;
+        handler.removeCallbacks(webViewStallFallbackRunnable);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.login_usos_external_fallback_title)
+                .setMessage(getString(
+                        R.string.login_usos_external_fallback_message,
+                        safeReason(reason)))
+                .setPositiveButton(R.string.login_usos_open_external, (dialog, which) -> openExternalBrowser())
+                .setNegativeButton(android.R.string.cancel, (dialog, which) -> fallbackDialogShown = false)
+                .show();
+    }
+
+    private String safeReason(String reason) {
+        String safe = reason != null ? reason.trim() : "";
+        return safe.isEmpty() ? getString(R.string.login_usos_webview_load_error) : safe;
+    }
+
+    private void openExternalBrowser() {
+        if (authUrl == null || authUrl.isEmpty()) {
+            Toast.makeText(this, R.string.login_usos_missing_auth_url, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        try {
+            openedExternalBrowser = true;
+            handler.removeCallbacks(webViewStallFallbackRunnable);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
+            browserIntent.addCategory(Intent.CATEGORY_BROWSABLE);
+            startActivity(browserIntent);
+            Toast.makeText(this, R.string.login_usos_external_started, Toast.LENGTH_SHORT).show();
+            finish();
+        } catch (ActivityNotFoundException e) {
+            openedExternalBrowser = false;
+            Toast.makeText(this, R.string.web_link_open_external_error, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuItem external = menu.add(0, MENU_OPEN_EXTERNAL, 0, R.string.login_usos_open_external);
+        external.setIcon(R.drawable.ic_open_in_new);
+        external.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        return true;
     }
 
     private void handleOAuthCallback(Uri callbackUri) {
@@ -245,12 +388,17 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
             finish();
             return true;
         }
+        if (item.getItemId() == MENU_OPEN_EXTERNAL) {
+            openExternalBrowser();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        handler.removeCallbacks(webViewStallFallbackRunnable);
         executor.shutdownNow();
         if (webView != null) {
             webView.destroy();

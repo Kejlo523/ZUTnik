@@ -20,4 +20,10 @@ public abstract class PhoneAwareActivity extends AppCompatActivity {
         }
         super.onCreate(savedInstanceState);
     }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, 0);
+    }
 }

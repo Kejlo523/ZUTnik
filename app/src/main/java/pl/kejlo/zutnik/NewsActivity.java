@@ -1,6 +1,5 @@
 package pl.kejlo.zutnik;
 
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -39,7 +38,6 @@ public class NewsActivity extends ZutnikBaseActivity {
     private static final String KEY_NEWS_TIMESTAMP = "news_timestamp";
     private static final long NEWS_CACHE_TTL_MS = CachePolicy.NEWS_TTL_MS;
 
-    private Toolbar toolbar;
     private LinearLayout drawerContentRoot;
 
     private RecyclerView listNews;
@@ -76,8 +74,6 @@ public class NewsActivity extends ZutnikBaseActivity {
         View content = shell.contentRoot;
 
         drawerContentRoot = content.findViewById(R.id.drawerContentRoot);
-        toolbar = content.findViewById(R.id.toolbar);
-        toolbar.setTitle(R.string.news_title);
 
         listNews = content.findViewById(R.id.listNews);
         progress = content.findViewById(R.id.newsProgress);
@@ -121,6 +117,7 @@ public class NewsActivity extends ZutnikBaseActivity {
             i.putExtra("contentHtml", item.contentHtml);
             i.putExtra("descriptionText", item.descriptionText);
             startActivity(i);
+            overridePendingTransition(0, 0);
         }
     }
 

@@ -73,6 +73,18 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
 
     @Nullable
     @Override
+    protected Toolbar getTabToolbar() {
+        return toolbar;
+    }
+
+    @Nullable
+    @Override
+    protected MainNavHelper.Screen getTabScreen() {
+        return MainNavHelper.Screen.FINANCE;
+    }
+
+    @Nullable
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         return ShellLayoutInflater.inflateTabContent(inflater, R.layout.activity_finance, container);
@@ -83,9 +95,7 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
         super.onViewCreated(view, savedInstanceState);
 
         toolbar = view.findViewById(R.id.toolbar);
-        hostActivity().setSupportActionBar(toolbar);
-        MainNavHelper.styleToolbarPublic(hostActivity(), toolbar);
-        toolbar.setTitle(R.string.finance_title);
+        onTabActivated();
 
         spinnerStudies = view.findViewById(R.id.spinnerStudies);
         filterGroup = view.findViewById(R.id.financeFilterGroup);

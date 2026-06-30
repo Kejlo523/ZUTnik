@@ -7,31 +7,42 @@
   <string name="nav_settings_label">Settings</string>
   <string name="nav_useful_links">Useful links</string>
   <string name="nav_logout_label">Log out</string>
+  <string name="nav_tab_home">Home</string>
+  <string name="nav_tab_plan">Plan</string>
+  <string name="nav_tab_studies">Studies</string>
+  <string name="nav_tab_grades">Grades</string>
+  <string name="nav_tab_more">More</string>
   <string name="login_card_title">Log in to ZUTnik</string>
-  <string name="login_hint">Login</string>
-  <string name="login_password_hint">Password</string>
-  <string name="login_button">Log in</string>
-  <string name="login_info_text">
-        Password login has been disabled. Use USOS authorization instead.
-    </string>
-  <string name="login_enter_credentials">Enter login and password!</string>
-  <string name="login_error_generic">Error: %1$s</string>
-  <string name="login_no_server_response">No response from server</string>
-  <string name="login_system_error">ZUT system error (SYSTEM ERROR).</string>
-  <string name="login_invalid_credentials">Invalid login or password.</string>
   <string name="login_success">Logged in as %1$s</string>
   <string name="login_usos_button">Log in with USOS</string>
   <string name="login_usos_info_text">
         Login uses the official USOS authorization window. After tapping the button, the authorization screen will open.
     </string>
   <string name="login_usos_scope_hint">
-        ZUTnik is an unofficial app for convenient access to data from USOS/ZUT systems. Use it voluntarily; important information should still be confirmed in the official panel.
+        ZUTnik is an unofficial app for convenient access to data from USOS/university systems. Use it voluntarily; important information should still be confirmed in the official panel.
     </string>
+  <string name="login_usos_web_title">USOS login</string>
+  <string name="login_usos_missing_auth_url">Missing authorization URL</string>
+  <string name="login_usos_reason_incomplete_params">incomplete parameters</string>
+  <string name="login_usos_reason_missing_request_secret">missing request token secret</string>
+  <string name="login_usos_error_missing_user_id">Missing user ID in USOS response</string>
+  <string name="login_usos_exchanging_token">Authorizing USOS…</string>
+  <string name="login_usos_fetching_user">Fetching user data…</string>
+  <string name="login_usos_error_request_token">USOS connection error: %1$s</string>
+  <string name="login_usos_error_auth">USOS authorization error: %1$s</string>
+  <string name="login_usos_keys_not_configured">USOS API keys are not configured.</string>
+  <string name="login_usos_open_external">Open in browser</string>
+  <string name="login_usos_external_fallback_title">Embedded login problem</string>
+  <string name="login_usos_external_fallback_message">USOS is not opening correctly inside the app (%1$s). You can finish signing in through the system browser.</string>
+  <string name="login_usos_external_started">Opening USOS login in the browser…</string>
+  <string name="login_usos_webview_load_error">page load error</string>
+  <string name="login_usos_webview_timeout">the page is taking too long to respond</string>
+  <string name="login_usos_webview_crash">the WebView process was closed</string>
   <string name="home_title">Main dashboard</string>
   <string name="home_toolbar_title">Home page</string>
   <string name="home_welcome_message">Hello %1$s</string>
   <string name="home_welcome_subtitle">
-        Lightweight access to timetable, grades, student data, and ZUT news in one place.
+        Lightweight access to timetable, grades, student data, and university news in one place.
     </string>
   <string name="home_welcome_fallback">Hello Student 👋</string>
   <string name="home_shortcuts_title">Quick shortcuts</string>
@@ -48,12 +59,12 @@
   <string name="home_tile_info_desc">
         Field of study, faculty, student status, course of studies.
     </string>
-  <string name="home_tile_news_title">📰 ZUT news</string>
+  <string name="home_tile_news_title">📰 University news</string>
   <string name="home_tile_news_desc">
-        Announcements from the ZUT RSS feed with a USOS news fallback.
+        Announcements from the university RSS feed with a USOS news fallback.
     </string>
   <string name="home_footer_meta">
-        Data is fetched from ZUT systems and cached locally. If something looks suspicious, always verify it in the official panels as well.
+        Data is fetched from university systems and cached locally. If something looks suspicious, always verify it in the official panels as well.
     </string>
   <string name="info_title">Student data</string>
   <string name="info_user_id">User ID: %1$s</string>
@@ -212,7 +223,7 @@
   <string name="grades_ects_breakdown_item">%1$s: %2$s ECTS</string>
   <string name="grades_ects_breakdown_remaining">remaining: %1$s ECTS</string>
   <string name="grades_empty_state">No grades for the selected semester.</string>
-  <string name="news_title">ZUT news</string>
+  <string name="news_title">University news</string>
   <string name="news_refresh_toast">Fetching latest data…</string>
   <string name="news_error_rss">Error fetching RSS: %1$s</string>
   <string name="news_detail_title">Post</string>
@@ -221,13 +232,13 @@
         No content in RSS channel for this post.
     </string>
   <string name="news_header_title">Announcements channel for students</string>
-  <string name="news_header_source_info">RSS source: ZUT students</string>
+  <string name="news_header_source_info">RSS source: university students</string>
   <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">just now</string>
   <string name="news_empty_state">
         No news or a problem occurred while fetching the RSS channel.
     </string>
-  <string name="news_detail_tag">📰 ZUT news item</string>
+  <string name="news_detail_tag">📰 University news item</string>
   <string name="plan_widget_subtitle_today">Today classes</string>
   <string name="plan_widget_subtitle_in_progress">Classes in progress</string>
   <string name="plan_widget_subtitle_next_prefix">Next in </string>
@@ -253,7 +264,7 @@
   <string name="plan_widget_empty_state">No classes to display</string>
   <string name="about_title">About the app</string>
   <string name="about_project_description_1">
-        ZUTnik is an unofficial, lightweight ZUT student assistant for quick access to timetable, grades, student data, and news without clicking through heavy web panels.
+        ZUTnik is an unofficial, lightweight university student assistant for quick access to timetable, grades, student data, and news without clicking through heavy web panels.
     </string>
   <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
   <string name="about_contact_website">Website: endozero.pl</string>

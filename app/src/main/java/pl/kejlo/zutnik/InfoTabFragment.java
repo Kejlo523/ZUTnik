@@ -89,6 +89,12 @@ public class InfoTabFragment extends ZutnikTabFragment {
 
     @Nullable
     @Override
+    protected MainNavHelper.Screen getTabScreen() {
+        return MainNavHelper.Screen.INFO;
+    }
+
+    @Nullable
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         return ShellLayoutInflater.inflateTabContent(inflater, R.layout.activity_info, container);
@@ -100,9 +106,7 @@ public class InfoTabFragment extends ZutnikTabFragment {
 
         drawerContentRoot = view.findViewById(R.id.drawerContentRoot);
         toolbar = view.findViewById(R.id.toolbar);
-        shellActivity().setSupportActionBar(toolbar);
-        MainNavHelper.styleToolbarPublic(shellActivity(), toolbar);
-        toolbar.setTitle(R.string.info_title);
+        onTabActivated();
 
         tvName = view.findViewById(R.id.tvInfoName);
         tvUserId = view.findViewById(R.id.tvInfoUserId);

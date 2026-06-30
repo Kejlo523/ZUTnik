@@ -108,9 +108,6 @@ public class BackgroundSyncWorker extends Worker {
                 checkFinanceChanges(context);
             }
             return Result.success();
-        } catch (SessionExpiredException expired) {
-            Log.w(TAG, "Session expired during background check: " + expired.getMessage());
-            return Result.success();
         } catch (IOException io) {
             Log.w(TAG, "Network/API error during background check", io);
             return Result.retry();

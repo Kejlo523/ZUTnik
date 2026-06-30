@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -142,6 +143,9 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         intent.putExtra("contentHtml", item.contentHtml);
         intent.putExtra("descriptionText", item.descriptionText);
         context.startActivity(intent);
+        if (context instanceof AppCompatActivity) {
+            ((AppCompatActivity) context).overridePendingTransition(0, 0);
+        }
     }
 
     private void loadThumbnail(ImageView iv, String url) {

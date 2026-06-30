@@ -50,7 +50,7 @@ public class HomeRepository {
                 JSONObject obj = arr.getJSONObject(i);
                 Tile t = Tile.fromJson(obj);
 
-                // MIGRATION: Keep default tiles localized and guard against stale resource IDs
+                // Keep default tiles localized and guard against stale resource IDs
                 if (isDefaultTitleOrDesc((int) t.id, t.title, t.description)) {
                     applyDefaultResIds(t);
                 } else {
@@ -103,7 +103,7 @@ public class HomeRepository {
             case 4: // News
                 return isMatch(title,
                         context.getString(R.string.home_tile_news_title),
-                        "Aktualności ZUT", "Aktualnosci ZUT", "ZUT news")
+                        "Aktualności uczelni", "Aktualnosci uczelni", "university news")
                         || isMatch(desc,
                                 context.getString(R.string.home_tile_news_desc),
                                 "Komunikaty", "Announcements");

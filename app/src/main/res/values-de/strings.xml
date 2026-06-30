@@ -7,24 +7,18 @@
   <string name="nav_settings_label">Einstellungen</string>
   <string name="nav_useful_links">Nützliche Links</string>
   <string name="nav_logout_label">Ausloggen</string>
+  <string name="nav_tab_home">Start</string>
+  <string name="nav_tab_plan">Plan</string>
+  <string name="nav_tab_studies">Studium</string>
+  <string name="nav_tab_grades">Noten</string>
+  <string name="nav_tab_more">Mehr</string>
   <string name="login_card_title">Bei ZUTnik anmelden</string>
-  <string name="login_hint">Benutzername</string>
-  <string name="login_password_hint">Passwort</string>
-  <string name="login_button">Anmelden</string>
-  <string name="login_info_text">
-        Anmeldedaten werden über die offizielle ZUTnik-API gesendet. Der Login wird auf diesem Gerät gespeichert.
-    </string>
-  <string name="login_enter_credentials">Benutzername und Passwort eingeben!</string>
-  <string name="login_error_generic">Fehler: %1$s</string>
-  <string name="login_no_server_response">Keine Antwort vom Server</string>
-  <string name="login_system_error">ZUT Systemfehler (SYSTEM ERROR).</string>
-  <string name="login_invalid_credentials">Ungültiger Benutzername oder Passwort.</string>
   <string name="login_success">Angemeldet als %1$s</string>
   <string name="home_title">Startbildschirm</string>
   <string name="home_toolbar_title">Startseite</string>
   <string name="home_welcome_message">Willkommen %1$s</string>
   <string name="home_welcome_subtitle">
-        Schneller Zugriff auf Stundenplan, Noten, Studieninformationen und ZUT-Neuigkeiten – alles an einem Ort.
+        Schneller Zugriff auf Stundenplan, Noten, Studieninformationen und Hochschul-Neuigkeiten – alles an einem Ort.
     </string>
   <string name="home_welcome_fallback">Willkommen Student 👋</string>
   <string name="home_shortcuts_title">Schnellzugriff</string>
@@ -41,12 +35,12 @@
   <string name="home_tile_info_desc">
         Studiengang, Fakultät, Studentenstatus, Studienverlauf.
     </string>
-  <string name="home_tile_news_title">📰 ZUT Neuigkeiten</string>
+  <string name="home_tile_news_title">📰 Hochschul-Neuigkeiten</string>
   <string name="home_tile_news_desc">
         Mitteilungen und Ankündigungen vom RSS-Kanal für Studenten.
     </string>
   <string name="home_footer_meta">
-        Daten werden aus den ZUT-Systemen abgerufen und lokal zwischengespeichert. Bei Unstimmigkeiten bitte in den offiziellen Panels überprüfen.
+        Daten werden aus den Hochschulsystemen abgerufen und lokal zwischengespeichert. Bei Unstimmigkeiten bitte in den offiziellen Panels überprüfen.
     </string>
   <string name="info_title">Studentendaten</string>
   <string name="info_user_id">Benutzer-ID: %1$s</string>
@@ -153,7 +147,7 @@
   <string name="grades_summary_ects_label">ECTS Summe</string>
   <string name="grades_summary_ects_total_label">Total in program</string>
   <string name="grades_empty_state">Keine Noten für das ausgewählte Semester.</string>
-  <string name="news_title">ZUT Neuigkeiten</string>
+  <string name="news_title">Hochschul-Neuigkeiten</string>
   <string name="news_refresh_toast">Lade neueste Daten…</string>
   <string name="news_error_rss">RSS-Ladefehler: %1$s</string>
   <string name="news_detail_title">Eintrag</string>
@@ -162,13 +156,13 @@
         Kein Inhalt im RSS-Feed für diesen Eintrag.
     </string>
   <string name="news_header_title">Studenten-Nachrichtenkanal</string>
-  <string name="news_header_source_info">RSS-Quelle: ZUT Studenten</string>
+  <string name="news_header_source_info">RSS-Quelle: Hochschul-Studenten</string>
   <string name="news_header_source_info_with_time">%1$s • %2$s</string>
   <string name="news_relative_just_now">gerade eben</string>
   <string name="news_empty_state">
         Keine Nachrichten oder Problem beim RSS-Download.
     </string>
-  <string name="news_detail_tag">📰 ZUT Nachricht</string>
+  <string name="news_detail_tag">📰 Hochschul-Nachricht</string>
   <string name="plan_widget_subtitle_today">Heutige Veranstaltungen</string>
   <string name="plan_widget_subtitle_in_progress">Laufende Veranstaltungen</string>
   <string name="plan_widget_subtitle_next_prefix">Nächste in </string>

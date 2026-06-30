@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/mzBg"
+    android:background="@drawable/bg_plan_canvas"
     android:fitsSystemWindows="false"
     app:statusBarBackground="?attr/mzBg">
 
@@ -134,7 +134,7 @@
                         android:id="@+id/layoutWeekHeadersFixed"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="?attr/mzBgSoft"
+                        android:background="@drawable/bg_plan_header"
                         android:orientation="horizontal"
                         android:paddingTop="10dp"
                         android:paddingBottom="10dp"
@@ -156,7 +156,7 @@
                         android:id="@+id/layoutMonthHeadersFixed"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="?attr/mzBgSoft"
+                        android:background="@drawable/bg_plan_header"
                         android:orientation="horizontal"
                         android:paddingTop="10dp"
                         android:paddingBottom="10dp"

@@ -7,18 +7,12 @@
   <string name="nav_settings_label">Kajuta Kapitana</string>
   <string name="nav_useful_links">Mapy Skarbów</string>
   <string name="nav_logout_label">Opuszczam Okręt</string>
+  <string name="nav_tab_home">Start</string>
+  <string name="nav_tab_plan">Plan</string>
+  <string name="nav_tab_studies">Studia</string>
+  <string name="nav_tab_grades">Oceny</string>
+  <string name="nav_tab_more">Więcej</string>
   <string name="login_card_title">Pokaż Przepustkę</string>
-  <string name="login_hint">Ksywa (Login)</string>
-  <string name="login_password_hint">Tajny Kod (Hasło)</string>
-  <string name="login_button">Wchodzę na pokład</string>
-  <string name="login_info_text">
-        Twoje dane lecą prosto do ZUT (Krakena). Login zostanie wyryty na tym urządzeniu.
-    </string>
-  <string name="login_enter_credentials">Podaj Ksywę i Tajny Kod, szczurze lądowy!</string>
-  <string name="login_error_generic">Sztorm: %1$s</string>
-  <string name="login_no_server_response">Kraken nie odpowiada (Brak serwera)</string>
-  <string name="login_system_error">Statek tonie! (SYSTEM ERROR).</string>
-  <string name="login_invalid_credentials">Zła przepustka! (Błędny login/hasło).</string>
   <string name="login_success">Ahoj, %1$s!</string>
   <string name="home_title">Mostek Kapitański</string>
   <string name="home_toolbar_title">Mostek Kapitański</string>

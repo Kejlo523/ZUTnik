@@ -32,8 +32,8 @@
     <color name="plan_week_header_text">@color/mz_text</color>
     <color name="plan_week_header_selected_bg">@color/mz_card_soft</color>
 
-    <color name="plan_week_day_bg">#000000</color>
-    <color name="plan_week_day_selected_bg">#181818</color>
+    <color name="plan_week_day_bg">#00000000</color>
+    <color name="plan_week_day_selected_bg">#12FFFFFF</color>
     <color name="plan_now_line">#FF5252</color>
 
     <color name="plan_event_text">#FFFFFF</color>

@@ -17,7 +17,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -65,11 +64,6 @@ public class AttendanceActivity extends PhoneAwareActivity {
         View content = shell.contentRoot;
 
         drawerContentRoot = content.findViewById(R.id.drawerContentRoot);
-
-        Toolbar toolbar = content.findViewById(R.id.toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(R.string.attendance_title);
-        }
 
         listSubjects = content.findViewById(R.id.listSubjects);
         tvAbsenceTotal = content.findViewById(R.id.tvAbsenceTotal);
