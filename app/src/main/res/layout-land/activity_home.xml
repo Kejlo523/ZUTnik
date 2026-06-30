@@ -151,7 +151,7 @@
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
-                        <pl.kejlo.mzutv2.TileGridLayout
+                        <pl.kejlo.zutnik.TileGridLayout
                             android:id="@+id/tileGrid"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -183,54 +183,6 @@
                 app:tint="?attr/colorOnPrimary" />
         </androidx.cardview.widget.CardView>
 
-        <!-- Sync Indicator (Bottom Center) -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/syncIndicator"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:layout_marginBottom="24dp"
-            android:visibility="gone"
-            app:cardBackgroundColor="?attr/mzCard"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="6dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="14dp"
-                android:paddingTop="10dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="10dp">
-
-                <ProgressBar
-                    android:id="@+id/syncProgress"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:indeterminate="true"
-                    android:indeterminateTint="?attr/mzPrimary" />
-
-                <ImageView
-                    android:id="@+id/syncDoneIcon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_check"
-                    android:visibility="gone"
-                    app:tint="?attr/mzPrimary" />
-
-                <TextView
-                    android:id="@+id/syncText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:text="@string/wear_main_status_syncing"
-                    android:textColor="?attr/mzText"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
     </FrameLayout>
     <include layout="@layout/include_bottom_navigation" />
 </LinearLayout>

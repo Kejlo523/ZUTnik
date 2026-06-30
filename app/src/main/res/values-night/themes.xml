@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base Application Theme (Night) -->
-    <style name="Base.Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Base.Theme.ZUTnik" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimaryDark">?attr/mzBg</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowBackground">?attr/mzBg</item>
@@ -20,19 +20,19 @@
         <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@android:color/transparent</item>
 
         <!-- Dialogs & Popups -->
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MZUTv2.AlertDialog</item>
-        <item name="popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
-        <item name="android:popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ZUTnik.AlertDialog</item>
+        <item name="popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
 
         <item name="mzNavHeader">@color/mz_nav_header</item>
         <item name="mzNavHeaderText">@color/mz_nav_header_text</item>
-        <item name="toolbarStyle">@style/Widget.MZUTv2.Toolbar</item>
+        <item name="toolbarStyle">@style/Widget.ZUTnik.Toolbar</item>
     </style>
 
     <!-- Default Theme (Night/Reference) uses colors.xml (Night resource resolution) -->
     <!-- Note: colors.xml automatically handles night values if in values-night/colors.xml. -->
     <!-- However, we must map the attributes here just like in values/themes.xml -->
-    <style name="Theme.MZUTv2" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">@color/mz_primary</item>
         <item name="colorPrimaryVariant">@color/mz_primary_alt</item>
         <item name="colorOnPrimary">@color/mz_text</item>
@@ -73,7 +73,7 @@
     </style>
 
     <!-- Deep Blue Theme (Night) -->
-    <style name="Theme.MZUTv2.DeepBlue" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik.DeepBlue" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">#60A5FA</item> <!-- Blue 400 -->
         <item name="colorPrimaryVariant">#3B82F6</item> <!-- Blue 500 -->
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -117,7 +117,7 @@
 
 
     <!-- Lime Theme (Night) -->
-    <style name="Theme.MZUTv2.Lime" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik.Lime" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">#65A30D</item>
         <item name="colorPrimaryVariant">#4D7C0F</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -157,7 +157,7 @@
         <item name="planWeekDaySelectedBg">#243326</item>
     </style>
     <!-- High Contrast Theme (Night) - Accessibility focused -->
-    <style name="Theme.MZUTv2.HighContrast" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik.HighContrast" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">#FFFFFF</item>
         <item name="colorPrimaryVariant">#FFFFFF</item>
         <item name="colorOnPrimary">#000000</item>

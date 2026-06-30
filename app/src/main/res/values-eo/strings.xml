@@ -189,14 +189,14 @@
   <string name="plan_widget_empty_state">Brak zajęć do pokazania</string>
   <string name="about_title">O tej łajbie</string>
   <string name="about_project_description_1">
-        mZUT v2 powstał, bo oryginalne mapy były do niczego. Szybko i bez zbędnego balastu.
+        ZUTnik powstał, bo oryginalne mapy były do niczego. Szybko i bez zbędnego balastu.
     </string>
   <string name="about_rate_title">Oceń okręt</string>
   <string name="about_rate_desc">Twój głos trzyma nas na powierzchni!</string>
   <string name="about_contact_email">List w butelce: kejlo@endozero.pl</string>
   <string name="about_contact_website">Port: endozero.pl</string>
-  <string name="about_contact_app_website">Dok: mzut.endozero.pl</string>
-  <string name="about_privacy_policy_url">https://mzut.endozero.pl/privacy-policy</string>
+  <string name="about_contact_app_website">Dok: zutnik.endozero.pl</string>
+  <string name="about_privacy_policy_url">https://zutnik.endozero.pl/privacy-policy</string>
   <string name="settings_title">Kajuta Kapitana (Ustawienia)</string>
   <string name="settings_language_label">Język załogi</string>
   <string name="settings_language_polish">Polski (Lądowy, bez rumu)</string>
@@ -323,32 +323,6 @@
   <string name="common_percent_format">%1$d%%</string>
   <string name="grades_placeholder_value">4.5</string>
   <string name="grades_ects_format">%1$.1f złota</string>
-  <string name="nav_watch_info_auto_sync_value">%1$s (%2$s)</string>
-  <string name="nav_watch_info_label_bluetooth">Błękitny Kieł</string>
-  <string name="nav_watch_info_label_last_sync">Ostatni kontakt</string>
-  <string name="nav_watch_info_label_auto_sync">Automatyczny zwiad</string>
-  <string name="nav_watch_info_label_tile">Płytka</string>
-  <string name="nav_watch_info_label_battery">Beczka prochu</string>
-  <string name="nav_watch_info_last_sync_none">Brak wieści</string>
-  <string name="nav_watch_info_tile_active">Aktywna (%1$s)</string>
-  <string name="nav_watch_info_tile_missing">Brak (dodaj w Galaxy Wearable)</string>
-  <string name="nav_watch_label">Kompas (Zegarek)</string>
-  <string name="nav_watch_not_found_title">Kompas zgubiony</string>
-  <string name="nav_watch_not_found_msg">Sprawdź czy jest sparowany i połączony.</string>
-  <string name="nav_watch_found_title">Kompas odnaleziony</string>
-  <string name="nav_watch_paired_title">Kompas sparowany</string>
-  <string name="nav_watch_paired_msg">Sparowano: %1$s\nPołącz, żeby zobaczyć dane.</string>
-  <string name="nav_watch_status_connected">Status: połączony</string>
-  <string name="nav_watch_status_connected_unresponsive">Status: połączony (milczy)</string>
-  <string name="nav_watch_status_paired">Status: sparowany (rozłączony)</string>
-  <string name="nav_watch_status_name">Kompas: %1$s</string>
-  <string name="nav_watch_status_bt_on">Włączony</string>
-  <string name="nav_watch_status_bt_off">Wyłączony</string>
-  <string name="nav_watch_status_battery">Proch: %1$d%%</string>
-  <string name="nav_watch_status_auto_on">tak</string>
-  <string name="nav_watch_status_auto_off">nie</string>
-  <string name="nav_watch_status_interval_h">co %1$d h</string>
-  <string name="nav_watch_status_interval_m">co %1$d min</string>
   <string name="session_start_label">Wypłynięcie (Sesja start)</string>
   <string name="session_end_label">Zawinięcie (Sesja koniec)</string>
   <string name="session_winter">zimowa</string>
@@ -367,16 +341,6 @@
   <string name="about_link_title_author">Port szkutnika</string>
   <string name="about_link_title_privacy">Sekrety (Prywatność)</string>
   <!-- Missing Strings -->
-  <string name="nav_watch_searching">Szukam kompasu…</string>
-  <string name="wear_sync_status_prepare">Szykuję mapy…</string>
-  <string name="wear_sync_status_sending">Wysyłam gołębia…</string>
-  <string name="wear_sync_status_waiting_watch">Czekam na sygnał…</string>
-  <string name="wear_sync_status_no_data">Puste kieszenie…</string>
-  <string name="wear_sync_status_error">Błąd w sztuce!</string>
-  <string name="wear_sync_status_watch_received">Kompas odebrał!</string>
-  <string name="wear_main_status_syncing">Przeładowuję mapy…</string>
-  <string name="wear_install_dialog_open_store">Otwórz Kram</string>
-  <string name="wear_install_sent_toast">Posłano gołębia na zegarek</string>
   <string name="web_link_title">Mapa w sieci</string>
   <string name="web_link_open_external">Otwórz iluminator</string>
   <string name="web_link_no_url">Brak współrzędnych</string>
@@ -448,6 +412,6 @@
   <string name="period_break_generic">przerwa dydaktyczna</string>
   <string name="period_holiday_winter">wakacje zimowe</string>
   <string name="period_holiday_summer">wakacje letnie</string>
-  <string name="about_logo_desc">Godło mZUT v2</string>
+  <string name="about_logo_desc">Godło ZUTnik</string>
   <string name="common_close">Zamknij luk</string>
 </resources>

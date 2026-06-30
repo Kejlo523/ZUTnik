@@ -2,7 +2,7 @@
 
 Mobilna, nieoficjalna aplikacja kliencka dla studentów Zachodniopomorskiego Uniwersytetu Technologicznego. Integruje się z **USOS API** (`usosapi.zut.edu.pl`) i udostępnia dane akademiowania na Androidzie.
 <br>
-<img width="auto" height="500" alt="mzut_promotional_banner_v2" src="https://github.com/user-attachments/assets/facda314-2843-4ea4-ab95-7722bdc3d1bf" />
+<img width="auto" height="500" alt="zutnik_promotional_banner" src="https://github.com/user-attachments/assets/facda314-2843-4ea4-ab95-7722bdc3d1bf" />
 
 <br>
 Aplikacja skupia się na:
@@ -82,7 +82,7 @@ Więcej informacji o projekcie: https://zutnik.endozero.pl
 - Język: Java (Android).
 - Autoryzacja: OAuth 1.0a wobec USOS API (`UsosOAuth`, `UsosApi`).
 - Warstwa danych:
-  - zapamiętywanie tokenów sesji i danych studiów (`MzutSession`),
+  - zapamiętywanie tokenów sesji i danych studiów (`ZutnikSession`),
   - repozytoria do obsługi planu, ocen i aktualności (`PlanRepository`, `GradesRepository`, `NewsRepository`),
   - lokalne cache’owanie odpowiedzi API.
 - Widoki:

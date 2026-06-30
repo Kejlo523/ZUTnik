@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base Application Theme -->
-    <style name="Base.Theme.MZUTv2" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Base.Theme.ZUTnik" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimaryDark">?attr/mzBg</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowBackground">?attr/mzBg</item>
@@ -20,17 +20,17 @@
         <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@android:color/transparent</item>
 
         <!-- Dialogs & Popups -->
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MZUTv2.AlertDialog</item>
-        <item name="popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
-        <item name="android:popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ZUTnik.AlertDialog</item>
+        <item name="popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
 
         <item name="mzNavHeader">@color/mz_nav_header</item>
         <item name="mzNavHeaderText">@color/mz_nav_header_text</item>
-        <item name="toolbarStyle">@style/Widget.MZUTv2.Toolbar</item>
+        <item name="toolbarStyle">@style/Widget.ZUTnik.Toolbar</item>
     </style>
 
     <!-- Default Theme (Light/Reference) uses colors.xml -->
-    <style name="Theme.MZUTv2" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">@color/mz_primary</item>
         <item name="colorPrimaryVariant">@color/mz_primary_alt</item>
         <item name="colorOnPrimary">@android:color/white</item>
@@ -71,7 +71,7 @@
     </style>
 
     <!-- Deep Blue Theme (Day/Light) -->
-    <style name="Theme.MZUTv2.DeepBlue" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik.DeepBlue" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">#1E3A8A</item> <!-- Blue 900 -->
         <item name="colorPrimaryVariant">#172554</item> <!-- Blue 950 -->
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -117,7 +117,7 @@
 
 
     <!-- Lime Theme (Day/Light) -->
-    <style name="Theme.MZUTv2.Lime" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik.Lime" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">#65A30D</item>
         <item name="colorPrimaryVariant">#4D7C0F</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -159,7 +159,7 @@
         <item name="planWeekDaySelectedBg">#ECFDF3</item>
     </style>
     <!-- High Contrast Theme (Day) - Accessibility focused -->
-    <style name="Theme.MZUTv2.HighContrast" parent="Base.Theme.MZUTv2">
+    <style name="Theme.ZUTnik.HighContrast" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">#000000</item>
         <item name="colorPrimaryVariant">#000000</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -202,14 +202,14 @@
         <item name="planWeekDaySelectedBg">#EEEEEE</item>
     </style>
 
-    <style name="ThemeOverlay.MZUTv2.Toolbar" parent="ThemeOverlay.AppCompat.ActionBar">
+    <style name="ThemeOverlay.ZUTnik.Toolbar" parent="ThemeOverlay.AppCompat.ActionBar">
         <item name="colorControlNormal">?attr/mzText</item>
         <item name="android:textColorPrimary">?attr/mzText</item>
     </style>
 
-    <style name="Widget.MZUTv2.Toolbar" parent="Widget.AppCompat.Toolbar">
+    <style name="Widget.ZUTnik.Toolbar" parent="Widget.AppCompat.Toolbar">
         <item name="android:background">@drawable/bg_toolbar</item>
-        <item name="android:theme">@style/ThemeOverlay.MZUTv2.Toolbar</item>
+        <item name="android:theme">@style/ThemeOverlay.ZUTnik.Toolbar</item>
         <item name="android:minHeight">?attr/actionBarSize</item>
         <item name="titleTextColor">?attr/mzText</item>
         <item name="subtitleTextColor">?attr/mzText</item>
@@ -217,64 +217,64 @@
     </style>
 
     <!-- AlertDialog Theme Overlay -->
-    <style name="ThemeOverlay.MZUTv2.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+    <style name="ThemeOverlay.ZUTnik.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="android:windowBackground">@drawable/bg_dialog_rounded_dark</item>
         <item name="colorSurface">?attr/mzBgSoft</item>
         <item name="colorOnSurface">?attr/mzText</item>
-        <item name="materialAlertDialogTitlePanelStyle">@style/Widget.MZUTv2.AlertDialog.Title.Panel</item>
+        <item name="materialAlertDialogTitlePanelStyle">@style/Widget.ZUTnik.AlertDialog.Title.Panel</item>
         <item name="materialAlertDialogTitleIconStyle">@style/MaterialAlertDialog.MaterialComponents.Title.Icon</item>
-        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Title</item>
-        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Body</item>
-        <item name="android:windowAnimationStyle">@style/Animation.MZUTv2.Dialog</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.ZUTnik.AlertDialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.ZUTnik.AlertDialog.Body</item>
+        <item name="android:windowAnimationStyle">@style/Animation.ZUTnik.Dialog</item>
     </style>
 
-    <style name="ThemeOverlay.MZUTv2.AlertDialog.Dark" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+    <style name="ThemeOverlay.ZUTnik.AlertDialog.Dark" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="android:windowBackground">@drawable/bg_dialog_rounded_dark</item>
         <item name="colorSurface">?attr/mzBgSoft</item>
         <item name="colorOnSurface">?attr/mzText</item>
-        <item name="materialAlertDialogTitlePanelStyle">@style/Widget.MZUTv2.AlertDialog.Title.Panel</item>
+        <item name="materialAlertDialogTitlePanelStyle">@style/Widget.ZUTnik.AlertDialog.Title.Panel</item>
         <item name="materialAlertDialogTitleIconStyle">@style/MaterialAlertDialog.MaterialComponents.Title.Icon</item>
-        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Title</item>
-        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.MZUTv2.AlertDialog.Body</item>
-        <item name="android:windowAnimationStyle">@style/Animation.MZUTv2.Dialog</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.ZUTnik.AlertDialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.ZUTnik.AlertDialog.Body</item>
+        <item name="android:windowAnimationStyle">@style/Animation.ZUTnik.Dialog</item>
     </style>
 
-    <style name="Animation.MZUTv2" parent="@android:style/Animation" />
+    <style name="Animation.ZUTnik" parent="@android:style/Animation" />
 
-    <style name="Animation.MZUTv2.Dialog" parent="Animation.MZUTv2">
+    <style name="Animation.ZUTnik.Dialog" parent="Animation.ZUTnik">
         <item name="android:windowEnterAnimation">@anim/dialog_enter</item>
         <item name="android:windowExitAnimation">@anim/dialog_exit</item>
     </style>
 
-    <style name="TextAppearance.MZUTv2.AlertDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+    <style name="TextAppearance.ZUTnik.AlertDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
         <item name="android:textColor">?attr/mzText</item>
     </style>
 
-    <style name="TextAppearance.MZUTv2.AlertDialog.Body" parent="TextAppearance.MaterialComponents.Body2">
+    <style name="TextAppearance.ZUTnik.AlertDialog.Body" parent="TextAppearance.MaterialComponents.Body2">
         <item name="android:textColor">?attr/mzMuted</item>
         <item name="android:textSize">14sp</item>
         <item name="android:lineSpacingExtra">2dp</item>
     </style>
 
-    <style name="Widget.MZUTv2.AlertDialog.Title.Panel" parent="MaterialAlertDialog.MaterialComponents.Title.Panel">
+    <style name="Widget.ZUTnik.AlertDialog.Title.Panel" parent="MaterialAlertDialog.MaterialComponents.Title.Panel">
         <item name="android:paddingLeft">?attr/dialogPreferredPadding</item>
         <item name="android:paddingRight">?attr/dialogPreferredPadding</item>
         <item name="android:paddingTop">@dimen/abc_dialog_padding_top_material</item>
     </style>
 
     <!-- Popup Menu -->
-    <style name="ThemeOverlay.MZUTv2.PopupMenu" parent="ThemeOverlay.MaterialComponents">
-        <item name="popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
-        <item name="android:popupMenuStyle">@style/Widget.MZUTv2.PopupMenu</item>
+    <style name="ThemeOverlay.ZUTnik.PopupMenu" parent="ThemeOverlay.MaterialComponents">
+        <item name="popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
     </style>
 
-    <style name="Widget.MZUTv2.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">
+    <style name="Widget.ZUTnik.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
         <item name="android:textColor">?attr/mzText</item>
-        <item name="android:itemTextAppearance">@style/TextAppearance.MZUTv2.PopupMenu</item>
+        <item name="android:itemTextAppearance">@style/TextAppearance.ZUTnik.PopupMenu</item>
     </style>
 
-    <style name="TextAppearance.MZUTv2.PopupMenu" parent="TextAppearance.MaterialComponents.Body2">
+    <style name="TextAppearance.ZUTnik.PopupMenu" parent="TextAppearance.MaterialComponents.Body2">
         <item name="android:textColor">?attr/mzText</item>
     </style>
 

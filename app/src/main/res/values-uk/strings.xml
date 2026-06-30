@@ -12,7 +12,7 @@
   <string name="login_password_hint">Пароль</string>
   <string name="login_button">Увійти</string>
   <string name="login_info_text">
-        Дані для входу надсилаються через офіційний API mZUT. Логін буде збережено на цьому пристрої.
+        Дані для входу надсилаються через офіційний API ZUTnik. Логін буде збережено на цьому пристрої.
     </string>
   <string name="login_enter_credentials">Введіть логін і пароль!</string>
   <string name="login_error_generic">Помилка: %1$s</string>
@@ -182,7 +182,7 @@
   <string name="plan_widget_subtitle_tomorrow">Завтрашні заняття</string>
   <string name="plan_widget_subtitle_no_classes_until">%1$s · немає занять до %2$s</string>
   <string name="plan_widget_subtitle_login_required">
-        Увійдіть в застосунок mZUT
+        Увійдіть в застосунок ZUTnik
     </string>
   <string name="plan_widget_refreshed_prefix">Оновлено: </string>
   <string name="plan_widget_refresh_desc">Оновити віджет</string>
@@ -194,12 +194,12 @@
   <string name="plan_widget_empty_state">Немає занять для відображення</string>
   <string name="about_title">Про застосунок</string>
   <string name="about_project_description_1">
-        mZUT v2 створено як неофіційну, легку альтернативу для швидкого перегляду розкладу, оцінок та інформації про навчання в ZUT без необхідності переходити через важкі веб-панелі.
+        ZUTnik створено як неофіційну, легку альтернативу для швидкого перегляду розкладу, оцінок та інформації про навчання в ZUT без необхідності переходити через важкі веб-панелі.
     </string>
   <string name="about_contact_email">E-mail: kejlo@endozero.pl</string>
   <string name="about_contact_website">Сайт: endozero.pl</string>
-  <string name="about_contact_app_website">Сайт застосунку: mzut.endozero.pl</string>
-  <string name="about_privacy_policy_url">https://mzut.endozero.pl/privacy-policy</string>
+  <string name="about_contact_app_website">Сайт застосунку: zutnik.endozero.pl</string>
+  <string name="about_privacy_policy_url">https://zutnik.endozero.pl/privacy-policy</string>
   <string name="settings_title">Налаштування</string>
   <string name="settings_section_appearance">Вигляд і мова</string>
   <string name="settings_section_widget">Віджет</string>
@@ -347,32 +347,6 @@
   <string name="common_percent_format">%1$d%%</string>
   <string name="grades_placeholder_value">4.5</string>
   <string name="grades_ects_format">%1$.1f ECTS</string>
-  <string name="nav_watch_info_auto_sync_value">%1$s (%2$s)</string>
-  <string name="nav_watch_info_label_bluetooth">Bluetooth</string>
-  <string name="nav_watch_info_label_last_sync">Остання синхронізація</string>
-  <string name="nav_watch_info_label_auto_sync">Автосинхронізація</string>
-  <string name="nav_watch_info_label_tile">Плитка</string>
-  <string name="nav_watch_info_label_battery">Батарея</string>
-  <string name="nav_watch_info_last_sync_none">Немає даних</string>
-  <string name="nav_watch_info_tile_active">Активна (%1$s)</string>
-  <string name="nav_watch_info_tile_missing">Немає (додайте в Galaxy Wearable)</string>
-  <string name="nav_watch_label">Годинник</string>
-  <string name="nav_watch_not_found_title">Годинник не знайдено</string>
-  <string name="nav_watch_not_found_msg">Перевірте, чи годинник спарований і підключений.</string>
-  <string name="nav_watch_found_title">Годинник підключено</string>
-  <string name="nav_watch_paired_title">Годинник спарований</string>
-  <string name="nav_watch_paired_msg">Спаровано: %1$s\nПідключіть, щоб показати дані.</string>
-  <string name="nav_watch_status_connected">Статус: підключено</string>
-  <string name="nav_watch_status_connected_unresponsive">Статус: підключено (без відповіді)</string>
-  <string name="nav_watch_status_paired">Статус: спаровано (немає з’єднання)</string>
-  <string name="nav_watch_status_name">Годинник: %1$s</string>
-  <string name="nav_watch_status_bt_on">Увімкнено</string>
-  <string name="nav_watch_status_bt_off">Вимкнено</string>
-  <string name="nav_watch_status_battery">Батарея: %1$d%%</string>
-  <string name="nav_watch_status_auto_on">увімкнена</string>
-  <string name="nav_watch_status_auto_off">вимкнена</string>
-  <string name="nav_watch_status_interval_h">кожні %1$d год</string>
-  <string name="nav_watch_status_interval_m">кожні %1$d хв</string>
   <!-- Missing session strings -->
   <string name="session_start_label">Початок сесії</string>
   <string name="session_end_label">Кінець сесії</string>
@@ -402,16 +376,6 @@
   <string name="about_link_title_author">Сайт автора</string>
   <string name="about_link_title_privacy">Політика конфіденційності</string>
   <!-- Missing Strings -->
-  <string name="nav_watch_searching">Шукаю годинник…</string>
-  <string name="wear_sync_status_prepare">Підготовка даних…</string>
-  <string name="wear_sync_status_sending">Надсилання на годинник…</string>
-  <string name="wear_sync_status_waiting_watch">Очікування відповіді годинника…</string>
-  <string name="wear_sync_status_no_data">Немає даних для синхронізації.</string>
-  <string name="wear_sync_status_error">Помилка синхронізації.</string>
-  <string name="wear_sync_status_watch_received">Годинник отримав дані!</string>
-  <string name="wear_main_status_syncing">Синхронізація…</string>
-  <string name="wear_install_dialog_open_store">Відкрити Маркет</string>
-  <string name="wear_install_sent_toast">Запит надіслано на годинник</string>
   <string name="settings_section_notifications">Notifications</string>
   <string name="settings_notifications_master_label">Enable notifications</string>
   <string name="settings_notifications_master_desc">Notifications about grades and timetable changes.</string>
@@ -446,6 +410,6 @@
   <string name="notif_plan_line_removed">%1$s: removed (%2$s %3$s)</string>
   <string name="notif_plan_refreshed_title">Timetable refreshed</string>
   <string name="notif_plan_refreshed_text">Large amount of changes detected. A new/refreshed timetable is available.</string>
-  <string name="about_logo_desc">Логотип mZUT v2</string>
+  <string name="about_logo_desc">Логотип ZUTnik</string>
   <string name="common_close">Закрити</string>
 </resources>
