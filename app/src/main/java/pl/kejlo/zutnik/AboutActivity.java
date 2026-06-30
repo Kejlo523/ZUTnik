@@ -30,7 +30,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -78,11 +77,13 @@ public class AboutActivity extends PhoneAwareActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
-        setContentView(R.layout.activity_about);
-        ThemeManager.applySystemBars(this);
+
+        ShellHostHelper.mountContentLayout(
+                this,
+                R.layout.activity_about,
+                MainNavHelper.Screen.ABOUT);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
         toolbar = findViewById(R.id.toolbar);
         textPlayStoreStats = findViewById(R.id.textPlayStoreStats);
         aboutVersion = findViewById(R.id.aboutVersion);
@@ -90,13 +91,6 @@ public class AboutActivity extends PhoneAwareActivity {
         easterTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
         toolbar.setTitle(R.string.about_title);
-
-        MainNavHelper.setup(
-                this,
-                drawerContentRoot,
-                bottomNavigation,
-                toolbar,
-                MainNavHelper.Screen.ABOUT);
 
         setupUI();
         loadPlayStoreStats();

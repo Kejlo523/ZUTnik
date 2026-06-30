@@ -188,11 +188,7 @@ public class SettingsActivity extends PhoneAwareActivity {
                 if (!val.equals(current)) {
                     ThemeManager.setTheme(SettingsActivity.this, val);
                     Toast.makeText(SettingsActivity.this, R.string.settings_theme_changed, Toast.LENGTH_SHORT).show();
-
-                    Intent i = new Intent(SettingsActivity.this, HomeActivity.class);
-                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(i);
-                    finish();
+                    restartMainShell();
                 }
             }
 
@@ -521,7 +517,11 @@ public class SettingsActivity extends PhoneAwareActivity {
                 getString(R.string.settings_language_changed_toast),
                 Toast.LENGTH_SHORT).show();
 
-        Intent i = new Intent(this, HomeActivity.class);
+        restartMainShell();
+    }
+
+    private void restartMainShell() {
+        Intent i = MainShellActivity.createIntent(this, MainNavHelper.Screen.HOME);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();

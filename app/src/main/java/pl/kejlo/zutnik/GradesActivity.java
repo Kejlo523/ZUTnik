@@ -14,6 +14,7 @@ public class GradesActivity extends ZutnikBaseActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        ThemeManager.applyTheme(this);
         super.onCreate(savedInstanceState);
         startActivity(MainShellActivity.createIntent(this, MainNavHelper.Screen.GRADES));
         finish();

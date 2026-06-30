@@ -505,9 +505,12 @@ public class TileGridLayout extends ViewGroup {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int availableWidth = width - getPaddingLeft() - getPaddingRight();
 
-        if (COLUMN_COUNT > 0) {
+        if (COLUMN_COUNT > 0 && availableWidth > 0) {
             int desired = (availableWidth - (COLUMN_COUNT - 1) * gap) / COLUMN_COUNT;
-            if (maxCellSizePx > 0) {
+            if (widthMode == MeasureSpec.EXACTLY
+                    || (widthMode == MeasureSpec.AT_MOST && width >= availableWidth)) {
+                cellWidth = desired;
+            } else if (maxCellSizePx > 0) {
                 cellWidth = Math.min(desired, maxCellSizePx);
             } else {
                 cellWidth = desired;
@@ -571,7 +574,6 @@ public class TileGridLayout extends ViewGroup {
                 if (!isDragging && !isResizing) {
                     child.setTranslationX(0f);
                     child.setTranslationY(0f);
-                    child.animate().cancel();
                 }
             }
         }

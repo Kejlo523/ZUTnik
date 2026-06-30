@@ -301,6 +301,17 @@ public class PlanRepository {
             return null;
         }
 
+        if (session.isDemoLogin()) {
+            String sn = session.getStudentNumber();
+            if (sn == null || sn.isEmpty()) {
+                sn = DemoDataProvider.ALBUM_NUMBER;
+            }
+            sCachedAlbum = sn;
+            sCachedAlbumTs = now;
+            sCachedAlbumStudyId = "demo_" + userId;
+            return sn;
+        }
+
         String authKey = session.getAuthKey();
         if (userId == null || authKey == null) {
             return null;

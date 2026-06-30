@@ -157,8 +157,7 @@ public class InfoTabFragment extends ZutnikTabFragment {
             imageAvatar.setVisibility(View.GONE);
         }
 
-        if (session.isUsosLogin()) {
-            // ── USOS mode: show album from session ──────────────────────────────
+        if (session.isUsosLogin() || session.isDemoLogin()) {
             String sn = session.getStudentNumber();
             setOrHide(tvAlbum, sn);
         }

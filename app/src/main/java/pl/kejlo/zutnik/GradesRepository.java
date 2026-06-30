@@ -1082,6 +1082,11 @@ public class GradesRepository {
 
     public List<Study> loadStudies(boolean forceRefresh) throws IOException, JSONException {
         ZutnikSession session = ZutnikSession.getInstance();
+        if (session.isDemoLogin()) {
+            List<Study> demoStudies = DemoDataProvider.createStudies();
+            session.setStudies(demoStudies);
+            return demoStudies;
+        }
         if (!session.isUsosLogin() || session.getUserId() == null) {
             return Collections.emptyList();
         }
@@ -1180,6 +1185,9 @@ public class GradesRepository {
 
     public List<Semester> loadSemesters(boolean forceRefresh) throws IOException, JSONException {
         ZutnikSession session = ZutnikSession.getInstance();
+        if (session.isDemoLogin()) {
+            return DemoDataProvider.createSemesters();
+        }
         List<Study> studies = loadStudies(forceRefresh);
         if (studies == null || studies.isEmpty()) {
             return Collections.emptyList();
@@ -1247,6 +1255,9 @@ public class GradesRepository {
 
     public List<Grade> loadCurrentGrades() throws IOException, JSONException {
         ZutnikSession session = ZutnikSession.getInstance();
+        if (session.isDemoLogin()) {
+            return DemoDataProvider.loadCurrentGrades();
+        }
         if (!session.isUsosLogin() || session.getUserId() == null) {
             return Collections.emptyList();
         }
@@ -1303,6 +1314,9 @@ public class GradesRepository {
 
     public CreditSummary loadCreditSummary() throws IOException {
         ZutnikSession session = ZutnikSession.getInstance();
+        if (session.isDemoLogin()) {
+            return DemoDataProvider.loadCreditSummary();
+        }
         if (!session.isUsosLogin() || session.getUserId() == null) {
             return new CreditSummary("", null, null);
         }
@@ -1386,6 +1400,9 @@ public class GradesRepository {
     public List<Grade> loadGradesForSemester(String listaSemestrowId)
             throws IOException, JSONException {
         ZutnikSession session = ZutnikSession.getInstance();
+        if (session.isDemoLogin()) {
+            return DemoDataProvider.loadGradesForSemester(listaSemestrowId);
+        }
         if (!session.isUsosLogin()
                 || session.getUserId() == null
                 || listaSemestrowId == null

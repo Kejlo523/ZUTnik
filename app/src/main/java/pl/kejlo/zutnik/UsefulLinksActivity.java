@@ -24,7 +24,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -82,28 +81,24 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
-        setContentView(R.layout.activity_useful_links);
-        ThemeManager.applySystemBars(this);
 
         ImageCache.init(getApplicationContext());
         ogCachePrefs = getSharedPreferences(PREF_OG_CACHE, MODE_PRIVATE);
 
-        drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
-        toolbar = findViewById(R.id.toolbar);
-        listLinks = findViewById(R.id.listLinks);
-        tvEmpty = findViewById(R.id.tvLinksEmpty);
+        ShellHostHelper.MountedContent shell = ShellHostHelper.mountContentLayout(
+                this,
+                R.layout.activity_useful_links,
+                MainNavHelper.Screen.USEFUL);
+        View content = shell.contentRoot;
+
+        drawerContentRoot = content.findViewById(R.id.drawerContentRoot);
+        toolbar = content.findViewById(R.id.toolbar);
+        listLinks = content.findViewById(R.id.listLinks);
+        tvEmpty = content.findViewById(R.id.tvLinksEmpty);
 
         if (toolbar != null) {
             toolbar.setTitle(R.string.nav_useful_links);
         }
-
-        MainNavHelper.setup(
-                this,
-                drawerContentRoot,
-                bottomNavigation,
-                toolbar,
-                MainNavHelper.Screen.USEFUL);
 
         listLinks.setLayoutManager(new LinearLayoutManager(this));
         listLinks.setItemAnimator(null);

@@ -4,8 +4,8 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.navigation.NavigationBarView;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -433,10 +433,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
         if (insetHost != null && fabAddEvent != null) {
             ViewCompat.setOnApplyWindowInsetsListener(insetHost, (v, windowInsets) -> {
                 Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-                BottomNavigationView shellBottomNav = shellActivity().getBottomNavigation();
-                int bottomNavExtra = shellBottomNav != null && shellBottomNav.getVisibility() == View.VISIBLE
-                        ? shellBottomNav.getHeight()
-                        : 0;
+                NavigationBarView shellNav = shellActivity().getShellNavigation();
+                int bottomNavExtra = MainNavHelper.bottomNavigationInset(shellNav);
                 if (fabAddEvent.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
                     ViewGroup.MarginLayoutParams lp =
                             (ViewGroup.MarginLayoutParams) fabAddEvent.getLayoutParams();
@@ -448,9 +446,9 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 }
                 return windowInsets;
             });
-            BottomNavigationView shellBottomNav = shellActivity().getBottomNavigation();
-            if (shellBottomNav != null) {
-                shellBottomNav.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+            NavigationBarView shellNav = shellActivity().getShellNavigation();
+            if (shellNav != null) {
+                shellNav.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
                         ViewCompat.requestApplyInsets(insetHost));
             }
             ViewCompat.requestApplyInsets(insetHost);

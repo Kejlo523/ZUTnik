@@ -4,8 +4,6 @@ import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-
 public class FinanceActivity extends ZutnikBaseActivity {
 
     @Override
@@ -16,13 +14,7 @@ public class FinanceActivity extends ZutnikBaseActivity {
         setContentView(R.layout.activity_main_shell);
         ThemeManager.applySystemBars(this);
 
-        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
-        MainNavHelper.setup(
-                this,
-                findViewById(R.id.mainShellRoot),
-                bottomNavigation,
-                null,
-                MainNavHelper.Screen.FINANCE);
+        ShellHostHelper.setupNavigation(this, MainNavHelper.Screen.FINANCE);
 
         if (savedInstanceState == null) {
             getSupportFragmentManager()

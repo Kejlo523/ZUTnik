@@ -382,7 +382,11 @@ public class HomeTabFragment extends ZutnikTabFragment {
         }
         if (tileGrid != null) {
             tileGrid.setAlpha(1f);
-            tileGrid.post(() -> tileGrid.animateTilesEntrance(80));
+            tileGrid.post(() -> {
+                if (tileGrid.getChildCount() > 0) {
+                    tileGrid.animateTilesEntrance(80);
+                }
+            });
         }
         if (homeSection != null) {
             homeSection.animate()

@@ -267,6 +267,9 @@ public class StudiesInfoRepository {
 
     public StudyDetails loadCurrentStudyDetails() throws IOException, JSONException {
         ZutnikSession session = ZutnikSession.getInstance();
+        if (session.isDemoLogin()) {
+            return DemoDataProvider.loadStudyDetails();
+        }
         if (!session.isUsosLogin() || session.getUserId() == null) {
             return null;
         }
@@ -313,6 +316,9 @@ public class StudiesInfoRepository {
 
     public List<StudyHistoryItem> loadStudyHistory() throws IOException, JSONException {
         ZutnikSession session = ZutnikSession.getInstance();
+        if (session.isDemoLogin()) {
+            return DemoDataProvider.loadStudyHistory();
+        }
         if (!session.isUsosLogin() || session.getUserId() == null) {
             return new ArrayList<>();
         }

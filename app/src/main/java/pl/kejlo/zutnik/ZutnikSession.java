@@ -244,6 +244,13 @@ public final class ZutnikSession {
             this.activeStudyIndex = 0;
             this.activeStudyId = null;
         }
+
+        if (LOGIN_TYPE_DEMO.equals(this.loginType)) {
+            if (this.studentNumber == null || this.studentNumber.trim().isEmpty()
+                    || this.studies == null || this.studies.isEmpty()) {
+                DemoDataProvider.populateSession(this);
+            }
+        }
     }
 
     /**
@@ -422,6 +429,10 @@ public final class ZutnikSession {
 
     public String getStudentNumber() {
         return studentNumber;
+    }
+
+    public void setStudentNumber(String studentNumber) {
+        this.studentNumber = studentNumber;
     }
 
     /** Returns true when the user authenticated via USOS OAuth. */

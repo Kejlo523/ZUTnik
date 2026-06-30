@@ -21,7 +21,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
@@ -58,30 +57,26 @@ public class AttendanceActivity extends PhoneAwareActivity {
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_attendance);
-        ThemeManager.applySystemBars(this);
 
-        drawerContentRoot = findViewById(R.id.drawerContentRoot);
-
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
-
-        MainNavHelper.setup(
+        ShellHostHelper.MountedContent shell = ShellHostHelper.mountContentLayout(
                 this,
-                drawerContentRoot,
-                bottomNavigation,
-                toolbar,
+                R.layout.activity_attendance,
                 MainNavHelper.Screen.ATTENDANCE);
+        View content = shell.contentRoot;
+
+        drawerContentRoot = content.findViewById(R.id.drawerContentRoot);
+
+        Toolbar toolbar = content.findViewById(R.id.toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.attendance_title);
         }
 
-        listSubjects = findViewById(R.id.listSubjects);
-        tvAbsenceTotal = findViewById(R.id.tvAbsenceTotal);
-        tvAttendanceSubtitle = findViewById(R.id.tvAttendanceSubtitle);
-        tvEmpty = findViewById(R.id.tvEmpty);
-        attendanceProgress = findViewById(R.id.attendanceProgress);
-        btnRefresh = findViewById(R.id.btnAttendanceRefresh);
+        listSubjects = content.findViewById(R.id.listSubjects);
+        tvAbsenceTotal = content.findViewById(R.id.tvAbsenceTotal);
+        tvAttendanceSubtitle = content.findViewById(R.id.tvAttendanceSubtitle);
+        tvEmpty = content.findViewById(R.id.tvEmpty);
+        attendanceProgress = content.findViewById(R.id.attendanceProgress);
+        btnRefresh = content.findViewById(R.id.btnAttendanceRefresh);
 
         listSubjects.setLayoutManager(new LinearLayoutManager(this));
         adapter = new AttendanceAdapter();

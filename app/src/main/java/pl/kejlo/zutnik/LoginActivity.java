@@ -297,7 +297,11 @@ public class LoginActivity extends PhoneAwareActivity {
 
         ZutnikSession.clearSessionData(this);
         ZutnikSession session = ZutnikSession.getInstance(this);
-        session.updateDemoUser("demo", getString(R.string.login_demo_username), null);
+        session.updateDemoUser(
+                DemoDataProvider.DEMO_USER_ID,
+                DemoDataProvider.DEMO_USERNAME,
+                null);
+        DemoDataProvider.populateSession(session);
         session.saveToPreferences(this);
 
         Toast.makeText(this, R.string.login_demo_toast, Toast.LENGTH_SHORT).show();

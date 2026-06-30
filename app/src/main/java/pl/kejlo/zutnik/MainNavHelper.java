@@ -3,6 +3,7 @@ package pl.kejlo.zutnik;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -18,8 +19,11 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.navigationrail.NavigationRailView;
 
 public class MainNavHelper {
 
@@ -70,13 +74,13 @@ public class MainNavHelper {
 
     private static boolean handleMoreNavClick(
             AppCompatActivity activity,
-            BottomNavigationView bottomNav,
+            NavigationBarView shellNav,
             String currentScreen) {
         if (activeMoreSheet != null && activeMoreSheet.isShowing()) {
             activeMoreSheet.dismiss();
             return true;
         }
-        showMoreSheet(activity, bottomNav, currentScreen);
+        showMoreSheet(activity, shellNav, currentScreen);
         return true;
     }
 
@@ -98,23 +102,23 @@ public class MainNavHelper {
     public static void setupShell(
             MainShellActivity activity,
             View contentRoot,
-            BottomNavigationView bottomNav) {
-        if (bottomNav == null) {
+            NavigationBarView shellNav) {
+        if (shellNav == null) {
             return;
         }
-        applyWindowInsets(contentRoot, bottomNav);
+        applyWindowInsets(contentRoot, shellNav);
 
         suppressNavCallback = true;
-        bottomNav.setSelectedItemId(menuItemForScreen(activity.getCurrentTabId()));
+        shellNav.setSelectedItemId(menuItemForScreen(activity.getCurrentTabId()));
         suppressNavCallback = false;
 
-        bottomNav.setOnItemSelectedListener(item -> {
+        shellNav.setOnItemSelectedListener(item -> {
             if (suppressNavCallback) {
                 return true;
             }
             int itemId = item.getItemId();
             if (itemId == R.id.nav_more) {
-                return handleMoreNavClick(activity, bottomNav, activity.getCurrentTabId());
+                return handleMoreNavClick(activity, shellNav, activity.getCurrentTabId());
             }
             Screen target = screenForMenuItem(itemId);
             if (target == null) {
@@ -127,47 +131,47 @@ public class MainNavHelper {
             return true;
         });
 
-        bottomNav.setOnItemReselectedListener(item -> {
+        shellNav.setOnItemReselectedListener(item -> {
             if (suppressNavCallback) {
                 return;
             }
             if (item.getItemId() == R.id.nav_more) {
-                handleMoreNavClick(activity, bottomNav, activity.getCurrentTabId());
+                handleMoreNavClick(activity, shellNav, activity.getCurrentTabId());
             }
         });
     }
 
-    public static void updateShellSelection(BottomNavigationView bottomNav, String currentScreen) {
-        if (bottomNav == null) {
+    public static void updateShellSelection(NavigationBarView shellNav, String currentScreen) {
+        if (shellNav == null) {
             return;
         }
         int itemId = menuItemForScreen(currentScreen);
-        if (bottomNav.getSelectedItemId() == itemId) {
+        if (shellNav.getSelectedItemId() == itemId) {
             return;
         }
         suppressNavCallback = true;
-        bottomNav.setSelectedItemId(itemId);
+        shellNav.setSelectedItemId(itemId);
         suppressNavCallback = false;
     }
 
     public static void setup(
             AppCompatActivity activity,
             View contentRoot,
-            BottomNavigationView bottomNav,
+            NavigationBarView shellNav,
             Toolbar toolbar,
             Screen currentScreen) {
         String currentScreenId = currentScreen != null ? currentScreen.getId() : null;
-        setup(activity, contentRoot, bottomNav, toolbar, currentScreenId);
+        setup(activity, contentRoot, shellNav, toolbar, currentScreenId);
     }
 
     @SuppressLint("StringFormatInvalid")
     public static void setup(
             AppCompatActivity activity,
             View contentRoot,
-            BottomNavigationView bottomNav,
+            NavigationBarView shellNav,
             Toolbar toolbar,
             String currentScreen) {
-        if (bottomNav == null) {
+        if (shellNav == null) {
             return;
         }
 
@@ -175,19 +179,19 @@ public class MainNavHelper {
             activity.setSupportActionBar(toolbar);
         }
         styleToolbar(activity, toolbar);
-        applyWindowInsets(contentRoot, bottomNav);
+        applyWindowInsets(contentRoot, shellNav);
 
         suppressNavCallback = true;
-        bottomNav.setSelectedItemId(menuItemForScreen(currentScreen));
+        shellNav.setSelectedItemId(menuItemForScreen(currentScreen));
         suppressNavCallback = false;
 
-        bottomNav.setOnItemSelectedListener(item -> {
+        shellNav.setOnItemSelectedListener(item -> {
             if (suppressNavCallback) {
                 return true;
             }
             int itemId = item.getItemId();
             if (itemId == R.id.nav_more) {
-                return handleMoreNavClick(activity, bottomNav, currentScreen);
+                return handleMoreNavClick(activity, shellNav, currentScreen);
             }
             Screen target = screenForMenuItem(itemId);
             if (target == null) {
@@ -200,21 +204,46 @@ public class MainNavHelper {
             return true;
         });
 
-        bottomNav.setOnItemReselectedListener(item -> {
+        shellNav.setOnItemReselectedListener(item -> {
             if (suppressNavCallback) {
                 return;
             }
             if (item.getItemId() == R.id.nav_more) {
-                handleMoreNavClick(activity, bottomNav, currentScreen);
+                handleMoreNavClick(activity, shellNav, currentScreen);
             }
         });
     }
 
+    public static NavigationBarView findShellNavigation(AppCompatActivity activity) {
+        if (activity == null) {
+            return null;
+        }
+        NavigationBarView rail = activity.findViewById(R.id.navigationRail);
+        if (rail != null) {
+            return rail;
+        }
+        return activity.findViewById(R.id.bottomNavigation);
+    }
+
     public static void setBottomNavVisible(BottomNavigationView bottomNav, boolean visible) {
-        if (bottomNav == null) {
+        setShellNavigationVisible(bottomNav, visible);
+    }
+
+    public static void setShellNavigationVisible(NavigationBarView shellNav, boolean visible) {
+        if (shellNav == null) {
             return;
         }
-        bottomNav.setVisibility(visible ? View.VISIBLE : View.GONE);
+        shellNav.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    public static int bottomNavigationInset(NavigationBarView shellNav) {
+        if (shellNav == null || shellNav.getVisibility() != View.VISIBLE) {
+            return 0;
+        }
+        if (shellNav instanceof NavigationRailView) {
+            return 0;
+        }
+        return shellNav.getHeight();
     }
 
     private static void styleToolbar(AppCompatActivity activity, Toolbar toolbar) {
@@ -319,7 +348,8 @@ public class MainNavHelper {
         ViewCompat.requestApplyInsets(contentRoot);
     }
 
-    private static void applyWindowInsets(View contentRoot, BottomNavigationView bottomNav) {
+    private static void applyWindowInsets(View contentRoot, NavigationBarView shellNav) {
+        boolean isRail = shellNav instanceof NavigationRailView;
         if (contentRoot != null) {
             final int baseLeft = contentRoot.getPaddingLeft();
             final int baseTop = contentRoot.getPaddingTop();
@@ -327,23 +357,43 @@ public class MainNavHelper {
             final int baseBottom = contentRoot.getPaddingBottom();
             ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (view, insets) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                view.setPadding(
-                        baseLeft + bars.left,
-                        baseTop,
-                        baseRight + bars.right,
-                        baseBottom);
+                if (isRail) {
+                    view.setPadding(
+                            baseLeft,
+                            baseTop,
+                            baseRight + bars.right,
+                            baseBottom);
+                } else {
+                    view.setPadding(
+                            baseLeft + bars.left,
+                            baseTop,
+                            baseRight + bars.right,
+                            baseBottom);
+                }
                 return insets;
             });
             ViewCompat.requestApplyInsets(contentRoot);
         }
 
-        if (bottomNav != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, insets) -> {
+        if (shellNav != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(shellNav, (view, insets) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), bars.bottom);
+                if (isRail) {
+                    view.setPadding(
+                            bars.left,
+                            bars.top,
+                            view.getPaddingRight(),
+                            bars.bottom);
+                } else {
+                    view.setPadding(
+                            view.getPaddingLeft(),
+                            view.getPaddingTop(),
+                            view.getPaddingRight(),
+                            bars.bottom);
+                }
                 return insets;
             });
-            ViewCompat.requestApplyInsets(bottomNav);
+            ViewCompat.requestApplyInsets(shellNav);
         }
     }
 
@@ -384,16 +434,16 @@ public class MainNavHelper {
         return null;
     }
 
-    private static void restoreBottomNavSelection(BottomNavigationView bottomNav, String currentScreen) {
-        if (bottomNav == null) {
+    private static void restoreBottomNavSelection(NavigationBarView shellNav, String currentScreen) {
+        if (shellNav == null) {
             return;
         }
         int itemId = menuItemForScreen(currentScreen);
-        if (bottomNav.getSelectedItemId() == itemId) {
+        if (shellNav.getSelectedItemId() == itemId) {
             return;
         }
         suppressNavCallback = true;
-        bottomNav.setSelectedItemId(itemId);
+        shellNav.setSelectedItemId(itemId);
         suppressNavCallback = false;
     }
 
@@ -456,7 +506,7 @@ public class MainNavHelper {
 
     private static void showMoreSheet(
             AppCompatActivity activity,
-            BottomNavigationView bottomNav,
+            NavigationBarView shellNav,
             String currentScreen) {
         if (activity.isFinishing() || activity.isDestroyed()) {
             return;
@@ -477,7 +527,7 @@ public class MainNavHelper {
         dialog.setOnDismissListener(d -> {
             activeMoreSheet = null;
             if (!activity.isFinishing() && !activity.isDestroyed()) {
-                restoreBottomNavSelection(bottomNav, currentScreen);
+                restoreBottomNavSelection(shellNav, currentScreen);
             }
         });
         activeMoreSheet = dialog;
@@ -520,6 +570,35 @@ public class MainNavHelper {
         bindMoreClick(content, R.id.moreLinkLogout, sheetListener);
 
         dialog.show();
+        expandMoreSheetForDisplay(activity, dialog);
+    }
+
+    private static void expandMoreSheetForDisplay(
+            AppCompatActivity activity,
+            com.google.android.material.bottomsheet.BottomSheetDialog dialog) {
+        android.widget.FrameLayout bottomSheet = dialog.findViewById(
+                com.google.android.material.R.id.design_bottom_sheet);
+        if (bottomSheet == null) {
+            return;
+        }
+
+        BottomSheetBehavior<android.widget.FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+        behavior.setSkipCollapsed(true);
+        behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+
+        Configuration config = activity.getResources().getConfiguration();
+        boolean tabletLandscape = config.smallestScreenWidthDp >= 600
+                && config.orientation == Configuration.ORIENTATION_LANDSCAPE;
+        if (tabletLandscape) {
+            android.util.DisplayMetrics metrics = activity.getResources().getDisplayMetrics();
+            int maxWidth = (int) (480f * metrics.density);
+            int targetWidth = Math.min(metrics.widthPixels, maxWidth);
+            android.view.ViewGroup.LayoutParams lp = bottomSheet.getLayoutParams();
+            if (lp != null) {
+                lp.width = targetWidth;
+                bottomSheet.setLayoutParams(lp);
+            }
+        }
     }
 
     private static void bindMoreClick(View root, int viewId, View.OnClickListener listener) {

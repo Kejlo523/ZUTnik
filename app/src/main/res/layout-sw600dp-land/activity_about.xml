@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainShellRoot"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mzBg"
+    android:fitsSystemWindows="false">
+
+    <LinearLayout
+        android:id="@+id/drawerContentRoot"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@drawable/bg_toolbar"
+            android:elevation="0dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:titleTextColor="?attr/mzNavHeaderText" />
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingBottom="48dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp">
+
+                <!-- Header Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="32dp">
+
+                    <ImageView
+                        android:id="@+id/aboutLogo"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:layout_marginBottom="16dp"
+                        android:contentDescription="@string/about_logo_desc"
+                        android:longClickable="true"
+                        android:src="@drawable/ic_zut_logo_inapp"
+                        android:elevation="0dp"/>
+                    <!-- Added bg_circle_soft to give it a rim if needed, though elevation handles shadow -->
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="@string/app_name"
+                        android:textColor="?attr/mzText"
+                        android:textSize="28sp" 
+                        android:letterSpacing="-0.02"/>
+
+                    <TextView
+                        android:id="@+id/aboutVersion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:alpha="0.6"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="?attr/mzText"
+                        android:textSize="14sp"
+                        android:background="@drawable/bg_circle_soft"
+                        android:backgroundTint="?attr/mzBgSoft"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        tools:text="v1.0.0" />
+                </LinearLayout>
+
+                <!-- Action Cards Section -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/about_section_support_project"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="12sp"
+                        android:textAllCaps="true"
+                        android:fontFamily="sans-serif-medium"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginStart="8dp"/>
+
+                <!-- Rate Us Card -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardRateUs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="?attr/mzCard"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/mzBorderSoft">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_circle_soft"
+                            android:backgroundTint="#26FFA000"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_star"
+                            app:tint="#FFA000" />
+                            <!-- Note: #1AORANGE is invalid, using #1AFFA000 -->
+                            
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/about_rate_title"
+                                android:textColor="?attr/mzText"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/textPlayStoreStats"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_rate_desc"
+                                android:textColor="?attr/mzMuted"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_chevron_right"
+                            app:tint="?attr/mzBorderStrong" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- GitHub Card -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardGithub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="?attr/mzCard"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/mzBorderSoft">
+
+                     <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_circle_soft"
+                            android:backgroundTint="?attr/mzBgSoft"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_github"
+                            app:tint="?attr/mzText" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/about_github_title"
+                                android:textColor="?attr/mzText"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_github_desc"
+                                android:textColor="?attr/mzMuted"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_open_in_new"
+                            app:tint="?attr/mzBorderStrong" />
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Links Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/about_section_info_contact"
+                    android:textColor="?attr/mzMuted"
+                    android:textSize="12sp"
+                    android:textAllCaps="true"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginStart="8dp"/>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:cardBackgroundColor="?attr/mzCard"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/mzBorderSoft">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- Item 1: App Site -->
+                        <TextView
+                            android:id="@+id/btnAppWebsite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:padding="16dp"
+                            android:drawablePadding="16dp"
+                            app:drawableStartCompat="@drawable/ic_info"
+                            app:drawableTint="?attr/mzPrimary"
+                            app:drawableEndCompat="@drawable/ic_chevron_right"
+                            android:text="@string/about_contact_app_website"
+                            android:textColor="?attr/mzText"
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif-medium"/>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/mzBorderSoft"
+                            android:layout_marginStart="56dp"/>
+
+                        <!-- Item 2: Author Site -->
+                        <TextView
+                            android:id="@+id/btnAuthorWebsite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:padding="16dp"
+                            android:drawablePadding="16dp"
+                            app:drawableStartCompat="@drawable/ic_person"
+                            app:drawableTint="?attr/mzPrimary"
+                            app:drawableEndCompat="@drawable/ic_chevron_right"
+                            android:text="@string/about_contact_website"
+                            android:textColor="?attr/mzText"
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif-medium"/>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/mzBorderSoft"
+                            android:layout_marginStart="56dp"/>
+
+                        <!-- Item 3: Privacy -->
+                        <TextView
+                            android:id="@+id/btnPrivacyPolicy"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:padding="16dp"
+                            android:drawablePadding="16dp"
+                            app:drawableStartCompat="@drawable/ic_lock"
+                            app:drawableTint="?attr/mzPrimary"
+                            app:drawableEndCompat="@drawable/ic_chevron_right"
+                            android:text="@string/about_privacy_policy_url"
+                            android:textColor="?attr/mzText"
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif-medium"/>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/mzBorderSoft"
+                            android:layout_marginStart="56dp"/>
+
+                         <!-- Item 4: Email -->
+                         <TextView
+                            android:id="@+id/btnContactEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:padding="16dp"
+                            android:drawablePadding="16dp"
+                            app:drawableStartCompat="@drawable/ic_newspaper"
+                            app:drawableTint="?attr/mzPrimary"
+                            app:drawableEndCompat="@drawable/ic_chevron_right"
+                            android:text="@string/about_contact_email"
+                            android:textColor="?attr/mzText"
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif-medium"/>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Footer -->
+                <TextView
+                    android:id="@+id/aboutDesc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:gravity="center"
+                    android:lineSpacingMultiplier="1.3"
+                    android:text="@string/about_project_description_1"
+                    android:textColor="?attr/mzMuted"
+                    android:textSize="13sp"
+                    android:paddingHorizontal="16dp"/>
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/about_footer_made_with"
+                    android:textColor="?attr/mzMuted"
+                    android:textSize="12sp"
+                    android:alpha="0.5"/>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+    <include layout="@layout/include_bottom_navigation" />
+</LinearLayout>

@@ -21,7 +21,30 @@ final class ShellLayoutInflater {
         View root = inflater.inflate(layoutId, container, false);
         stripEmbeddedBottomNav(root);
         expandMainContent(root);
-        return root;
+        return unwrapContentRoot(root);
+    }
+
+    /**
+     * Returns the inner content panel when a layout still wraps it in a legacy
+     * shell root ({@code mainShellRoot} + bottom nav). Avoids duplicate shell ids
+     * when embedding inside {@link R.layout#activity_main_shell}.
+     */
+    static View unwrapContentRoot(View inflated) {
+        if (inflated == null) {
+            return null;
+        }
+        View content = inflated.findViewById(R.id.drawerContentRoot);
+        if (content == null) {
+            content = inflated.findViewById(R.id.planCoordinatorRoot);
+        }
+        if (content == null || content == inflated) {
+            return inflated;
+        }
+        ViewGroup parent = (ViewGroup) content.getParent();
+        if (parent != null) {
+            parent.removeView(content);
+        }
+        return content;
     }
 
     private static void stripEmbeddedBottomNav(View root) {

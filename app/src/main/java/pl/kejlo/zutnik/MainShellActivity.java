@@ -13,6 +13,8 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.navigationrail.NavigationRailView;
 
 public class MainShellActivity extends ZutnikBaseActivity {
 
@@ -20,13 +22,15 @@ public class MainShellActivity extends ZutnikBaseActivity {
     public static final String EXTRA_REQUEST_NOTIF_PERMISSION = "extra_request_notif_permission";
 
     private BottomNavigationView bottomNavigation;
+    private NavigationRailView navigationRail;
+    private NavigationBarView shellNavigation;
     private String currentTabId = MainNavHelper.Screen.HOME.getId();
     private boolean initialTabApplied;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         ThemeManager.applyTheme(this);
+        super.onCreate(savedInstanceState);
         ThemeManager.applySystemBars(this);
 
         ZutnikSession.initializeFromPreferences(this);
@@ -42,12 +46,14 @@ public class MainShellActivity extends ZutnikBaseActivity {
         ThemeManager.applySystemBars(this);
 
         bottomNavigation = findViewById(R.id.bottomNavigation);
-        MainNavHelper.setupShell(this, findViewById(R.id.mainShellRoot), bottomNavigation);
+        navigationRail = findViewById(R.id.navigationRail);
+        shellNavigation = MainNavHelper.findShellNavigation(this);
+        MainNavHelper.setupShell(this, findViewById(R.id.mainShellRoot), shellNavigation);
         setupBackNavigation();
 
         if (savedInstanceState != null) {
             currentTabId = savedInstanceState.getString("current_tab", currentTabId);
-            MainNavHelper.updateShellSelection(bottomNavigation, currentTabId);
+            MainNavHelper.updateShellSelection(shellNavigation, currentTabId);
         } else {
             String initialTab = getIntent().getStringExtra(EXTRA_INITIAL_TAB);
             MainNavHelper.Screen start = MainNavHelper.Screen.fromId(initialTab);
@@ -108,8 +114,12 @@ public class MainShellActivity extends ZutnikBaseActivity {
         return bottomNavigation;
     }
 
+    public NavigationBarView getShellNavigation() {
+        return shellNavigation;
+    }
+
     public void setBottomNavVisible(boolean visible) {
-        MainNavHelper.setBottomNavVisible(bottomNavigation, visible);
+        MainNavHelper.setShellNavigationVisible(shellNavigation, visible);
     }
 
     public void switchToTab(@NonNull MainNavHelper.Screen screen, boolean animateFirstShow) {
@@ -145,7 +155,7 @@ public class MainShellActivity extends ZutnikBaseActivity {
         tx.commit();
         getSupportFragmentManager().executePendingTransactions();
         currentTabId = screen.getId();
-        MainNavHelper.updateShellSelection(bottomNavigation, currentTabId);
+        MainNavHelper.updateShellSelection(shellNavigation, currentTabId);
         if (target instanceof ZutnikTabFragment) {
             ((ZutnikTabFragment) target).onTabActivated();
         }

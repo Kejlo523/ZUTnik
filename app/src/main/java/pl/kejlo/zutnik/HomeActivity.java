@@ -9,8 +9,10 @@ public class HomeActivity extends ZutnikBaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Intent redirect = new Intent(this, MainShellActivity.class)
-                .putExtra(MainShellActivity.EXTRA_INITIAL_TAB, MainNavHelper.Screen.HOME.getId());
+        ThemeManager.applyTheme(this);
+        super.onCreate(savedInstanceState);
+
+        Intent redirect = MainShellActivity.createIntent(this, MainNavHelper.Screen.HOME);
         if (getIntent() != null && getIntent().hasExtra(EXTRA_REQUEST_NOTIF_PERMISSION)) {
             redirect.putExtra(
                     EXTRA_REQUEST_NOTIF_PERMISSION,

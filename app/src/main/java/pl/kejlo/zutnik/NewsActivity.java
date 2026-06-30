@@ -6,7 +6,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import android.content.Context;
 import android.content.Intent;
@@ -67,29 +66,24 @@ public class NewsActivity extends ZutnikBaseActivity {
         repo = new NewsRepository(this);
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
-        setContentView(R.layout.activity_news);
-        ThemeManager.applySystemBars(this);
 
         openLatestOnLoad = getIntent().getBooleanExtra("EXTRA_OPEN_LATEST", false);
 
-        drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
-        toolbar = findViewById(R.id.toolbar);
+        ShellHostHelper.MountedContent shell = ShellHostHelper.mountContentLayout(
+                this,
+                R.layout.activity_news,
+                MainNavHelper.Screen.NEWS);
+        View content = shell.contentRoot;
 
+        drawerContentRoot = content.findViewById(R.id.drawerContentRoot);
+        toolbar = content.findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.news_title);
 
-        MainNavHelper.setup(
-                this,
-                drawerContentRoot,
-                bottomNavigation,
-                toolbar,
-                MainNavHelper.Screen.NEWS);
-
-        listNews = findViewById(R.id.listNews);
-        progress = findViewById(R.id.newsProgress);
-        tvEmpty = findViewById(R.id.tvNewsEmpty);
-        tvInfo = findViewById(R.id.tvNewsInfo);
-        btnNewsRefresh = findViewById(R.id.btnNewsRefresh);
+        listNews = content.findViewById(R.id.listNews);
+        progress = content.findViewById(R.id.newsProgress);
+        tvEmpty = content.findViewById(R.id.tvNewsEmpty);
+        tvInfo = content.findViewById(R.id.tvNewsInfo);
+        btnNewsRefresh = content.findViewById(R.id.btnNewsRefresh);
 
         listNews.setLayoutManager(new LinearLayoutManager(this));
 

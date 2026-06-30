@@ -59,9 +59,14 @@ public class FinanceRepository {
 
         ZutnikSession session = ZutnikSession.getInstance();
         try {
-            List<FinanceRecord> records = session.isUsosLogin()
-                    ? loadUsosPayments()
-                    : loadLegacyPayments(forceRefresh);
+            List<FinanceRecord> records;
+            if (session.isDemoLogin()) {
+                records = DemoDataProvider.loadFinanceRecords();
+            } else if (session.isUsosLogin()) {
+                records = loadUsosPayments();
+            } else {
+                records = loadLegacyPayments(forceRefresh);
+            }
             long fetchedAt = System.currentTimeMillis();
             saveSnapshot(cacheKey, records, fetchedAt);
             return new FinanceSnapshot(records, fetchedAt, false);
@@ -188,7 +193,8 @@ public class FinanceRepository {
     private String buildFinanceCacheKey() {
         ZutnikSession session = ZutnikSession.getInstance();
         StringBuilder sb = new StringBuilder(KEY_FINANCE_CACHE_PREFIX);
-        sb.append(session.isUsosLogin() ? "usos" : "legacy").append('_');
+        sb.append(session.isDemoLogin() ? "demo"
+                : session.isUsosLogin() ? "usos" : "legacy").append('_');
 
         String activeId = session.getActiveStudyId();
         if (activeId != null && !activeId.trim().isEmpty()) {
