@@ -74,13 +74,6 @@
         <View style="@style/MoreSheetDivider" />
 
         <TextView
-            android:id="@+id/moreLinkWatch"
-            style="@style/MoreSheetItem"
-            android:text="@string/nav_watch_label" />
-
-        <View style="@style/MoreSheetDivider" />
-
-        <TextView
             android:id="@+id/moreLinkLogout"
             style="@style/MoreSheetItem"
             android:drawablePadding="12dp"

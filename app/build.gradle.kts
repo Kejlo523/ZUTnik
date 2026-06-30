@@ -11,15 +11,15 @@ if (localPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "pl.kejlo.mzutv2"
+    namespace = "pl.kejlo.zutnik"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "pl.kejlo.mzutv2"
+        applicationId = "pl.kejlo.zutnik"
         minSdk = 26
         targetSdk = 36
-        versionCode = 159
-        versionName = "1.67"
+        versionCode = 1
+        versionName = "1.00"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -59,8 +59,6 @@ dependencies {
     implementation(libs.work.runtime)
     implementation(libs.appcompat)
     implementation(libs.material)
-    implementation(libs.play.services.wearable)
-    implementation(libs.remote.interactions)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

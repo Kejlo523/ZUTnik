@@ -22,10 +22,10 @@
   <string name="login_success">Logged in as %1$s</string>
   <string name="login_usos_button">Log in with USOS</string>
   <string name="login_usos_info_text">
-        Login is handled only through USOS. The authorization page will open in a moment.
+        Login uses the official USOS authorization window. After tapping the button, the authorization screen will open.
     </string>
   <string name="login_usos_scope_hint">
-        ZUTnik will request access to grades, payments, photo, and student data needed by the app.
+        ZUTnik is an unofficial app for convenient access to data from USOS/ZUT systems. Use it voluntarily; important information should still be confirmed in the official panel.
     </string>
   <string name="home_title">Main dashboard</string>
   <string name="home_toolbar_title">Home page</string>
@@ -175,6 +175,7 @@
   <string name="plan_type_lecture">Lecture</string>
   <string name="plan_type_lab">Laboratory</string>
   <string name="plan_type_auditory">Auditory classes</string>
+  <string name="plan_type_lectorate">Lectorate</string>
   <string name="plan_type_exam">Exam</string>
   <string name="plan_type_cancelled">Cancelled</string>
   <string name="plan_type_rector">Rector day</string>
@@ -207,6 +208,9 @@
   <string name="grades_summary_average_label">Grade average</string>
   <string name="grades_summary_ects_label">ECTS total</string>
   <string name="grades_summary_ects_total_label">Total in program</string>
+  <string name="grades_ects_programme_fallback">Programme</string>
+  <string name="grades_ects_breakdown_item">%1$s: %2$s ECTS</string>
+  <string name="grades_ects_breakdown_remaining">remaining: %1$s ECTS</string>
   <string name="grades_empty_state">No grades for the selected semester.</string>
   <string name="news_title">ZUT news</string>
   <string name="news_refresh_toast">Fetching latest data…</string>
@@ -266,7 +270,7 @@
   <string name="settings_language_info_hint">
         Changing the language may require restarting the app.
     </string>
-  <string name="about_privacy_policy_url">https://mzut.endozero.pl/privacy-policy</string>
+  <string name="about_privacy_policy_url">https://zutnik.endozero.pl/privacy-policy</string>
   <string name="settings_language_changed_toast">
         Language changed. Interface has been reloaded.
     </string>
@@ -319,7 +323,9 @@
   <string name="notif_channel_auth_name">Session security</string>
   <string name="notif_channel_auth_desc">Information about session expiration</string>
   <string name="notif_grades_title">New grades</string>
+  <string name="notif_grades_single_title">New grade</string>
   <string name="notif_grades_summary">New grades added: %1$d</string>
+  <string name="notif_more_items">+%1$d more</string>
   <string name="notif_finance_due_title">Payment due date is approaching</string>
   <string name="notif_finance_due_summary">Payments due in 5 days: %1$d</string>
   <string name="notif_finance_due_line">%1$s: due on %2$s</string>
@@ -449,32 +455,6 @@
   <string name="common_percent_format">%1$d%%</string>
   <string name="grades_placeholder_value">4.5</string>
   <string name="grades_ects_format">%1$.1f ECTS</string>
-  <string name="nav_watch_info_auto_sync_value">%1$s (%2$s)</string>
-  <string name="nav_watch_info_label_bluetooth">Bluetooth</string>
-  <string name="nav_watch_info_label_last_sync">Last sync</string>
-  <string name="nav_watch_info_label_auto_sync">Auto sync</string>
-  <string name="nav_watch_info_label_tile">Tile</string>
-  <string name="nav_watch_info_label_battery">Battery</string>
-  <string name="nav_watch_info_last_sync_none">No data</string>
-  <string name="nav_watch_info_tile_active">Active (%1$s)</string>
-  <string name="nav_watch_info_tile_missing">Missing (add in Galaxy Wearable)</string>
-  <string name="nav_watch_label">Watch</string>
-  <string name="nav_watch_not_found_title">Watch not found</string>
-  <string name="nav_watch_not_found_msg">Check if your watch is paired and connected.</string>
-  <string name="nav_watch_found_title">Watch connected</string>
-  <string name="nav_watch_paired_title">Watch paired</string>
-  <string name="nav_watch_paired_msg">Paired: %1$s\nConnect to show data.</string>
-  <string name="nav_watch_status_connected">Status: connected</string>
-  <string name="nav_watch_status_connected_unresponsive">Status: connected (no response)</string>
-  <string name="nav_watch_status_paired">Status: paired (not connected)</string>
-  <string name="nav_watch_status_name">Watch: %1$s</string>
-  <string name="nav_watch_status_bt_on">On</string>
-  <string name="nav_watch_status_bt_off">Off</string>
-  <string name="nav_watch_status_battery">Battery: %1$d%%</string>
-  <string name="nav_watch_status_auto_on">enabled</string>
-  <string name="nav_watch_status_auto_off">disabled</string>
-  <string name="nav_watch_status_interval_h">every %1$d h</string>
-  <string name="nav_watch_status_interval_m">every %1$d min</string>
   <string name="theme_deep_blue">Deep Blue</string>
   <string name="theme_high_contrast">High Contrast</string>
   <string name="theme_lime">Lime</string>
@@ -509,14 +489,4 @@
   <string name="about_logo_desc">ZUTnik logo</string>
   <string name="common_close">Close</string>
   <!-- Missing Strings -->
-  <string name="nav_watch_searching">Searching for watch…</string>
-  <string name="wear_sync_status_prepare">Preparing data…</string>
-  <string name="wear_sync_status_sending">Sending to watch…</string>
-  <string name="wear_sync_status_waiting_watch">Waiting for watch response…</string>
-  <string name="wear_sync_status_no_data">No data to sync.</string>
-  <string name="wear_sync_status_error">Sync error.</string>
-  <string name="wear_sync_status_watch_received">Watch confirmed receipt!</string>
-  <string name="wear_main_status_syncing">Syncing…</string>
-  <string name="wear_install_dialog_open_store">Open Store</string>
-  <string name="wear_install_sent_toast">Request sent to watch</string>
 </resources>

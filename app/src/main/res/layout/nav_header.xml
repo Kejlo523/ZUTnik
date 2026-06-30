@@ -271,20 +271,6 @@
             android:textSize="12sp" />
 
         <ImageView
-            android:id="@+id/navWatch"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_nav_item"
-            android:clickable="true"
-            android:contentDescription="@string/nav_watch_label"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:padding="4dp"
-            android:src="@drawable/ic_watch_24"
-            app:tint="?attr/mzText" />
-
-        <ImageView
             android:id="@+id/navSettings"
             android:layout_width="24dp"
             android:layout_height="24dp"

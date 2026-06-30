@@ -8,39 +8,8 @@
   <string name="nav_header_default_username">Student</string>
   <string name="logout_success_message">Wylogowano</string>
   <string name="nav_settings_label">Ustawienia</string>
-  <string name="nav_watch_label">Zegarek</string>
   <string name="nav_useful_links">Przydatne strony</string>
   <string name="nav_logout_label">Wyloguj się</string>
-  <string name="nav_watch_searching">Szukam zegarka…</string>
-  <string name="nav_watch_not_found_title">Nie znaleziono zegarka</string>
-  <string name="nav_watch_not_found_msg">Sprawdź, czy zegarek jest sparowany i połączony z telefonem.</string>
-  <string name="nav_watch_paired_title">Zegarek sparowany</string>
-  <string name="nav_watch_paired_msg">Sparowany: %1$s\nPołącz, aby wyświetlić dane.</string>
-  <string name="nav_watch_status_connected">Status: połączony</string>
-  <string name="nav_watch_status_connected_unresponsive">Status: połączony (brak odpowiedzi)</string>
-  <string name="nav_watch_status_bt_on">Włączony</string>
-  <string name="nav_watch_status_bt_off">Wyłączony</string>
-  <string name="nav_watch_info_label_bluetooth">Bluetooth</string>
-  <string name="nav_watch_info_label_last_sync">Ostatnia synchronizacja</string>
-  <string name="nav_watch_info_label_auto_sync">Auto synchronizacja</string>
-  <string name="nav_watch_info_label_tile">Kafelek</string>
-  <string name="nav_watch_info_label_battery">Bateria</string>
-  <string name="nav_watch_info_last_sync_none">Brak danych</string>
-  <string name="nav_watch_info_tile_active">Aktywny (%1$s)</string>
-  <string name="nav_watch_info_tile_missing">Brak (dodaj w aplikacji zegarka)</string>
-  <string name="nav_watch_status_paired">Status: sparowany (brak połączenia)</string>
-  <string name="nav_watch_status_auto_on">włączona</string>
-  <string name="nav_watch_status_auto_off">wyłączona</string>
-  <string name="nav_watch_status_interval_h">co %1$d h</string>
-  <string name="nav_watch_status_interval_m">co %1$d min</string>
-  <string name="nav_watch_found_title">Zegarek połączony</string>
-  <string name="wear_sync_status_prepare">Przygotowuję dane…</string>
-  <string name="wear_sync_status_sending">Wysyłam dane do zegarka…</string>
-  <string name="wear_sync_status_waiting_watch">Wysłano, czekam na zegarek…</string>
-  <string name="wear_sync_status_no_data">Brak danych do wysłania</string>
-  <string name="wear_sync_status_error">Błąd wysyłki danych</string>
-  <string name="wear_sync_status_watch_received">100% Zegarek odebrał dane!</string>
-  <string name="wear_main_status_syncing">Synchronizuję z zegarkiem…</string>
   <string name="login_card_title">Zaloguj się do ZUTnika</string>
   <string name="login_hint">Login</string>
   <string name="login_password_hint">Hasło</string>
@@ -64,16 +33,20 @@
   <string name="login_usos_reason_missing_request_secret">brak request token secret</string>
   <string name="login_usos_error_missing_user_id">Brak ID użytkownika w odpowiedzi USOS</string>
   <string name="login_usos_info_text">
-        Logowanie odbywa się wyłącznie przez USOS. Po chwili otworzy się okno autoryzacji.
+        Logowanie odbywa się przez oficjalne okno USOS. Po kliknięciu otworzy się ekran autoryzacji.
     </string>
   <string name="login_usos_scope_hint">
-        ZUTnik poprosi o dostęp do ocen, płatności, zdjęcia i danych studenta potrzebnych do działania aplikacji.
+        ZUTnik jest nieoficjalną aplikacją do wygodnego podglądu danych z systemów USOS/ZUT. Korzystasz z niej dobrowolnie; ważne informacje zawsze warto potwierdzić w oficjalnym panelu.
     </string>
   <string name="login_usos_exchanging_token">Autoryzacja USOS…</string>
   <string name="login_usos_fetching_user">Pobieram dane użytkownika…</string>
   <string name="login_usos_error_request_token">Błąd połączenia z USOS: %1$s</string>
   <string name="login_usos_error_auth">Błąd autoryzacji USOS: %1$s</string>
   <string name="login_usos_keys_not_configured">Klucze USOS API nie są skonfigurowane.</string>
+  <string name="login_demo_hint">tryb demo</string>
+  <string name="login_demo_content_description">Uruchom tryb demo</string>
+  <string name="login_demo_username">Student (tryb demo)</string>
+  <string name="login_demo_toast">Uruchomiono tryb demo</string>
   <string name="home_title">Pulpit główny</string>
   <string name="home_toolbar_title">Strona główna</string>
   <string name="home_welcome_message">Witaj %1$s</string>
@@ -242,6 +215,7 @@
   <string name="plan_type_lecture">Wykład</string>
   <string name="plan_type_lab">Laboratorium</string>
   <string name="plan_type_auditory">Ćwiczenia audytoryjne</string>
+  <string name="plan_type_lectorate">Lektorat</string>
   <string name="plan_type_exam">Egzamin</string>
   <string name="plan_type_cancelled">Odwołane</string>
   <string name="plan_type_rector">Dzień rektorski</string>
@@ -264,8 +238,12 @@
   <string name="grades_summary_average_label">Średnia z ocen</string>
   <string name="grades_summary_ects_label">Suma ECTS</string>
   <string name="grades_summary_ects_total_label">ECTS Łącznie</string>
+  <string name="grades_ects_programme_fallback">Kierunek</string>
+  <string name="grades_ects_breakdown_item">%1$s: %2$s ECTS</string>
+  <string name="grades_ects_breakdown_remaining">pozostałe: %1$s ECTS</string>
   <string name="grades_grouping_toggle">Grupuj oceny</string>
   <string name="grades_final_grade_label">Ocena końcowa</string>
+  <string name="grades_no_grades_label">Brak ocen</string>
   <string name="grades_new_badge">Nowe</string>
   <string name="grades_new_badge_label">Ostatnio dodane</string>
   <string name="plan_type_label">Typ zajęć</string>
@@ -383,7 +361,9 @@
   <string name="notif_channel_auth_name">Bezpieczeństwo sesji</string>
   <string name="notif_channel_auth_desc">Informacje o wygaśnięciu sesji</string>
   <string name="notif_grades_title">Nowe oceny</string>
+  <string name="notif_grades_single_title">Nowa ocena</string>
   <string name="notif_grades_summary">Dodano nowych ocen: %1$d</string>
+  <string name="notif_more_items">+%1$d więcej</string>
   <string name="notif_finance_due_title">Zbliża się termin płatności</string>
   <string name="notif_finance_due_summary">Płatności z terminem za 5 dni: %1$d</string>
   <string name="notif_finance_due_line">%1$s: termin %2$s</string>
@@ -549,7 +529,6 @@
   <string name="common_percent_format">%1$d%%</string>
   <string name="grades_placeholder_value">4.5</string>
   <string name="grades_ects_format">%1$.1f ECTS</string>
-  <string name="nav_watch_info_auto_sync_value">%1$s (%2$s)</string>
   <!-- Custom Plan Events (Egzaminy/Kolokwia) -->
   <string name="plan_custom_add_event">Dodaj wydarzenie</string>
   <string name="plan_custom_type_exam">Egzamin</string>
@@ -579,10 +558,6 @@
   <string name="plan_custom_delete_confirm">Usunąć to wydarzenie?</string>
   <string name="plan_custom_remove_marker">Usuń oznaczenie</string>
   <string name="plan_custom_removed_toast">Usunięto oznaczenie</string>
-  <string name="nav_watch_status_name">Zegarek: %1$s</string>
-  <string name="nav_watch_status_battery">Bateria: %1$d%%</string>
-  <string name="wear_install_dialog_open_store">Zainstaluj</string>
-  <string name="wear_install_sent_toast">Wysłano żądanie otwarcia sklepu na zegarku.</string>
   <!-- Session dates -->
   <string name="session_start_label">Początek sesji</string>
   <string name="session_end_label">Koniec sesji</string>

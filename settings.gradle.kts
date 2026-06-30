@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "mZUTv2"
+rootProject.name = "ZUTnik"
 include(":app")
-include(":wear")
