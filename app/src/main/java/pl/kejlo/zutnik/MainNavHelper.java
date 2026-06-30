@@ -565,8 +565,10 @@ public class MainNavHelper {
         }
 
         com.google.android.material.bottomsheet.BottomSheetDialog dialog =
-                new com.google.android.material.bottomsheet.BottomSheetDialog(activity);
+                new com.google.android.material.bottomsheet.BottomSheetDialog(
+                        activity, R.style.ThemeOverlay_ZUTnik_BottomSheetDialog);
         dialog.setContentView(content);
+        dialog.setOnShowListener(d -> expandMoreSheetForDisplay(activity, dialog));
         dialog.setOnDismissListener(d -> {
             activeMoreSheet = null;
             if (!activity.isFinishing() && !activity.isDestroyed()) {
@@ -613,7 +615,6 @@ public class MainNavHelper {
         bindMoreClick(content, R.id.moreLinkLogout, sheetListener);
 
         dialog.show();
-        expandMoreSheetForDisplay(activity, dialog);
     }
 
     private static void expandMoreSheetForDisplay(
@@ -625,7 +626,8 @@ public class MainNavHelper {
             return;
         }
 
-        bottomSheet.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        bottomSheet.setBackgroundResource(R.drawable.bg_more_sheet_root);
+        bottomSheet.setClipToOutline(true);
 
         BottomSheetBehavior<android.widget.FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
         behavior.setSkipCollapsed(true);
