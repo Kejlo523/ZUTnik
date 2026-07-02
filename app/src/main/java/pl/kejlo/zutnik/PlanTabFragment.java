@@ -3737,16 +3737,37 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 drawOverlayPill(canvas, width, padTop);
             }
 
+            float titleTop = baseline + dpToPx(compactHeight ? 4 : 6);
+            if (shouldDrawHeaderDetail(height) && !footerText.isEmpty()) {
+                Paint.FontMetrics metaFm = metaPaint.getFontMetrics();
+                float detailBaseline = baseline + dpToPx(compactHeight ? 3 : 4) - metaFm.ascent;
+                float detailBottom = detailBaseline + metaFm.descent;
+                metaPaint.setColor(secondaryTextColor);
+                CharSequence clipped = TextUtils.ellipsize(
+                        footerText,
+                        metaPaint,
+                        Math.max(0, width - padX * 2),
+                        TextUtils.TruncateAt.MIDDLE);
+                canvas.save();
+                canvas.clipRect(
+                        padX,
+                        baseline + timeFm.descent,
+                        Math.max(padX, width - padX),
+                        Math.min(height, detailBottom + dpToPx(2)));
+                canvas.drawText(clipped.toString(), padX, detailBaseline, metaPaint);
+                canvas.restore();
+                titleTop = detailBottom + dpToPx(compactHeight ? 3 : 5);
+            }
+
             if (titleLayout != null) {
                 titlePaint.setColor(textColor);
-                float titleTop = baseline + dpToPx(compactHeight ? 4 : 6);
                 canvas.save();
                 canvas.translate(padX, titleTop);
                 titleLayout.draw(canvas);
                 canvas.restore();
             }
 
-            if (height >= dpToPx(38) && (!footerText.isEmpty() || !badgeText.isEmpty())) {
+            if (height >= dpToPx(38) && !badgeText.isEmpty()) {
                 drawFooter(canvas, width, height, padX, padBottom);
             }
         }
@@ -3769,32 +3790,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
 
         private void drawFooter(Canvas canvas, int width, int height, int padX, int padBottom) {
-            Paint.FontMetrics metaFm = metaPaint.getFontMetrics();
             Paint.FontMetrics badgeFm = badgePaint.getFontMetrics();
-            float footerBaseline = height - padBottom - Math.max(metaFm.descent, badgeFm.descent);
-            float badgeWidth = 0f;
-            float badgeGap = dpToPx(5);
-
-            if (!badgeText.isEmpty()) {
-                badgeWidth = badgePaint.measureText(badgeText);
-                float badgeLeft = width - padX - badgeWidth;
-                badgePaint.setColor(textColor);
-                canvas.drawText(badgeText, badgeLeft, footerBaseline, badgePaint);
-            }
-
-            if (!footerText.isEmpty()) {
-                float footerRight = width - padX - (badgeWidth > 0f ? badgeWidth + badgeGap : 0f);
-                float footerWidth = Math.max(0f, footerRight - padX);
-                if (footerWidth > dpToPx(10)) {
-                    CharSequence clipped = TextUtils.ellipsize(
-                            footerText,
-                            metaPaint,
-                            footerWidth,
-                            TextUtils.TruncateAt.MIDDLE);
-                    metaPaint.setColor(secondaryTextColor);
-                    canvas.drawText(clipped.toString(), padX, footerBaseline, metaPaint);
-                }
-            }
+            float footerBaseline = height - padBottom - badgeFm.descent;
+            float badgeWidth = badgePaint.measureText(badgeText);
+            float badgeLeft = width - padX - badgeWidth;
+            badgePaint.setColor(textColor);
+            canvas.drawText(badgeText, badgeLeft, footerBaseline, badgePaint);
         }
 
         private void ensureTextLayout() {
@@ -3832,19 +3833,24 @@ public class PlanTabFragment extends ZutnikTabFragment {
             timeText = fitEventTimeText(event, contentWidth, compactWidth ? 7.4f : 8.6f, compactWidth ? 9.3f : 10.5f);
             badgePaint.setTextSize(spToPx(compactWidth ? 8.2f : 9.0f));
 
-            float badgeWidth = badgeText.isEmpty() ? 0f : badgePaint.measureText(badgeText);
-            float footerWidth = contentWidth - (badgeWidth > 0f ? badgeWidth + dpToPx(5) : 0f);
-            fitSingleLineText(metaPaint, footerText, Math.max(0f, footerWidth), compactWidth ? 6.1f : 6.6f, compactWidth ? 8.0f : 8.8f);
+            fitSingleLineText(metaPaint, footerText, contentWidth, compactWidth ? 6.3f : 6.8f, compactWidth ? 8.1f : 8.9f);
 
             int timeReserve = textLineHeight(timePaint) + dpToPx(3);
+            int detailReserve = (shouldDrawHeaderDetail(height) && !footerText.isEmpty())
+                    ? textLineHeight(metaPaint) + dpToPx(5)
+                    : 0;
             int footerLineHeight = Math.max(textLineHeight(metaPaint), textLineHeight(badgePaint));
-            int footerReserve = (height >= dpToPx(38) && (!footerText.isEmpty() || !badgeText.isEmpty()))
+            int footerReserve = (height >= dpToPx(38) && !badgeText.isEmpty())
                     ? footerLineHeight + dpToPx(6)
                     : 0;
             int titleArea = Math.max(
                     dpToPx(10),
-                    height - padTop - padBottom - timeReserve - footerReserve);
+                    height - padTop - padBottom - timeReserve - detailReserve - footerReserve);
             titleLayout = buildBestTitleLayout(titleText, contentWidth, titleArea, compactWidth, compactHeight);
+        }
+
+        private boolean shouldDrawHeaderDetail(int height) {
+            return height >= dpToPx(54);
         }
 
         private StaticLayout buildBestTitleLayout(
