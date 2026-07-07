@@ -1,6 +1,6 @@
 # ZUTnik
 
-Mobilna, nieoficjalna aplikacja kliencka dla studentów Zachodniopomorskiego Uniwersytetu Technologicznego. Integruje się z **USOS API** (`usosapi.zut.edu.pl`) i udostępnia dane akademiowania na Androidzie.
+Mobilna, nieoficjalna aplikacja kliencka dla studentów Zachodniopomorskiego Uniwersytetu Technologicznego. Integruje się z **USOS API** i udostępnia dane akademiowania na Androidzie.
 <br>
 <img width="auto" height="500" alt="zutnik_promotional_banner" src="https://github.com/user-attachments/assets/facda314-2843-4ea4-ab95-7722bdc3d1bf" />
 
@@ -23,7 +23,7 @@ Więcej informacji o projekcie: https://zutnik.endozero.pl
   - planu zajęć,
   - ocen,
   - informacji o studiach,
-  - aktualności ZUT.
+  - aktualności.
 - Blok z najważniejszymi wskazówkami dotyczącymi korzystania z aplikacji.
 
 ### Plan zajęć
@@ -98,7 +98,7 @@ Więcej informacji o projekcie: https://zutnik.endozero.pl
 ## Wymagania
 
 - Android 8.0 (API 26) lub nowszy.
-- Aktywne konto studenta w USOS ZUT.
+- Aktywne konto studenta w USOS.
 - Połączenie z internetem do synchronizacji danych z USOS API i plan.zut.edu.pl.
 
 ---
