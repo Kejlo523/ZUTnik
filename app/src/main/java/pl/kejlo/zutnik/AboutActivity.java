@@ -157,8 +157,14 @@ public class AboutActivity extends PhoneAwareActivity {
             updateStatsText(cachedRating, cachedDownloads);
         }
 
-        // 2. Fetch network if expired or empty
-        if (System.currentTimeMillis() - lastFetch > CACHE_TTL_MS || cachedRating == null) {
+        // 2. Fetch network only when the shared policy allows it or cache is empty.
+        NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                this,
+                NetworkRefreshPolicy.Module.ABOUT,
+                NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                "about_stats",
+                lastFetch);
+        if (decision.allowNetwork) {
             fetchStatsFromNetwork();
         }
     }
@@ -181,6 +187,11 @@ public class AboutActivity extends PhoneAwareActivity {
             String downloads = null;
             
             try {
+                NetworkRefreshPolicy.recordAttempt(
+                        AboutActivity.this,
+                        NetworkRefreshPolicy.Module.ABOUT,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        "about_stats");
                 String packageName = getPackageName();
                 String url = "https://play.google.com/store/apps/details?id=" + packageName + "&hl=en";
                 
@@ -261,6 +272,10 @@ public class AboutActivity extends PhoneAwareActivity {
                 editor.putString(KEY_DOWNLOADS, finalDownloads);
                 editor.putLong(KEY_TIMESTAMP, System.currentTimeMillis());
                 editor.apply();
+                NetworkRefreshPolicy.recordSuccess(
+                        AboutActivity.this,
+                        NetworkRefreshPolicy.Module.ABOUT,
+                        "about_stats");
             });
         });
     }

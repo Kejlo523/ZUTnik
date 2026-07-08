@@ -144,7 +144,7 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         if (hasSession) {
             try {
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
-                List<PlanRepository.SessionPeriod> periods = repo.fetchSessionDates();
+                List<PlanRepository.SessionPeriod> periods = PlanRepository.getCachedSessionDates(context);
                 PlanRepository.SessionPeriod activeNoClasses =
                         PlanRepository.findActivePeriod(periods, today, true);
 
@@ -163,8 +163,8 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
                             .getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE)
                             .getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
 
-                    PlanRepository.PlanResult weekResult = repo.loadPlan("week", today);
-                    PlanRepository.PlanResult nextWeekResult = repo.loadPlan("week", today.plusDays(7));
+                    PlanRepository.PlanResult weekResult = repo.loadPlanFromCache("week", today);
+                    PlanRepository.PlanResult nextWeekResult = repo.loadPlanFromCache("week", today.plusDays(7));
 
                     if (nextWeekResult != null && nextWeekResult.dayColumns != null && weekResult != null) {
                         if (weekResult.dayColumns == null) {

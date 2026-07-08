@@ -77,7 +77,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
 
-                PlanRepository.PlanResult result = repo.loadPlan("day", targetDate);
+                PlanRepository.PlanResult result = repo.loadPlanFromCache("day", targetDate);
 
                 if (result.dayColumns != null) {
                     for (PlanRepository.DayColumn col : result.dayColumns) {

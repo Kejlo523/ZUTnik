@@ -97,6 +97,19 @@ public class NewsActivity extends ZutnikBaseActivity {
 
         if (btnNewsRefresh != null) {
             btnNewsRefresh.setOnClickListener(v -> {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        NewsActivity.this,
+                        NetworkRefreshPolicy.Module.NEWS,
+                        NetworkRefreshPolicy.Mode.MANUAL,
+                        "news",
+                        getCacheTimestamp());
+                if (!decision.allowNetwork) {
+                    Toast.makeText(
+                            NewsActivity.this,
+                            NetworkRefreshPolicy.describeForUser(NewsActivity.this, decision),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 Toast.makeText(
                         NewsActivity.this,
                         R.string.news_refresh_toast,
@@ -127,16 +140,13 @@ public class NewsActivity extends ZutnikBaseActivity {
         }
 
         if (forceReload) {
-            clearNewsCache();
-            renderNewsItems(null);
-            updateNewsInfo(0L);
             ImageCache.getInstance().clear();
         }
 
-        executeLoadNewsTask();
+        executeLoadNewsTask(forceReload ? NetworkRefreshPolicy.Mode.MANUAL : NetworkRefreshPolicy.Mode.SCREEN_AUTO);
     }
 
-    private void executeLoadNewsTask() {
+    private void executeLoadNewsTask(NetworkRefreshPolicy.Mode mode) {
         progress.setVisibility(View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
         setRefreshing(true);
@@ -147,7 +157,13 @@ public class NewsActivity extends ZutnikBaseActivity {
             boolean success = false;
 
             try {
+                NetworkRefreshPolicy.recordAttempt(
+                        NewsActivity.this,
+                        NetworkRefreshPolicy.Module.NEWS,
+                        mode,
+                        "news");
                 loaded = repo.loadNews();
+                NetworkRefreshPolicy.recordSuccess(NewsActivity.this, NetworkRefreshPolicy.Module.NEWS, "news");
                 success = true;
             } catch (Exception e) {
                 error = e;
@@ -184,11 +200,13 @@ public class NewsActivity extends ZutnikBaseActivity {
     private boolean shouldFetchFromNetwork() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE);
         long ts = prefs.getLong(KEY_NEWS_TIMESTAMP, 0L);
-        if (ts == 0L) {
-            return true;
-        }
-        long now = System.currentTimeMillis();
-        return (now - ts) > NEWS_CACHE_TTL_MS;
+        NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                this,
+                NetworkRefreshPolicy.Module.NEWS,
+                NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                "news",
+                ts);
+        return decision.allowNetwork;
     }
 
     private long getCacheTimestamp() {

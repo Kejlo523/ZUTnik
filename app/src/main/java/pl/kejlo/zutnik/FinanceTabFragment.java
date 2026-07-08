@@ -124,7 +124,22 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
         bindNoticeDate(0L);
 
         if (refreshButton != null) {
-            refreshButton.setOnClickListener(v -> startLoad(true));
+            refreshButton.setOnClickListener(v -> {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        requireContext(),
+                        NetworkRefreshPolicy.Module.FINANCE,
+                        NetworkRefreshPolicy.Mode.MANUAL,
+                        null,
+                        0L);
+                if (!decision.allowNetwork) {
+                    Toast.makeText(
+                            requireContext(),
+                            NetworkRefreshPolicy.describeForUser(requireContext(), decision),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                startLoad(true);
+            });
         }
 
         startLoad(false);
@@ -230,9 +245,11 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
             String resultingStudyId;
 
             try {
-                studies = financeRepository.loadStudies(forceRefreshStudies);
+                studies = financeRepository.loadStudies(false);
                 FinanceRepository.FinanceSnapshot snapshot =
-                        financeRepository.loadPaymentsForActiveStudy(forceRefreshStudies);
+                        financeRepository.loadPaymentsForActiveStudy(forceRefreshStudies
+                                ? NetworkRefreshPolicy.Mode.MANUAL
+                                : NetworkRefreshPolicy.Mode.SCREEN_AUTO);
                 records = snapshot.records;
                 fetchedAt = snapshot.fetchedAt;
                 fromCache = snapshot.fromCache;

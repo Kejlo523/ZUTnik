@@ -291,8 +291,24 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             return;
         }
 
+        NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                this,
+                NetworkRefreshPolicy.Module.LINK_PREVIEW,
+                NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                item.url,
+                0L);
+        if (!decision.allowNetwork) {
+            markMetadataLoaded(item);
+            return;
+        }
+
         bgExecutor.submit(() -> {
             try {
+                NetworkRefreshPolicy.recordAttempt(
+                        UsefulLinksActivity.this,
+                        NetworkRefreshPolicy.Module.LINK_PREVIEW,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        item.url);
                 Request request = new Request.Builder()
                         .url(item.url)
                         .header("User-Agent", USER_AGENT)
@@ -310,6 +326,10 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
                             extractTitle(html));
                     item.previewImageUrl = emptyToNull(extractMeta(html, "og:image"));
                     savePreviewToCache(item);
+                    NetworkRefreshPolicy.recordSuccess(
+                            UsefulLinksActivity.this,
+                            NetworkRefreshPolicy.Module.LINK_PREVIEW,
+                            item.url);
 
                     if (item.previewImageUrl != null) {
                         downloadImageToCache(item.previewImageUrl);

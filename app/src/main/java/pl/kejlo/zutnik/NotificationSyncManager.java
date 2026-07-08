@@ -28,8 +28,8 @@ public final class NotificationSyncManager {
 
     public static final String UNIQUE_WORK_NAME = "zutnik_background_sync";
     public static final String UNIQUE_BOOTSTRAP_WORK_NAME = "zutnik_background_sync_bootstrap";
-    public static final long SYNC_INTERVAL_MINUTES = 90L;
-    private static final long SYNC_FLEX_MINUTES = 20L;
+    public static final long SYNC_INTERVAL_MINUTES = 6L * 60L;
+    private static final long SYNC_FLEX_MINUTES = 60L;
     private static final String PREFS_RUNTIME = "zutnik_sync_runtime";
     private static final String KEY_BOOTSTRAP_SYNC_SCOPE = "bootstrap_sync_scope_v2";
     private static final String PREFS_BG = "zutnik_background_sync_cache";

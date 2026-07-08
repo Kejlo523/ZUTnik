@@ -1,6 +1,7 @@
 package pl.kejlo.zutnik;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,6 +23,9 @@ public class GradesRepository {
 
     private static final long STUDIES_TTL_MS = CachePolicy.STUDIES_TTL_MS;
     private static final long SEMESTERS_TTL_MS = CachePolicy.SEMESTERS_TTL_MS;
+    private static final String PREFS_CURRENT_GRADES_CACHE = "zutnik_current_grades_repository_cache";
+    private static final String KEY_CURRENT_GRADES_JSON_PREFIX = "current_grades_json_";
+    private static final String KEY_CURRENT_GRADES_TS_PREFIX = "current_grades_ts_";
 
     private static final String PROGRAMME_FIELDS =
             "id|programme[id|name|description|faculty[id|name]|mode_of_studies|level_of_studies|level]|status|admission_date|is_primary|stages[id|name]";
@@ -92,6 +96,16 @@ public class GradesRepository {
         String activityType;
         double ects;
         final List<JSONObject> embeddedGrades = new ArrayList<>();
+    }
+
+    private static final class CachedGrades {
+        final long timestampMs;
+        final List<Grade> grades;
+
+        CachedGrades(long timestampMs, List<Grade> grades) {
+            this.timestampMs = timestampMs;
+            this.grades = grades != null ? grades : Collections.emptyList();
+        }
     }
 
     private static StudiesCacheEntry sStudiesCache;
@@ -1254,6 +1268,10 @@ public class GradesRepository {
     }
 
     public List<Grade> loadCurrentGrades() throws IOException, JSONException {
+        return loadCurrentGrades(NetworkRefreshPolicy.Mode.SCREEN_AUTO);
+    }
+
+    public List<Grade> loadCurrentGrades(NetworkRefreshPolicy.Mode mode) throws IOException, JSONException {
         ZutnikSession session = ZutnikSession.getInstance();
         if (session.isDemoLogin()) {
             return DemoDataProvider.loadCurrentGrades();
@@ -1266,6 +1284,53 @@ public class GradesRepository {
             return Collections.emptyList();
         }
 
+        Context appContext = ZutnikSession.getAppContextOrNull();
+        String scope = buildCurrentGradesCacheScope(session);
+        CachedGrades cached = readCurrentGradesCache(appContext, scope);
+        if (appContext != null) {
+            NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                    appContext,
+                    NetworkRefreshPolicy.Module.GRADES,
+                    mode != null ? mode : NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                    scope,
+                    cached != null ? cached.timestampMs : 0L);
+            if (!decision.allowNetwork) {
+                return cached != null ? copyGrades(cached.grades) : Collections.emptyList();
+            }
+            NetworkRefreshPolicy.recordAttempt(
+                    appContext,
+                    NetworkRefreshPolicy.Module.GRADES,
+                    mode != null ? mode : NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                    scope);
+        }
+
+        try {
+            List<Grade> fresh = fetchCurrentGradesFromNetwork();
+            saveCurrentGradesCache(appContext, scope, fresh);
+            if (appContext != null) {
+                NetworkRefreshPolicy.recordSuccess(appContext, NetworkRefreshPolicy.Module.GRADES, scope);
+            }
+            return fresh;
+        } catch (IOException | JSONException e) {
+            if (cached != null) {
+                return copyGrades(cached.grades);
+            }
+            throw e;
+        }
+    }
+
+    public List<Grade> loadCurrentGradesFromNetwork() throws IOException, JSONException {
+        List<Grade> fresh = fetchCurrentGradesFromNetwork();
+        Context appContext = ZutnikSession.getAppContextOrNull();
+        String scope = buildCurrentGradesCacheScope(ZutnikSession.getInstance());
+        saveCurrentGradesCache(appContext, scope, fresh);
+        if (appContext != null) {
+            NetworkRefreshPolicy.recordSuccess(appContext, NetworkRefreshPolicy.Module.GRADES, scope);
+        }
+        return fresh;
+    }
+
+    private List<Grade> fetchCurrentGradesFromNetwork() throws IOException, JSONException {
         JSONObject coursesResponse = fetchCoursesResponse(true, "true");
         List<String> termIds = getTermIdsForCourses(coursesResponse);
         if (termIds.isEmpty()) {
@@ -1284,6 +1349,141 @@ public class GradesRepository {
                 : fetchLatestGradesForTerms(termIds);
 
         return mapGradesForTerms(termIds, coursesResponse, ectsResponse, gradesTermsResponse, latestGrades);
+    }
+
+    private String buildCurrentGradesCacheScope(ZutnikSession session) {
+        if (session == null) {
+            return "unknown";
+        }
+        String userId = firstNonEmpty(session.getUserId(), "unknown");
+        String studyId = firstNonEmpty(session.getActiveStudyId());
+        if (studyId.isEmpty()) {
+            Study active = session.getActiveStudy();
+            if (active != null) {
+                studyId = firstNonEmpty(active.przynaleznoscId);
+            }
+        }
+        if (studyId.isEmpty()) {
+            studyId = "no_study";
+        }
+        return "u:" + userId + "|s:" + studyId + "|current";
+    }
+
+    private CachedGrades readCurrentGradesCache(Context appContext, String scope) {
+        if (appContext == null || scope == null || scope.trim().isEmpty()) {
+            return null;
+        }
+        SharedPreferences prefs = appContext.getSharedPreferences(PREFS_CURRENT_GRADES_CACHE, Context.MODE_PRIVATE);
+        String suffix = Integer.toHexString(scope.hashCode());
+        String raw = prefs.getString(KEY_CURRENT_GRADES_JSON_PREFIX + suffix, null);
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+        try {
+            long ts = prefs.getLong(KEY_CURRENT_GRADES_TS_PREFIX + suffix, 0L);
+            JSONArray arr = new JSONArray(raw);
+            List<Grade> out = new ArrayList<>();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.optJSONObject(i);
+                if (obj != null) {
+                    out.add(gradeFromJson(obj));
+                }
+            }
+            return new CachedGrades(ts, out);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void saveCurrentGradesCache(Context appContext, String scope, List<Grade> grades) {
+        if (appContext == null || scope == null || scope.trim().isEmpty() || grades == null) {
+            return;
+        }
+        try {
+            JSONArray arr = new JSONArray();
+            for (Grade grade : grades) {
+                arr.put(gradeToJson(grade));
+            }
+            String suffix = Integer.toHexString(scope.hashCode());
+            appContext.getSharedPreferences(PREFS_CURRENT_GRADES_CACHE, Context.MODE_PRIVATE)
+                    .edit()
+                    .putString(KEY_CURRENT_GRADES_JSON_PREFIX + suffix, arr.toString())
+                    .putLong(KEY_CURRENT_GRADES_TS_PREFIX + suffix, System.currentTimeMillis())
+                    .apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private JSONObject gradeToJson(Grade grade) throws JSONException {
+        JSONObject obj = new JSONObject();
+        if (grade == null) {
+            return obj;
+        }
+        obj.put("subjectName", grade.subjectName);
+        obj.put("courseId", grade.courseId);
+        obj.put("grade", grade.grade);
+        obj.put("weight", grade.weight);
+        obj.put("gradeType", grade.gradeType);
+        obj.put("gradeDescription", grade.gradeDescription);
+        obj.put("passes", grade.passes);
+        obj.put("type", grade.type);
+        obj.put("teacher", grade.teacher);
+        obj.put("date", grade.date);
+        obj.put("comment", grade.comment);
+        obj.put("countsIntoAverage", grade.countsIntoAverage);
+        obj.put("examId", grade.examId);
+        obj.put("examSessionNumber", grade.examSessionNumber);
+        obj.put("dateModified", grade.dateModified);
+        obj.put("dateAcquisition", grade.dateAcquisition);
+        obj.put("modificationAuthor", grade.modificationAuthor);
+        obj.put("decimalValue", grade.decimalValue);
+        obj.put("gradeTypeId", grade.gradeTypeId);
+        return obj;
+    }
+
+    private Grade gradeFromJson(JSONObject obj) {
+        Grade grade = new Grade();
+        grade.subjectName = obj.optString("subjectName", "");
+        grade.courseId = obj.optString("courseId", "");
+        grade.grade = obj.optString("grade", "");
+        grade.weight = obj.optDouble("weight", 0.0);
+        grade.gradeType = obj.optString("gradeType", "");
+        grade.gradeDescription = obj.optString("gradeDescription", "");
+        grade.passes = obj.optBoolean("passes", false);
+        grade.type = obj.optString("type", "");
+        grade.teacher = obj.optString("teacher", "");
+        grade.date = obj.optString("date", "");
+        grade.comment = obj.optString("comment", "");
+        grade.countsIntoAverage = obj.optBoolean("countsIntoAverage", false);
+        grade.examId = obj.optString("examId", "");
+        grade.examSessionNumber = obj.optInt("examSessionNumber", 0);
+        grade.dateModified = obj.optString("dateModified", "");
+        grade.dateAcquisition = obj.optString("dateAcquisition", "");
+        grade.modificationAuthor = obj.optString("modificationAuthor", "");
+        grade.decimalValue = obj.optString("decimalValue", "");
+        grade.gradeTypeId = obj.optInt("gradeTypeId", 0);
+        return grade;
+    }
+
+    private List<Grade> copyGrades(List<Grade> source) {
+        if (source == null || source.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Grade> out = new ArrayList<>(source.size());
+        for (Grade grade : source) {
+            if (grade != null) {
+                out.add(gradeFromJson(gradeToJsonSafe(grade)));
+            }
+        }
+        return out;
+    }
+
+    private JSONObject gradeToJsonSafe(Grade grade) {
+        try {
+            return gradeToJson(grade);
+        } catch (JSONException e) {
+            return new JSONObject();
+        }
     }
 
     private Double parseCreditsResponse(String raw) {
