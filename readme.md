@@ -2,7 +2,7 @@
 
 Mobilna, nieoficjalna aplikacja kliencka dla studentów Zachodniopomorskiego Uniwersytetu Technologicznego. Integruje się z **USOS API** i udostępnia dane akademiowania na Androidzie.
 <br>
-<img width="auto" height="500" alt="zutnik_promotional_banner" src="https://github.com/user-attachments/assets/facda314-2843-4ea4-ab95-7722bdc3d1bf" />
+<!--- <img width="auto" height="500" alt="zutnik_promotional_banner" src="https://github.com/user-attachments/assets/facda314-2843-4ea4-ab95-7722bdc3d1bf" /> --->
 
 <br>
 Aplikacja skupia się na:
