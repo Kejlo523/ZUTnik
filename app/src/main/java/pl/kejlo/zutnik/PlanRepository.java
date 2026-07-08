@@ -1247,6 +1247,7 @@ public class PlanRepository {
             LocalDate rangeEnd,
             String viewMode,
             boolean forceScopeRefresh,
+            boolean allowNetworkRefresh,
             PlanDebug debug) throws IOException, JSONException {
         long now = System.currentTimeMillis();
 
@@ -1277,6 +1278,20 @@ public class PlanRepository {
 
             boolean needRefresh = forceScopeRefresh || (lastScopeMs == null) || ((now - lastScopeMs) > ttl);
 
+            if (needRefresh && !forceScopeRefresh && isUserPlan && appContext != null) {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        appContext,
+                        NetworkRefreshPolicy.Module.PLAN,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        scopeKey,
+                        lastScopeMs != null ? lastScopeMs : 0L);
+                needRefresh = decision.allowNetwork;
+            }
+
+            if (!allowNetworkRefresh) {
+                needRefresh = false;
+            }
+
             // If offline, disable refresh to prevent errors and rely on cache
             if (appContext != null && !NetworkStatusHelper.isNetworkAvailable(appContext)) {
                 needRefresh = false;
@@ -1284,6 +1299,13 @@ public class PlanRepository {
 
             if (needRefresh) {
                 try {
+                    if (appContext != null && isUserPlan) {
+                        NetworkRefreshPolicy.recordAttempt(
+                                appContext,
+                                NetworkRefreshPolicy.Module.PLAN,
+                                forceScopeRefresh ? NetworkRefreshPolicy.Mode.MANUAL : NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                                scopeKey);
+                    }
                     List<PlanEventRaw> fresh = fetchPlanRangeByAlbum(album, rangeStart, rangeEnd, debug);
                     // If we get data, update cache. If we get NOTHING (and not error), it might be
                     // empty period.
@@ -1302,6 +1324,9 @@ public class PlanRepository {
                     sFullPlanCache.scopeTimestamps.put(scopeKey, now);
                     sFullPlanCache.timestampMs = now;
                     writeCacheToDisk(sFullPlanCache);
+                    if (appContext != null && isUserPlan) {
+                        NetworkRefreshPolicy.recordSuccess(appContext, NetworkRefreshPolicy.Module.PLAN, scopeKey);
+                    }
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to refresh plan scope (offline?): " + e.getMessage());
                     // We suppress the error and return what we have in cache
@@ -1441,21 +1466,25 @@ public class PlanRepository {
     // Public API
 
     public PlanResult loadPlan(String viewMode, LocalDate currentDate) throws IOException, JSONException {
-        return loadPlanInternal(viewMode, currentDate, false, false);
+        return loadPlanInternal(viewMode, currentDate, false, false, true);
     }
 
     public PlanResult loadPlan(String viewMode, LocalDate currentDate, boolean forceFullRefresh)
             throws IOException, JSONException {
-        return loadPlanInternal(viewMode, currentDate, forceFullRefresh, false);
+        return loadPlanInternal(viewMode, currentDate, forceFullRefresh, false, true);
+    }
+
+    public PlanResult loadPlanFromCache(String viewMode, LocalDate currentDate) throws IOException, JSONException {
+        return loadPlanInternal(viewMode, currentDate, false, false, false);
     }
 
     @SuppressWarnings("unused")
     public PlanResult reloadScope(String viewMode, LocalDate currentDate) throws IOException, JSONException {
-        return loadPlanInternal(viewMode, currentDate, false, true);
+        return loadPlanInternal(viewMode, currentDate, false, true, true);
     }
 
     private PlanResult loadPlanInternal(String viewMode, LocalDate currentDate, boolean forceFullRefresh,
-            boolean forceScopeRefresh) throws IOException, JSONException {
+            boolean forceScopeRefresh, boolean allowNetworkRefresh) throws IOException, JSONException {
         if (currentDate == null)
             currentDate = LocalDate.now();
         if (!"day".equals(viewMode) && !"week".equals(viewMode) && !"month".equals(viewMode))
@@ -1498,7 +1527,7 @@ public class PlanRepository {
         r.debug.rangeStart = rangeStart.format(YMD);
         r.debug.rangeEnd = rangeEnd.format(YMD);
 
-        if (forceFullRefresh) {
+        if (forceFullRefresh && allowNetworkRefresh) {
             try {
                 long now = System.currentTimeMillis();
                 List<PlanEventRaw> allEvents = fetchFullPlanByAlbum(album, r.debug);
@@ -1511,6 +1540,9 @@ public class PlanRepository {
                     newCache.scopeTimestamps = new ConcurrentHashMap<>();
                     sFullPlanCache = newCache;
                     writeCacheToDisk(newCache);
+                    if (appContext != null) {
+                        NetworkRefreshPolicy.recordSuccess(appContext, NetworkRefreshPolicy.Module.PLAN, viewMode);
+                    }
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Full refresh failed: " + e.getMessage());
@@ -1520,7 +1552,7 @@ public class PlanRepository {
         // Ensure we iterate through the requested dates to build the result
         // If not force refresh, ensureScopeData will fetch if needed
         Map<LocalDate, List<PlanEventRaw>> byDate = ensureScopeData(album, rangeStart, rangeEnd, viewMode,
-                forceScopeRefresh, r.debug);
+                forceScopeRefresh, allowNetworkRefresh, r.debug);
 
         List<PlanEventRaw> entries = new ArrayList<>();
         LocalDate iterDate = rangeStart;
@@ -1588,7 +1620,7 @@ public class PlanRepository {
         }
 
         // Side effect only: prefetch upcoming days into cache for faster widget reads.
-        ensureScopeData(album, today, end, "widget", false, new PlanDebug());
+        ensureScopeData(album, today, end, "widget", false, false, new PlanDebug());
         return Collections.emptyList();
     }
 
@@ -1616,6 +1648,7 @@ public class PlanRepository {
                 rangeEnd,
                 scope,
                 false,
+                true,
                 new PlanDebug());
 
         Map<LocalDate, List<PlanEventRaw>> result = new LinkedHashMap<>();
@@ -1647,6 +1680,7 @@ public class PlanRepository {
                 range.end,
                 "filter_current",
                 forceRefresh,
+                true,
                 new PlanDebug());
 
         if (byDate == null || byDate.isEmpty()) {
@@ -1679,6 +1713,7 @@ public class PlanRepository {
                 range.end,
                 "filter_semester",
                 forceRefresh,
+                true,
                 new PlanDebug());
 
         if (byDate == null || byDate.isEmpty()) {

@@ -176,7 +176,23 @@ public class InfoTabFragment extends ZutnikTabFragment {
         }
         
         if (btnInfoRefresh != null) {
-            btnInfoRefresh.setOnClickListener(v -> startInfoLoad(true));
+            btnInfoRefresh.setOnClickListener(v -> {
+                String scope = getActiveStudyCacheScopeKey();
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        requireContext(),
+                        NetworkRefreshPolicy.Module.INFO,
+                        NetworkRefreshPolicy.Mode.MANUAL,
+                        scope,
+                        getInfoCacheTimestamp(scope));
+                if (!decision.allowNetwork) {
+                    Toast.makeText(
+                            requireContext(),
+                            NetworkRefreshPolicy.describeForUser(requireContext(), decision),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                startInfoLoad(true);
+            });
         }
     }
 
@@ -209,6 +225,11 @@ public class InfoTabFragment extends ZutnikTabFragment {
     private void executeLoadInfoTask(boolean forceRefreshStudies) {
         progress.setVisibility(View.VISIBLE);
         infoContentRoot.setAlpha(0.3f);
+        Context appContext = requireContext().getApplicationContext();
+        String loadScopeKey = getActiveStudyCacheScopeKey();
+        NetworkRefreshPolicy.Mode loadMode = forceRefreshStudies
+                ? NetworkRefreshPolicy.Mode.MANUAL
+                : NetworkRefreshPolicy.Mode.SCREEN_AUTO;
         currentInfoFuture = executor.submit(() -> {
             StudiesInfoRepository.StudyDetails details = null;
             List<StudiesInfoRepository.StudyHistoryItem> history = null;
@@ -216,6 +237,11 @@ public class InfoTabFragment extends ZutnikTabFragment {
             boolean success = false;
 
             try {
+                NetworkRefreshPolicy.recordAttempt(
+                        appContext,
+                        NetworkRefreshPolicy.Module.INFO,
+                        loadMode,
+                        loadScopeKey);
                 GradesRepository gradesRepository = new GradesRepository();
                 gradesRepository.loadStudies(forceRefreshStudies);
                 StudiesInfoRepository repo = new StudiesInfoRepository();
@@ -268,6 +294,10 @@ public class InfoTabFragment extends ZutnikTabFragment {
 
                 // Save to cache after successful refresh
                 saveInfoToCache(getActiveStudyCacheScopeKey(), finalDetails, finalHistory);
+                NetworkRefreshPolicy.recordSuccess(
+                        appContext,
+                        NetworkRefreshPolicy.Module.INFO,
+                        finalScopeKey);
                 revealInfoContent();
             });
         });
@@ -316,20 +346,18 @@ public class InfoTabFragment extends ZutnikTabFragment {
     // Returns true if data should be fetched from the network for the given study key
     // (cache is empty or older than TTL).
     private boolean shouldFetchFromNetwork(String scopeKey) {
+        NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                requireContext(),
+                NetworkRefreshPolicy.Module.INFO,
+                NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                scopeKey,
+                getInfoCacheTimestamp(scopeKey));
+        return decision.allowNetwork;
+    }
+
+    private long getInfoCacheTimestamp(String scopeKey) {
         SharedPreferences cache = requireContext().getSharedPreferences(PREFS_INFO_CACHE, Context.MODE_PRIVATE);
-
-        long ts = cache.getLong(getCacheKey(KEY_INFO_TIMESTAMP, scopeKey), 0L);
-        if (ts == 0L) {
-            return true;
-        }
-
-        // If offline, don't try to refresh expired cache
-        if (!NetworkStatusHelper.isNetworkAvailable(requireContext())) {
-            return false;
-        }
-
-        long now = System.currentTimeMillis();
-        return (now - ts) > INFO_CACHE_TTL_MS;
+        return cache.getLong(getCacheKey(KEY_INFO_TIMESTAMP, scopeKey), 0L);
     }
 
     // Loads data from cache (if available) and binds it to the views.
@@ -665,6 +693,7 @@ public class InfoTabFragment extends ZutnikTabFragment {
         if (url == null || url.isEmpty())
             return;
 
+        Context appContext = requireContext().getApplicationContext();
         executor.execute(() -> {
             // 1. Try cache (Disk check is safe here as this is background thread)
             try {
@@ -681,6 +710,20 @@ public class InfoTabFragment extends ZutnikTabFragment {
 
             // 2. Fetch via ZutnikNetwork (handles SSL/certs)
             try {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        appContext,
+                        NetworkRefreshPolicy.Module.INFO,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        url,
+                        0L);
+                if (!decision.allowNetwork) {
+                    return;
+                }
+                NetworkRefreshPolicy.recordAttempt(
+                        appContext,
+                        NetworkRefreshPolicy.Module.INFO,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        url);
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(url)
                         .header("User-Agent", "ZUTnik-Android-Info/2.0")
@@ -695,6 +738,10 @@ public class InfoTabFragment extends ZutnikTabFragment {
                         if (bmp != null) {
                             try {
                                 ImageCache.getInstance().put(url, bmp);
+                                NetworkRefreshPolicy.recordSuccess(
+                                        appContext,
+                                        NetworkRefreshPolicy.Module.INFO,
+                                        url);
                             } catch (Exception ignored) {
                             }
                         }

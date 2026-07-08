@@ -568,8 +568,31 @@ public class PlanTabFragment extends ZutnikTabFragment {
         setupFab();
 
         // Load session dates in background
+        Context appContext = requireContext().getApplicationContext();
         executor.execute(() -> {
-            List<PlanRepository.SessionPeriod> sessions = planRepository.fetchSessionDates();
+            NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                    appContext,
+                    NetworkRefreshPolicy.Module.SESSION,
+                    NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                    "academic_calendar",
+                    0L);
+            List<PlanRepository.SessionPeriod> sessions;
+            if (decision.allowNetwork) {
+                NetworkRefreshPolicy.recordAttempt(
+                        appContext,
+                        NetworkRefreshPolicy.Module.SESSION,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        "academic_calendar");
+                sessions = planRepository.fetchSessionDates();
+                if (sessions != null && !sessions.isEmpty()) {
+                    NetworkRefreshPolicy.recordSuccess(
+                            appContext,
+                            NetworkRefreshPolicy.Module.SESSION,
+                            "academic_calendar");
+                }
+            } else {
+                sessions = PlanRepository.getCachedSessionDates(appContext);
+            }
             if (sessions != null && !sessions.isEmpty()) {
                 sessionDates = sessions;
                 // Refresh displayed pages so session markers appear
@@ -960,6 +983,24 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private void setupRefreshButton() {
         if (btnRefresh != null) {
             btnRefresh.setOnClickListener(v -> {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        requireContext(),
+                        NetworkRefreshPolicy.Module.PLAN,
+                        NetworkRefreshPolicy.Mode.MANUAL,
+                        viewModeId,
+                        0L);
+                if (!decision.allowNetwork) {
+                    Toast.makeText(
+                            requireContext(),
+                            NetworkRefreshPolicy.describeForUser(requireContext(), decision),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                NetworkRefreshPolicy.recordAttempt(
+                        requireContext(),
+                        NetworkRefreshPolicy.Module.PLAN,
+                        NetworkRefreshPolicy.Mode.MANUAL,
+                        viewModeId);
                 startRefreshAnimation();
                 updatePlanDataFreshnessText(getString(R.string.data_status_syncing));
                 if (currentSearchQuery != null) {
@@ -3743,18 +3784,13 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 float detailBaseline = baseline + dpToPx(compactHeight ? 3 : 4) - metaFm.ascent;
                 float detailBottom = detailBaseline + metaFm.descent;
                 metaPaint.setColor(secondaryTextColor);
-                CharSequence clipped = TextUtils.ellipsize(
-                        footerText,
-                        metaPaint,
-                        Math.max(0, width - padX * 2),
-                        TextUtils.TruncateAt.MIDDLE);
                 canvas.save();
                 canvas.clipRect(
                         padX,
                         baseline + timeFm.descent,
                         Math.max(padX, width - padX),
                         Math.min(height, detailBottom + dpToPx(2)));
-                canvas.drawText(clipped.toString(), padX, detailBaseline, metaPaint);
+                drawFittedSingleLine(canvas, footerText, metaPaint, padX, detailBaseline, Math.max(0, width - padX * 2));
                 canvas.restore();
                 titleTop = detailBottom + dpToPx(compactHeight ? 3 : 5);
             }
@@ -3826,31 +3862,45 @@ public class PlanTabFragment extends ZutnikTabFragment {
             if (titleText.isEmpty()) {
                 titleText = rawTitle;
             }
-            footerText = buildFooterText(event);
+            footerText = buildFooterText(event, compactWidth);
             badgeText = buildTypeBadge(event, rawTitle);
             overlayText = safe(event.customOverlayLabel);
 
             timeText = fitEventTimeText(event, contentWidth, compactWidth ? 7.4f : 8.6f, compactWidth ? 9.3f : 10.5f);
             badgePaint.setTextSize(spToPx(compactWidth ? 8.2f : 9.0f));
 
-            fitSingleLineText(metaPaint, footerText, contentWidth, compactWidth ? 6.3f : 6.8f, compactWidth ? 8.1f : 8.9f);
+            fitSingleLineText(metaPaint, footerText, contentWidth, compactWidth ? 4.8f : 5.2f, compactWidth ? 8.1f : 8.9f);
 
-            int timeReserve = textLineHeight(timePaint) + dpToPx(3);
-            int detailReserve = (shouldDrawHeaderDetail(height) && !footerText.isEmpty())
-                    ? textLineHeight(metaPaint) + dpToPx(5)
-                    : 0;
-            int footerLineHeight = Math.max(textLineHeight(metaPaint), textLineHeight(badgePaint));
-            int footerReserve = (height >= dpToPx(38) && !badgeText.isEmpty())
-                    ? footerLineHeight + dpToPx(6)
-                    : 0;
+            Paint.FontMetrics timeFm = timePaint.getFontMetrics();
+            float timeBaseline = padTop - timeFm.ascent;
+            float titleTop = timeBaseline + dpToPx(compactHeight ? 4 : 6);
+            if (shouldDrawHeaderDetail(height) && !footerText.isEmpty()) {
+                Paint.FontMetrics metaFm = metaPaint.getFontMetrics();
+                float detailBaseline = timeBaseline + dpToPx(compactHeight ? 3 : 4) - metaFm.ascent;
+                float detailBottom = detailBaseline + metaFm.descent;
+                titleTop = detailBottom + dpToPx(compactHeight ? 3 : 5);
+            }
             int titleArea = Math.max(
-                    dpToPx(10),
-                    height - padTop - padBottom - timeReserve - detailReserve - footerReserve);
-            titleLayout = buildBestTitleLayout(titleText, contentWidth, titleArea, compactWidth, compactHeight);
+                    dpToPx(8),
+                    Math.round(height - titleTop - padBottom));
+            float badgeAvoidWidth = shouldAvoidBadgeInTitle(height)
+                    ? badgePaint.measureText(badgeText) + dpToPx(6)
+                    : 0f;
+            titleLayout = buildBestTitleLayout(
+                    titleText,
+                    contentWidth,
+                    titleArea,
+                    compactWidth,
+                    compactHeight,
+                    badgeAvoidWidth);
         }
 
         private boolean shouldDrawHeaderDetail(int height) {
             return height >= dpToPx(54);
+        }
+
+        private boolean shouldAvoidBadgeInTitle(int height) {
+            return height >= dpToPx(50) && !badgeText.isEmpty();
         }
 
         private StaticLayout buildBestTitleLayout(
@@ -3858,20 +3908,25 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 int availableWidth,
                 int availableHeight,
                 boolean compactWidth,
-                boolean compactHeight) {
+                boolean compactHeight,
+                float bottomEndAvoidWidth) {
             if (TextUtils.isEmpty(text) || availableWidth <= 0 || availableHeight <= 0) {
                 return null;
             }
 
-            float maxSp = compactWidth ? 10.4f : 12.0f;
-            float minSp = compactWidth ? 7.2f : 7.8f;
+            float maxSp = compactWidth ? 10.2f : 11.8f;
+            float minSp = compactWidth ? 5.6f : 6.2f;
             StaticLayout fallback = null;
 
             for (float sp = maxSp; sp >= minSp; sp -= 0.35f) {
                 titlePaint.setTextSize(spToPx(sp));
                 int lineHeight = Math.max(1, titleLineHeight());
-                int maxLines = Math.max(1, Math.min(compactHeight ? 1 : 6, availableHeight / lineHeight));
-                StaticLayout candidate = makeTitleLayout(text, availableWidth, maxLines);
+                int maxLines = Math.max(1, Math.min(compactHeight ? 2 : 7, availableHeight / lineHeight));
+                StaticLayout candidate = makeTitleLayoutWithBadgeAvoidance(
+                        text,
+                        availableWidth,
+                        maxLines,
+                        bottomEndAvoidWidth);
                 fallback = candidate;
                 if (candidate != null && candidate.getHeight() <= availableHeight && !hasEllipsis(candidate)) {
                     return candidate;
@@ -3880,9 +3935,41 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
             titlePaint.setTextSize(spToPx(minSp));
             int lineHeight = Math.max(1, titleLineHeight());
-            int maxLines = Math.max(1, Math.min(compactHeight ? 1 : 6, availableHeight / lineHeight));
-            StaticLayout clipped = makeTitleLayout(text, availableWidth, maxLines);
+            int maxLines = Math.max(1, Math.min(compactHeight ? 2 : 7, availableHeight / lineHeight));
+            StaticLayout clipped = makeTitleLayoutWithBadgeAvoidance(
+                    text,
+                    availableWidth,
+                    maxLines,
+                    bottomEndAvoidWidth);
             return clipped != null ? clipped : fallback;
+        }
+
+        private StaticLayout makeTitleLayoutWithBadgeAvoidance(
+                String text,
+                int availableWidth,
+                int maxLines,
+                float bottomEndAvoidWidth) {
+            int safeMaxLines = Math.max(1, maxLines);
+            if (bottomEndAvoidWidth <= 0f || safeMaxLines <= 1 || availableWidth < dpToPx(42)) {
+                return makeTitleLayout(text, availableWidth, safeMaxLines);
+            }
+
+            int[] leftIndents = new int[safeMaxLines];
+            int[] rightIndents = new int[safeMaxLines];
+            rightIndents[safeMaxLines - 1] = Math.max(0, Math.round(bottomEndAvoidWidth));
+
+            return StaticLayout.Builder
+                    .obtain(text, 0, text.length(), titlePaint, availableWidth)
+                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setIncludePad(false)
+                    .setLineSpacing(0f, 0.92f)
+                    .setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE)
+                    .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE)
+                    .setMaxLines(safeMaxLines)
+                    .setEllipsize(TextUtils.TruncateAt.END)
+                    .setEllipsizedWidth(availableWidth)
+                    .setIndents(leftIndents, rightIndents)
+                    .build();
         }
 
         private StaticLayout makeTitleLayout(String text, int availableWidth, int maxLines) {
@@ -3890,7 +3977,9 @@ public class PlanTabFragment extends ZutnikTabFragment {
                     .obtain(text, 0, text.length(), titlePaint, availableWidth)
                     .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                     .setIncludePad(false)
-                    .setLineSpacing(0f, 0.96f)
+                    .setLineSpacing(0f, 0.92f)
+                    .setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE)
+                    .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE)
                     .setMaxLines(Math.max(1, maxLines))
                     .setEllipsize(TextUtils.TruncateAt.END)
                     .setEllipsizedWidth(availableWidth)
@@ -3927,6 +4016,39 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 }
             }
             paint.setTextSize(spToPx(minSp));
+        }
+
+        private void drawFittedSingleLine(
+                Canvas canvas,
+                String text,
+                TextPaint paint,
+                float x,
+                float baseline,
+                float availableWidth) {
+            String value = safe(text);
+            if (value.isEmpty() || availableWidth <= 0f) {
+                return;
+            }
+            float textWidth = paint.measureText(value);
+            if (textWidth <= availableWidth || textWidth <= 0f) {
+                canvas.drawText(value, x, baseline, paint);
+                return;
+            }
+
+            float scale = Math.min(1f, availableWidth / textWidth);
+            if (scale < 0.86f) {
+                CharSequence clipped = TextUtils.ellipsize(
+                        value,
+                        paint,
+                        availableWidth,
+                        TextUtils.TruncateAt.MIDDLE);
+                canvas.drawText(clipped.toString(), x, baseline, paint);
+                return;
+            }
+            canvas.save();
+            canvas.scale(scale, 1f, x, baseline);
+            canvas.drawText(value, x, baseline, paint);
+            canvas.restore();
         }
 
         private String fitEventTimeText(
@@ -3995,11 +4117,11 @@ public class PlanTabFragment extends ZutnikTabFragment {
             return start + "-" + end;
         }
 
-        private String buildFooterText(PlanRepository.PlanEventUi ev) {
+        private String buildFooterText(PlanRepository.PlanEventUi ev, boolean compactWidth) {
             String room = safe(ev.room);
             String group = safe(ev.group);
             if (!room.isEmpty() && !group.isEmpty()) {
-                return room + " / " + group;
+                return room + (compactWidth ? "/" : " / ") + group;
             }
             if (!room.isEmpty()) {
                 return room;

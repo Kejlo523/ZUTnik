@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,11 +42,19 @@ public class FinanceRepository {
 
     public FinanceSnapshot loadPaymentsForActiveStudy(boolean forceRefresh)
             throws Exception {
+        return loadPaymentsForActiveStudy(forceRefresh
+                ? NetworkRefreshPolicy.Mode.MANUAL
+                : NetworkRefreshPolicy.Mode.SCREEN_AUTO);
+    }
+
+    public FinanceSnapshot loadPaymentsForActiveStudy(NetworkRefreshPolicy.Mode mode)
+            throws Exception {
         String cacheKey = buildFinanceCacheKey();
         FinanceSnapshot cachedSnapshot = readSnapshot(cacheKey, true);
         boolean isOnline = NetworkStatusHelper.isNetworkAvailable(appContext);
+        NetworkRefreshPolicy.Mode effectiveMode = mode != null ? mode : NetworkRefreshPolicy.Mode.SCREEN_AUTO;
 
-        if (!forceRefresh) {
+        if (effectiveMode != NetworkRefreshPolicy.Mode.MANUAL) {
             FinanceSnapshot freshSnapshot = readSnapshot(cacheKey, false);
             if (freshSnapshot != null) {
                 return freshSnapshot;
@@ -57,6 +66,34 @@ public class FinanceRepository {
             return cachedSnapshot;
         }
 
+        NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                appContext,
+                NetworkRefreshPolicy.Module.FINANCE,
+                effectiveMode,
+                cacheKey,
+                cachedSnapshot != null ? cachedSnapshot.fetchedAt : 0L);
+        if (!decision.allowNetwork) {
+            return cachedSnapshot != null
+                    ? cachedSnapshot
+                    : new FinanceSnapshot(new ArrayList<>(), 0L, true);
+        }
+        NetworkRefreshPolicy.recordAttempt(
+                appContext,
+                NetworkRefreshPolicy.Module.FINANCE,
+                effectiveMode,
+                cacheKey);
+
+        return fetchPaymentsForActiveStudy(cacheKey, cachedSnapshot);
+    }
+
+    public FinanceSnapshot loadPaymentsForActiveStudyFromNetwork() throws Exception {
+        String cacheKey = buildFinanceCacheKey();
+        FinanceSnapshot cachedSnapshot = readSnapshot(cacheKey, true);
+        return fetchPaymentsForActiveStudy(cacheKey, cachedSnapshot);
+    }
+
+    private FinanceSnapshot fetchPaymentsForActiveStudy(String cacheKey, FinanceSnapshot cachedSnapshot)
+            throws Exception {
         ZutnikSession session = ZutnikSession.getInstance();
         try {
             List<FinanceRecord> records;
@@ -67,6 +104,7 @@ public class FinanceRepository {
             }
             long fetchedAt = System.currentTimeMillis();
             saveSnapshot(cacheKey, records, fetchedAt);
+            NetworkRefreshPolicy.recordSuccess(appContext, NetworkRefreshPolicy.Module.FINANCE, cacheKey);
             return new FinanceSnapshot(records, fetchedAt, false);
         } catch (Exception e) {
             if (cachedSnapshot != null) {
@@ -74,6 +112,25 @@ public class FinanceRepository {
             }
             throw e;
         }
+    }
+
+    public boolean hasCachedOutstandingDueSoon(int daysAhead) {
+        FinanceSnapshot snapshot = readSnapshot(buildFinanceCacheKey(), true);
+        if (snapshot == null || snapshot.records == null || snapshot.records.isEmpty()) {
+            return false;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate latest = today.plusDays(Math.max(0, daysAhead));
+        for (FinanceRecord record : snapshot.records) {
+            if (record == null || record.getStatus() != FinanceRecord.Status.DUE) {
+                continue;
+            }
+            LocalDate due = record.getDueDate();
+            if (due != null && !due.isBefore(today) && !due.isAfter(latest)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<FinanceRecord> loadUsosPayments() throws Exception {

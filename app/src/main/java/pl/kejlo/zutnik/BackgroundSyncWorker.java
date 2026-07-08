@@ -82,30 +82,81 @@ public class BackgroundSyncWorker extends Worker {
                 return Result.success();
             }
 
-            boolean withinAcademicWindow = isWithinAcademicNotificationWindow(context);
-            if (!withinAcademicWindow) {
-                Log.d(TAG, "Skipping grades and timetable checks outside didactic/session period.");
-            }
+            String scope = NotificationSyncManager.buildCurrentSyncScope(context);
 
             if (getInputData().getBoolean(INPUT_BOOTSTRAP_PREFETCH, false)) {
-                runBootstrapPrefetch(context);
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        context,
+                        NetworkRefreshPolicy.Module.PLAN,
+                        NetworkRefreshPolicy.Mode.BACKGROUND,
+                        scope,
+                        0L);
+                if (decision.allowNetwork) {
+                    NetworkRefreshPolicy.recordAttempt(
+                            context,
+                            NetworkRefreshPolicy.Module.PLAN,
+                            NetworkRefreshPolicy.Mode.BACKGROUND,
+                            scope);
+                    if (runBootstrapPrefetch(context)) {
+                        NetworkRefreshPolicy.recordSuccess(context, NetworkRefreshPolicy.Module.PLAN, scope);
+                    }
+                }
             }
 
             if (NotificationSyncManager.isGradesEnabled(context)) {
-                if (withinAcademicWindow) {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        context,
+                        NetworkRefreshPolicy.Module.GRADES,
+                        NetworkRefreshPolicy.Mode.BACKGROUND,
+                        scope,
+                        0L);
+                if (decision.allowNetwork) {
+                    NetworkRefreshPolicy.recordAttempt(
+                            context,
+                            NetworkRefreshPolicy.Module.GRADES,
+                            NetworkRefreshPolicy.Mode.BACKGROUND,
+                            scope);
                     checkGrades(context);
+                    NetworkRefreshPolicy.recordSuccess(context, NetworkRefreshPolicy.Module.GRADES, scope);
                 }
             }
 
             if (NotificationSyncManager.isPlanEnabled(context) && NotificationSyncManager.isAnyPlanCategoryEnabled(context)) {
-                if (withinAcademicWindow) {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        context,
+                        NetworkRefreshPolicy.Module.PLAN,
+                        NetworkRefreshPolicy.Mode.BACKGROUND,
+                        scope,
+                        0L);
+                if (decision.allowNetwork) {
+                    NetworkRefreshPolicy.recordAttempt(
+                            context,
+                            NetworkRefreshPolicy.Module.PLAN,
+                            NetworkRefreshPolicy.Mode.BACKGROUND,
+                            scope);
                     checkPlanChanges(context);
+                    NetworkRefreshPolicy.recordSuccess(context, NetworkRefreshPolicy.Module.PLAN, scope);
                 }
             }
 
             if (NotificationSyncManager.isFinanceEnabled(context)
                     && NotificationSyncManager.isAnyFinanceCategoryEnabled(context)) {
-                checkFinanceChanges(context);
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        context,
+                        NetworkRefreshPolicy.Module.FINANCE,
+                        NetworkRefreshPolicy.Mode.BACKGROUND,
+                        scope,
+                        0L,
+                        resolveFinanceBackgroundIntervalMs(context));
+                if (decision.allowNetwork) {
+                    NetworkRefreshPolicy.recordAttempt(
+                            context,
+                            NetworkRefreshPolicy.Module.FINANCE,
+                            NetworkRefreshPolicy.Mode.BACKGROUND,
+                            scope);
+                    checkFinanceChanges(context);
+                    NetworkRefreshPolicy.recordSuccess(context, NetworkRefreshPolicy.Module.FINANCE, scope);
+                }
             }
             return Result.success();
         } catch (IOException io) {
@@ -130,39 +181,34 @@ public class BackgroundSyncWorker extends Worker {
         return NotificationSyncManager.isAnyFeatureEnabled(context);
     }
 
-    private void runBootstrapPrefetch(Context context) {
+    private long resolveFinanceBackgroundIntervalMs(Context context) {
+        try {
+            return new FinanceRepository(context).hasCachedOutstandingDueSoon(3)
+                    ? CachePolicy.BACKGROUND_SYNC_INTERVAL_MS
+                    : CachePolicy.FINANCE_TTL_MS;
+        } catch (Exception ignored) {
+            return CachePolicy.FINANCE_TTL_MS;
+        }
+    }
+
+    private boolean runBootstrapPrefetch(Context context) {
         if (!(NotificationSyncManager.isPlanEnabled(context) && NotificationSyncManager.isAnyPlanCategoryEnabled(context))) {
-            return;
+            return false;
         }
         try {
             PlanRepository repo = new PlanRepository(context);
             repo.loadPlan("week", LocalDate.now(), true);
             Log.d(TAG, "Bootstrap prefetch: plan full-refresh completed");
+            return true;
         } catch (Exception e) {
             Log.w(TAG, "Bootstrap prefetch: plan full-refresh failed", e);
+            return false;
         }
-    }
-
-    private boolean isWithinAcademicNotificationWindow(Context context) {
-        LocalDate today = LocalDate.now();
-        List<PlanRepository.SessionPeriod> periods = PlanRepository.getCachedSessionDates(context);
-        if (periods.isEmpty()) {
-            try {
-                periods = new PlanRepository(context).fetchSessionDates();
-            } catch (Exception ignored) {
-            }
-        }
-        if (periods.isEmpty()) {
-            // If calendar cannot be resolved, keep checks enabled instead of silently disabling.
-            return true;
-        }
-        PlanRepository.SessionPeriod noClasses = PlanRepository.findActivePeriod(periods, today, true);
-        return noClasses == null;
     }
 
     private void checkGrades(Context context) throws IOException, org.json.JSONException {
         GradesRepository repo = new GradesRepository();
-        List<Grade> grades = repo.loadCurrentGrades();
+        List<Grade> grades = repo.loadCurrentGradesFromNetwork();
         if (grades == null) {
             grades = Collections.emptyList();
         }
@@ -281,7 +327,7 @@ public class BackgroundSyncWorker extends Worker {
         }
 
         FinanceRepository repository = new FinanceRepository(context);
-        FinanceRepository.FinanceSnapshot snapshot = repository.loadPaymentsForActiveStudy(true);
+        FinanceRepository.FinanceSnapshot snapshot = repository.loadPaymentsForActiveStudyFromNetwork();
         List<FinanceRecord> currentRecords = snapshot != null && snapshot.records != null
                 ? snapshot.records
                 : Collections.emptyList();

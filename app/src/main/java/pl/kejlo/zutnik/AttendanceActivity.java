@@ -79,6 +79,21 @@ public class AttendanceActivity extends PhoneAwareActivity {
         repository = new AttendanceRepository(this);
 
         btnRefresh.setOnClickListener(v -> {
+            NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                    this,
+                    NetworkRefreshPolicy.Module.PLAN,
+                    NetworkRefreshPolicy.Mode.MANUAL,
+                    "attendance_subjects",
+                    0L);
+            if (!decision.allowNetwork) {
+                Toast.makeText(this, NetworkRefreshPolicy.describeForUser(this, decision), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            NetworkRefreshPolicy.recordAttempt(
+                    this,
+                    NetworkRefreshPolicy.Module.PLAN,
+                    NetworkRefreshPolicy.Mode.MANUAL,
+                    "attendance_subjects");
             Toast.makeText(this, R.string.attendance_refreshing, Toast.LENGTH_SHORT).show();
             loadData(true);
         });

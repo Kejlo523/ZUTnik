@@ -44,6 +44,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
     // Core student data uses short TTL to keep study/semester/grades in sync.
     private static final long GRADES_CACHE_TTL_MS = CachePolicy.GRADES_TTL_MS;
     private static final long SEMESTERS_CACHE_TTL_MS = CachePolicy.SEMESTERS_TTL_MS;
+    private static final long CREDIT_SUMMARY_CACHE_TTL_MS = CachePolicy.INFO_TTL_MS;
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
     private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
     private static final String ACTIVE_GRADES_CACHE_SEMESTER_ID = "active_terms_v4";
@@ -136,12 +137,30 @@ public class GradesTabFragment extends ZutnikTabFragment {
 
         if (btnGradesRefresh != null) {
             btnGradesRefresh.setOnClickListener(v -> {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        requireContext(),
+                        NetworkRefreshPolicy.Module.GRADES,
+                        NetworkRefreshPolicy.Mode.MANUAL,
+                        null,
+                        0L);
+                if (!decision.allowNetwork) {
+                    Toast.makeText(
+                            requireContext(),
+                            NetworkRefreshPolicy.describeForUser(requireContext(), decision),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                NetworkRefreshPolicy.recordAttempt(
+                        requireContext(),
+                        NetworkRefreshPolicy.Module.GRADES,
+                        NetworkRefreshPolicy.Mode.MANUAL,
+                        null);
                 updateGradesDataFreshnessText(getString(R.string.data_status_syncing));
                 Toast.makeText(
                         requireContext(),
                         R.string.grades_refresh_toast,
                         Toast.LENGTH_SHORT).show();
-                reloadSemesters(true);
+                reloadCurrentGrades(true);
             });
         }
 
@@ -792,6 +811,19 @@ public class GradesTabFragment extends ZutnikTabFragment {
             currentGradesFuture.cancel(true);
         }
         boolean showingCached = showCachedGradesIfAvailable(expectedStudyId, cacheScope, true);
+        if (!forceNetwork) {
+            NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                    requireContext(),
+                    NetworkRefreshPolicy.Module.GRADES,
+                    NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                    null,
+                    0L);
+            if (!decision.allowNetwork) {
+                showEmptyState(!showingCached);
+                updateGradesDataFreshness(false);
+                return;
+            }
+        }
         executeLoadCurrentGradesTask(expectedStudyIndex, expectedStudyId, cacheScope, forceNetwork, showingCached);
     }
 
@@ -812,7 +844,10 @@ public class GradesTabFragment extends ZutnikTabFragment {
             Exception error = null;
             List<Grade> previousSnapshot = loadGradesFromCache(expectedStudyId, cacheScope, true);
             try {
-                grades = new GradesRepository().loadCurrentGrades();
+                GradesRepository repo = new GradesRepository();
+                grades = forceNetwork
+                        ? repo.loadCurrentGradesFromNetwork()
+                        : repo.loadCurrentGrades(NetworkRefreshPolicy.Mode.SCREEN_AUTO);
                 markNewGrades(previousSnapshot, grades);
             } catch (Exception e) {
                 error = e;
@@ -1212,7 +1247,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
                 return null;
             }
 
-            if ((System.currentTimeMillis() - ts) > GRADES_CACHE_TTL_MS
+            if ((System.currentTimeMillis() - ts) > CREDIT_SUMMARY_CACHE_TTL_MS
                     && NetworkStatusHelper.isNetworkAvailable(requireContext())) {
                 return null;
             }
@@ -1313,6 +1348,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
         GradesRepository.CreditSummary cached = loadCreditSummaryFromCache(activeStudy);
         if (cached != null) {
             setEctsSummary(cached);
+            return;
         } else {
             setEctsSummary((GradesRepository.CreditSummary) null);
         }

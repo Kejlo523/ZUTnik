@@ -328,8 +328,23 @@ public class HomeTabFragment extends ZutnikTabFragment {
     }
 
     private void refreshUsosUsername(TextView textWelcome, ZutnikSession s) {
+        Context appContext = requireContext().getApplicationContext();
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
             try {
+                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                        appContext,
+                        NetworkRefreshPolicy.Module.HOME_USER,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        "home_user",
+                        0L);
+                if (!decision.allowNetwork) {
+                    return;
+                }
+                NetworkRefreshPolicy.recordAttempt(
+                        appContext,
+                        NetworkRefreshPolicy.Module.HOME_USER,
+                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
+                        "home_user");
                 org.json.JSONObject user = UsosApi.get("services/users/user", null);
                 org.json.JSONObject firstObj = user.optJSONObject("first_name");
                 org.json.JSONObject lastObj = user.optJSONObject("last_name");
@@ -342,7 +357,11 @@ public class HomeTabFragment extends ZutnikTabFragment {
                 String name = (first + " " + last).trim();
                 if (!name.isEmpty()) {
                     s.setUsername(name);
-                    s.saveToPreferences(requireContext());
+                    s.saveToPreferences(appContext);
+                    NetworkRefreshPolicy.recordSuccess(
+                            appContext,
+                            NetworkRefreshPolicy.Module.HOME_USER,
+                            "home_user");
                     requireActivity().runOnUiThread(() -> {
                         if (textWelcome != null) {
                             textWelcome.setText(getString(R.string.home_welcome_message,
