@@ -59,7 +59,7 @@
                 android:background="@drawable/bg_grade_type_chip"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="3dp"
-                android:textColor="?attr/mzPrimary"
+                android:textColor="?attr/mzMuted"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 tools:text="Wykład" />
@@ -84,7 +84,7 @@
                 android:background="@drawable/bg_grade_type_chip"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="3dp"
-                android:textColor="?attr/mzPrimary"
+                android:textColor="?attr/mzMuted"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:visibility="gone"

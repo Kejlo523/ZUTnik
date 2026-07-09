@@ -15,13 +15,11 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder> {
 
-    private static final int MAX_VISIBLE_GRADE_PILLS = 3;
     private final List<Grade> grades = new ArrayList<>();
 
     public GradesAdapter(List<Grade> grades) {
@@ -91,45 +89,21 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         Context ctx = h.itemView.getContext();
         Resources res = ctx.getResources();
 
-        List<String> history = g != null ? g.gradeHistory : null;
-        if (history == null || history.isEmpty()) {
-            String rawSingle = GradesTextUtils.clean(g != null ? g.grade : "");
-            if (!rawSingle.isEmpty()) {
-                history = Collections.singletonList(rawSingle);
-            }
-        }
-
-        if (history == null || history.isEmpty()) {
+        String rawSingle = GradesTextUtils.clean(g != null ? g.grade : "");
+        if (rawSingle.isEmpty()) {
             TextView dash = createGradePill(ctx, res, ctx.getString(R.string.common_dash), true);
             styleGradePill(ctx, dash, "", true);
             h.gradesContainer.addView(dash);
             return;
         }
 
-        int show = Math.min(MAX_VISIBLE_GRADE_PILLS, history.size());
-        int rendered = 0;
+        String correction = GradesCorrectionHelper.correctionLabel(g);
+        TextView pill = createGradePill(ctx, res, rawSingle, false);
+        styleGradePill(ctx, pill, rawSingle, false);
+        h.gradesContainer.addView(pill);
 
-        for (int idx = 0; idx < show; idx++) {
-            String rawGrade = GradesTextUtils.clean(history.get(idx));
-            if (rawGrade.isEmpty()) {
-                continue;
-            }
-
-            TextView pill = createGradePill(ctx, res, rawGrade, false);
-            styleGradePill(ctx, pill, rawGrade, false);
-            h.gradesContainer.addView(pill);
-            rendered++;
-        }
-
-        if (rendered == 0) {
-            TextView dash = createGradePill(ctx, res, ctx.getString(R.string.common_dash), true);
-            styleGradePill(ctx, dash, "", true);
-            h.gradesContainer.addView(dash);
-        }
-
-        if (history.size() > show) {
-            TextView more = createCountPill(ctx, res, history.size() - show);
-            h.gradesContainer.addView(more);
+        if (!correction.isEmpty()) {
+            h.gradesContainer.addView(createCorrectionPill(ctx, res, correction));
         }
     }
 
@@ -154,6 +128,30 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         TextView pill = createGradePill(ctx, res, "+" + remaining, true);
         pill.setBackgroundResource(R.drawable.bg_card_primary);
         pill.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzMuted));
+        return pill;
+    }
+
+    private TextView createCorrectionPill(Context ctx, Resources res, String text) {
+        TextView pill = new TextView(ctx);
+        pill.setText(text);
+        pill.setSingleLine();
+        pill.setEllipsize(TextUtils.TruncateAt.END);
+        pill.setMaxLines(1);
+        pill.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 10f);
+        pill.setTypeface(null, Typeface.BOLD);
+        pill.setGravity(Gravity.CENTER);
+        pill.setIncludeFontPadding(false);
+        pill.setBackgroundResource(R.drawable.bg_grade_correction_chip);
+        pill.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzSuccess));
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(res, 24));
+        lp.setMarginStart(dp(res, 6));
+        pill.setMinWidth(dp(res, 44));
+        pill.setMaxWidth(dp(res, 70));
+        pill.setPadding(dp(res, 8), 0, dp(res, 8), 0);
+        pill.setLayoutParams(lp);
         return pill;
     }
 
