@@ -1438,6 +1438,13 @@ public class GradesRepository {
         obj.put("modificationAuthor", grade.modificationAuthor);
         obj.put("decimalValue", grade.decimalValue);
         obj.put("gradeTypeId", grade.gradeTypeId);
+        JSONArray history = new JSONArray();
+        if (grade.gradeHistory != null) {
+            for (String item : grade.gradeHistory) {
+                history.put(item);
+            }
+        }
+        obj.put("gradeHistory", history);
         return obj;
     }
 
@@ -1462,6 +1469,15 @@ public class GradesRepository {
         grade.modificationAuthor = obj.optString("modificationAuthor", "");
         grade.decimalValue = obj.optString("decimalValue", "");
         grade.gradeTypeId = obj.optInt("gradeTypeId", 0);
+        JSONArray history = obj.optJSONArray("gradeHistory");
+        if (history != null) {
+            for (int i = 0; i < history.length(); i++) {
+                String item = history.optString(i, "");
+                if (item != null && !item.trim().isEmpty()) {
+                    grade.gradeHistory.add(item);
+                }
+            }
+        }
         return grade;
     }
 

@@ -191,8 +191,8 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             h.finalRow.setVisibility(View.VISIBLE);
             h.finalPill.setText(R.string.grades_new_badge);
             h.finalPill.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f);
-            h.finalPill.setBackgroundResource(R.drawable.bg_grade_type_chip);
-            h.finalPill.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzPrimary));
+            h.finalPill.setBackgroundResource(R.drawable.bg_grade_new_chip);
+            h.finalPill.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzSuccess));
             h.finalLabel.setText(R.string.grades_new_badge_label);
         } else if (!(g.finalMissing || g.finalGrade == null)) {
             h.finalRow.setVisibility(View.VISIBLE);
@@ -219,6 +219,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         Context ctx = h.itemView.getContext();
 
         String rawGrade = GradesTextUtils.clean(g != null ? g.grade : "");
+        String correction = GradesCorrectionHelper.correctionLabel(g);
         if (rawGrade.isEmpty()) {
             rawGrade = ctx.getString(R.string.common_dash);
             styleGradePill(ctx, h.gradePill, "", true);
@@ -237,6 +238,13 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             h.type.setVisibility(View.VISIBLE);
         } else {
             h.type.setVisibility(View.GONE);
+        }
+
+        if (!correction.isEmpty()) {
+            h.correction.setText(correction);
+            h.correction.setVisibility(View.VISIBLE);
+        } else {
+            h.correction.setVisibility(View.GONE);
         }
 
         String date = GradesTextUtils.clean(g != null ? g.date : "");
@@ -265,6 +273,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         int max = 3;
         int total = group.others.size();
         int show = Math.min(max, total);
+        boolean reserveCorrectionSlot = hasCorrectionInPreview(group.others, show);
 
         for (int i = 0; i < show; i++) {
             Grade g = group.others.get(i);
@@ -272,33 +281,58 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             boolean missing = raw.isEmpty();
             String label = missing ? ctx.getString(R.string.common_dash) : raw;
 
-            container.addView(createPreviewGradeItem(ctx, label, raw, missing, g));
+            container.addView(createPreviewGradeItem(ctx, label, raw, missing, g, reserveCorrectionSlot));
         }
 
         if (total > show) {
             int remaining = total - show;
-            container.addView(createPreviewCountItem(ctx, remaining));
+            container.addView(createPreviewCountItem(ctx, remaining, reserveCorrectionSlot));
         }
     }
 
-    private View createPreviewGradeItem(Context ctx, String label, String raw, boolean missing, Grade grade) {
+    private boolean hasCorrectionInPreview(List<Grade> grades, int limit) {
+        if (grades == null || grades.isEmpty() || limit <= 0) {
+            return false;
+        }
+        int count = Math.min(limit, grades.size());
+        for (int i = 0; i < count; i++) {
+            if (!GradesCorrectionHelper.correctionLabel(grades.get(i)).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private View createPreviewGradeItem(
+            Context ctx,
+            String label,
+            String raw,
+            boolean missing,
+            Grade grade,
+            boolean reserveCorrectionSlot) {
         LinearLayout item = createPreviewItemContainer(ctx);
         addTypeSlot(ctx, item, resolveTypeChipText(grade));
 
         TextView pill = createPreviewPill(ctx, label, false);
+        String correction = GradesCorrectionHelper.correctionLabel(grade);
         styleGradePill(ctx, pill, raw, missing);
         String typeDisplay = resolveTypeDisplay(ctx, grade);
         pill.setContentDescription(typeDisplay.isEmpty() ? label : label + ", " + typeDisplay);
+        if (!correction.isEmpty()) {
+            pill.setContentDescription(pill.getContentDescription() + ", " + correction);
+        }
         item.addView(pill);
+        addPreviewCorrectionSlot(ctx, item, correction, reserveCorrectionSlot);
         return item;
     }
 
-    private View createPreviewCountItem(Context ctx, int remaining) {
+    private View createPreviewCountItem(Context ctx, int remaining, boolean reserveCorrectionSlot) {
         LinearLayout item = createPreviewItemContainer(ctx);
         addTypeSlot(ctx, item, "");
 
         TextView more = createPreviewPill(ctx, "+" + remaining, true);
         item.addView(more);
+        addPreviewCorrectionSlot(ctx, item, "", reserveCorrectionSlot);
         return item;
     }
 
@@ -342,6 +376,48 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         chip.setMaxWidth(dp(ctx, 56));
         chip.setLayoutParams(lp);
         item.addView(chip);
+    }
+
+    private void addPreviewCorrectionSlot(
+            Context ctx,
+            LinearLayout item,
+            String correction,
+            boolean reserveCorrectionSlot) {
+        if (!reserveCorrectionSlot) {
+            return;
+        }
+
+        String labelText = GradesTextUtils.clean(correction).replace(" -> ", "->");
+        if (labelText.isEmpty()) {
+            View spacer = new View(ctx);
+            LinearLayout.LayoutParams spacerLp = new LinearLayout.LayoutParams(dp(ctx, 1), dp(ctx, 19));
+            spacerLp.topMargin = dp(ctx, 3);
+            spacer.setLayoutParams(spacerLp);
+            item.addView(spacer);
+            return;
+        }
+
+        TextView label = new TextView(ctx);
+        label.setText(labelText);
+        label.setGravity(android.view.Gravity.CENTER);
+        label.setIncludeFontPadding(false);
+        label.setSingleLine(true);
+        label.setMaxLines(1);
+        label.setEllipsize(TextUtils.TruncateAt.END);
+        label.setTextColor(ThemeManager.resolveColor(ctx, R.attr.mzSuccess));
+        label.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 10f);
+        label.setTypeface(null, Typeface.BOLD);
+        label.setBackgroundResource(R.drawable.bg_grade_correction_chip);
+        label.setMinWidth(dp(ctx, 46));
+        label.setMaxWidth(dp(ctx, 62));
+        label.setPadding(dp(ctx, 6), 0, dp(ctx, 6), 0);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(ctx, 19));
+        lp.topMargin = dp(ctx, 3);
+        label.setLayoutParams(lp);
+        item.addView(label);
     }
 
     private TextView createPreviewPill(Context ctx, String text, boolean isCount) {
@@ -518,6 +594,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
     static class GradeViewHolder extends RecyclerView.ViewHolder {
         TextView gradePill;
         TextView type;
+        TextView correction;
         TextView date;
         TextView teacher;
 
@@ -525,6 +602,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             super(v);
             gradePill = v.findViewById(R.id.detailGradePill);
             type = v.findViewById(R.id.detailType);
+            correction = v.findViewById(R.id.detailCorrection);
             date = v.findViewById(R.id.detailDate);
             teacher = v.findViewById(R.id.detailTeacher);
         }

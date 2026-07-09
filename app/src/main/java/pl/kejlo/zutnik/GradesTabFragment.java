@@ -697,15 +697,16 @@ public class GradesTabFragment extends ZutnikTabFragment {
         if (listGrades == null || flatAdapter == null || groupedAdapter == null) {
             return;
         }
+        List<Grade> displayGrades = GradesCorrectionHelper.collapseCorrectedGrades(currentGradesRaw);
         if (groupingEnabled) {
-            List<GroupedGradesAdapter.GradeGroup> groups = buildGradeGroups(currentGradesRaw);
+            List<GroupedGradesAdapter.GradeGroup> groups = buildGradeGroups(displayGrades);
             groupedAdapter.setGroups(groups);
             if (listGrades.getAdapter() != groupedAdapter) {
                 listGrades.setAdapter(groupedAdapter);
             }
             showEmptyState(groups.isEmpty());
         } else {
-            List<Grade> filteredGrades = filterGradesForDisplay(currentGradesRaw, getHiddenPlanFilterItems());
+            List<Grade> filteredGrades = filterGradesForDisplay(displayGrades, getHiddenPlanFilterItems());
             flatAdapter.setGrades(filteredGrades);
             if (listGrades.getAdapter() != flatAdapter) {
                 listGrades.setAdapter(flatAdapter);
@@ -1070,8 +1071,9 @@ public class GradesTabFragment extends ZutnikTabFragment {
         double sumWeighted = 0.0;
         double sumWeights = 0.0;
         boolean usedFinal = false;
+        List<Grade> summaryGrades = GradesCorrectionHelper.collapseCorrectedGrades(currentGradesRaw);
 
-        for (Grade g : currentGradesRaw) {
+        for (Grade g : summaryGrades) {
             if (!isFinalGrade(g)) {
                 continue;
             }
@@ -1115,7 +1117,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
         if (!usedFinal) {
             sumWeighted = 0.0;
             sumWeights = 0.0;
-            for (Grade g : currentGradesRaw) {
+            for (Grade g : summaryGrades) {
                 double ects = g.weight;
                 if (ects < 0) {
                     ects = 0;
@@ -1530,10 +1532,21 @@ public class GradesTabFragment extends ZutnikTabFragment {
                 o.put("courseId", g.courseId);
                 o.put("grade", g.grade);
                 o.put("weight", g.weight);
+                o.put("gradeType", g.gradeType);
                 o.put("type", g.type);
                 o.put("gradeDescription", g.gradeDescription);
+                o.put("passes", g.passes);
                 o.put("teacher", g.teacher);
                 o.put("date", g.date);
+                o.put("comment", g.comment);
+                o.put("countsIntoAverage", g.countsIntoAverage);
+                o.put("examId", g.examId);
+                o.put("examSessionNumber", g.examSessionNumber);
+                o.put("dateModified", g.dateModified);
+                o.put("dateAcquisition", g.dateAcquisition);
+                o.put("modificationAuthor", g.modificationAuthor);
+                o.put("decimalValue", g.decimalValue);
+                o.put("gradeTypeId", g.gradeTypeId);
                 arr.put(o);
             }
 
@@ -1593,10 +1606,21 @@ public class GradesTabFragment extends ZutnikTabFragment {
                 g.courseId = o.optString("courseId", "");
                 g.grade = o.optString("grade", "");
                 g.weight = o.optDouble("weight", 0.0);
+                g.gradeType = o.optString("gradeType", "");
                 g.type = o.optString("type", "");
                 g.gradeDescription = o.optString("gradeDescription", "");
+                g.passes = o.optBoolean("passes", false);
                 g.teacher = o.optString("teacher", "");
                 g.date = o.optString("date", "");
+                g.comment = o.optString("comment", "");
+                g.countsIntoAverage = o.optBoolean("countsIntoAverage", false);
+                g.examId = o.optString("examId", "");
+                g.examSessionNumber = o.optInt("examSessionNumber", 0);
+                g.dateModified = o.optString("dateModified", "");
+                g.dateAcquisition = o.optString("dateAcquisition", "");
+                g.modificationAuthor = o.optString("modificationAuthor", "");
+                g.decimalValue = o.optString("decimalValue", "");
+                g.gradeTypeId = o.optInt("gradeTypeId", 0);
                 result.add(g);
             }
 
