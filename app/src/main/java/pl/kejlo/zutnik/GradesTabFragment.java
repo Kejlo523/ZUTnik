@@ -213,6 +213,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
     protected void onTabActivated() {
         super.onTabActivated();
         applyGradesView();
+        markCurrentGradesAsSeenIfVisible();
         if (planFilterItems.isEmpty()) {
             loadPlanFilterItemsAsync(false);
         }
@@ -784,6 +785,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
         currentGradesRaw.clear();
         currentGradesRaw.addAll(cached);
         applyGradesView();
+        markCurrentGradesAsSeenIfVisible();
         updateSummaryCards();
         updateGradesDataFreshness(false);
         if (planFilterItems.isEmpty()) {
@@ -868,6 +870,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
                         currentGradesRaw.clear();
                         currentGradesRaw.addAll(cached);
                         applyGradesView();
+                        markCurrentGradesAsSeenIfVisible();
                         updateSummaryCards();
                         updateGradesDataFreshness(false);
 
@@ -901,6 +904,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
                     saveGradesToCache(expectedStudyId, cacheScope, finalGrades);
                 }
                 applyGradesView();
+                markCurrentGradesAsSeenIfVisible();
                 updateSummaryCards();
                 updateGradesDataFreshness(true);
                 if (planFilterItems.isEmpty()) {
@@ -1050,6 +1054,13 @@ public class GradesTabFragment extends ZutnikTabFragment {
             String key = buildGradeStableKey(grade);
             grade.isNew = !key.isEmpty() && !previousKeys.contains(key);
         }
+    }
+
+    private void markCurrentGradesAsSeenIfVisible() {
+        if (!isTabCurrentlyVisible() || currentGradesRaw.isEmpty()) {
+            return;
+        }
+        NotificationSyncManager.markGradesAsSeen(requireContext(), currentGradesRaw);
     }
 
     private String buildGradeStableKey(Grade grade) {
