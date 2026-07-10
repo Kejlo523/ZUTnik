@@ -1,29 +1,15 @@
 package pl.kejlo.zutnik;
 
-import android.content.pm.ActivityInfo;
-import android.os.Bundle;
-
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
- * Locks app rotation on phones while leaving tablets free to rotate.
+ * Shared activity behavior for phones and larger screens.
  */
 public abstract class PhoneAwareActivity extends AppCompatActivity {
-
-    private static final int TABLET_MIN_SMALLEST_WIDTH_DP = 600;
-
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        if (getResources().getConfiguration().smallestScreenWidthDp < TABLET_MIN_SMALLEST_WIDTH_DP) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        }
-        super.onCreate(savedInstanceState);
-    }
 
     @Override
     public void finish() {
         super.finish();
-        overridePendingTransition(0, 0);
+        overridePendingTransition(R.anim.screen_pop_enter, R.anim.screen_pop_exit);
     }
 }

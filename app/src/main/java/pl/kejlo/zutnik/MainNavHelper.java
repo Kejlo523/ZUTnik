@@ -28,7 +28,6 @@ import com.google.android.material.navigationrail.NavigationRailView;
 public class MainNavHelper {
 
     private static final String TAG = "ZUTnik-MainNav";
-    private static boolean suppressNavCallback;
     private static com.google.android.material.bottomsheet.BottomSheetDialog activeMoreSheet;
 
     public enum Screen {
@@ -114,12 +113,12 @@ public class MainNavHelper {
         }
         applyWindowInsets(contentRoot, shellNav);
 
-        suppressNavCallback = true;
+        setNavCallbackSuppressed(shellNav, true);
         shellNav.setSelectedItemId(menuItemForScreen(activity.getCurrentTabId()));
-        suppressNavCallback = false;
+        setNavCallbackSuppressed(shellNav, false);
 
         shellNav.setOnItemSelectedListener(item -> {
-            if (suppressNavCallback) {
+            if (isNavCallbackSuppressed(shellNav)) {
                 return true;
             }
             int itemId = item.getItemId();
@@ -138,7 +137,7 @@ public class MainNavHelper {
         });
 
         shellNav.setOnItemReselectedListener(item -> {
-            if (suppressNavCallback) {
+            if (isNavCallbackSuppressed(shellNav)) {
                 return;
             }
             if (item.getItemId() == R.id.nav_more) {
@@ -155,9 +154,9 @@ public class MainNavHelper {
         if (shellNav.getSelectedItemId() == itemId) {
             return;
         }
-        suppressNavCallback = true;
+        setNavCallbackSuppressed(shellNav, true);
         shellNav.setSelectedItemId(itemId);
-        suppressNavCallback = false;
+        setNavCallbackSuppressed(shellNav, false);
     }
 
     public static void setup(
@@ -188,12 +187,12 @@ public class MainNavHelper {
         applyToolbarTitle(activity, toolbar, Screen.fromId(currentScreen));
         applyWindowInsets(contentRoot, shellNav);
 
-        suppressNavCallback = true;
+        setNavCallbackSuppressed(shellNav, true);
         shellNav.setSelectedItemId(menuItemForScreen(currentScreen));
-        suppressNavCallback = false;
+        setNavCallbackSuppressed(shellNav, false);
 
         shellNav.setOnItemSelectedListener(item -> {
-            if (suppressNavCallback) {
+            if (isNavCallbackSuppressed(shellNav)) {
                 return true;
             }
             int itemId = item.getItemId();
@@ -212,7 +211,7 @@ public class MainNavHelper {
         });
 
         shellNav.setOnItemReselectedListener(item -> {
-            if (suppressNavCallback) {
+            if (isNavCallbackSuppressed(shellNav)) {
                 return;
             }
             if (item.getItemId() == R.id.nav_more) {
@@ -485,9 +484,19 @@ public class MainNavHelper {
         if (shellNav.getSelectedItemId() == itemId) {
             return;
         }
-        suppressNavCallback = true;
+        setNavCallbackSuppressed(shellNav, true);
         shellNav.setSelectedItemId(itemId);
-        suppressNavCallback = false;
+        setNavCallbackSuppressed(shellNav, false);
+    }
+
+    private static void setNavCallbackSuppressed(NavigationBarView navigation, boolean suppressed) {
+        if (navigation != null) {
+            navigation.setTag(R.id.tag_nav_suppress, suppressed ? Boolean.TRUE : null);
+        }
+    }
+
+    private static boolean isNavCallbackSuppressed(NavigationBarView navigation) {
+        return navigation != null && Boolean.TRUE.equals(navigation.getTag(R.id.tag_nav_suppress));
     }
 
     private static void navigateTo(AppCompatActivity activity, Screen target, String currentScreen) {
@@ -540,10 +549,10 @@ public class MainNavHelper {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         }
         activity.startActivity(intent);
-        activity.overridePendingTransition(0, 0);
+        activity.overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
         if (!Screen.HOME.getId().equals(currentScreen) && !(activity instanceof MainShellActivity)) {
             activity.finish();
-            activity.overridePendingTransition(0, 0);
+            activity.overridePendingTransition(R.anim.screen_pop_enter, R.anim.screen_pop_exit);
         }
     }
 

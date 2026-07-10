@@ -144,7 +144,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         intent.putExtra("descriptionText", item.descriptionText);
         context.startActivity(intent);
         if (context instanceof AppCompatActivity) {
-            ((AppCompatActivity) context).overridePendingTransition(0, 0);
+            ((AppCompatActivity) context).overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
         }
     }
 

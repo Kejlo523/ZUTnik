@@ -68,7 +68,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="@string/finance_title"
+                                    android:text="@string/finance_summary_title"
                                     android:textColor="?attr/mzText"
                                     android:textSize="22sp"
                                     android:textStyle="bold" />

@@ -42,7 +42,7 @@
   <string name="login_demo_username">Student (tryb demo)</string>
   <string name="login_demo_toast">Uruchomiono tryb demo</string>
   <string name="home_title">Pulpit główny</string>
-  <string name="home_toolbar_title">Strona główna</string>
+  <string name="home_toolbar_title">Start</string>
   <string name="home_welcome_message">Witaj %1$s</string>
   <string name="home_welcome_subtitle">
         Lekki podgląd planu, ocen, danych studenta i aktualności z uczelni w jednym miejscu.
@@ -50,32 +50,33 @@
   <string name="home_welcome_fallback">Witaj Student 👋</string>
   <string name="home_shortcuts_title">Szybkie skróty</string>
   <string name="home_side_panel_desc">Panel boczny</string>
-  <string name="home_tile_plan_title">📅 Plan zajęć</string>
+  <string name="home_tile_plan_title">Plan zajęć</string>
   <string name="home_tile_plan_desc">
         Widok dnia, tygodnia i miesiąca + filtrowanie przedmiotów.
     </string>
-  <string name="home_tile_grades_title">⭐ Oceny</string>
+  <string name="home_tile_grades_title">Oceny</string>
   <string name="home_tile_grades_desc">
         Średnia, ECTS i szczegóły zaliczeń w jednym miejscu.
     </string>
-  <string name="home_tile_info_title">🎓 Informacje o studiach</string>
+  <string name="home_tile_info_title">Informacje o studiach</string>
   <string name="home_tile_info_desc">
         Kierunek, status studenta, przebieg studiów.
     </string>
-  <string name="home_tile_news_title">📰 Aktualności uczelni</string>
+  <string name="home_tile_news_title">Aktualności uczelni</string>
   <string name="home_tile_news_desc">
         Komunikaty z RSS uczelni z fallbackiem do aktualności USOS.
     </string>
   <string name="home_footer_meta">
         Dane są pobierane z systemów uczelni i cache’owane lokalnie. Jeśli coś wygląda podejrzanie, zawsze zweryfikuj też w oficjalnych panelach.
     </string>
-  <string name="info_title">Dane Studenta</string>
+  <string name="info_title">Studia</string>
   <string name="info_study_selector_label">Kierunek studiów</string>
   <string name="info_user_id">ID użytkownika: %1$s</string>
   <string name="info_user_id_placeholder">ID użytkownika: -</string>
   <string name="info_sync_in_progress">Synchronizuję…</string>
   <string name="info_error_loading">Błąd ładowania danych: %1$s</string>
   <string name="finance_title">Finanse</string>
+  <string name="finance_summary_title">Podsumowanie</string>
   <string name="finance_subtitle">Należności, salda i konta do wpłat dla wybranego kierunku.</string>
   <string name="finance_refresh">Odśwież finanse</string>
   <string name="finance_summary_due">Do zapłaty</string>

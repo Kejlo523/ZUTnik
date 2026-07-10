@@ -5,27 +5,26 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="16dp"
+    android:paddingStart="20dp"
     android:paddingEnd="12dp"
     android:paddingTop="2dp"
     android:paddingBottom="4dp">
 
     <TextView
         android:id="@+id/tvPlanToolbarTitle"
+        style="@style/TextAppearance.ZUTnik.Toolbar.Title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/plan_title"
-        android:textColor="?attr/mzText"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:textColor="?attr/mzText" />
 
     <TextView
         android:id="@+id/tvPlanToolbarSubtitle"
+        style="@style/TextAppearance.ZUTnik.Toolbar.Subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="1dp"
-        android:textColor="?attr/mzMuted"
-        android:textSize="12sp" />
+        android:textColor="?attr/mzMuted" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -42,8 +41,9 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/common_dash"
+            android:fontFamily="sans-serif-condensed"
             android:textColor="?attr/mzText"
-            android:textSize="17sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <ImageButton

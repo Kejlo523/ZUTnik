@@ -4,7 +4,11 @@
     <style name="Base.Theme.ZUTnik" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimaryDark">?attr/mzBg</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">?attr/mzBg</item>
+        <item name="android:navigationBarColor">?attr/mzCard</item>
         <item name="android:windowBackground">?attr/mzBg</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowAnimationStyle">@style/Animation.ZUTnik.Activity</item>
 
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
 
@@ -23,6 +27,7 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.ZUTnik.AlertDialog</item>
         <item name="popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
         <item name="android:popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
+        <item name="materialButtonStyle">@style/Widget.ZUTnik.Button</item>
 
         <item name="mzNavHeader">@color/mz_nav_header</item>
         <item name="mzNavHeaderText">@color/mz_nav_header_text</item>
@@ -35,14 +40,14 @@
     <style name="Theme.ZUTnik" parent="Base.Theme.ZUTnik">
         <item name="colorPrimary">@color/mz_primary</item>
         <item name="colorPrimaryVariant">@color/mz_primary_alt</item>
-        <item name="colorOnPrimary">@color/mz_text</item>
+        <item name="colorOnPrimary">#101317</item>
 
         <item name="mzBg">@color/mz_bg</item>
         <item name="mzBgSoft">@color/mz_bg_soft</item>
         <item name="mzCard">@color/mz_card</item>
         <item name="mzCardSoft">@color/mz_card_soft</item>
         <item name="mzBgSurface">@color/mz_bg_surface</item>
-        <item name="mzInputBg">@color/mz_bg</item>
+        <item name="mzInputBg">@color/mz_card_soft</item>
         <item name="mzText">@color/mz_text</item>
         <item name="mzMuted">@color/mz_muted</item>
         <item name="mzBorderSoft">@color/mz_border_soft</item>
@@ -68,7 +73,7 @@
         <item name="mzPlanColumnText">@color/mz_muted</item>
         <item name="mzPlanHeaderText">@color/mz_text</item>
         <item name="mzPlanGridBg">@android:color/transparent</item>
-        <item name="mzPlanGridBgSelected">#12FFFFFF</item>
+        <item name="mzPlanGridBgSelected">@android:color/transparent</item>
         <item name="mzPlanEventTextColor">#E2E8F0</item>
     </style>
 

@@ -5,6 +5,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -142,14 +143,15 @@ public class TileView extends FrameLayout {
             iconView.setVisibility(GONE);
             textTitle.setVisibility(VISIBLE);
             textDesc.setVisibility(GONE);
-            textTitle.setTextSize(14f);
-            textTitle.setGravity(android.view.Gravity.CENTER);
+            textTitle.setTextSize(15f);
+            textTitle.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
         } else {
             // Default (Big tiles, e.g. 2x2, 2x4)
-            iconView.setVisibility(GONE);
+            iconView.setVisibility(VISIBLE);
+            iconView.setImageResource(getIconForAction(tile));
             textTitle.setVisibility(VISIBLE);
             textDesc.setVisibility(VISIBLE);
-            textTitle.setTextSize(16f);
+            textTitle.setTextSize(17f);
             textTitle.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL); // Reset to default
             // Ensure textDesc is also aligned if needed, usually it is below title
         }
@@ -170,6 +172,21 @@ public class TileView extends FrameLayout {
             textDesc.setTextColor(ThemeManager.resolveColor(getContext(), R.attr.mzMuted));
             iconView.setColorFilter(ThemeManager.resolveColor(getContext(), R.attr.mzPrimary));
         }
+    }
+
+    @Override
+    protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
+        super.onSizeChanged(width, height, oldWidth, oldHeight);
+        if (tile == null || tile.colSpan <= 1 || tile.rowSpan <= 1) {
+            return;
+        }
+        float density = getResources().getDisplayMetrics().density;
+        boolean compact = width < 150f * density || height < 132f * density;
+        textDesc.setVisibility(compact ? GONE : VISIBLE);
+        textTitle.setMaxLines(compact ? 2 : 3);
+        ViewGroup.MarginLayoutParams iconParams = (ViewGroup.MarginLayoutParams) iconView.getLayoutParams();
+        iconParams.bottomMargin = Math.round((compact ? 6f : 10f) * density);
+        iconView.setLayoutParams(iconParams);
     }
 
     private int getIconForAction(Tile t) {

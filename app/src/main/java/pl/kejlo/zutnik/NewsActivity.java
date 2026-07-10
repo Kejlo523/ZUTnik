@@ -130,7 +130,7 @@ public class NewsActivity extends ZutnikBaseActivity {
             i.putExtra("contentHtml", item.contentHtml);
             i.putExtra("descriptionText", item.descriptionText);
             startActivity(i);
-            overridePendingTransition(0, 0);
+            overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
         }
     }
 

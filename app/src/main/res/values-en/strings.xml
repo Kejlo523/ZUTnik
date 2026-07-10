@@ -47,19 +47,19 @@
   <string name="home_welcome_fallback">Hello Student 👋</string>
   <string name="home_shortcuts_title">Quick shortcuts</string>
   <string name="home_side_panel_desc">Side panel</string>
-  <string name="home_tile_plan_title">📅 Timetable</string>
+  <string name="home_tile_plan_title">Timetable</string>
   <string name="home_tile_plan_desc">
         Day, week and month view + subject filtering.
     </string>
-  <string name="home_tile_grades_title">⭐ Grades</string>
+  <string name="home_tile_grades_title">Grades</string>
   <string name="home_tile_grades_desc">
         Average, ECTS and pass details in one place.
     </string>
-  <string name="home_tile_info_title">🎓 Study information</string>
+  <string name="home_tile_info_title">Study information</string>
   <string name="home_tile_info_desc">
         Field of study, faculty, student status, course of studies.
     </string>
-  <string name="home_tile_news_title">📰 University news</string>
+  <string name="home_tile_news_title">University news</string>
   <string name="home_tile_news_desc">
         Announcements from the university RSS feed with a USOS news fallback.
     </string>
@@ -72,6 +72,7 @@
   <string name="info_sync_in_progress">Syncing…</string>
   <string name="info_error_loading">Error loading data: %1$s</string>
   <string name="finance_title">Finance</string>
+  <string name="finance_summary_title">Overview</string>
   <string name="finance_subtitle">Liabilities, balances and payment accounts for the selected study programme.</string>
   <string name="finance_refresh">Refresh finance</string>
   <string name="finance_summary_due">Due total</string>

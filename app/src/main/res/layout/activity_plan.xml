@@ -45,8 +45,8 @@
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="8dp">
 
@@ -54,7 +54,7 @@
                     android:id="@+id/layoutViewModesRow"
                     android:orientation="horizontal"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                android:layout_height="40dp"
                     android:background="@drawable/bg_card_soft"
                     android:padding="2dp">
 
@@ -110,17 +110,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="8dp">
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="0dp">
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     app:cardBackgroundColor="?attr/mzBgSurface"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="1dp">
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
 
                     <LinearLayout
                         android:id="@+id/planContentRoot"

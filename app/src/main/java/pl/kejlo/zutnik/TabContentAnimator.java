@@ -5,7 +5,7 @@ import android.view.animation.DecelerateInterpolator;
 
 final class TabContentAnimator {
 
-    private static final int FADE_DURATION_MS = 160;
+    private static final int REVEAL_DURATION_MS = 220;
 
     private TabContentAnimator() {
     }
@@ -15,14 +15,14 @@ final class TabContentAnimator {
             return;
         }
         content.animate().cancel();
-        content.setScaleX(1f);
-        content.setScaleY(1f);
-        content.setTranslationY(0f);
-        content.setAlpha(0.88f);
+        float offset = 8f * content.getResources().getDisplayMetrics().density;
+        content.setTranslationY(offset);
+        content.setAlpha(0f);
         content.animate()
                 .alpha(1f)
-                .setDuration(FADE_DURATION_MS)
-                .setInterpolator(new DecelerateInterpolator(1.1f))
+                .translationY(0f)
+                .setDuration(REVEAL_DURATION_MS)
+                .setInterpolator(new DecelerateInterpolator(1.35f))
                 .start();
     }
 

@@ -21,8 +21,8 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
             android:titleTextColor="?attr/mzNavHeaderText" />
 
         <LinearLayout
@@ -39,9 +39,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_news_header_card"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -60,8 +60,9 @@
                             android:layout_height="wrap_content"
                             android:lineSpacingExtra="2dp"
                             android:text="@string/news_header_title"
+                            android:fontFamily="sans-serif-condensed"
                             android:textColor="?attr/mzText"
-                            android:textSize="20sp"
+                            android:textSize="22sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -91,8 +92,7 @@
                 android:id="@+id/newsListContainer"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_news_surface_card">
+                android:layout_weight="1">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/listNews"

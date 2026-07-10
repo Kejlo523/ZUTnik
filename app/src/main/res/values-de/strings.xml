@@ -23,19 +23,19 @@
   <string name="home_welcome_fallback">Willkommen Student 👋</string>
   <string name="home_shortcuts_title">Schnellzugriff</string>
   <string name="home_side_panel_desc">Seitenleiste</string>
-  <string name="home_tile_plan_title">📅 Stundenplan</string>
+  <string name="home_tile_plan_title">Stundenplan</string>
   <string name="home_tile_plan_desc">
         Tages-, Wochen- und Monatsansicht + Fächerfilter.
     </string>
-  <string name="home_tile_grades_title">⭐ Noten</string>
+  <string name="home_tile_grades_title">Noten</string>
   <string name="home_tile_grades_desc">
         Durchschnitt, ECTS und Leistungsdetails an einem Ort.
     </string>
-  <string name="home_tile_info_title">🎓 Studieninformationen</string>
+  <string name="home_tile_info_title">Studieninformationen</string>
   <string name="home_tile_info_desc">
         Studiengang, Fakultät, Studentenstatus, Studienverlauf.
     </string>
-  <string name="home_tile_news_title">📰 Hochschul-Neuigkeiten</string>
+  <string name="home_tile_news_title">Hochschul-Neuigkeiten</string>
   <string name="home_tile_news_desc">
         Mitteilungen und Ankündigungen vom RSS-Kanal für Studenten.
     </string>

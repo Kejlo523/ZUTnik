@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardBackgroundColor="?attr/mzCard"
-    app:cardCornerRadius="18dp"
+    app:cardCornerRadius="8dp"
     app:cardElevation="0dp"
     app:strokeColor="?attr/mzBorderSoft"
     app:strokeWidth="1dp">

@@ -1,68 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="mz_bg">#050505</color>
-    <color name="mz_bg_soft">#121212</color>
-    <color name="mz_card">#1E1E1E</color>
-    <color name="mz_card_soft">#2C2C2C</color>
-    <color name="mz_bg_surface">#1E1E1E</color>
-    <color name="mz_text">#FFFFFF</color>
-    <color name="mz_muted">#A0A0A0</color>
-    <color name="mz_border_soft">#333333</color>
-    <color name="mz_border_strong">#4D4D4D</color>
+    <color name="mz_bg">#101317</color>
+    <color name="mz_bg_soft">#14181D</color>
+    <color name="mz_card">#171C21</color>
+    <color name="mz_card_soft">#20262D</color>
+    <color name="mz_bg_surface">#171C21</color>
+    <color name="mz_text">#F3F5F6</color>
+    <color name="mz_muted">#9AA4AE</color>
+    <color name="mz_border_soft">#2B333B</color>
+    <color name="mz_border_strong">#46515C</color>
 
-    <color name="mz_primary">#4A90D9</color>
-    <color name="mz_nav_header">#0F172A</color>
-    <color name="mz_nav_header_text">#FFFFFF</color>
-    <color name="mz_primary_alt">#7C4DFF</color>
-    <color name="mz_accent">#00E676</color>
-    <color name="mz_lime">#8FD94A</color>
-    <color name="mz_success">#4CA672</color>
-    <color name="mz_danger">#FF5252</color>
-    <color name="mz_danger_soft">#3E1818</color>
-    <color name="mz_toolbar_grad_start">#1E1E1E</color>
-    <color name="mz_toolbar_grad_end">#050505</color>
+    <color name="mz_primary">#35C2AF</color>
+    <color name="mz_nav_header">#101317</color>
+    <color name="mz_nav_header_text">#F3F5F6</color>
+    <color name="mz_primary_alt">#7DDBCF</color>
+    <color name="mz_accent">#FF675B</color>
+    <color name="mz_lime">#A6C967</color>
+    <color name="mz_success">#58B78A</color>
+    <color name="mz_danger">#FF6B68</color>
+    <color name="mz_danger_soft">#3B2022</color>
+    <color name="mz_toolbar_grad_start">#101317</color>
+    <color name="mz_toolbar_grad_end">#101317</color>
 
-    <color name="offline_bar_bg">#F25F2A</color>
-    <color name="online_bar_bg">#3FAF6C</color>
-
-    <color name="plan_time_column_text">@color/mz_muted</color>
-
-    <color name="plan_hour_line">#1A2A3650</color>
-
-    <color name="plan_week_header_text">@color/mz_text</color>
-    <color name="plan_week_header_selected_bg">@color/mz_card_soft</color>
-
+    <color name="offline_bar_bg">#D75A3A</color>
+    <color name="online_bar_bg">#3A966E</color>
+    <color name="plan_time_column_text">#8F99A4</color>
+    <color name="plan_hour_line">#383F47</color>
+    <color name="plan_week_header_text">#F3F5F6</color>
+    <color name="plan_week_header_selected_bg">#263C3B</color>
     <color name="plan_week_day_bg">#00000000</color>
-    <color name="plan_week_day_selected_bg">#12FFFFFF</color>
-    <color name="plan_now_line">#FF5252</color>
+    <color name="plan_week_day_selected_bg">#00000000</color>
+    <color name="plan_now_line">#FF675B</color>
+    <color name="plan_event_text">#F7F8F9</color>
 
-    <color name="plan_event_text">#FFFFFF</color>
+    <color name="plan_event_lecture_bg">#596A91</color>
+    <color name="plan_event_lab_bg">#785082</color>
+    <color name="plan_event_auditory_bg">#3D7971</color>
+    <color name="plan_event_exam_bg">#934F4B</color>
+    <color name="plan_event_cancelled_bg">#4D555D</color>
+    <color name="plan_event_rector_bg">#806546</color>
+    <color name="plan_event_remote_bg">#84536E</color>
+    <color name="plan_event_pass_bg">#47745B</color>
+    <color name="plan_event_default_bg">#4B555E</color>
+    <color name="plan_event_project_bg">#3D756F</color>
+    <color name="plan_event_seminar_bg">#4B7356</color>
+    <color name="plan_event_diploma_seminar_bg">#3F6E50</color>
+    <color name="plan_event_diploma_bg">#806C43</color>
+    <color name="plan_event_lectorate_bg">#466C82</color>
+    <color name="plan_event_conservatory_bg">#765178</color>
+    <color name="plan_event_consultation_bg">#625953</color>
+    <color name="plan_event_field_bg">#5C7044</color>
+    <color name="plan_event_class_bg">#50678A</color>
+    <color name="plan_event_exam_remote_bg">#955653</color>
+    <color name="plan_event_dean_bg">#50575D</color>
 
-    <color name="plan_event_lecture_bg">#828ac2</color>
-    <color name="plan_event_lab_bg">#a75bbb</color>
-    <color name="plan_event_auditory_bg">#6e73c2</color>
-    <color name="plan_event_exam_bg">#bb5b5b</color>
-    <color name="plan_event_cancelled_bg">#8c8c8c</color>
-    <color name="plan_event_rector_bg">#8c8c8c</color>
-    <color name="plan_event_remote_bg">#bb5b93</color>
-    <color name="plan_event_pass_bg">#bb5b5b</color>
-    <color name="plan_event_default_bg">#f5d751</color>
-
-    <color name="plan_event_project_bg">#5bbb9e</color>
-    <color name="plan_event_seminar_bg">#5bbb70</color>
-    <color name="plan_event_diploma_seminar_bg">#4ca672</color>
-    <color name="plan_event_diploma_bg">#bb935b</color>
-    <color name="plan_event_lectorate_bg">#5b8ebb</color>
-    <color name="plan_event_conservatory_bg">#bb5ba7</color>
-    <color name="plan_event_consultation_bg">#8c7b70</color>
-    <color name="plan_event_field_bg">#708c5b</color>
-    <color name="plan_event_class_bg">#6e85c2</color>
-    <color name="plan_event_exam_remote_bg">#d66b6b</color>
-    <color name="plan_event_dean_bg">#6e6e6e</color>
-
-    <color name="glass_bg_start">#F2121212</color>
-    <color name="glass_bg_end">#F21C1C1C</color>
+    <color name="glass_bg_start">#F2171C21</color>
+    <color name="glass_bg_end">#F220262D</color>
     <color name="glass_border">#26FFFFFF</color>
-    <color name="glass_text_primary">#F8FAFC</color>
-    <color name="glass_text_secondary">#94A3B8</color>
+    <color name="glass_text_primary">#F3F5F6</color>
+    <color name="glass_text_secondary">#9AA4AE</color>
 </resources>

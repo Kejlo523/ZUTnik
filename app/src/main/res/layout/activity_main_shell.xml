@@ -4,6 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/mzBg"
+    android:clipChildren="true"
+    android:clipToPadding="true"
     android:fitsSystemWindows="false"
     android:orientation="vertical">
 
@@ -11,7 +13,9 @@
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:clipChildren="true"
+        android:clipToPadding="true" />
 
     <include layout="@layout/include_bottom_navigation" />
 </LinearLayout>
