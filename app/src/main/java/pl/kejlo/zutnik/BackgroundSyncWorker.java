@@ -23,7 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,8 +35,6 @@ public class BackgroundSyncWorker extends Worker {
 
     private static final String PREFS_BG = "zutnik_background_sync_cache";
     private static final String PREFS_PLAN = "zutnik_plan";
-    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v2";
-    private static final String KEY_GRADES_BASELINE_JSON = "grades_baseline_json_v2";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v3";
     private static final String KEY_PLAN_BASELINE_JSON = "plan_baseline_json_v3";
     private static final String KEY_FINANCE_BASELINE_READY = "finance_baseline_ready_v1";
@@ -51,7 +48,6 @@ public class BackgroundSyncWorker extends Worker {
     private static final String KEY_LAST_PLAN_ALERT_HASH = "plan_last_alert_hash_v1";
     private static final String KEY_LAST_PLAN_ALERT_TS = "plan_last_alert_ts_v1";
 
-    private static final int NOTIF_ID_GRADES = 9101;
     private static final int NOTIF_ID_PLAN = 9102;
     private static final int NOTIF_ID_FINANCE_DUE = 9103;
     private static final int NOTIF_ID_FINANCE_BOOKED = 9104;
@@ -212,46 +208,15 @@ public class BackgroundSyncWorker extends Worker {
         if (grades == null) {
             grades = Collections.emptyList();
         }
-        Semester gradeScope = new Semester();
-        gradeScope.listaSemestrowId = "active_terms";
-        Map<String, String> current = new LinkedHashMap<>();
-        for (Grade grade : grades) {
-            if (grade == null || safe(grade.grade).isEmpty()) {
-                continue;
-            }
-            String key = buildGradeKey(gradeScope, grade);
-            String label = buildGradeLabel(grade);
-            current.put(key, label);
-        }
-
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
         String scope = NotificationSyncManager.buildCurrentSyncScope(context);
-        String gradesBaselineReadyKey = NotificationSyncManager.scopedPrefKey(KEY_GRADES_BASELINE_READY, scope);
-        String gradesBaselineJsonKey = NotificationSyncManager.scopedPrefKey(KEY_GRADES_BASELINE_JSON, scope);
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
         String gradesAlertHashKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_GRADES_ALERT_HASH, scope);
         String gradesAlertTsKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_GRADES_ALERT_TS, scope);
-        boolean baselineReady = prefs.getBoolean(gradesBaselineReadyKey, false);
-        Set<String> previous = readStringSetJson(prefs.getString(gradesBaselineJsonKey, "[]"));
 
-        if (!baselineReady) {
-            saveStringSetJson(prefs, gradesBaselineJsonKey, current.keySet());
-            prefs.edit().putBoolean(gradesBaselineReadyKey, true).apply();
-            return;
-        }
-
-        if (current.isEmpty() && !previous.isEmpty()) {
-            Log.d(TAG, "Skipping grades baseline overwrite: USOS returned empty grades after a non-empty baseline.");
-            return;
-        }
-
-        List<String> addedKeys = new ArrayList<>();
-        for (String key : current.keySet()) {
-            if (!previous.contains(key)) {
-                addedKeys.add(key);
+        GradesNotificationStateStore.processBackgroundSnapshot(context, scope, grades, (current, addedKeys) -> {
+            if (addedKeys.isEmpty()) {
+                return;
             }
-        }
-
-        if (!addedKeys.isEmpty()) {
             List<String> lines = new ArrayList<>();
             for (String key : addedKeys) {
                 String label = current.get(key);
@@ -260,17 +225,13 @@ public class BackgroundSyncWorker extends Worker {
                 }
             }
             Collections.sort(lines);
-            saveStringSetJson(prefs, gradesBaselineJsonKey, current.keySet());
 
             String signature = buildAlertSignatureFromList(addedKeys);
             if (shouldNotifyForSignature(prefs, gradesAlertHashKey, gradesAlertTsKey, signature)) {
                 notifyGrades(context, addedKeys.size(), lines);
                 rememberAlertSignature(prefs, gradesAlertHashKey, gradesAlertTsKey, signature);
             }
-            return;
-        }
-
-        saveStringSetJson(prefs, gradesBaselineJsonKey, current.keySet());
+        });
     }
 
     private void notifyGrades(Context context, int count, List<String> lines) {
@@ -316,7 +277,7 @@ public class BackgroundSyncWorker extends Worker {
                 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        NotificationManagerCompat.from(context).notify(NOTIF_ID_GRADES, builder.build());
+        NotificationManagerCompat.from(context).notify(GradesNotificationStateStore.NOTIFICATION_ID, builder.build());
     }
 
     private void checkFinanceChanges(Context context) throws Exception {
@@ -752,70 +713,6 @@ public class BackgroundSyncWorker extends Worker {
             }
         }
         prefs.edit().putString(storageKey, arr.toString()).apply();
-    }
-
-    private String buildGradeKey(Semester semester, Grade grade) {
-        return normalize(semester.listaSemestrowId)
-                + "|" + normalize(grade.courseId)
-                + "|" + normalize(grade.subjectName)
-                + "|" + normalize(grade.grade)
-                + "|" + normalize(normalizeGradeDate(grade))
-                + "|" + normalize(grade.type)
-                + "|" + normalize(grade.gradeDescription)
-                + "|" + normalize(grade.comment);
-    }
-
-    private String normalizeGradeDate(Grade grade) {
-        if (grade == null) {
-            return "";
-        }
-        String[] candidates = {
-                safe(grade.dateAcquisition),
-                safe(grade.dateModified),
-                safe(grade.date)
-        };
-        for (String candidate : candidates) {
-            if (candidate.isEmpty()) {
-                continue;
-            }
-            java.util.regex.Matcher isoMatcher = java.util.regex.Pattern
-                    .compile("(\\d{4}-\\d{2}-\\d{2})")
-                    .matcher(candidate);
-            if (isoMatcher.find()) {
-                return isoMatcher.group(1);
-            }
-            java.util.regex.Matcher localMatcher = java.util.regex.Pattern
-                    .compile("(\\d{2}\\.\\d{2}\\.\\d{4})")
-                    .matcher(candidate);
-            if (localMatcher.find()) {
-                return localMatcher.group(1);
-            }
-            return candidate;
-        }
-        return "";
-    }
-
-    private String buildGradeLabel(Grade grade) {
-        String subject = safe(grade.subjectName);
-        String score = safe(grade.grade);
-        String type = safe(grade.type);
-        String date = safe(grade.date);
-        StringBuilder sb = new StringBuilder();
-        if (!score.isEmpty()) {
-            sb.append(score).append(" - ");
-        }
-        if (!subject.isEmpty()) {
-            sb.append(subject);
-        } else {
-            sb.append("Przedmiot");
-        }
-        if (!type.isEmpty()) {
-            sb.append(" · ").append(type);
-        }
-        if (!date.isEmpty()) {
-            sb.append(" · ").append(date);
-        }
-        return sb.toString();
     }
 
     private NotificationCompat.InboxStyle buildInboxStyle(

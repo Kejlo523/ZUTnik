@@ -33,7 +33,6 @@ public final class NotificationSyncManager {
     private static final String PREFS_RUNTIME = "zutnik_sync_runtime";
     private static final String KEY_BOOTSTRAP_SYNC_SCOPE = "bootstrap_sync_scope_v2";
     private static final String PREFS_BG = "zutnik_background_sync_cache";
-    private static final String KEY_GRADES_BASELINE_READY = "grades_baseline_ready_v2";
     private static final String KEY_PLAN_BASELINE_READY = "plan_baseline_ready_v3";
     private static final String KEY_FINANCE_BASELINE_READY = "finance_baseline_ready_v1";
 
@@ -218,7 +217,7 @@ public final class NotificationSyncManager {
         boolean requiresPlanBaseline = isPlanEnabled(appContext) && isAnyPlanCategoryEnabled(appContext);
         boolean requiresFinanceBaseline = isFinanceEnabled(appContext) && isAnyFinanceCategoryEnabled(appContext);
         boolean gradesBaselineReady = !requiresGradesBaseline
-                || bgPrefs.getBoolean(scopedPrefKey(KEY_GRADES_BASELINE_READY, scope), false);
+                || GradesNotificationStateStore.isBaselineReady(appContext, scope);
         boolean planBaselineReady = !requiresPlanBaseline
                 || bgPrefs.getBoolean(scopedPrefKey(KEY_PLAN_BASELINE_READY, scope), false);
         boolean financeBaselineReady = !requiresFinanceBaseline
@@ -255,6 +254,10 @@ public final class NotificationSyncManager {
         WorkManager wm = WorkManager.getInstance(context.getApplicationContext());
         wm.cancelUniqueWork(UNIQUE_WORK_NAME);
         wm.cancelUniqueWork(UNIQUE_BOOTSTRAP_WORK_NAME);
+    }
+
+    public static void markGradesAsSeen(Context context, java.util.List<Grade> visibleGrades) {
+        GradesNotificationStateStore.markSeen(context, visibleGrades);
     }
 
     static String buildCurrentSyncScope(Context context) {
