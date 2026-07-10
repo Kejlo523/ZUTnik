@@ -23,19 +23,19 @@
   <string name="home_welcome_fallback">Вітаємо Студенте 👋</string>
   <string name="home_shortcuts_title">Швидкі ярлики</string>
   <string name="home_side_panel_desc">Бічна панель</string>
-  <string name="home_tile_plan_title">📅 Розклад занять</string>
+  <string name="home_tile_plan_title">Розклад занять</string>
   <string name="home_tile_plan_desc">
         Перегляд дня, тижня й місяця + фільтрування предметів.
     </string>
-  <string name="home_tile_grades_title">⭐ Оцінки</string>
+  <string name="home_tile_grades_title">Оцінки</string>
   <string name="home_tile_grades_desc">
         Середнє, ECTS та деталі заліків в одному місці.
     </string>
-  <string name="home_tile_info_title">🎓 Інформація про навчання</string>
+  <string name="home_tile_info_title">Інформація про навчання</string>
   <string name="home_tile_info_desc">
         Напрям, факультет, статус студента, історія навчання.
     </string>
-  <string name="home_tile_news_title">📰 Новини університету</string>
+  <string name="home_tile_news_title">Новини університету</string>
   <string name="home_tile_news_desc">
         Повідомлення й оголошення з RSS-каналу для студентів.
     </string>

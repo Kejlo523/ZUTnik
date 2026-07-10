@@ -19,7 +19,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="64dp"
             android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
             android:paddingStart="16dp"
@@ -45,7 +45,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_tablet_surface_soft"
+                    android:background="@android:color/transparent"
                     android:orientation="vertical"
                     android:padding="14dp">
 
@@ -85,6 +85,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="@string/grades_average_placeholder"
+                        android:fontFamily="sans-serif-condensed"
                         android:textColor="?attr/mzText"
                         android:textSize="40sp"
                         android:textStyle="bold" />
@@ -99,8 +100,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -111,30 +111,29 @@
                             android:textSize="11sp"
                             android:textStyle="bold" />
 
-                        <Space
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1" />
-
                         <TextView
                             android:id="@+id/tvEctsValue"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-condensed"
                             android:text="@string/common_zero"
                             android:textColor="?attr/mzText"
                             android:textSize="36sp"
                             android:textStyle="bold" />
 
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="8dp"
+                            android:background="?attr/mzBorderSoft" />
+
                         <LinearLayout
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:background="@drawable/bg_grades_metric_card"
+                            android:layout_marginTop="8dp"
+                            android:background="@android:color/transparent"
                             android:orientation="vertical"
-                            android:paddingStart="10dp"
-                            android:paddingTop="6dp"
-                            android:paddingEnd="10dp"
-                            android:paddingBottom="6dp">
+                            android:padding="0dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -151,6 +150,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:contentDescription="@string/grades_summary_ects_total_label"
+                                android:fontFamily="sans-serif-condensed"
                                 android:text="@string/common_zero"
                                 android:textColor="?attr/mzText"
                                 android:textSize="36sp"

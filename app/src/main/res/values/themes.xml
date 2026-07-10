@@ -3,8 +3,12 @@
     <!-- Base Application Theme -->
     <style name="Base.Theme.ZUTnik" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimaryDark">?attr/mzBg</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">?attr/mzBg</item>
+        <item name="android:navigationBarColor">?attr/mzCard</item>
         <item name="android:windowBackground">?attr/mzBg</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowAnimationStyle">@style/Animation.ZUTnik.Activity</item>
 
         <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
 
@@ -23,6 +27,7 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.ZUTnik.AlertDialog</item>
         <item name="popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
         <item name="android:popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
+        <item name="materialButtonStyle">@style/Widget.ZUTnik.Button</item>
 
         <item name="mzNavHeader">@color/mz_nav_header</item>
         <item name="mzNavHeaderText">@color/mz_nav_header_text</item>
@@ -213,7 +218,97 @@
         <item name="android:minHeight">?attr/actionBarSize</item>
         <item name="titleTextColor">?attr/mzText</item>
         <item name="subtitleTextColor">?attr/mzText</item>
+        <item name="titleTextAppearance">@style/TextAppearance.ZUTnik.Toolbar.Title</item>
+        <item name="subtitleTextAppearance">@style/TextAppearance.ZUTnik.Toolbar.Subtitle</item>
         <item name="android:elevation">0dp</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Toolbar.Title" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/mzText</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Toolbar.Subtitle" parent="TextAppearance.Widget.AppCompat.Toolbar.Subtitle">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">?attr/mzMuted</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Display" parent="TextAppearance.MaterialComponents.Headline4">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/mzText</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Section" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/mzText</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Body" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/mzText</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Label" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">?attr/mzMuted</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Data" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/mzText</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Widget.ZUTnik.Button" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">8dp</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <style name="ShapeAppearance.ZUTnik.NavigationIndicator" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="Widget.ZUTnik.Navigation.ActiveIndicator" parent="">
+        <item name="android:width">54dp</item>
+        <item name="android:height">30dp</item>
+        <item name="marginHorizontal">4dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.ZUTnik.NavigationIndicator</item>
+        <item name="android:color">?attr/mzInputBg</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Navigation.Active" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.Navigation.Inactive" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <!-- AlertDialog Theme Overlay -->
@@ -246,8 +341,19 @@
         <item name="android:windowExitAnimation">@anim/dialog_exit</item>
     </style>
 
+    <style name="Animation.ZUTnik.Activity" parent="Animation.ZUTnik">
+        <item name="android:activityOpenEnterAnimation">@anim/screen_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/screen_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/screen_pop_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/screen_pop_exit</item>
+    </style>
+
     <style name="TextAppearance.ZUTnik.AlertDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
         <item name="android:textColor">?attr/mzText</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="TextAppearance.ZUTnik.AlertDialog.Body" parent="TextAppearance.MaterialComponents.Body2">
@@ -313,21 +419,21 @@
 
     <style name="MoreSheetRow">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_height">54dp</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <item name="android:foreground">?attr/selectableItemBackground</item>
-        <item name="android:paddingStart">14dp</item>
-        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">10dp</item>
     </style>
 
     <style name="MoreSheetIconFrame">
-        <item name="android:layout_width">34dp</item>
-        <item name="android:layout_height">34dp</item>
+        <item name="android:layout_width">32dp</item>
+        <item name="android:layout_height">32dp</item>
         <item name="android:layout_marginEnd">12dp</item>
-        <item name="android:background">@drawable/bg_circle_soft</item>
+        <item name="android:background">@android:color/transparent</item>
         <item name="android:padding">7dp</item>
     </style>
 
@@ -338,7 +444,7 @@
     <style name="MoreSheetIcon">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">match_parent</item>
-        <item name="android:tint">?attr/mzMuted</item>
+        <item name="android:tint">?attr/mzPrimary</item>
         <item name="android:contentDescription">@null</item>
         <item name="android:importantForAccessibility">no</item>
     </style>
@@ -354,8 +460,8 @@
         <item name="android:ellipsize">end</item>
         <item name="android:maxLines">1</item>
         <item name="android:textColor">?attr/mzText</item>
-        <item name="android:textSize">15sp</item>
-        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
     <style name="MoreSheetDangerLabel" parent="MoreSheetLabel">

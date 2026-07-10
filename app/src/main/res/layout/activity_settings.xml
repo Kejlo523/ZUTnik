@@ -10,12 +10,13 @@
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
+        style="@style/Widget.ZUTnik.Toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@drawable/bg_toolbar"
         android:elevation="0dp"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp"
         android:titleTextColor="?attr/mzNavHeaderText" />
 
     <ScrollView
@@ -42,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginBottom="8dp"
-                android:letterSpacing="0.06"
+                android:letterSpacing="0"
                 android:text="@string/settings_section_appearance"
                 android:textAllCaps="true"
                 android:textColor="?attr/mzPrimary"
@@ -54,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 app:cardBackgroundColor="?attr/mzCard"
-                app:cardCornerRadius="18dp"
+                app:cardCornerRadius="8dp"
                 app:cardElevation="0dp">
 
                 <LinearLayout
@@ -171,7 +172,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginBottom="8dp"
-                android:letterSpacing="0.06"
+                android:letterSpacing="0"
                 android:text="@string/settings_section_widget"
                 android:textAllCaps="true"
                 android:textColor="?attr/mzPrimary"
@@ -183,7 +184,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 app:cardBackgroundColor="?attr/mzCard"
-                app:cardCornerRadius="18dp"
+                app:cardCornerRadius="8dp"
                 app:cardElevation="0dp">
 
                 <LinearLayout
@@ -240,7 +241,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginBottom="8dp"
-                android:letterSpacing="0.06"
+                android:letterSpacing="0"
                 android:text="@string/settings_section_notifications"
                 android:textAllCaps="true"
                 android:textColor="?attr/mzPrimary"
@@ -251,7 +252,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="?attr/mzCard"
-                app:cardCornerRadius="18dp"
+                app:cardCornerRadius="8dp"
                 app:cardElevation="0dp">
 
                 <LinearLayout

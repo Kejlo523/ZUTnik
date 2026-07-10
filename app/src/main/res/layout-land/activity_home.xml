@@ -70,7 +70,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:background="@drawable/bg_card_soft"
-                                android:letterSpacing="0.05"
+                                android:letterSpacing="0"
                                 android:paddingStart="8dp"
                                 android:paddingTop="3dp"
                                 android:paddingEnd="8dp"

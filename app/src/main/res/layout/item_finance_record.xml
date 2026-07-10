@@ -2,10 +2,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
+    android:layout_marginBottom="6dp"
     android:background="@drawable/bg_info_hero_card"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,6 +18,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:fontFamily="sans-serif-condensed"
             android:textColor="?attr/mzText"
             android:textSize="21sp"
             android:textStyle="bold" />
@@ -35,7 +36,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="10dp"
         android:baselineAligned="false"
         android:orientation="horizontal">
 
@@ -45,7 +46,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_info_metric_card"
+            android:background="@android:color/transparent"
             android:orientation="vertical"
             android:padding="10dp">
 
@@ -63,6 +64,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
+                android:fontFamily="sans-serif-condensed"
                 android:textColor="?attr/mzText"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -73,7 +75,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_info_metric_card"
+            android:background="@android:color/transparent"
             android:orientation="vertical"
             android:padding="10dp">
 
@@ -91,6 +93,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
+                android:fontFamily="sans-serif-condensed"
                 android:textColor="?attr/mzText"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -102,9 +105,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:background="@drawable/bg_card_outlined"
+        android:background="@android:color/transparent"
         android:orientation="vertical"
-        android:padding="10dp">
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp">
 
         <LinearLayout
             android:id="@+id/financePaidRow"

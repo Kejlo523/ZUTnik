@@ -95,7 +95,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:letterSpacing="0.02"
+                        android:letterSpacing="0"
                         android:text="@string/home_shortcuts_title"
                         android:textColor="?attr/mzText"
                         android:textSize="20sp"

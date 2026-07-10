@@ -3,6 +3,7 @@ package pl.kejlo.zutnik;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -26,6 +27,9 @@ public class MainShellActivity extends ZutnikBaseActivity {
     private NavigationBarView shellNavigation;
     private String currentTabId = MainNavHelper.Screen.HOME.getId();
     private boolean initialTabApplied;
+    private boolean tabTransitionRunning;
+    @Nullable
+    private MainNavHelper.Screen pendingTab;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,6 +53,7 @@ public class MainShellActivity extends ZutnikBaseActivity {
         navigationRail = findViewById(R.id.navigationRail);
         shellNavigation = MainNavHelper.findShellNavigation(this);
         MainNavHelper.setupShell(this, findViewById(R.id.mainShellRoot), shellNavigation);
+        keepNavigationAboveContent();
         setupBackNavigation();
 
         if (savedInstanceState != null) {
@@ -126,6 +131,10 @@ public class MainShellActivity extends ZutnikBaseActivity {
         if (!MainNavHelper.isMainTab(screen)) {
             return;
         }
+        if (tabTransitionRunning) {
+            pendingTab = screen;
+            return;
+        }
         if (screen.getId().equals(currentTabId) && findFragment(screen) != null && findFragment(screen).isVisible()) {
             Fragment alreadyVisible = findFragment(screen);
             if (alreadyVisible instanceof ZutnikTabFragment) {
@@ -138,6 +147,11 @@ public class MainShellActivity extends ZutnikBaseActivity {
 
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction tx = fm.beginTransaction();
+
+        boolean forward = tabOrder(screen) >= tabOrder(MainNavHelper.Screen.fromId(currentTabId));
+        tx.setCustomAnimations(
+                forward ? R.anim.tab_enter_forward : R.anim.tab_enter_back,
+                forward ? R.anim.tab_exit_forward : R.anim.tab_exit_back);
 
         for (Fragment fragment : fm.getFragments()) {
             if (fragment.isAdded()) {
@@ -154,12 +168,50 @@ public class MainShellActivity extends ZutnikBaseActivity {
             tx.show(target);
         }
 
+        currentTabId = screen.getId();
+        tabTransitionRunning = true;
         tx.commit();
         getSupportFragmentManager().executePendingTransactions();
-        currentTabId = screen.getId();
+        keepNavigationAboveContent();
         MainNavHelper.updateShellSelection(shellNavigation, currentTabId);
         if (target instanceof ZutnikTabFragment) {
             ((ZutnikTabFragment) target).onTabActivated();
+        }
+        View fragmentContainer = findViewById(R.id.fragmentContainer);
+        fragmentContainer.postDelayed(this::finishTabTransition, 220L);
+    }
+
+    private void finishTabTransition() {
+        tabTransitionRunning = false;
+        MainNavHelper.Screen next = pendingTab;
+        pendingTab = null;
+        if (next != null && !next.getId().equals(currentTabId)) {
+            switchToTab(next, false);
+        } else {
+            MainNavHelper.updateShellSelection(shellNavigation, currentTabId);
+        }
+    }
+
+    private void keepNavigationAboveContent() {
+        if (shellNavigation != null) {
+            shellNavigation.bringToFront();
+        }
+    }
+
+    private int tabOrder(@Nullable MainNavHelper.Screen screen) {
+        if (screen == null) {
+            return 0;
+        }
+        switch (screen) {
+            case PLAN:
+                return 1;
+            case INFO:
+                return 2;
+            case GRADES:
+                return 3;
+            case HOME:
+            default:
+                return 0;
         }
     }
 
@@ -223,7 +275,7 @@ public class MainShellActivity extends ZutnikBaseActivity {
         }
         context.startActivity(intent);
         if (context instanceof AppCompatActivity) {
-            ((AppCompatActivity) context).overridePendingTransition(0, 0);
+            ((AppCompatActivity) context).overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
         }
     }
 }

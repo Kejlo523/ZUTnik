@@ -118,7 +118,7 @@
                     android:layout_marginStart="4dp"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
-                    android:letterSpacing="0.06"
+                    android:letterSpacing="0"
                     android:text="@string/calendar_export_section_ics"
                     android:textAllCaps="true"
                     android:textColor="?attr/mzPrimary"
@@ -129,7 +129,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="18dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp">
 
                     <LinearLayout
@@ -202,7 +202,7 @@
                     android:layout_marginStart="4dp"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
-                    android:letterSpacing="0.06"
+                    android:letterSpacing="0"
                     android:text="@string/calendar_export_section_device"
                     android:textAllCaps="true"
                     android:textColor="?attr/mzPrimary"
@@ -213,7 +213,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="18dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp">
 
                     <LinearLayout

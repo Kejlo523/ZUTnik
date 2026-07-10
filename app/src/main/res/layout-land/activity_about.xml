@@ -66,7 +66,7 @@
                         android:text="@string/app_name"
                         android:textColor="?attr/mzText"
                         android:textSize="28sp" 
-                        android:letterSpacing="-0.02"/>
+                        android:letterSpacing="0"/>
 
                     <TextView
                         android:id="@+id/aboutVersion"
@@ -106,7 +106,7 @@
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="20dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp"
                     app:strokeWidth="1dp"
                     app:strokeColor="?attr/mzBorderSoft">
@@ -170,7 +170,7 @@
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="20dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp"
                     app:strokeWidth="1dp"
                     app:strokeColor="?attr/mzBorderSoft">
@@ -240,7 +240,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="20dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp"
                     app:strokeWidth="1dp"
                     app:strokeColor="?attr/mzBorderSoft">

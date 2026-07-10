@@ -2,4 +2,5 @@
 <resources>
     <item name="nav_swipe_detector" type="id" />
     <item name="tag_toolbar_status_insets" type="id" />
+    <item name="tag_nav_suppress" type="id" />
 </resources>

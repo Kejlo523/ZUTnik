@@ -23,19 +23,19 @@
   <string name="home_welcome_fallback">Ahoj Majtku 👋</string>
   <string name="home_shortcuts_title">Szybka Szalupa</string>
   <string name="home_side_panel_desc">Burtowy panel</string>
-  <string name="home_tile_plan_title">📅 Plan Rejsu</string>
+  <string name="home_tile_plan_title">Plan Rejsu</string>
   <string name="home_tile_plan_desc">
         Gdzie i kiedy masz wiosłować.
     </string>
-  <string name="home_tile_grades_title">⭐ Złoto i Łupy</string>
+  <string name="home_tile_grades_title">Złoto i Łupy</string>
   <string name="home_tile_grades_desc">
         Podsumowanie Twoich zdobyczy i punktów.
     </string>
-  <string name="home_tile_info_title">🎓 O Tobie</string>
+  <string name="home_tile_info_title">O Tobie</string>
   <string name="home_tile_info_desc">
         Kierunek rejsu, ranga i inne papiery.
     </string>
-  <string name="home_tile_news_title">📰 Wieści z Portu</string>
+  <string name="home_tile_news_title">Wieści z Portu</string>
   <string name="home_tile_news_desc">
         Co tam krzyczą w porcie (Komunikaty).
     </string>

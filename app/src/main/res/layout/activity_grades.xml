@@ -17,33 +17,32 @@
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
+            style="@style/Widget.ZUTnik.Toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+        android:layout_height="64dp"
             android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="12dp"
             android:titleTextColor="?attr/mzNavHeaderText" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingStart="16dp"
+            android:paddingStart="20dp"
             android:paddingTop="8dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp">
+            android:paddingEnd="20dp"
+            android:paddingBottom="0dp">
 
             <LinearLayout
                 android:id="@+id/gradesHero"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:background="@drawable/bg_card_soft"
+                android:layout_marginBottom="12dp"
                 android:gravity="center_vertical"
                 android:orientation="vertical"
-                android:clipToPadding="true"
-                android:padding="8dp">
+                android:clipToPadding="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -87,7 +86,8 @@
                             android:maxLines="1"
                             android:text="@string/grades_average_placeholder"
                             android:textColor="?attr/mzText"
-                            android:textSize="20sp"
+                            android:fontFamily="sans-serif-condensed"
+                            android:textSize="23sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -126,7 +126,8 @@
                             android:maxLines="1"
                             android:text="@string/common_zero"
                             android:textColor="?attr/mzText"
-                            android:textSize="20sp"
+                            android:fontFamily="sans-serif-condensed"
+                            android:textSize="23sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -165,7 +166,8 @@
                             android:maxLines="1"
                             android:text="@string/common_zero"
                             android:textColor="?attr/mzText"
-                            android:textSize="20sp"
+                            android:fontFamily="sans-serif-condensed"
+                            android:textSize="23sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                     <ImageView
@@ -187,7 +189,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:background="@drawable/bg_grades_metric_card"
+                    android:background="@android:color/transparent"
                     android:ellipsize="end"
                     android:includeFontPadding="false"
                     android:lineSpacingExtra="1dp"
@@ -236,19 +238,16 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_grades_surface_card">
+                android:layout_weight="1">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/listGrades"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:clipToPadding="true"
+                    android:clipToPadding="false"
                     android:overScrollMode="ifContentScrolls"
-                    android:paddingStart="10dp"
-                    android:paddingTop="10dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="12dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="20dp"
                     android:scrollbars="vertical" />
 
                 <TextView

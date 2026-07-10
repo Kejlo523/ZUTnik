@@ -519,7 +519,7 @@ public class TileGridLayout extends ViewGroup {
             cellWidth = 0;
         }
 
-        cellHeight = cellWidth; // Square cells
+        cellHeight = Math.round(cellWidth * 0.78f);
 
         int maxRow = 0;
         for (Tile t : tiles) {

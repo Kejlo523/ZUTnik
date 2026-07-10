@@ -2436,7 +2436,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 context,
                 highlight ? R.attr.mzPlanGridBgSelected : R.attr.mzPlanGridBg);
         bg.setColor(fill);
-        bg.setCornerRadius(dpToPx(12));
+        bg.setCornerRadius(0f);
         return bg;
     }
 
@@ -3512,7 +3512,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
             tv.setLayoutParams(lp);
             tv.setText(formatDayHeader(col.date));
             tv.setTextColor(ThemeManager.resolveColor(requireContext(), R.attr.mzPlanHeaderText));
-            tv.setTextSize(12f);
+            tv.setTextSize(11.5f);
+            tv.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
             tv.setGravity(Gravity.CENTER);
             tv.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
 
@@ -3537,12 +3538,11 @@ public class PlanTabFragment extends ZutnikTabFragment {
         eventView.setTag(ev);
         int color = ThemeManager.resolveEventColor(requireContext(), ev.typeClass);
         int surface = ThemeManager.resolveColor(requireContext(), R.attr.mzCard);
-        int bgStart = ColorUtils.blendARGB(color, surface, 0.08f);
-        int bgEnd = ColorUtils.blendARGB(color, surface, 0.20f);
-        GradientDrawable bg = new GradientDrawable(
-                GradientDrawable.Orientation.TL_BR,
-                new int[] { bgStart, bgEnd });
-        bg.setCornerRadius(dpToPx(11));
+        int eventFill = ColorUtils.blendARGB(color, surface, 0.14f);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(eventFill);
+        bg.setCornerRadius(dpToPx(7));
+        bg.setStroke(dpToPx(1), ColorUtils.setAlphaComponent(color, 150));
 
         int danger = ThemeManager.resolveColor(requireContext(), R.attr.mzDanger);
         int dangerSoft = ThemeManager.resolveColor(requireContext(), R.attr.mzDangerSoft);

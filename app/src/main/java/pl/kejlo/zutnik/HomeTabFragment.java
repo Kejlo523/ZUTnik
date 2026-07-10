@@ -245,7 +245,7 @@ public class HomeTabFragment extends ZutnikTabFragment {
     private void setupGrid() {
         homeRepository = new HomeRepository(requireContext());
         List<Tile> tiles = homeRepository.loadTiles();
-        tileGrid.setGap((int) (8f * getResources().getDisplayMetrics().density));
+        tileGrid.setGap((int) (6f * getResources().getDisplayMetrics().density));
         tileGrid.setTiles(tiles);
         tileGrid.setOnTileClickListener(this::onTileClicked);
     }
@@ -310,7 +310,7 @@ public class HomeTabFragment extends ZutnikTabFragment {
         if ((username == null || username.trim().isEmpty()) && s.isUsosLogin()) {
             textWelcome.setText(getString(R.string.home_welcome_message,
                     getString(R.string.nav_header_default_username)));
-            textWelcomeSub.setText(R.string.home_welcome_subtitle);
+            setWelcomeSubtitle(textWelcomeSub, s);
             refreshUsosUsername(textWelcome, s);
             return;
         }
@@ -324,7 +324,15 @@ public class HomeTabFragment extends ZutnikTabFragment {
         username = extractFirstName(username);
 
         textWelcome.setText(getString(R.string.home_welcome_message, username));
-        textWelcomeSub.setText(R.string.home_welcome_subtitle);
+        setWelcomeSubtitle(textWelcomeSub, s);
+    }
+
+    private void setWelcomeSubtitle(TextView subtitle, ZutnikSession session) {
+        Study activeStudy = session != null ? session.getActiveStudy() : null;
+        String studyLabel = activeStudy != null && activeStudy.label != null
+                ? activeStudy.label.trim()
+                : "";
+        subtitle.setText(studyLabel.isEmpty() ? getString(R.string.home_welcome_subtitle) : studyLabel);
     }
 
     private void refreshUsosUsername(TextView textWelcome, ZutnikSession s) {
@@ -395,7 +403,7 @@ public class HomeTabFragment extends ZutnikTabFragment {
             homeHero.animate()
                     .alpha(1f)
                     .translationY(0f)
-                    .setDuration(500)
+                    .setDuration(260)
                     .setInterpolator(new DecelerateInterpolator(1.5f))
                     .start();
         }
@@ -403,7 +411,7 @@ public class HomeTabFragment extends ZutnikTabFragment {
             tileGrid.setAlpha(1f);
             tileGrid.post(() -> {
                 if (tileGrid.getChildCount() > 0) {
-                    tileGrid.animateTilesEntrance(80);
+                    tileGrid.animateTilesEntrance(36);
                 }
             });
         }
@@ -411,8 +419,8 @@ public class HomeTabFragment extends ZutnikTabFragment {
             homeSection.animate()
                     .alpha(1f)
                     .translationY(0f)
-                    .setStartDelay(400)
-                    .setDuration(400)
+                    .setStartDelay(150)
+                    .setDuration(220)
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
         }
@@ -421,14 +429,14 @@ public class HomeTabFragment extends ZutnikTabFragment {
     private void prepareIntroAnimations() {
         if (homeHero != null) {
             homeHero.setAlpha(0f);
-            homeHero.setTranslationY(60f);
+            homeHero.setTranslationY(24f);
         }
         if (tileGrid != null) {
             tileGrid.prepareTilesForEntrance();
         }
         if (homeSection != null) {
             homeSection.setAlpha(0f);
-            homeSection.setTranslationY(40f);
+            homeSection.setTranslationY(16f);
         }
     }
 
@@ -485,7 +493,7 @@ public class HomeTabFragment extends ZutnikTabFragment {
                     Intent latestIntent = new Intent(requireContext(), NewsActivity.class);
                     latestIntent.putExtra("EXTRA_OPEN_LATEST", true);
                     startActivity(latestIntent);
-                    requireActivity().overridePendingTransition(0, 0);
+                    requireActivity().overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
                     return;
                 case Tile.ACTION_PLAN_SEARCH:
                     shellActivity().switchToTab(MainNavHelper.Screen.PLAN, false);
@@ -506,7 +514,7 @@ public class HomeTabFragment extends ZutnikTabFragment {
         if (intent != null) {
             try {
                 startActivity(intent);
-                requireActivity().overridePendingTransition(0, 0);
+                requireActivity().overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
             } catch (Exception e) {
                 Toast.makeText(requireContext(), getString(R.string.home_open_error, tile.title), Toast.LENGTH_SHORT).show();
             }

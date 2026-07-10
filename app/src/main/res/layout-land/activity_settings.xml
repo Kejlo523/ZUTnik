@@ -40,7 +40,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_marginBottom="8dp"
-                    android:letterSpacing="0.06"
+                    android:letterSpacing="0"
                     android:text="@string/settings_section_appearance"
                     android:textAllCaps="true"
                     android:textColor="?attr/mzPrimary"
@@ -52,7 +52,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="18dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp">
 
                     <LinearLayout
@@ -169,7 +169,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_marginBottom="8dp"
-                    android:letterSpacing="0.06"
+                    android:letterSpacing="0"
                     android:text="@string/settings_section_widget"
                     android:textAllCaps="true"
                     android:textColor="?attr/mzPrimary"
@@ -181,7 +181,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="18dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp">
 
                     <LinearLayout
@@ -238,7 +238,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_marginBottom="8dp"
-                    android:letterSpacing="0.06"
+                    android:letterSpacing="0"
                     android:text="@string/settings_section_notifications"
                     android:textAllCaps="true"
                     android:textColor="?attr/mzPrimary"
@@ -249,7 +249,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="?attr/mzCard"
-                    app:cardCornerRadius="18dp"
+                    app:cardCornerRadius="8dp"
                     app:cardElevation="0dp">
 
                     <LinearLayout
