@@ -206,8 +206,8 @@ public class TileGridLayout extends ViewGroup {
                 tilesChangedListener.onTilesChanged(tiles);
         });
 
-        // Handle click
-        view.setOnClickListener(v -> {
+        // Handle click on cardContent — it owns clickable/ripple in item_tile.xml
+        view.setOnTileClickListener(v -> {
             if (tileClickListener != null) {
                 tileClickListener.onTileClick(tile);
             }

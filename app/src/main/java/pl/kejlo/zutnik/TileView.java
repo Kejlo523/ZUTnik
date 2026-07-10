@@ -2,6 +2,7 @@ package pl.kejlo.zutnik;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -235,7 +236,7 @@ public class TileView extends FrameLayout {
             btnResizeRight.setVisibility(VISIBLE);
             btnResizeLeft.setVisibility(VISIBLE);
             btnDrag.setVisibility(VISIBLE);
-            this.setForeground(null); // Disable ripple
+            cardContent.setForeground(null);
 
             // Visual "Shrink" for edit mode feeling
             animate().scaleX(0.92f).scaleY(0.92f).setDuration(200).start();
@@ -245,6 +246,7 @@ public class TileView extends FrameLayout {
             btnResizeRight.setVisibility(GONE);
             btnResizeLeft.setVisibility(GONE);
             btnDrag.setVisibility(GONE);
+            restoreCardRipple();
 
             // Restore scale
             animate().scaleX(1f).scaleY(1f).setDuration(200).start();
@@ -253,5 +255,17 @@ public class TileView extends FrameLayout {
 
     public void setOnDeleteListener(OnDeleteListener listener) {
         this.deleteListener = listener;
+    }
+
+    public void setOnTileClickListener(@Nullable View.OnClickListener listener) {
+        cardContent.setOnClickListener(listener);
+    }
+
+    private void restoreCardRipple() {
+        TypedValue out = new TypedValue();
+        if (getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, out, true)) {
+            cardContent.setForeground(
+                    androidx.appcompat.content.res.AppCompatResources.getDrawable(getContext(), out.resourceId));
+        }
     }
 }
