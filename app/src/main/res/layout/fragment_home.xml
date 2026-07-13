@@ -142,6 +142,8 @@
         </ScrollView>
     </LinearLayout>
 
+    <include layout="@layout/view_home_edit_dock" />
+
     <androidx.cardview.widget.CardView
         android:id="@+id/indicatorOverlay"
         android:layout_width="48dp"

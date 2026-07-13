@@ -726,7 +726,7 @@ public class InfoTabFragment extends ZutnikTabFragment {
                         url);
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(url)
-                        .header("User-Agent", "ZUTnik-Android-Info/2.0")
+                        .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                         .build();
 
                 try (okhttp3.Response response = ZutnikNetwork.getClient().newCall(request).execute()) {

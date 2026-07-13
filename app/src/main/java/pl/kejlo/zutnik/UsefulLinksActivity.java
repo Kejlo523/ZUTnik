@@ -52,7 +52,6 @@ import okhttp3.Response;
 public class UsefulLinksActivity extends PhoneAwareActivity {
 
     private static final String PREF_OG_CACHE = "useful_links_og_cache";
-    private static final String USER_AGENT = "Mozilla/5.0 (compatible; ZUTnik-Android/2.0)";
     private static final Pattern TITLE_TAG_PATTERN = Pattern.compile(
             "<title>(.*?)</title>",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -61,6 +60,10 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final OkHttpClient client = new OkHttpClient.Builder()
             .callTimeout(Duration.ofSeconds(10))
+            .addInterceptor(chain -> chain.proceed(
+                    chain.request().newBuilder()
+                            .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
+                            .build()))
             .build();
 
     private LinearLayout drawerContentRoot;
@@ -311,7 +314,7 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
                         item.url);
                 Request request = new Request.Builder()
                         .url(item.url)
-                        .header("User-Agent", USER_AGENT)
+                        .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                         .build();
 
                 try (Response response = client.newCall(request).execute()) {

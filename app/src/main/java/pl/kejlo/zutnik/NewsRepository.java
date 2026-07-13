@@ -90,7 +90,7 @@ public class NewsRepository {
     private List<NewsItem> fetchFromRss() throws Exception {
         Request request = new Request.Builder()
                 .url(RSS_URL)
-                .header("User-Agent", "ZUTnik-Android-News/2.0-RSS")
+                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
@@ -200,7 +200,7 @@ public class NewsRepository {
 
         Request request = new Request.Builder()
                 .url(url)
-                .header("User-Agent", "ZUTnik-Android-Images/2.0")
+                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {

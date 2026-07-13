@@ -182,6 +182,7 @@ public class NewsDetailActivity extends PhoneAwareActivity {
             });
 
             WebSettings ws = webView.getSettings();
+            ws.setUserAgentString(ZutnikNetwork.getBrowserUserAgent());
             ws.setJavaScriptEnabled(false);
             ws.setLoadWithOverviewMode(true);
             ws.setUseWideViewPort(true);

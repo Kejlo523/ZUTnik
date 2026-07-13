@@ -3,6 +3,8 @@ package pl.kejlo.zutnik;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -23,6 +25,10 @@ import java.util.List;
 
 public class AddEditTileDialog extends DialogFragment {
 
+    public static final String RESULT_KEY = "home_tile_editor_result";
+    public static final String RESULT_TILE_JSON = "tile_json";
+    private static final String ARG_TILE_JSON = "edited_tile_json";
+
     private Tile tileToEdit;
     private OnTileSavedListener listener;
 
@@ -32,7 +38,15 @@ public class AddEditTileDialog extends DialogFragment {
 
     public static AddEditTileDialog newInstance(Tile tile) {
         AddEditTileDialog dialog = new AddEditTileDialog();
-        dialog.tileToEdit = tile;
+        if (tile != null) {
+            Bundle arguments = new Bundle();
+            try {
+                arguments.putString(ARG_TILE_JSON, tile.toJson().toString());
+                dialog.setArguments(arguments);
+            } catch (org.json.JSONException ignored) {
+                dialog.tileToEdit = tile;
+            }
+        }
         return dialog;
     }
 
@@ -45,6 +59,7 @@ public class AddEditTileDialog extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        restoreEditedTileFromArguments();
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_add_edit_tile, null);
@@ -56,11 +71,15 @@ public class AddEditTileDialog extends DialogFragment {
         Spinner spinnerSavedParams = view.findViewById(R.id.spinnerSavedParams);
         View containerUrl = view.findViewById(R.id.containerUrl);
         View containerSavedParams = view.findViewById(R.id.containerSavedParams);
+        TileView tileEditorPreview = view.findViewById(R.id.tileEditorPreview);
+        final Runnable[] updateTilePreview = {() -> { }};
 
         // Color UI
         android.widget.LinearLayout containerColors = view.findViewById(R.id.containerColors);
         View colorPreview = view.findViewById(R.id.colorPreview);
         TextView btnColorDefault = view.findViewById(R.id.btnColorDefault);
+        View btnColorCustom = view.findViewById(R.id.btnColorCustom);
+        View containerColorMixer = view.findViewById(R.id.containerColorMixer);
         SeekBar seekHue = view.findViewById(R.id.seekHue);
         SeekBar seekSat = view.findViewById(R.id.seekSat);
         SeekBar seekVal = view.findViewById(R.id.seekVal);
@@ -76,12 +95,12 @@ public class AddEditTileDialog extends DialogFragment {
         // Setup Colors
         int[] palette = {
                 0, // Default
-                0xFFFF5252, // Red
-                0xFF448AFF, // Blue
-                0xFF4CAF50, // Green
-                0xFFFF9800, // Orange
-                0xFF9C27B0, // Purple
-                0xFF607D8B, // Blue Grey
+                0xFF8C4F55, // Red
+                0xFF556C9E, // Blue
+                0xFF387D70, // Green
+                0xFF8A6C3D, // Amber
+                0xFF765382, // Purple
+                0xFF56666E, // Blue Grey
                 0xFF212121, // Dark
                 0xFFE0E0E0 // Light
         };
@@ -96,8 +115,8 @@ public class AddEditTileDialog extends DialogFragment {
             android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
             gd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
             if (color == 0) {
-                gd.setColor(0xFFFFFFFF); // White visual for default
-                gd.setStroke(dpToPx(1), 0xFFCCCCCC); // Border
+                gd.setColor(themeDefaultColor);
+                gd.setStroke(dpToPx(2), ThemeManager.resolveColor(requireContext(), R.attr.mzPrimary));
             } else {
                 gd.setColor(color);
             }
@@ -111,6 +130,7 @@ public class AddEditTileDialog extends DialogFragment {
                 seekSat.setProgress(Math.round(hsv[1] * 100f));
                 seekVal.setProgress(Math.round(hsv[2] * 100f));
                 previewDrawable.setColor(applied);
+                updateTilePreview[0].run();
             });
             containerColors.addView(cView);
         }
@@ -122,6 +142,12 @@ public class AddEditTileDialog extends DialogFragment {
             seekSat.setProgress(Math.round(hsv[1] * 100f));
             seekVal.setProgress(Math.round(hsv[2] * 100f));
             previewDrawable.setColor(themeDefaultColor);
+            updateTilePreview[0].run();
+        });
+
+        btnColorCustom.setOnClickListener(v -> {
+            boolean show = containerColorMixer.getVisibility() != View.VISIBLE;
+            containerColorMixer.setVisibility(show ? View.VISIBLE : View.GONE);
         });
 
         SeekBar.OnSeekBarChangeListener hsvListener = new SeekBar.OnSeekBarChangeListener() {
@@ -134,6 +160,7 @@ public class AddEditTileDialog extends DialogFragment {
                 hsv[2] = seekVal.getProgress() / 100f;
                 selectedColor = android.graphics.Color.HSVToColor(hsv);
                 previewDrawable.setColor(selectedColor);
+                updateTilePreview[0].run();
             }
 
             @Override
@@ -177,6 +204,41 @@ public class AddEditTileDialog extends DialogFragment {
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark);
         spinnerAction.setAdapter(adapter);
 
+        Tile previewTile = new Tile();
+        previewTile.colSpan = 2;
+        previewTile.rowSpan = 2;
+        updateTilePreview[0] = () -> {
+            String title = etTitle.getText() == null ? "" : etTitle.getText().toString().trim();
+            String description = etDesc.getText() == null ? "" : etDesc.getText().toString().trim();
+            previewTile.title = title.isEmpty()
+                    ? getString(R.string.dialog_add_edit_tile_hint_title)
+                    : title;
+            previewTile.description = description;
+            int selectedAction = spinnerAction.getSelectedItemPosition();
+            previewTile.actionType = selectedAction >= 0 && selectedAction < actionValues.size()
+                    ? actionValues.get(selectedAction)
+                    : Tile.ACTION_PLAN;
+            previewTile.color = selectedColor;
+            previewTile.titleResId = 0;
+            previewTile.descResId = 0;
+            tileEditorPreview.setTile(previewTile);
+        };
+
+        TextWatcher previewWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+                updateTilePreview[0].run();
+            }
+
+            @Override
+            public void afterTextChanged(Editable text) { }
+        };
+        etTitle.addTextChangedListener(previewWatcher);
+        etDesc.addTextChangedListener(previewWatcher);
+
         // Load Saved Searches
         List<PlanRepository.SavedSearch> savedSearches = PlanRepository.loadSavedSearches(requireContext());
         List<String> savedLabels = new ArrayList<>();
@@ -206,6 +268,7 @@ public class AddEditTileDialog extends DialogFragment {
                     containerUrl.setVisibility(View.GONE);
                     containerSavedParams.setVisibility(View.GONE);
                 }
+                updateTilePreview[0].run();
             }
 
             @Override
@@ -283,6 +346,8 @@ public class AddEditTileDialog extends DialogFragment {
             previewDrawable.setColor(themeDefaultColor);
         }
 
+        updateTilePreview[0].run();
+
         builder.setView(view)
                 .setPositiveButton(R.string.dialog_add_edit_tile_btn_save, (dialog, id) -> {
                     String title = etTitle.getText().toString();
@@ -330,8 +395,7 @@ public class AddEditTileDialog extends DialogFragment {
                         tileToEdit.titleResId = 0;
                         tileToEdit.descResId = 0;
 
-                        if (listener != null)
-                            listener.onTileSaved(tileToEdit);
+                        publishResult(tileToEdit);
                     } else {
                         Tile t = new Tile();
                         t.id = System.currentTimeMillis();
@@ -342,13 +406,39 @@ public class AddEditTileDialog extends DialogFragment {
                         t.color = selectedColor; // Set color
                         t.colSpan = 2; // Default size 2x2
                         t.rowSpan = 2;
-                        if (listener != null)
-                            listener.onTileSaved(t);
+                        publishResult(t);
                     }
                 })
                 .setNegativeButton(R.string.dialog_add_edit_tile_btn_cancel, (dialog, id) -> dialog.dismiss());
 
         return builder.create();
+    }
+
+    private void restoreEditedTileFromArguments() {
+        if (tileToEdit != null || getArguments() == null) {
+            return;
+        }
+        String json = getArguments().getString(ARG_TILE_JSON);
+        if (json == null || json.isEmpty()) {
+            return;
+        }
+        try {
+            tileToEdit = Tile.fromJson(new org.json.JSONObject(json));
+        } catch (org.json.JSONException ignored) {
+        }
+    }
+
+    private void publishResult(Tile tile) {
+        if (listener != null) {
+            listener.onTileSaved(tile);
+            return;
+        }
+        try {
+            Bundle result = new Bundle();
+            result.putString(RESULT_TILE_JSON, tile.toJson().toString());
+            getParentFragmentManager().setFragmentResult(RESULT_KEY, result);
+        } catch (org.json.JSONException ignored) {
+        }
     }
 
     private int dpToPx(int dp) {

@@ -48,21 +48,13 @@
   <string name="home_shortcuts_title">Quick shortcuts</string>
   <string name="home_side_panel_desc">Side panel</string>
   <string name="home_tile_plan_title">Timetable</string>
-  <string name="home_tile_plan_desc">
-        Day, week and month view + subject filtering.
-    </string>
+  <string name="home_tile_plan_desc">Day, week and month.</string>
   <string name="home_tile_grades_title">Grades</string>
-  <string name="home_tile_grades_desc">
-        Average, ECTS and pass details in one place.
-    </string>
+  <string name="home_tile_grades_desc">Average, ECTS and results.</string>
   <string name="home_tile_info_title">Study information</string>
-  <string name="home_tile_info_desc">
-        Field of study, faculty, student status, course of studies.
-    </string>
+  <string name="home_tile_info_desc">Status and study progress.</string>
   <string name="home_tile_news_title">University news</string>
-  <string name="home_tile_news_desc">
-        Announcements from the university RSS feed with a USOS news fallback.
-    </string>
+  <string name="home_tile_news_desc">University announcements.</string>
   <string name="home_footer_meta">
         Data is fetched from university systems and cached locally. If something looks suspicious, always verify it in the official panels as well.
     </string>
@@ -396,6 +388,11 @@
   <string name="tile_action_about">About app</string>
   <string name="tile_action_url">Custom URL</string>
   <string name="menu_home_edit">Edit tiles</string>
+  <string name="home_tile_move">Move tile</string>
+  <string name="home_tile_resize">Resize tile</string>
+  <string name="home_tile_delete">Delete tile</string>
+  <string name="home_tile_size">%1$d × %2$d</string>
+  <string name="dialog_add_edit_tile_color_custom">Custom color</string>
   <string name="menu_home_save">Save</string>
   <string name="menu_home_add">Add tile</string>
   <string name="menu_home_cancel">Cancel</string>
@@ -412,6 +409,9 @@
   <string name="app_update_action">Update</string>
   <string name="app_update_dismiss">Not now</string>
   <string name="app_update_downloading">Downloading update…</string>
+  <string name="app_update_starting">Opening update…</string>
+  <string name="app_update_installing">Installing update…</string>
+  <string name="app_update_start_failed">Could not start the update. Try again.</string>
   <string name="app_update_ready">Update ready to install</string>
   <string name="app_update_restart">Restart</string>
   <string name="data_status_online_now">Refreshed just now</string>

@@ -256,7 +256,7 @@ public class PlanRepository {
 
         Request request = new Request.Builder()
                 .url(urlStr)
-                .header("User-Agent", "ZUTnik-Android-Plan/1.0")
+                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
@@ -466,7 +466,7 @@ public class PlanRepository {
 
         Request request = new Request.Builder()
                 .url(url)
-                .header("User-Agent", "ZUTnik-Android-Plan/1.0")
+                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
@@ -2350,7 +2350,7 @@ public class PlanRepository {
             try {
                 Request request = new Request.Builder()
                         .url(url)
-                        .header("User-Agent", "ZUTnik-Android-Plan/1.0")
+                        .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                         .build();
 
                 try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
@@ -2396,7 +2396,7 @@ public class PlanRepository {
         try {
             Request request = new Request.Builder()
                     .url("https://www.zut.edu.pl/zut-studenci/")
-                    .header("User-Agent", "ZUTnik-Android-Plan/1.0")
+                    .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                     .build();
             try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
                 if (!response.isSuccessful()) {

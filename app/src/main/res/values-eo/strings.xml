@@ -28,17 +28,11 @@
         Gdzie i kiedy masz wiosłować.
     </string>
   <string name="home_tile_grades_title">Złoto i Łupy</string>
-  <string name="home_tile_grades_desc">
-        Podsumowanie Twoich zdobyczy i punktów.
-    </string>
+  <string name="home_tile_grades_desc">Zdobycze i punkty.</string>
   <string name="home_tile_info_title">O Tobie</string>
-  <string name="home_tile_info_desc">
-        Kierunek rejsu, ranga i inne papiery.
-    </string>
+  <string name="home_tile_info_desc">Ranga i papiery.</string>
   <string name="home_tile_news_title">Wieści z Portu</string>
-  <string name="home_tile_news_desc">
-        Co tam krzyczą w porcie (Komunikaty).
-    </string>
+  <string name="home_tile_news_desc">Wieści z portu.</string>
   <string name="home_footer_meta">
         Dane kradzione z ZUT i kitrane lokalnie. Jak coś śmierdzi, sprawdź w oficjalnym dzienniku pokładowym.
     </string>
@@ -239,6 +233,11 @@
   <string name="tile_action_about">O łajbie</string>
   <string name="tile_action_url">Własny Kurs</string>
   <string name="menu_home_edit">Przemebluj pokład</string>
+  <string name="home_tile_move">Przesuń łatę</string>
+  <string name="home_tile_resize">Zmień rozmiar łaty</string>
+  <string name="home_tile_delete">Usuń łatę</string>
+  <string name="home_tile_size">%1$d × %2$d</string>
+  <string name="dialog_add_edit_tile_color_custom">Własny kolor</string>
   <string name="menu_home_save">Zapisz ustawienie</string>
   <string name="menu_home_add">Dodaj coś</string>
   <string name="menu_home_cancel">Anuluj</string>
@@ -262,6 +261,9 @@
   <string name="app_update_action">Ĝisdatigi</string>
   <string name="app_update_dismiss">Ne nun</string>
   <string name="app_update_downloading">Elŝutado de ĝisdatigo…</string>
+  <string name="app_update_starting">Malfermado de ĝisdatigo…</string>
+  <string name="app_update_installing">Instalado de ĝisdatigo…</string>
+  <string name="app_update_start_failed">Ne eblis komenci la ĝisdatigon. Provu denove.</string>
   <string name="app_update_ready">Ĝisdatigo pretas por instali</string>
   <string name="app_update_restart">Restartigi</string>
   <string name="data_status_online_now">Odświeżono przed chwilą</string>

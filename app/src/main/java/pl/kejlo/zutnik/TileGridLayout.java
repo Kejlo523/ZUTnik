@@ -1,62 +1,117 @@
 package pl.kejlo.zutnik;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TileGridLayout extends ViewGroup {
 
     private static final int COLUMN_COUNT = 4;
-    /** Height as a fraction of cell width — tuned so 2×2 tiles fit title + description. */
-    private static final float CELL_HEIGHT_RATIO = 0.84f;
-    private int cellWidth;
-    private int cellHeight;
-    private int gap = 0;
-    private int maxCellSizePx = 0;
-
-    private List<Tile> tiles = new ArrayList<>();
-    private boolean isEditMode = false;
-    private boolean entrancePrepared = false;
-
-    private OnTilesChangedListener tilesChangedListener;
-    private OnTileClickListener tileClickListener;
+    private static final int MAX_GRID_ROWS = 80;
+    private static final int EXTRA_EDIT_ROWS = 2;
+    private static final int MAX_TILE_ROW_SPAN = 4;
+    private static final float CELL_HEIGHT_RATIO = 0.96f;
+    private static final long SETTLE_DURATION_MS = 170L;
+    private static final long NEIGHBOR_DURATION_MS = 145L;
 
     public interface OnTileClickListener {
         void onTileClick(Tile tile);
     }
 
+    public interface OnTilesChangedListener {
+        void onTilesChanged(List<Tile> newTiles);
+    }
+
+    private static final class GridState {
+        final int col;
+        final int row;
+        final int colSpan;
+        final int rowSpan;
+
+        GridState(Tile tile) {
+            this(tile.col, tile.row, tile.colSpan, tile.rowSpan);
+        }
+
+        GridState(int col, int row, int colSpan, int rowSpan) {
+            this.col = col;
+            this.row = row;
+            this.colSpan = colSpan;
+            this.rowSpan = rowSpan;
+        }
+
+        void applyTo(Tile tile) {
+            tile.col = col;
+            tile.row = row;
+            tile.colSpan = colSpan;
+            tile.rowSpan = rowSpan;
+        }
+    }
+
+    private static final class GridPoint {
+        final int col;
+        final int row;
+
+        GridPoint(int col, int row) {
+            this.col = col;
+            this.row = row;
+        }
+    }
+
+    private final List<Tile> tiles = new ArrayList<>();
+    private final Map<Tile, GridState> gestureBaseline = new IdentityHashMap<>();
+    private final RectF previewRect = new RectF();
+    private final RectF gridSlotRect = new RectF();
+    private final Paint gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint previewFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint previewStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    private int cellWidth;
+    private int cellHeight;
+    private int gridOffsetX;
+    private int gap;
+    private int maxCellSizePx;
+    private int touchSlop;
+
+    private boolean editMode;
+    private boolean entrancePrepared;
+    private boolean dragging;
+    private boolean resizing;
+    private boolean gestureMoved;
+    private boolean settling;
+    private boolean settleShouldNotify;
+
     private TileView activeTileView;
-    private float touchDownX, touchDownY;
-    private float initialTileX, initialTileY;
-    private boolean isDragging = false;
-    private boolean isResizing = false;
-    private int resizeDirection = 0; // 1 = Right, -1 = Left
-
-    // For drawing placement preview
-    private final Rect previewRect = new Rect();
-    private final Paint previewPaint = new Paint();
-
-    // Optimization state
+    private float touchDownRawX;
+    private float touchDownRawY;
+    private float initialTileLeft;
+    private float initialTileTop;
     private int lastPreviewCol = -1;
     private int lastPreviewRow = -1;
     private int lastPreviewColSpan = -1;
     private int lastPreviewRowSpan = -1;
 
-    public interface OnTilesChangedListener {
-        void onTilesChanged(List<Tile> newTiles);
-    }
+    private OnTilesChangedListener tilesChangedListener;
+    private OnTileClickListener tileClickListener;
+
+    private final Runnable settleRunnable = () -> completeInteraction(settleShouldNotify);
 
     public TileGridLayout(Context context) {
         super(context);
@@ -74,946 +129,791 @@ public class TileGridLayout extends ViewGroup {
     }
 
     private void init(Context context) {
-        // No LayoutTransition - we handle animations manually during drag
-        setWillNotDraw(false); // To draw preview rect
+        setWillNotDraw(false);
+        setClipChildren(false);
+        setClipToPadding(false);
 
         maxCellSizePx = context.getResources().getDimensionPixelSize(R.dimen.tile_cell_max);
+        touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
 
-        int base = ThemeManager.resolveColor(context, R.attr.mzPrimary);
-        previewPaint.setColor(applyAlpha(base, 0.25f));
-        previewPaint.setStyle(Paint.Style.FILL);
-        previewPaint.setAntiAlias(true);
-    }
+        int primary = ThemeManager.resolveColor(context, R.attr.mzPrimary);
+        int border = ThemeManager.resolveColor(context, R.attr.mzBorderSoft);
 
-    private static int applyAlpha(int color, float alpha) {
-        int a = Math.round(Color.alpha(color) * alpha);
-        return (color & 0x00FFFFFF) | (a << 24);
+        gridPaint.setStyle(Paint.Style.STROKE);
+        gridPaint.setStrokeWidth(dp(1));
+        gridPaint.setColor(withAlpha(border, 0.48f));
+
+        previewFillPaint.setStyle(Paint.Style.FILL);
+        previewFillPaint.setColor(withAlpha(primary, 0.16f));
+
+        previewStrokePaint.setStyle(Paint.Style.STROKE);
+        previewStrokePaint.setStrokeWidth(dp(1.5f));
+        previewStrokePaint.setColor(withAlpha(primary, 0.9f));
     }
 
     public void setOnTilesChangedListener(OnTilesChangedListener listener) {
-        this.tilesChangedListener = listener;
+        tilesChangedListener = listener;
     }
 
     public void setOnTileClickListener(OnTileClickListener listener) {
-        this.tileClickListener = listener;
+        tileClickListener = listener;
     }
 
     public void setGap(int gapPx) {
-        this.gap = gapPx;
+        gap = Math.max(0, gapPx);
         requestLayout();
     }
 
-    public void setEditMode(boolean editMode) {
-        this.isEditMode = editMode;
-        if (!editMode) {
-            // Cancel any active drag
-            activeTileView = null;
-            isDragging = false;
-            isResizing = false;
-            invalidate();
+    public void setEditMode(boolean enabled) {
+        if (editMode == enabled) {
+            return;
         }
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child instanceof TileView) {
-                ((TileView) child).setEditMode(editMode);
-            }
+        editMode = enabled;
+        if (!enabled) {
+            cancelInteractionImmediately();
         }
+        forEachTileView(view -> view.setEditMode(enabled));
+        requestLayout();
+        invalidate();
     }
 
     public boolean isEditMode() {
-        return isEditMode;
+        return editMode;
     }
 
     public void setTiles(List<Tile> newTiles) {
-        this.tiles = new ArrayList<>(newTiles);
-        removeAllViews();
+        cancelInteractionImmediately();
+        tiles.clear();
+        if (newTiles != null) {
+            tiles.addAll(newTiles);
+        }
+        normalizeLayout();
 
+        removeAllViews();
         for (Tile tile : tiles) {
             addTileView(tile);
         }
-
-        resolveCollisions();
         requestLayout();
-    }
-
-    /**
-     * Prepares children for entrance animation before first draw.
-     * Call before animateTilesEntrance to avoid visible flicker.
-     */
-    public void prepareTilesForEntrance() {
-        entrancePrepared = true;
-        float offsetY = 18f * getResources().getDisplayMetrics().density;
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child instanceof TileView) {
-                child.animate().cancel();
-                child.setAlpha(0f);
-                child.setScaleX(0.92f);
-                child.setScaleY(0.92f);
-                child.setTranslationY(offsetY);
-            }
-        }
-    }
-
-    /**
-     * Animate tiles entrance with staggered delay.
-     * Call this after layout is complete (e.g., via post or postDelayed).
-     * 
-     * @param staggerDelayMs Delay between each tile's animation start
-     */
-    public void animateTilesEntrance(int staggerDelayMs) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child instanceof TileView) {
-                child.animate().cancel();
-
-                if (!entrancePrepared) {
-                    child.setAlpha(1f);
-                    child.setScaleX(1f);
-                    child.setScaleY(1f);
-                    child.setTranslationY(0f);
-                }
-
-                // Animate with stagger
-                child.animate()
-                        .alpha(1f)
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .translationY(0f)
-                        .setStartDelay(i * staggerDelayMs)
-                        .setDuration(350)
-                        .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
-                        .start();
-            }
-        }
-        entrancePrepared = false;
     }
 
     public List<Tile> getTiles() {
         return new ArrayList<>(tiles);
     }
 
-    private void addTileView(Tile tile) {
-        TileView view = new TileView(getContext());
-        view.setTile(tile);
-        view.setEditMode(isEditMode);
-
-        // Handle deletion
-        view.setOnDeleteListener(v -> {
-            removeView(v);
-            tiles.remove(v.getTile());
-            resolveCollisions();
-            requestLayout();
-            if (tilesChangedListener != null)
-                tilesChangedListener.onTilesChanged(tiles);
-        });
-
-        // Handle click on cardContent — it owns clickable/ripple in item_tile.xml
-        view.setOnTileClickListener(v -> {
-            if (tileClickListener != null) {
-                tileClickListener.onTileClick(tile);
-            }
-        });
-
-        addView(view);
-    }
-
     public void addTile(Tile tile) {
-        // Find best position (append to bottom)
-        int maxRow = 0;
-        for (Tile t : tiles) {
-            maxRow = Math.max(maxRow, t.row + t.rowSpan);
+        if (tile == null) {
+            return;
         }
-        tile.row = maxRow;
-        tile.col = 0;
-
+        sanitizeSize(tile);
+        boolean[][] occupied = buildOccupiedGrid(null);
+        GridPoint slot = findNearestSlot(occupied, 0, 0, tile.colSpan, tile.rowSpan);
+        tile.col = slot.col;
+        tile.row = slot.row;
         tiles.add(tile);
         addTileView(tile);
-        resolveCollisions();
         requestLayout();
-        if (tilesChangedListener != null)
-            tilesChangedListener.onTilesChanged(tiles);
+        post(() -> {
+            TileView view = findViewForTile(tile);
+            if (view != null) {
+                view.setAlpha(0f);
+                view.setScaleX(0.9f);
+                view.setScaleY(0.9f);
+                view.animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(190L)
+                        .start();
+            }
+        });
+        notifyTilesChanged();
     }
 
-    // Called by TileView when drag handle is touched
+    public void refreshTileView(Tile tile) {
+        TileView view = findViewForTile(tile);
+        if (view != null) {
+            view.setTile(tile);
+            requestLayout();
+        }
+    }
+
+    public void prepareTilesForEntrance() {
+        entrancePrepared = true;
+        float offset = dp(12);
+        forEachTileView(view -> {
+            view.animate().cancel();
+            view.setAlpha(0f);
+            view.setScaleX(0.96f);
+            view.setScaleY(0.96f);
+            view.setTranslationY(offset);
+        });
+    }
+
+    public void animateTilesEntrance(int staggerDelayMs) {
+        int index = 0;
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (!(child instanceof TileView)) {
+                continue;
+            }
+            child.animate().cancel();
+            if (!entrancePrepared) {
+                child.setAlpha(1f);
+                child.setScaleX(1f);
+                child.setScaleY(1f);
+                child.setTranslationY(0f);
+            }
+            child.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .setStartDelay((long) index * staggerDelayMs)
+                    .setDuration(240L)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                    .start();
+            index++;
+        }
+        entrancePrepared = false;
+    }
+
     public void startDragging(TileView tileView, float rawX, float rawY) {
-        if (!isEditMode)
+        if (!canStartInteraction(tileView)) {
             return;
-        activeTileView = tileView;
-        isDragging = true;
-        initialTileX = tileView.getX();
-        initialTileY = tileView.getY();
-
-        // Reset optimization state
-        lastPreviewCol = -1;
-        lastPreviewRow = -1;
-        lastPreviewColSpan = -1;
-        lastPreviewRowSpan = -1;
-        updatePreviewRect(); // Initialize preview rect immediately
-
-        // We use raw coords for offsets to be safe from coordinate space confusion
-        touchDownX = rawX;
-        touchDownY = rawY;
-
-        // Stop ScrollView from stealing
-        requestDisallowInterceptTouchEvent(true);
-        if (getParent() != null)
-            getParent().requestDisallowInterceptTouchEvent(true);
+        }
+        beginInteraction(tileView, rawX, rawY);
+        dragging = true;
+        updatePreview(tileView.getTile().col, tileView.getTile().row,
+                tileView.getTile().colSpan, tileView.getTile().rowSpan, false);
     }
 
-    // Called by TileView when resize handle is touched
-    // direction: 1 = Right, -1 = Left
-    public void startResizing(TileView tileView, int direction) {
-        if (!isEditMode)
+    public void startResizing(TileView tileView, float rawX, float rawY) {
+        if (!canStartInteraction(tileView)) {
             return;
+        }
+        beginInteraction(tileView, rawX, rawY);
+        resizing = true;
+        updatePreview(tileView.getTile().col, tileView.getTile().row,
+                tileView.getTile().colSpan, tileView.getTile().rowSpan, false);
+    }
+
+    public void finishHandleTap() {
+        if ((dragging || resizing) && !gestureMoved && !settling) {
+            restoreBaseline();
+            completeInteraction(false);
+        }
+    }
+
+    private boolean canStartInteraction(TileView tileView) {
+        return editMode && tileView != null && !settling && activeTileView == null;
+    }
+
+    private void beginInteraction(TileView tileView, float rawX, float rawY) {
+        removeCallbacks(settleRunnable);
         activeTileView = tileView;
-        isResizing = true;
-        resizeDirection = direction;
+        touchDownRawX = rawX;
+        touchDownRawY = rawY;
+        initialTileLeft = tileView.getLeft();
+        initialTileTop = tileView.getTop();
+        gestureMoved = false;
+        snapshotBaseline();
+        resetPreviewState();
 
-        // Reset optimization state
-        lastPreviewCol = -1;
-        lastPreviewRow = -1;
-        lastPreviewColSpan = -1;
-        lastPreviewRowSpan = -1;
-
-        // Stop ScrollView from stealing
-        requestDisallowInterceptTouchEvent(true);
-        if (getParent() != null)
+        tileView.bringToFront();
+        tileView.setManipulating(true);
+        if (getParent() != null) {
             getParent().requestDisallowInterceptTouchEvent(true);
+        }
     }
 
     @Override
-    public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (!isEditMode)
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+        if (!editMode || activeTileView == null || (!dragging && !resizing)) {
             return false;
-
-        // If we established a mode via child callbacks, steal the stream
-        if ((isDragging || isResizing) && activeTileView != null) {
-            requestDisallowInterceptTouchEvent(true);
-            return true;
         }
-
-        // We no longer auto-detect click on body for dragging.
-        // We only listen for explicit startDragging calls from children.
-
-        return super.onInterceptTouchEvent(ev);
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (!isEditMode)
-            return super.onTouchEvent(event);
-
-        // Lock scroll again just in case
-        if (isDragging || isResizing) {
-            requestDisallowInterceptTouchEvent(true);
-            if (getParent() != null)
-                getParent().requestDisallowInterceptTouchEvent(true);
-        }
-
-        if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (isDragging && activeTileView != null) {
-                // Determine delta using RAW coords to match startDragging
-                float dx = event.getRawX() - touchDownX;
-                float dy = event.getRawY() - touchDownY;
-
-                activeTileView.setTranslationX(dx);
-                activeTileView.setTranslationY(dy);
-
-                activeTileView.setTranslationX(dx);
-                activeTileView.setTranslationY(dy);
-
-                if (updatePreviewRect()) {
-                    invalidate();
-                    simulateLayout(); // Only simulate if grid pos changed
-                }
-                return true;
-            }
-
-            if (isResizing && activeTileView != null) {
-                if (handleResizeDrag(event)) {
-                    simulateLayout(); // Only simulate if grid pos changed
-                }
-                return true;
-            }
-
-        } else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-            handleTouchUp(event);
-            return true;
-        }
-
-        return true;
-    }
-
-    private void handleTouchUp(MotionEvent event) {
-        if (isDragging && activeTileView != null) {
-            finishDrag(event);
-        } else if (isResizing && activeTileView != null) {
-            finishResize();
-        }
-
-        isDragging = false;
-        isResizing = false;
-        activeTileView = null;
-        previewRect.setEmpty();
-        invalidate();
-    }
-
-    // Improved Bi-directional Resize Logic (Snapped)
-    // Returns TRUE if grid state changed
-    private boolean handleResizeDrag(MotionEvent event) {
-        float rawX = event.getX();
-        float rawY = event.getY();
-
-        // ... (rest of logic same until calculation)
-
-        // ... (This function needs to be rewritten slightly to return boolean, see next
-        // Chunk)
-        // Actually I'll rewrite the whole method signature and end part.
-
-        int tileTop = activeTileView.getTop();
-        int tileLeft = activeTileView.getLeft();
-        int tileRight = activeTileView.getRight();
-
-        Tile t = activeTileView.getTile();
-        int anchorCol = t.col;
-        int anchorRow = t.row;
-
-        // Calculate target spans
-
-        int newColSpan = t.colSpan;
-        int newRowSpan = t.rowSpan;
-        int newCol = t.col; // Only changes for Left Resize
-
-        // HEIGHT (Bottom Control)
-        float targetHeight = rawY - tileTop;
-        newRowSpan = (int) Math.round((targetHeight + gap / 2.0) / (cellHeight + gap));
-        newRowSpan = Math.max(1, Math.min(4, newRowSpan));
-
-        // WIDTH
-        if (resizeDirection == -1) { // Left Handle
-            // Moving Left edge, Right edge is Anchor
-            int currentRightCol = t.col + t.colSpan;
-            int rightEdgePx = getPaddingLeft() + currentRightCol * (cellWidth + gap);
-
-            float distFromRight = rightEdgePx - rawX;
-            int potentialSpan = (int) Math.round((distFromRight + gap / 2.0) / (cellWidth + gap));
-            // Clamp span
-            potentialSpan = Math.max(1, Math.min(currentRightCol, potentialSpan));
-
-            newColSpan = potentialSpan;
-            newCol = currentRightCol - newColSpan;
-
-        } else { // Right Handle
-            // Moving Right edge, Left edge is Anchor
-            int leftEdgePx = getPaddingLeft() + anchorCol * (cellWidth + gap);
-            float targetWidth = rawX - leftEdgePx;
-            int potentialSpan = (int) Math.round((targetWidth + gap / 2.0) / (cellWidth + gap));
-            // Clamp
-            potentialSpan = Math.max(1, Math.min(COLUMN_COUNT - anchorCol, potentialSpan));
-
-            newColSpan = potentialSpan;
-        }
-
-        // Check change
-        boolean changed = (newCol != lastPreviewCol || anchorRow != lastPreviewRow ||
-                newColSpan != lastPreviewColSpan || newRowSpan != lastPreviewRowSpan);
-
-        if (!changed)
-            return false;
-
-        lastPreviewCol = newCol;
-        lastPreviewRow = anchorRow;
-        lastPreviewColSpan = newColSpan;
-        lastPreviewRowSpan = newRowSpan;
-
-        // Calculate pixel bounds
-        int l = getPaddingLeft() + newCol * (cellWidth + gap);
-        int top = getPaddingTop() + anchorRow * (cellHeight + gap);
-        int w = newColSpan * cellWidth + (newColSpan - 1) * gap;
-        int h = newRowSpan * cellHeight + (newRowSpan - 1) * gap;
-        int r = l + w;
-        int b = top + h;
-
-        // Update preview rect
-        previewRect.set(l, top, r, b);
-
-        // Update view position
-        t.colSpan = newColSpan;
-        t.rowSpan = newRowSpan;
-        t.col = newCol;
-        t.row = anchorRow;
-
-        activeTileView.setTile(t); // Force visual refresh (Icon vs Text)
-
-        int wSpec = MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY);
-        int hSpec = MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY);
-        activeTileView.measure(wSpec, hSpec);
-
-        // Layout to snapped position
-        activeTileView.layout(l, top, r, b);
-
-        invalidate(); // Redraw preview
-        return true;
-    }
-
-    // Returns TRUE if grid position changed
-    private boolean updatePreviewRect() {
-        if (activeTileView == null)
-            return false;
-        // With snapped logic, handleResizeDrag updates it.
-        // We only need this for Drag (Move) logic.
-
-        if (isDragging) {
-            float x = activeTileView.getX();
-            float y = activeTileView.getY();
-
-            int col = Math.round((x - getPaddingLeft()) / (cellWidth + gap));
-            int row = Math.round((y - getPaddingTop()) / (cellHeight + gap));
-
-            col = Math.max(0, Math.min(COLUMN_COUNT - activeTileView.getTile().colSpan, col));
-            row = Math.max(0, row); // Bound row > 0
-
-            // Optimization Check
-            if (col == lastPreviewCol && row == lastPreviewRow) {
-                return false;
-            }
-
-            lastPreviewCol = col;
-            lastPreviewRow = row;
-
-            int l = getPaddingLeft() + col * (cellWidth + gap);
-            int t = getPaddingTop() + row * (cellHeight + gap);
-            int w = activeTileView.getTile().colSpan * cellWidth + (activeTileView.getTile().colSpan - 1) * gap;
-            int h = activeTileView.getTile().rowSpan * cellHeight + (activeTileView.getTile().rowSpan - 1) * gap;
-
-            previewRect.set(l, t, l + w, t + h);
-            return true;
+        if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+            float dx = event.getRawX() - touchDownRawX;
+            float dy = event.getRawY() - touchDownRawY;
+            return Math.hypot(dx, dy) >= touchSlop;
         }
         return false;
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        if (isEditMode && !previewRect.isEmpty()) {
-            canvas.drawRect(previewRect, previewPaint);
+    public boolean onTouchEvent(MotionEvent event) {
+        if (!editMode || activeTileView == null) {
+            return super.onTouchEvent(event);
+        }
+
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_MOVE:
+                gestureMoved = true;
+                if (dragging) {
+                    handleDragMove(event);
+                } else if (resizing) {
+                    handleResizeMove(event);
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                settleInteraction(false);
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                settleInteraction(true);
+                return true;
+            default:
+                return true;
         }
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        int availableWidth = width - getPaddingLeft() - getPaddingRight();
-
-        if (COLUMN_COUNT > 0 && availableWidth > 0) {
-            int desired = (availableWidth - (COLUMN_COUNT - 1) * gap) / COLUMN_COUNT;
-            if (widthMode == MeasureSpec.EXACTLY
-                    || (widthMode == MeasureSpec.AT_MOST && width >= availableWidth)) {
-                cellWidth = desired;
-            } else if (maxCellSizePx > 0) {
-                cellWidth = Math.min(desired, maxCellSizePx);
-            } else {
-                cellWidth = desired;
-            }
-        } else {
-            cellWidth = 0;
-        }
-
-        cellHeight = Math.round(cellWidth * CELL_HEIGHT_RATIO);
-
-        int maxRow = 0;
-        for (Tile t : tiles) {
-            maxRow = Math.max(maxRow, t.row + t.rowSpan);
-        }
-
-        // Add some extra space at the bottom for dragging
-        if (isEditMode)
-            maxRow += 2;
-
-        int totalHeight = getPaddingTop() + getPaddingBottom() +
-                maxRow * cellHeight + (Math.max(0, maxRow - 1)) * gap;
-
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child instanceof TileView) {
-                Tile t = ((TileView) child).getTile();
-                int childWidth = t.colSpan * cellWidth + (t.colSpan - 1) * gap;
-                int childHeight = t.rowSpan * cellHeight + (t.rowSpan - 1) * gap;
-
-                int wSpec = MeasureSpec.makeMeasureSpec(childWidth, MeasureSpec.EXACTLY);
-                int hSpec = MeasureSpec.makeMeasureSpec(childHeight, MeasureSpec.EXACTLY);
-                child.measure(wSpec, hSpec);
-            }
-        }
-
-        int contentWidth = getPaddingLeft() + getPaddingRight()
-                + COLUMN_COUNT * cellWidth + (COLUMN_COUNT - 1) * gap;
-        int measuredWidth = widthMode == MeasureSpec.EXACTLY ? width : Math.min(width, contentWidth);
-
-        setMeasuredDimension(measuredWidth, resolveSize(totalHeight, heightMeasureSpec));
+    public boolean performClick() {
+        super.performClick();
+        return true;
     }
 
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        int paddingLeft = getPaddingLeft();
-        int paddingTop = getPaddingTop();
+    private void handleDragMove(MotionEvent event) {
+        float dx = event.getRawX() - touchDownRawX;
+        float dy = event.getRawY() - touchDownRawY;
+        activeTileView.setTranslationX(dx);
+        activeTileView.setTranslationY(dy);
 
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child instanceof TileView) {
-                Tile tile = ((TileView) child).getTile();
-
-                int left = paddingLeft + tile.col * (cellWidth + gap);
-                int top = paddingTop + tile.row * (cellHeight + gap);
-                int right = left + child.getMeasuredWidth();
-                int bottom = top + child.getMeasuredHeight();
-
-                child.layout(left, top, right, bottom);
-
-                // Only reset visuals if we are NOT currently interacting
-                if (!isDragging && !isResizing) {
-                    child.setTranslationX(0f);
-                    child.setTranslationY(0f);
-                }
-            }
-        }
+        Tile active = activeTileView.getTile();
+        int maxRow = Math.min(
+                Math.max(getContentRowCount() + EXTRA_EDIT_ROWS - active.rowSpan, 0),
+                MAX_GRID_ROWS - active.rowSpan);
+        int col = snapColumn(initialTileLeft + dx, active.colSpan);
+        int row = clamp(Math.round((initialTileTop + dy - getPaddingTop()) / (float) rowPitch()), 0, maxRow);
+        updatePreview(col, row, active.colSpan, active.rowSpan, true);
     }
 
-    // Core Logic: Resolve Collisions & Gravity
-    // Now static/pure so we can run it on simulated lists
-    private void resolveCollisions(List<Tile> targetTiles) {
-        // First, apply "Gravity" - Try to move everything UP if possible
-        compactTiles(targetTiles);
-
-        // Limit iterations to prevent ANR
-        int iterations = 0;
-        int MAX_ITERATIONS = 100;
-
-        boolean changed = true;
-        while (changed && iterations < MAX_ITERATIONS) {
-            changed = false;
-            iterations++;
-
-            // Sort to ensure deterministic behavior (top-left first)
-            Collections.sort(targetTiles, new Comparator<Tile>() {
-                @Override
-                public int compare(Tile o1, Tile o2) {
-                    if (o1.row != o2.row)
-                        return Integer.compare(o1.row, o2.row);
-                    return Integer.compare(o1.col, o2.col);
-                }
-            });
-
-            for (Tile tile : targetTiles) {
-                for (Tile other : targetTiles) {
-                    if (tile == other)
-                        continue;
-
-                    if (rectsOverlap(tile, other)) {
-                        // Decide which one to push down
-                        Tile stationary = tile;
-                        Tile toMove = other;
-
-                        // If one is the active tile currently being manipulated (in simulation),
-                        // we generally want to treat it as the "intruder" or "stationary force"
-                        // depending on logic.
-                        // But here we are working on a list. The caller should have already positioned
-                        // the 'active' tile.
-                        // In simulation, the active tile is at its NEW dragged position.
-                        // We usually want the active tile to DISPLACE others.
-                        // So if 'tile' is the one corresponding to active, 'other' should move.
-
-                        // However, since we don't pass 'activeTile' here easily, we can rely on
-                        // ID/reference
-                        // if we are careful, OR we rely on the heuristic that we just moved one tile
-                        // and we want others to react.
-
-                        // Current logic:
-                        if (tile.row < other.row) {
-                            stationary = tile;
-                            toMove = other;
-                        } else if (other.row < tile.row) {
-                            stationary = other;
-                            toMove = tile;
-                        } else {
-                            // Same row
-                            if (tile.col < other.col) {
-                                stationary = tile;
-                                toMove = other;
-                            } else {
-                                stationary = other;
-                                toMove = tile;
-                            }
-                        }
-
-                        // Push toMove below stationary
-                        int targetRow = stationary.row + stationary.rowSpan;
-                        if (toMove.row < targetRow) {
-                            toMove.row = targetRow;
-                            changed = true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void compactTiles(List<Tile> targetTiles) {
-        // Sort by row to process top-down
-        Collections.sort(targetTiles, (o1, o2) -> Integer.compare(o1.row, o2.row));
-
-        for (Tile t : targetTiles) {
-            // Note: In simulation, we might NOT want to compact the active dragged tile
-            // if we want it to stay exactly where the user is holding it.
-            // But if we moved it to a 'preview' grid slot, maybe we do?
-            // Usually, the dragged tile is 'floating' in the preview slot.
-            // We should pin it so gravity doesn't pull it away from the finger.
-
-            // We need a way to identify the active tile to SKIP gravity for it during
-            // simulation.
-            boolean isActive = false;
-            if (activeTileView != null && activeTileView.getTile() != null) {
-                // If this 't' is the clone of active tile.
-                // Since 't' is a clone, 't == activeTileView.getTile()' is FALSE.
-                // We need IDs. Assuming Tile has ID or unique title.
-                // If not, we rely on the fact that we modify 't' before calling this.
-                // Actually, let's pass a list of "pinned" tiles or similar?
-                // Or simply: check if this tile overlaps the previewRect (roughly) AND matches
-                // metadata?
-
-                if (isEditMode && (isDragging || isResizing) && activeTileView != null) {
-                    // We match by reference if we are running on REAL list.
-                    if (t == activeTileView.getTile())
-                        isActive = true;
-
-                    // If we are running on COPY list, we need another way.
-                    // Let's assume for now we don't have IDs.
-                    // We can rely on the caller to have set a flag or we can skip this check for
-                    // simplicity
-                    // and assume the preview rect forces position later?
-                    // No, gravity will pull it up.
-                }
-            }
-
-            // SIMPLIFIED: usage of compactTiles in simulation needs to know which tile is
-            // "fixed".
-            // Implementation detail: I will add an optional "fixedTile" arg to these
-            // methods.
-        }
-    }
-
-    // Internal collision resolution
-    private void resolveCollisions() {
-        resolveCollisions(this.tiles, activeTileView != null ? activeTileView.getTile() : null);
-    }
-
-    private void resolveCollisions(List<Tile> targetTiles, Tile fixedTile) {
-        // Collision Resolution - only move tiles that actually overlap
-        // This preserves intentional gaps in the layout
-
-        if (fixedTile == null) {
-            // No fixed tile, just ensure no overlaps between tiles
-            resolveOverlaps(targetTiles);
+    private void handleResizeMove(MotionEvent event) {
+        GridState start = gestureBaseline.get(activeTileView.getTile());
+        if (start == null) {
             return;
         }
 
-        // Build grid with fixedTile position
-        boolean[][] grid = new boolean[50][COLUMN_COUNT];
-        markGrid(grid, fixedTile);
+        float dx = event.getRawX() - touchDownRawX;
+        float dy = event.getRawY() - touchDownRawY;
+        int startWidth = spanWidth(start.colSpan);
+        int startHeight = spanHeight(start.rowSpan);
+        int colSpan = Math.round((startWidth + dx + gap) / (float) columnPitch());
+        int rowSpan = Math.round((startHeight + dy + gap) / (float) rowPitch());
+        colSpan = clamp(colSpan, 1, COLUMN_COUNT - start.col);
+        rowSpan = clamp(rowSpan, 1, MAX_TILE_ROW_SPAN);
 
-        // Check each other tile for collision with fixedTile
-        for (Tile t : targetTiles) {
-            if (t == fixedTile || tilesMatch(t, fixedTile)) {
+        if (!updatePreview(start.col, start.row, colSpan, rowSpan, true)) {
+            return;
+        }
+
+        int width = spanWidth(colSpan);
+        int height = spanHeight(rowSpan);
+        activeTileView.measure(
+                MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
+        activeTileView.layout(
+                Math.round(initialTileLeft),
+                Math.round(initialTileTop),
+                Math.round(initialTileLeft) + width,
+                Math.round(initialTileTop) + height);
+        activeTileView.updateSizeBadge();
+    }
+
+    private boolean updatePreview(int col, int row, int colSpan, int rowSpan, boolean haptic) {
+        col = clamp(col, 0, COLUMN_COUNT - colSpan);
+        row = Math.max(0, row);
+        if (col == lastPreviewCol && row == lastPreviewRow
+                && colSpan == lastPreviewColSpan && rowSpan == lastPreviewRowSpan) {
+            return false;
+        }
+
+        lastPreviewCol = col;
+        lastPreviewRow = row;
+        lastPreviewColSpan = colSpan;
+        lastPreviewRowSpan = rowSpan;
+        applyCandidateLayout(col, row, colSpan, rowSpan);
+
+        float radiusInset = dp(2);
+        previewRect.set(
+                columnLeft(col) + radiusInset,
+                rowTop(row) + radiusInset,
+                columnLeft(col) + spanWidth(colSpan) - radiusInset,
+                rowTop(row) + spanHeight(rowSpan) - radiusInset);
+        invalidate();
+
+        if (haptic && activeTileView != null) {
+            activeTileView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+        }
+        return true;
+    }
+
+    private void applyCandidateLayout(int activeCol, int activeRow, int activeColSpan, int activeRowSpan) {
+        if (activeTileView == null) {
+            return;
+        }
+        restoreBaseline();
+
+        Tile active = activeTileView.getTile();
+        GridState activeBaseline = gestureBaseline.get(active);
+        active.col = activeCol;
+        active.row = activeRow;
+        active.colSpan = activeColSpan;
+        active.rowSpan = activeRowSpan;
+
+        boolean[][] occupied = new boolean[MAX_GRID_ROWS][COLUMN_COUNT];
+        markOccupied(occupied, active);
+
+        List<Tile> remaining = new ArrayList<>(tiles);
+        remaining.remove(active);
+        Collections.sort(remaining, baselineComparator());
+
+        for (Tile tile : remaining) {
+            GridState baseline = gestureBaseline.get(tile);
+            int preferredCol = baseline == null ? tile.col : baseline.col;
+            int preferredRow = baseline == null ? tile.row : baseline.row;
+            if (baseline != null && activeBaseline != null
+                    && overlaps(baseline.col, baseline.row, baseline.colSpan, baseline.rowSpan,
+                    activeCol, activeRow, activeColSpan, activeRowSpan)) {
+                preferredCol = activeBaseline.col;
+                preferredRow = activeBaseline.row;
+            }
+            preferredCol = clamp(preferredCol, 0, COLUMN_COUNT - tile.colSpan);
+            preferredRow = Math.max(0, preferredRow);
+
+            GridPoint point;
+            if (isSlotFree(occupied, preferredCol, preferredRow, tile.colSpan, tile.rowSpan)) {
+                point = new GridPoint(preferredCol, preferredRow);
+            } else {
+                point = findNearestSlot(occupied, preferredCol, preferredRow, tile.colSpan, tile.rowSpan);
+            }
+            tile.col = point.col;
+            tile.row = point.row;
+            markOccupied(occupied, tile);
+        }
+
+        animateNeighborsToModel();
+    }
+
+    private boolean overlaps(int firstCol, int firstRow, int firstColSpan, int firstRowSpan,
+            int secondCol, int secondRow, int secondColSpan, int secondRowSpan) {
+        return firstCol < secondCol + secondColSpan
+                && firstCol + firstColSpan > secondCol
+                && firstRow < secondRow + secondRowSpan
+                && firstRow + firstRowSpan > secondRow;
+    }
+
+    private Comparator<Tile> baselineComparator() {
+        return (left, right) -> {
+            GridState a = gestureBaseline.get(left);
+            GridState b = gestureBaseline.get(right);
+            int aRow = a == null ? left.row : a.row;
+            int bRow = b == null ? right.row : b.row;
+            if (aRow != bRow) {
+                return Integer.compare(aRow, bRow);
+            }
+            int aCol = a == null ? left.col : a.col;
+            int bCol = b == null ? right.col : b.col;
+            return Integer.compare(aCol, bCol);
+        };
+    }
+
+    private void animateNeighborsToModel() {
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (!(child instanceof TileView) || child == activeTileView) {
                 continue;
             }
-
-            // Check if this tile overlaps with fixedTile
-            if (rectsOverlap(t, fixedTile)) {
-                // Find new position for this tile - try to stay close to original
-                Point newPos = findNearestAvailableSlot(grid, t.col, t.row, t.colSpan, t.rowSpan);
-                t.col = newPos.x;
-                t.row = newPos.y;
-            }
-
-            // Mark this tile's position as occupied
-            markGrid(grid, t);
+            Tile tile = ((TileView) child).getTile();
+            child.animate().cancel();
+            child.animate()
+                    .x(columnLeft(tile.col))
+                    .y(rowTop(tile.row))
+                    .setDuration(NEIGHBOR_DURATION_MS)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f))
+                    .start();
         }
     }
 
-    /**
-     * Resolve overlaps between tiles without a fixed tile.
-     * Only moves tiles that actually collide with each other.
-     */
-    private void resolveOverlaps(List<Tile> targetTiles) {
-        boolean[][] grid = new boolean[50][COLUMN_COUNT];
+    private void settleInteraction(boolean cancelled) {
+        if (activeTileView == null || settling) {
+            return;
+        }
+        settling = true;
+        settleShouldNotify = !cancelled;
+        if (cancelled) {
+            restoreBaseline();
+        }
 
-        // Sort by position to process top-left first
-        List<Tile> sorted = new ArrayList<>(targetTiles);
-        Collections.sort(sorted, (o1, o2) -> {
-            if (o1.row != o2.row)
-                return Integer.compare(o1.row, o2.row);
-            return Integer.compare(o1.col, o2.col);
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (!(child instanceof TileView)) {
+                continue;
+            }
+            Tile tile = ((TileView) child).getTile();
+            child.animate().cancel();
+            child.animate()
+                    .x(columnLeft(tile.col))
+                    .y(rowTop(tile.row))
+                    .setDuration(SETTLE_DURATION_MS)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.8f))
+                    .start();
+        }
+        removeCallbacks(settleRunnable);
+        postDelayed(settleRunnable, SETTLE_DURATION_MS + 20L);
+    }
+
+    private void completeInteraction(boolean notify) {
+        removeCallbacks(settleRunnable);
+        TileView previousActive = activeTileView;
+        dragging = false;
+        resizing = false;
+        settling = false;
+        settleShouldNotify = false;
+        gestureMoved = false;
+        activeTileView = null;
+        gestureBaseline.clear();
+        previewRect.setEmpty();
+        resetPreviewState();
+
+        forEachTileView(view -> {
+            view.animate().cancel();
+            view.setTranslationX(0f);
+            view.setTranslationY(0f);
+            view.setManipulating(false);
+            view.updateSizeBadge();
         });
-
-        for (Tile t : sorted) {
-            // Check if current position is free
-            if (!isSlotFree(grid, t.col, t.row, t.colSpan, t.rowSpan)) {
-                // Find nearest available slot
-                Point newPos = findNearestAvailableSlot(grid, t.col, t.row, t.colSpan, t.rowSpan);
-                t.col = newPos.x;
-                t.row = newPos.y;
-            }
-            markGrid(grid, t);
+        if (previousActive != null) {
+            previousActive.setManipulating(false);
+        }
+        if (getParent() != null) {
+            getParent().requestDisallowInterceptTouchEvent(false);
+        }
+        requestLayout();
+        invalidate();
+        if (notify) {
+            notifyTilesChanged();
         }
     }
 
-    /**
-     * Find the nearest available slot to the preferred position.
-     * Tries to stay close to original position rather than packing to top-left.
-     */
-    private Point findNearestAvailableSlot(boolean[][] grid, int prefCol, int prefRow, int colSpan, int rowSpan) {
-        // Try original position first
-        if (isSlotFree(grid, prefCol, prefRow, colSpan, rowSpan)) {
-            return new Point(prefCol, prefRow);
+    private void cancelInteractionImmediately() {
+        removeCallbacks(settleRunnable);
+        if (!gestureBaseline.isEmpty()) {
+            restoreBaseline();
         }
+        dragging = false;
+        resizing = false;
+        settling = false;
+        settleShouldNotify = false;
+        gestureMoved = false;
+        activeTileView = null;
+        gestureBaseline.clear();
+        previewRect.setEmpty();
+        resetPreviewState();
+        forEachTileView(view -> {
+            view.animate().cancel();
+            view.setTranslationX(0f);
+            view.setTranslationY(0f);
+            view.setManipulating(false);
+        });
+    }
 
-        // Search in expanding rings around preferred position
-        for (int distance = 1; distance < 20; distance++) {
-            // Try same row first (horizontal displacement)
-            for (int dc = -distance; dc <= distance; dc++) {
-                int c = prefCol + dc;
-                if (c >= 0 && c <= COLUMN_COUNT - colSpan) {
-                    // Try at preferred row
-                    if (isSlotFree(grid, c, prefRow, colSpan, rowSpan)) {
-                        return new Point(c, prefRow);
-                    }
-                    // Try below preferred row
-                    for (int dr = 1; dr <= distance; dr++) {
-                        int r = prefRow + dr;
-                        if (r >= 0 && r < grid.length - rowSpan) {
-                            if (isSlotFree(grid, c, r, colSpan, rowSpan)) {
-                                return new Point(c, r);
-                            }
-                        }
-                    }
+    private void snapshotBaseline() {
+        gestureBaseline.clear();
+        for (Tile tile : tiles) {
+            gestureBaseline.put(tile, new GridState(tile));
+        }
+    }
+
+    private void restoreBaseline() {
+        for (Map.Entry<Tile, GridState> entry : gestureBaseline.entrySet()) {
+            entry.getValue().applyTo(entry.getKey());
+        }
+    }
+
+    private void resetPreviewState() {
+        lastPreviewCol = -1;
+        lastPreviewRow = -1;
+        lastPreviewColSpan = -1;
+        lastPreviewRowSpan = -1;
+    }
+
+    private void addTileView(Tile tile) {
+        TileView view = new TileView(getContext());
+        view.setTile(tile);
+        view.setEditMode(editMode);
+        view.setOnTileClickListener(clicked -> {
+            if (tileClickListener != null && !dragging && !resizing && !settling) {
+                tileClickListener.onTileClick(tile);
+            }
+        });
+        view.setOnDeleteListener(deleted -> removeTileView(deleted));
+        addView(view);
+    }
+
+    private void removeTileView(TileView view) {
+        if (!editMode || view == null || settling) {
+            return;
+        }
+        Tile tile = view.getTile();
+        view.animate().cancel();
+        view.animate()
+                .alpha(0f)
+                .scaleX(0.86f)
+                .scaleY(0.86f)
+                .setDuration(140L)
+                .withEndAction(() -> {
+                    removeView(view);
+                    tiles.remove(tile);
+                    normalizeLayout();
+                    requestLayout();
+                    notifyTilesChanged();
+                })
+                .start();
+    }
+
+    private void normalizeLayout() {
+        boolean[][] occupied = new boolean[MAX_GRID_ROWS][COLUMN_COUNT];
+        List<Tile> sorted = new ArrayList<>(tiles);
+        sorted.sort(Comparator.comparingInt((Tile tile) -> tile.row).thenComparingInt(tile -> tile.col));
+        for (Tile tile : sorted) {
+            sanitizeSize(tile);
+            int preferredCol = clamp(tile.col, 0, COLUMN_COUNT - tile.colSpan);
+            int preferredRow = Math.max(0, tile.row);
+            GridPoint point = isSlotFree(occupied, preferredCol, preferredRow, tile.colSpan, tile.rowSpan)
+                    ? new GridPoint(preferredCol, preferredRow)
+                    : findNearestSlot(occupied, preferredCol, preferredRow, tile.colSpan, tile.rowSpan);
+            tile.col = point.col;
+            tile.row = point.row;
+            markOccupied(occupied, tile);
+        }
+    }
+
+    private void sanitizeSize(Tile tile) {
+        tile.colSpan = clamp(tile.colSpan <= 0 ? 1 : tile.colSpan, 1, COLUMN_COUNT);
+        tile.rowSpan = clamp(tile.rowSpan <= 0 ? 1 : tile.rowSpan, 1, MAX_TILE_ROW_SPAN);
+        tile.col = clamp(tile.col, 0, COLUMN_COUNT - tile.colSpan);
+        tile.row = Math.max(0, tile.row);
+    }
+
+    private boolean[][] buildOccupiedGrid(@Nullable Tile excluded) {
+        boolean[][] occupied = new boolean[MAX_GRID_ROWS][COLUMN_COUNT];
+        for (Tile tile : tiles) {
+            if (tile != excluded) {
+                markOccupied(occupied, tile);
+            }
+        }
+        return occupied;
+    }
+
+    private GridPoint findNearestSlot(boolean[][] occupied, int preferredCol, int preferredRow,
+            int colSpan, int rowSpan) {
+        preferredCol = clamp(preferredCol, 0, COLUMN_COUNT - colSpan);
+        preferredRow = clamp(preferredRow, 0, MAX_GRID_ROWS - rowSpan);
+        GridPoint best = null;
+        int bestScore = Integer.MAX_VALUE;
+
+        int searchBottom = MAX_GRID_ROWS - rowSpan;
+        for (int row = 0; row <= searchBottom; row++) {
+            for (int col = 0; col <= COLUMN_COUNT - colSpan; col++) {
+                if (!isSlotFree(occupied, col, row, colSpan, rowSpan)) {
+                    continue;
+                }
+                int verticalDistance = Math.abs(row - preferredRow);
+                int horizontalDistance = Math.abs(col - preferredCol);
+                int score = verticalDistance * 10 + horizontalDistance * 3;
+                if (score < bestScore) {
+                    best = new GridPoint(col, row);
+                    bestScore = score;
                 }
             }
         }
-
-        // Fallback: append to bottom
-        int maxRow = 0;
-        for (int r = 0; r < grid.length; r++) {
-            for (int c = 0; c < COLUMN_COUNT; c++) {
-                if (grid[r][c])
-                    maxRow = Math.max(maxRow, r + 1);
-            }
-        }
-        return new Point(0, maxRow);
+        return best != null ? best : new GridPoint(0, Math.max(0, getContentRowCount()));
     }
 
-    private static class Point {
-        int x, y;
-
-        Point(int x, int y) {
-            this.x = x;
-            this.y = y;
+    private boolean isSlotFree(boolean[][] occupied, int col, int row, int colSpan, int rowSpan) {
+        if (col < 0 || row < 0 || col + colSpan > COLUMN_COUNT || row + rowSpan > occupied.length) {
+            return false;
         }
-    }
-
-    private void markGrid(boolean[][] grid, Tile t) {
-        for (int r = t.row; r < t.row + t.rowSpan; r++) {
-            for (int c = t.col; c < t.col + t.colSpan; c++) {
-                if (r >= 0 && r < grid.length && c >= 0 && c < COLUMN_COUNT) {
-                    grid[r][c] = true;
-                }
-            }
-        }
-    }
-
-    private boolean isSlotFree(boolean[][] grid, int col, int row, int colSpan, int rowSpan) {
         for (int r = row; r < row + rowSpan; r++) {
             for (int c = col; c < col + colSpan; c++) {
-                if (grid[r][c])
+                if (occupied[r][c]) {
                     return false;
+                }
             }
         }
         return true;
     }
 
-    public void refreshTileView(Tile tile) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child instanceof TileView) {
-                TileView tv = (TileView) child;
-                if (tv.getTile() == tile) {
-                    tv.setTile(tile); // Refresh content (title/desc)
-                    tv.measure(MeasureSpec.makeMeasureSpec(tv.getWidth(), MeasureSpec.EXACTLY),
-                            MeasureSpec.makeMeasureSpec(tv.getHeight(), MeasureSpec.EXACTLY));
-                    tv.layout(tv.getLeft(), tv.getTop(), tv.getRight(), tv.getBottom());
-                    return;
+    private void markOccupied(boolean[][] occupied, Tile tile) {
+        for (int row = tile.row; row < Math.min(tile.row + tile.rowSpan, occupied.length); row++) {
+            for (int col = tile.col; col < Math.min(tile.col + tile.colSpan, COLUMN_COUNT); col++) {
+                if (row >= 0 && col >= 0) {
+                    occupied[row][col] = true;
                 }
             }
         }
     }
 
-    private boolean tilesMatch(Tile t1, Tile t2) {
-        return t1 == t2;
-    }
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int availableWidth = Math.max(0, width - getPaddingLeft() - getPaddingRight());
+        int desiredCellWidth = COLUMN_COUNT == 0
+                ? 0
+                : Math.max(0, (availableWidth - (COLUMN_COUNT - 1) * gap) / COLUMN_COUNT);
+        cellWidth = maxCellSizePx > 0 ? Math.min(desiredCellWidth, maxCellSizePx) : desiredCellWidth;
+        cellHeight = Math.round(cellWidth * CELL_HEIGHT_RATIO);
 
-    private void simulateLayout() {
-        if (activeTileView == null)
-            return;
-        Tile activeTile = activeTileView.getTile();
+        int gridWidth = COLUMN_COUNT * cellWidth + Math.max(0, COLUMN_COUNT - 1) * gap;
+        gridOffsetX = getPaddingLeft() + Math.max(0, (availableWidth - gridWidth) / 2);
 
-        // Calculate where the CENTER of the dragged tile is
-        float centerX = activeTileView.getX() + activeTileView.getWidth() / 2f;
-        float centerY = activeTileView.getY() + activeTileView.getHeight() / 2f;
+        int rowCount = getContentRowCount() + (editMode ? EXTRA_EDIT_ROWS : 0);
+        int totalHeight = getPaddingTop() + getPaddingBottom();
+        if (rowCount > 0) {
+            totalHeight += rowCount * cellHeight + (rowCount - 1) * gap;
+        }
 
-        // Find which tile the center is over (if any)
-        TileView targetView = null;
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
-            if (!(child instanceof TileView))
+            if (!(child instanceof TileView)) {
                 continue;
-            TileView tv = (TileView) child;
-            if (tv == activeTileView)
-                continue;
-
-            // Get the current visual bounds (including any animation)
-            float tvLeft = tv.getX();
-            float tvTop = tv.getY();
-            float tvRight = tvLeft + tv.getWidth();
-            float tvBottom = tvTop + tv.getHeight();
-
-            // Add a dead zone - only trigger swap when entering central 60% of tile
-            float deadZone = 0.2f;
-            float dzWidth = tv.getWidth() * deadZone;
-            float dzHeight = tv.getHeight() * deadZone;
-
-            if (centerX > tvLeft + dzWidth && centerX < tvRight - dzWidth &&
-                    centerY > tvTop + dzHeight && centerY < tvBottom - dzHeight) {
-                targetView = tv;
-                break;
             }
+            Tile tile = ((TileView) child).getTile();
+            child.measure(
+                    MeasureSpec.makeMeasureSpec(spanWidth(tile.colSpan), MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(spanHeight(tile.rowSpan), MeasureSpec.EXACTLY));
         }
 
-        if (targetView != null) {
-            Tile targetTile = targetView.getTile();
-
-            // Only swap if sizes are compatible OR if target would fit in active's spot
-            boolean canSwap = true;
-
-            // Simple swap: exchange row/col positions
-            int tempRow = activeTile.row;
-            int tempCol = activeTile.col;
-
-            // Check if target can fit in active's original spot
-            if (targetTile.col + targetTile.colSpan > COLUMN_COUNT) {
-                // Would overflow, adjust
-                targetTile.col = COLUMN_COUNT - targetTile.colSpan;
-            }
-
-            activeTile.row = targetTile.row;
-            activeTile.col = targetTile.col;
-            targetTile.row = tempRow;
-            targetTile.col = tempCol;
-
-            // Clamp active tile position
-            if (activeTile.col + activeTile.colSpan > COLUMN_COUNT) {
-                activeTile.col = COLUMN_COUNT - activeTile.colSpan;
-            }
-            if (activeTile.col < 0)
-                activeTile.col = 0;
-            if (activeTile.row < 0)
-                activeTile.row = 0;
-
-            // Animate target tile to its new position
-            int targetLeft = getPaddingLeft() + targetTile.col * (cellWidth + gap);
-            int targetTop = getPaddingTop() + targetTile.row * (cellHeight + gap);
-
-            targetView.animate()
-                    .x(targetLeft)
-                    .y(targetTop)
-                    .setDuration(150)
-                    .start();
-
-            // Update preview rect to new active tile position
-            lastPreviewCol = activeTile.col;
-            lastPreviewRow = activeTile.row;
-            int l = getPaddingLeft() + activeTile.col * (cellWidth + gap);
-            int t = getPaddingTop() + activeTile.row * (cellHeight + gap);
-            int w = activeTile.colSpan * cellWidth + (activeTile.colSpan - 1) * gap;
-            int h = activeTile.rowSpan * cellHeight + (activeTile.rowSpan - 1) * gap;
-            previewRect.set(l, t, l + w, t + h);
-            invalidate();
-        }
+        int measuredWidth = widthMode == MeasureSpec.UNSPECIFIED
+                ? gridWidth + getPaddingLeft() + getPaddingRight()
+                : width;
+        setMeasuredDimension(resolveSize(measuredWidth, widthMeasureSpec),
+                resolveSize(totalHeight, heightMeasureSpec));
     }
 
-    private void finishResize() {
-        if (activeTileView == null)
-            return;
-
-        // Position was already updated during handleResizeDrag
-        // Just resolve any collisions and relayout
-        resolveCollisions();
-        requestLayout();
-        if (tilesChangedListener != null)
-            tilesChangedListener.onTilesChanged(tiles);
-    }
-
-    private void finishDrag(MotionEvent event) {
-        if (activeTileView == null)
-            return;
-
-        Tile activeTile = activeTileView.getTile();
-
-        // Calculate final grid position from preview rect (where user dropped)
-        if (!previewRect.isEmpty()) {
-            int col = Math.round((previewRect.left - getPaddingLeft()) / (float) (cellWidth + gap));
-            int row = Math.round((previewRect.top - getPaddingTop()) / (float) (cellHeight + gap));
-
-            // Clamp to valid range
-            col = Math.max(0, Math.min(COLUMN_COUNT - activeTile.colSpan, col));
-            row = Math.max(0, row);
-
-            activeTile.col = col;
-            activeTile.row = row;
-        }
-
-        // Reset view translation (was used for drag visual)
-        activeTileView.setTranslationX(0f);
-        activeTileView.setTranslationY(0f);
-
-        // Reset all tile animations to their final grid positions
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
-            if (child instanceof TileView) {
-                child.animate().cancel();
+            if (!(child instanceof TileView)) {
+                continue;
+            }
+            Tile tile = ((TileView) child).getTile();
+            int childLeft = Math.round(columnLeft(tile.col));
+            int childTop = Math.round(rowTop(tile.row));
+            child.layout(childLeft, childTop,
+                    childLeft + child.getMeasuredWidth(), childTop + child.getMeasuredHeight());
+            if (!dragging && !resizing && !settling) {
                 child.setTranslationX(0f);
                 child.setTranslationY(0f);
             }
         }
-
-        // Resolve collisions - only tiles that overlap will be moved
-        resolveCollisions();
-        requestLayout();
-        if (tilesChangedListener != null)
-            tilesChangedListener.onTilesChanged(tiles);
     }
 
-    private boolean rectsOverlap(Tile t1, Tile t2) {
-        int l1 = t1.col;
-        int r1 = t1.col + t1.colSpan;
-        int top1 = t1.row;
-        int b1 = t1.row + t1.rowSpan;
+    @Override
+    protected void onDraw(@NonNull Canvas canvas) {
+        super.onDraw(canvas);
+        if (!editMode || cellWidth <= 0 || cellHeight <= 0) {
+            return;
+        }
 
-        int l2 = t2.col;
-        int r2 = t2.col + t2.colSpan;
-        int top2 = t2.row;
-        int b2 = t2.row + t2.rowSpan;
+        float inset = dp(2);
+        float radius = dp(7);
+        int rows = getContentRowCount() + EXTRA_EDIT_ROWS;
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < COLUMN_COUNT; col++) {
+                gridSlotRect.set(
+                        columnLeft(col) + inset,
+                        rowTop(row) + inset,
+                        columnLeft(col) + cellWidth - inset,
+                        rowTop(row) + cellHeight - inset);
+                canvas.drawRoundRect(gridSlotRect, radius, radius, gridPaint);
+            }
+        }
 
-        return l1 < r2 && r1 > l2 && top1 < b2 && b1 > top2;
+        if (!previewRect.isEmpty()) {
+            canvas.drawRoundRect(previewRect, radius, radius, previewFillPaint);
+            canvas.drawRoundRect(previewRect, radius, radius, previewStrokePaint);
+        }
+    }
+
+    private int snapColumn(float visualLeft, int colSpan) {
+        return clamp(Math.round((visualLeft - gridOffsetX) / (float) columnPitch()),
+                0, COLUMN_COUNT - colSpan);
+    }
+
+    private int getContentRowCount() {
+        int rows = 0;
+        for (Tile tile : tiles) {
+            rows = Math.max(rows, tile.row + tile.rowSpan);
+        }
+        return rows;
+    }
+
+    private int spanWidth(int colSpan) {
+        return colSpan * cellWidth + Math.max(0, colSpan - 1) * gap;
+    }
+
+    private int spanHeight(int rowSpan) {
+        return rowSpan * cellHeight + Math.max(0, rowSpan - 1) * gap;
+    }
+
+    private int columnPitch() {
+        return Math.max(1, cellWidth + gap);
+    }
+
+    private int rowPitch() {
+        return Math.max(1, cellHeight + gap);
+    }
+
+    private float columnLeft(int col) {
+        return gridOffsetX + col * columnPitch();
+    }
+
+    private float rowTop(int row) {
+        return getPaddingTop() + row * rowPitch();
+    }
+
+    private void notifyTilesChanged() {
+        if (tilesChangedListener != null) {
+            tilesChangedListener.onTilesChanged(getTiles());
+        }
+    }
+
+    @Nullable
+    private TileView findViewForTile(Tile tile) {
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof TileView && ((TileView) child).getTile() == tile) {
+                return (TileView) child;
+            }
+        }
+        return null;
+    }
+
+    private interface TileViewAction {
+        void run(TileView view);
+    }
+
+    private void forEachTileView(TileViewAction action) {
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof TileView) {
+                action.run((TileView) child);
+            }
+        }
+    }
+
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int resultAlpha = Math.round(Color.alpha(color) * alpha);
+        return (color & 0x00FFFFFF) | (resultAlpha << 24);
     }
 }
