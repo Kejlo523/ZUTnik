@@ -199,6 +199,11 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
     }
 
     private int resolveSortWeight(LinkItem item, Set<String> majors, Set<String> faculties) {
+        if (item.featured) {
+            item.highlighted = true;
+            return -1;
+        }
+
         if (item.scope == LinkScope.MAJOR
                 && item.majorCode != null
                 && majors.contains(item.majorCode)) {
@@ -242,6 +247,7 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
                         title,
                         url,
                         raw.optString("description", ""),
+                        raw.optBoolean("featured", false),
                         parseLinkScope(raw.optString("scope", "")),
                         emptyToNull(raw.optString("facultyCode", null)),
                         emptyToNull(raw.optString("majorCode", null))));
@@ -488,6 +494,7 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
         final String title;
         final String url;
         final String description;
+        final boolean featured;
         final LinkScope scope;
         final String facultyCode;
         final String majorCode;
@@ -503,6 +510,7 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
                 String title,
                 String url,
                 String description,
+                boolean featured,
                 LinkScope scope,
                 String facultyCode,
                 String majorCode) {
@@ -510,6 +518,7 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             this.title = title;
             this.url = url;
             this.description = description;
+            this.featured = featured;
             this.scope = scope;
             this.facultyCode = facultyCode;
             this.majorCode = majorCode;
@@ -523,6 +532,7 @@ public class UsefulLinksActivity extends PhoneAwareActivity {
             return title.equals(other.title)
                     && url.equals(other.url)
                     && Objects.equals(description, other.description)
+                    && featured == other.featured
                     && scope == other.scope
                     && Objects.equals(facultyCode, other.facultyCode)
                     && Objects.equals(majorCode, other.majorCode)

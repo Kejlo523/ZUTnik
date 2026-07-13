@@ -173,6 +173,7 @@
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Raum 123</string>
   <string name="plan_widget_empty_state">Keine Veranstaltungen zum Anzeigen</string>
+  <string name="plan_widget_preview_refreshed">Aktualisiert: 10:24</string>
   <string name="about_title">Über die App</string>
   <string name="about_project_description_1">
         ZUTnik wurde als inoffizielle, leichte Alternative erstellt, um Stundenplan, Noten und Studieninformationen schnell einzusehen.
@@ -257,8 +258,8 @@
   <string name="theme_deep_blue">Tiefblau</string>
   <string name="theme_high_contrast">Hoher Kontrast</string>
   <string name="theme_lime">Limette</string>
-  <string name="offline_mode_label">Offline-Modus</string>
-  <string name="online_mode_label">Online-Modus</string>
+  <string name="offline_mode_label">Offline · Daten aus Cache</string>
+  <string name="online_mode_label">Verbindung wiederhergestellt</string>
   <string name="app_update_available">Eine neue App-Version ist verfügbar</string>
   <string name="app_update_action">Aktualisieren</string>
   <string name="app_update_dismiss">Nicht jetzt</string>
@@ -419,4 +420,16 @@
   <string name="period_holiday_summer">Sommerferien</string>
   <string name="about_logo_desc">ZUTnik-Logo</string>
   <string name="common_close">Schließen</string>
+  <string name="about_play_store_action">Google Play</string>
+  <string name="about_share_action">Teilen</string>
+  <string name="about_share_subject">ZUTnik</string>
+  <string name="about_share_text">Entdecke ZUTnik – Stundenplan, Noten und wichtige Studierendenfunktionen an einem Ort.\n%1$s</string>
+  <string name="about_share_chooser">ZUTnik teilen</string>
+  <string name="easter_achievement_label">VERSTECKTER ERFOLG</string>
+  <string name="easter_reward_title">ZUTnik-Entdecker</string>
+  <string name="easter_reward_message">Dieser Ort öffnet sich nicht zufällig. Du hast ihn gefunden, also bleibt dieses Abzeichen bei dir.</string>
+  <string name="easter_discovered_label">ENTDECKT</string>
+  <string name="easter_identifier_label">KENNUNG</string>
+  <string name="easter_saved_message">Abzeichen auf diesem Gerät gespeichert</string>
+  <string name="easter_done_action">Abzeichen behalten</string>
 </resources>

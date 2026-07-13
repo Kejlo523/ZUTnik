@@ -45,14 +45,14 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="32dp">
+                    android:paddingTop="8dp"
+                    android:paddingBottom="20dp">
 
                     <ImageView
                         android:id="@+id/aboutLogo"
-                        android:layout_width="96dp"
-                        android:layout_height="96dp"
-                        android:layout_marginBottom="16dp"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="10dp"
                         android:contentDescription="@string/about_logo_desc"
                         android:longClickable="true"
                         android:src="@drawable/ic_zut_logo_inapp"
@@ -65,23 +65,73 @@
                         android:fontFamily="sans-serif-black"
                         android:text="@string/app_name"
                         android:textColor="?attr/mzText"
-                        android:textSize="28sp" 
+                        android:textSize="24sp"
                         android:letterSpacing="0"/>
 
                     <TextView
                         android:id="@+id/aboutVersion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginTop="2dp"
                         android:alpha="0.6"
                         android:fontFamily="sans-serif-medium"
                         android:textColor="?attr/mzText"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:background="@drawable/bg_circle_soft"
                         android:backgroundTint="?attr/mzBgSoft"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="4dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="3dp"
                         tools:text="v1.0.0" />
+
+                    <LinearLayout
+                        android:layout_width="520dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnViewPlayStore"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="@string/about_play_store_action"
+                            android:textAllCaps="false"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_android"
+                            app:iconGravity="textStart"
+                            app:iconSize="18dp"
+                            app:iconTint="?attr/mzPrimary"
+                            app:strokeColor="?attr/mzBorderStrong" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnShareApp"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="@string/about_share_action"
+                            android:textAllCaps="false"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_share"
+                            app:iconGravity="textStart"
+                            app:iconSize="18dp"
+                            app:iconTint="?attr/mzPrimary"
+                            app:strokeColor="?attr/mzBorderStrong" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Action Cards Section -->

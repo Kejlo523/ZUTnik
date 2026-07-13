@@ -274,6 +274,13 @@
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Sala 123</string>
   <string name="plan_widget_empty_state">Brak zajęć do wyświetlenia</string>
+  <string name="plan_widget_preview_title_first" translatable="false">Matematyka II</string>
+  <string name="plan_widget_preview_time_first" translatable="false">10:15–11:45</string>
+  <string name="plan_widget_preview_room_first" translatable="false">WI1-12</string>
+  <string name="plan_widget_preview_title_second" translatable="false">Transmisja danych</string>
+  <string name="plan_widget_preview_time_second" translatable="false">12:15–13:45</string>
+  <string name="plan_widget_preview_room_second" translatable="false">WI2-227</string>
+  <string name="plan_widget_preview_refreshed">Odświeżono: 10:24</string>
   <string name="about_title">O aplikacji</string>
   <string name="about_rate_title">Oceń aplikację</string>
   <string name="about_rate_desc">Twoja opinia pomaga nam rozwijać ZUTnika!</string>
@@ -493,8 +500,8 @@
   <string name="theme_deep_blue">Deep Blue</string>
   <string name="theme_high_contrast">Wysoki kontrast</string>
   <string name="theme_lime">Limonka</string>
-  <string name="offline_mode_label">Tryb offline</string>
-  <string name="online_mode_label">Tryb online</string>
+  <string name="offline_mode_label">Offline · dane z pamięci</string>
+  <string name="online_mode_label">Połączenie przywrócone</string>
   <string name="app_update_available">Dostępna nowa wersja aplikacji</string>
   <string name="app_update_action">Aktualizuj</string>
   <string name="app_update_dismiss">Nie teraz</string>
@@ -587,6 +594,18 @@
   <string name="about_link_title_author">Strona autora</string>
   <string name="about_link_title_privacy">Polityka prywatności</string>
   <string name="about_logo_desc">Logo ZUTnika</string>
+  <string name="about_play_store_action">Google Play</string>
+  <string name="about_share_action">Udostępnij</string>
+  <string name="about_share_subject">ZUTnik</string>
+  <string name="about_share_text">Sprawdź ZUTnika – plan, oceny i najważniejsze sprawy studenckie w jednym miejscu.\n%1$s</string>
+  <string name="about_share_chooser">Udostępnij ZUTnika</string>
+  <string name="easter_achievement_label">UKRYTE OSIĄGNIĘCIE</string>
+  <string name="easter_reward_title">Odkrywca ZUTnika</string>
+  <string name="easter_reward_message">To miejsce nie otwiera się przypadkiem. Znalazłeś je, więc ta odznaka zostaje z Tobą.</string>
+  <string name="easter_discovered_label">ODKRYTO</string>
+  <string name="easter_identifier_label">IDENTYFIKATOR</string>
+  <string name="easter_saved_message">Odznaka zapisana na tym urządzeniu</string>
+  <string name="easter_done_action">Zabieram odznakę</string>
   <string name="common_close">Zamknij</string>
   <string name="nav_tab_home">Start</string>
   <string name="nav_tab_plan">Plan</string>

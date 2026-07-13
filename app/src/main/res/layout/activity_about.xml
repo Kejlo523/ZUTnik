@@ -82,6 +82,56 @@
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="4dp"
                         tools:text="v1.0.0" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnViewPlayStore"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="@string/about_play_store_action"
+                            android:textAllCaps="false"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_android"
+                            app:iconGravity="textStart"
+                            app:iconSize="18dp"
+                            app:iconTint="?attr/mzPrimary"
+                            app:strokeColor="?attr/mzBorderStrong" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnShareApp"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="@string/about_share_action"
+                            android:textAllCaps="false"
+                            android:textColor="?attr/mzText"
+                            android:textSize="13sp"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_share"
+                            app:iconGravity="textStart"
+                            app:iconSize="18dp"
+                            app:iconTint="?attr/mzPrimary"
+                            app:strokeColor="?attr/mzBorderStrong" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Action Cards Section -->

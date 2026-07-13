@@ -8,65 +8,189 @@
     android:clickable="true"
     android:focusable="true">
 
-    <View
-        android:id="@+id/easterNebulaOne"
-        android:layout_width="340dp"
-        android:layout_height="340dp"
-        android:layout_gravity="top|start"
-        android:alpha="0.82"
-        android:background="@drawable/bg_easter_egg_nebula_one"
-        android:translationX="-74dp"
-        android:translationY="-88dp" />
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
-    <View
-        android:id="@+id/easterNebulaTwo"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:layout_gravity="bottom|end"
-        android:alpha="0.86"
-        android:background="@drawable/bg_easter_egg_nebula_two"
-        android:translationX="64dp"
-        android:translationY="86dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:minHeight="560dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="56dp">
 
-    <View
-        android:id="@+id/easterStarOne"
-        android:layout_width="4dp"
-        android:layout_height="4dp"
-        android:layout_gravity="top|start"
-        android:layout_marginStart="68dp"
-        android:layout_marginTop="130dp"
-        android:alpha="0.55"
-        android:background="@drawable/bg_easter_egg_star" />
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/easterRewardCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="#151A1F"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="12dp"
+                app:strokeColor="#3A444C"
+                app:strokeWidth="1dp">
 
-    <View
-        android:id="@+id/easterStarTwo"
-        android:layout_width="3dp"
-        android:layout_height="3dp"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="164dp"
-        android:layout_marginEnd="76dp"
-        android:alpha="0.5"
-        android:background="@drawable/bg_easter_egg_star" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="24dp">
 
-    <View
-        android:id="@+id/easterStarThree"
-        android:layout_width="5dp"
-        android:layout_height="5dp"
-        android:layout_gravity="bottom|start"
-        android:layout_marginStart="94dp"
-        android:layout_marginBottom="180dp"
-        android:alpha="0.7"
-        android:background="@drawable/bg_easter_egg_star" />
+                    <View
+                        android:id="@+id/easterAccentLine"
+                        android:layout_width="48dp"
+                        android:layout_height="3dp"
+                        android:layout_marginBottom="22dp"
+                        android:background="#3BC7B8" />
 
-    <View
-        android:id="@+id/easterStarFour"
-        android:layout_width="3dp"
-        android:layout_height="3dp"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="88dp"
-        android:layout_marginBottom="134dp"
-        android:alpha="0.62"
-        android:background="@drawable/bg_easter_egg_star" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_easter_reward_label"
+                        android:fontFamily="sans-serif-medium"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:text="@string/easter_achievement_label"
+                        android:textColor="#7DE0D4"
+                        android:textSize="11sp" />
+
+                    <ImageView
+                        android:id="@+id/easterCenterLogo"
+                        android:layout_width="88dp"
+                        android:layout_height="88dp"
+                        android:layout_marginTop="24dp"
+                        android:background="@drawable/bg_easter_egg_logo_core"
+                        android:contentDescription="@string/about_logo_desc"
+                        android:padding="13dp"
+                        android:src="@drawable/ic_zut_logo_inapp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="22dp"
+                        android:fontFamily="sans-serif-black"
+                        android:gravity="center"
+                        android:text="@string/easter_reward_title"
+                        android:textColor="#F5F7F8"
+                        android:textSize="26sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/easter_reward_message"
+                        android:textColor="#AAB5BE"
+                        android:textSize="14sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="24dp"
+                        android:layout_marginBottom="18dp"
+                        android:background="#303940" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/easter_discovered_label"
+                                android:textColor="#7F8B94"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/easterDiscoveryDate"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-bold"
+                                android:textColor="#E6EAEC"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="end"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/easter_identifier_label"
+                                android:textColor="#7F8B94"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/easterDiscoveryCode"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/bg_easter_reward_code"
+                                android:fontFamily="monospace"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="4dp"
+                                android:textColor="#E6EAEC"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="22dp"
+                        android:background="@drawable/bg_easter_reward_status"
+                        android:drawablePadding="9dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp"
+                        android:text="@string/easter_saved_message"
+                        android:textColor="#E1C27B"
+                        android:textSize="12sp"
+                        app:drawableStartCompat="@drawable/ic_check"
+                        app:drawableTint="#D2A54A" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/easterDoneButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="18dp"
+                        android:backgroundTint="#3BC7B8"
+                        android:fontFamily="sans-serif-bold"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/easter_done_action"
+                        android:textAllCaps="false"
+                        android:textColor="#081412"
+                        app:cornerRadius="8dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/easterCloseButton"
@@ -80,92 +204,5 @@
         android:padding="9dp"
         android:src="@drawable/ic_close"
         app:tint="@android:color/white" />
-
-    <LinearLayout
-        android:id="@+id/easterCenterColumn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:paddingHorizontal="20dp">
-
-        <FrameLayout
-            android:id="@+id/easterPortal"
-            android:layout_width="238dp"
-            android:layout_height="238dp"
-            android:layout_marginBottom="0dp">
-
-            <View
-                android:id="@+id/easterGlow"
-                android:layout_width="220dp"
-                android:layout_height="220dp"
-                android:layout_gravity="center"
-                android:alpha="0.62"
-                android:background="@drawable/bg_easter_egg_glow" />
-
-            <View
-                android:id="@+id/easterOrbitRing"
-                android:layout_width="214dp"
-                android:layout_height="214dp"
-                android:layout_gravity="center"
-                android:background="@drawable/bg_easter_egg_orbit_ring" />
-
-            <View
-                android:id="@+id/easterOrbitRingInner"
-                android:layout_width="188dp"
-                android:layout_height="188dp"
-                android:layout_gravity="center"
-                android:background="@drawable/bg_easter_egg_orbit_ring_inner" />
-
-            <FrameLayout
-                android:id="@+id/easterOrbitFast"
-                android:layout_width="198dp"
-                android:layout_height="198dp"
-                android:layout_gravity="center">
-
-                <View
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_gravity="top|center_horizontal"
-                    android:background="@drawable/bg_easter_egg_orbit_dot" />
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:background="@drawable/bg_easter_egg_orbit_dot" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/easterOrbitSlow"
-                android:layout_width="210dp"
-                android:layout_height="210dp"
-                android:layout_gravity="center">
-
-                <View
-                    android:layout_width="9dp"
-                    android:layout_height="9dp"
-                    android:layout_gravity="center_vertical|start"
-                    android:background="@drawable/bg_easter_egg_orbit_dot" />
-
-                <View
-                    android:layout_width="7dp"
-                    android:layout_height="7dp"
-                    android:layout_gravity="center_vertical|end"
-                    android:background="@drawable/bg_easter_egg_orbit_dot" />
-            </FrameLayout>
-
-            <ImageView
-                android:id="@+id/easterCenterLogo"
-                android:layout_width="106dp"
-                android:layout_height="106dp"
-                android:layout_gravity="center"
-                android:background="@drawable/bg_easter_egg_logo_core"
-                android:contentDescription="@string/about_logo_desc"
-                android:padding="14dp"
-                android:src="@drawable/ic_zut_logo_inapp" />
-        </FrameLayout>
-    </LinearLayout>
 
 </FrameLayout>

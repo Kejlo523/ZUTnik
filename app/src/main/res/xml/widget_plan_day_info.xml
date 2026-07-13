@@ -6,5 +6,8 @@
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_plan_day_glass"
     android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:previewLayout="@layout/widget_plan_day_preview"
     android:previewImage="@drawable/widget_preview"
     android:widgetCategory="home_screen" />

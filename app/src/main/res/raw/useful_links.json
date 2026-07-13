@@ -1,5 +1,14 @@
 [
   {
+    "id": "inf_quiz_endozero",
+    "title": "Quizy z informatyki",
+    "url": "https://quiz.endozero.pl",
+    "description": "Quizy pomagające powtórzyć i sprawdzić wiedzę z informatyki.",
+    "featured": true,
+    "scope": "MAJOR",
+    "majorCode": "INF"
+  },
+  {
     "id": "global_plan_zajec",
     "title": "Plan zajęć (Rozkład)",
     "url": "https://plan.zut.edu.pl",

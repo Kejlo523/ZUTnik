@@ -1,7 +1,5 @@
 package pl.kejlo.zutnik;
 
-import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
@@ -19,26 +17,22 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public class AboutActivity extends PhoneAwareActivity {
 
@@ -49,21 +43,16 @@ public class AboutActivity extends PhoneAwareActivity {
 
     private android.widget.LinearLayout drawerContentRoot;
 
-    private TextView textPlayStoreStats;
     private TextView aboutVersion;
     private ImageView aboutLogo;
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Handler handler = new Handler(Looper.getMainLooper());
     private final Handler easterHandler = new Handler(Looper.getMainLooper());
 
-    private static final String PREFS_ABOUT_CACHE = "zutnik_about_cache";
-    private static final String KEY_RATING = "play_store_rating";
-    private static final String KEY_DOWNLOADS = "play_store_downloads";
-    private static final String KEY_TIMESTAMP = "play_store_timestamp";
-    private static final long CACHE_TTL_MS = CachePolicy.ABOUT_STATS_TTL_MS;
     private static final long EASTER_HOLD_DURATION_MS = 5_000L;
     private static final float EASTER_HOLD_MAX_SCALE = 1.14f;
+    private static final String PREFS_EASTER_EGG = "about_easter_egg";
+    private static final String KEY_EASTER_DISCOVERED_AT = "discovered_at";
+    private static final String KEY_EASTER_DISCOVERY_CODE = "discovery_code";
 
     private Runnable easterUnlockRunnable;
     private ValueAnimator easterHoldAnimator;
@@ -82,13 +71,11 @@ public class AboutActivity extends PhoneAwareActivity {
                 MainNavHelper.Screen.ABOUT);
 
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
-        textPlayStoreStats = findViewById(R.id.textPlayStoreStats);
         aboutVersion = findViewById(R.id.aboutVersion);
         aboutLogo = findViewById(R.id.aboutLogo);
         easterTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
         setupUI();
-        loadPlayStoreStats();
     }
 
     private void setupUI() {
@@ -105,10 +92,9 @@ public class AboutActivity extends PhoneAwareActivity {
             openUrl("https://github.com/Kejlo523/ZUTnik", getString(R.string.about_github_title));
         });
 
-        // Rate Us Button - Direct Play Store link
-        findViewById(R.id.cardRateUs).setOnClickListener(v -> {
-            openPlayStore();
-        });
+        findViewById(R.id.cardRateUs).setOnClickListener(v -> openPlayStore(true));
+        findViewById(R.id.btnViewPlayStore).setOnClickListener(v -> openPlayStore(false));
+        findViewById(R.id.btnShareApp).setOnClickListener(v -> shareApp());
 
         // New Links
         findViewById(R.id.btnAppWebsite).setOnClickListener(v -> openUrl("https://zutnik.endozero.pl", getString(R.string.about_link_title_project)));
@@ -137,147 +123,32 @@ public class AboutActivity extends PhoneAwareActivity {
         }
     }
 
-    private void openPlayStore() {
+    private void openPlayStore(boolean ratingIntent) {
         final String appPackageName = getPackageName();
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
-        } catch (ActivityNotFoundException anfe) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
-        }
-    }
-
-    private void loadPlayStoreStats() {
-        // 1. Try Cache
-        SharedPreferences prefs = getSharedPreferences(PREFS_ABOUT_CACHE, MODE_PRIVATE);
-        String cachedRating = prefs.getString(KEY_RATING, null);
-        String cachedDownloads = prefs.getString(KEY_DOWNLOADS, null);
-        long lastFetch = prefs.getLong(KEY_TIMESTAMP, 0L);
-
-        if (cachedRating != null) {
-            updateStatsText(cachedRating, cachedDownloads);
-        }
-
-        // 2. Fetch network only when the shared policy allows it or cache is empty.
-        NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
-                this,
-                NetworkRefreshPolicy.Module.ABOUT,
-                NetworkRefreshPolicy.Mode.SCREEN_AUTO,
-                "about_stats",
-                lastFetch);
-        if (decision.allowNetwork) {
-            fetchStatsFromNetwork();
-        }
-    }
-
-    private void updateStatsText(String rating, String downloads) {
-        if (rating == null) return;
-        
-        String text;
-        if (downloads != null) {
-             text = getString(R.string.about_stats_format_full, rating, downloads);
-        } else {
-             text = getString(R.string.about_stats_format_rating_only, rating);
-        }
-        textPlayStoreStats.setText(text);
-    }
-
-    private void fetchStatsFromNetwork() {
-        executor.execute(() -> {
-            String rating = null;
-            String downloads = null;
-            
-            try {
-                NetworkRefreshPolicy.recordAttempt(
-                        AboutActivity.this,
-                        NetworkRefreshPolicy.Module.ABOUT,
-                        NetworkRefreshPolicy.Mode.SCREEN_AUTO,
-                        "about_stats");
-                String packageName = getPackageName();
-                String url = "https://play.google.com/store/apps/details?id=" + packageName + "&hl=en";
-                
-                OkHttpClient client = new OkHttpClient.Builder()
-                        .followRedirects(true)
-                        .retryOnConnectionFailure(true)
-                        .build();
-
-                Request request = new Request.Builder()
-                        .url(url)
-                        .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
-                        .build();
-
-                try (Response response = client.newCall(request).execute()) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        String html = response.body().string();
-                        
-                        // 1. JSON-LD Strategy
-                        try {
-                             Pattern pJson = Pattern.compile("<script type=\"application/ld\\+json\">(.*?)</script>", Pattern.DOTALL);
-                             Matcher mJson = pJson.matcher(html);
-                             while (mJson.find()) {
-                                 String json = mJson.group(1);
-                                 if (json != null && json.contains("ratingValue")) {
-                                     Pattern pVal = Pattern.compile("\"ratingValue\":\\s*\"([0-9.]+)\"");
-                                     Matcher mVal = pVal.matcher(json);
-                                     if (mVal.find()) {
-                                         rating = mVal.group(1);
-                                         if (rating.length() > 3) rating = rating.substring(0, 3);
-                                     }
-                                     break;
-                                 }
-                             }
-                        } catch (Exception ignored) {}
-
-                        // 2. Regex Strategy (Fallback for Rating)
-                        if (rating == null) {
-                            Pattern pRating = Pattern.compile("aria-label=\"Rated ([0-9]+[.,]?[0-9]?) stars");
-                            Matcher mRating = pRating.matcher(html);
-                            if (mRating.find()) {
-                                rating = mRating.group(1);
-                            }
-                        }
-
-                        // 3. Downloads Strategy
-                        Pattern pDownloads = Pattern.compile(">\\s*([0-9,.]+[KkMm]?\\+)\\s*<"); 
-                        Matcher mDownloads = pDownloads.matcher(html);
-                        while (mDownloads.find()) {
-                            String cand = mDownloads.group(1);
-                            if (cand.contains("K") || cand.contains("M") || cand.length() >= 3) {
-                                 downloads = cand;
-                                 break;
-                            }
-                            if (cand.contains("00+")) {
-                                downloads = cand;
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (ratingIntent) {
+                InAppReviewPrompter.suppressAfterManualStoreOpen(this);
             }
+        } catch (ActivityNotFoundException anfe) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
+                if (ratingIntent) {
+                    InAppReviewPrompter.suppressAfterManualStoreOpen(this);
+                }
+            } catch (ActivityNotFoundException ignored) {
+                Toast.makeText(this, R.string.home_open_url_error, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
-            // Fallbacks requested by user
-            if (rating == null) rating = "5.0";
-            if (downloads == null) downloads = "100+";
-
-            String finalRating = rating;
-            String finalDownloads = downloads;
-            
-            handler.post(() -> {
-                updateStatsText(finalRating, finalDownloads);
-                
-                // Cache
-                SharedPreferences.Editor editor = getSharedPreferences(PREFS_ABOUT_CACHE, MODE_PRIVATE).edit();
-                editor.putString(KEY_RATING, finalRating);
-                editor.putString(KEY_DOWNLOADS, finalDownloads);
-                editor.putLong(KEY_TIMESTAMP, System.currentTimeMillis());
-                editor.apply();
-                NetworkRefreshPolicy.recordSuccess(
-                        AboutActivity.this,
-                        NetworkRefreshPolicy.Module.ABOUT,
-                        "about_stats");
-            });
-        });
+    private void shareApp() {
+        String playStoreUrl = "https://play.google.com/store/apps/details?id=" + getPackageName();
+        Intent shareIntent = new Intent(Intent.ACTION_SEND)
+                .setType("text/plain")
+                .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.about_share_subject))
+                .putExtra(Intent.EXTRA_TEXT, getString(R.string.about_share_text, playStoreUrl));
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.about_share_chooser)));
     }
 
     private void setupEasterEggHold() {
@@ -365,6 +236,21 @@ public class AboutActivity extends PhoneAwareActivity {
     }
 
     private void showEasterEggDialog() {
+        SharedPreferences rewardPreferences = getSharedPreferences(PREFS_EASTER_EGG, MODE_PRIVATE);
+        long discoveredAt = rewardPreferences.getLong(KEY_EASTER_DISCOVERED_AT, 0L);
+        String discoveryCode = rewardPreferences.getString(KEY_EASTER_DISCOVERY_CODE, null);
+        if (discoveredAt <= 0L || discoveryCode == null || discoveryCode.isEmpty()) {
+            discoveredAt = System.currentTimeMillis();
+            discoveryCode = String.format(
+                    Locale.ROOT,
+                    "ZN-%04X",
+                    new SecureRandom().nextInt(0x10000));
+            rewardPreferences.edit()
+                    .putLong(KEY_EASTER_DISCOVERED_AT, discoveredAt)
+                    .putString(KEY_EASTER_DISCOVERY_CODE, discoveryCode)
+                    .apply();
+        }
+
         Dialog dialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_about_easter_egg);
@@ -377,140 +263,83 @@ public class AboutActivity extends PhoneAwareActivity {
         }
 
         View root = dialog.findViewById(R.id.easterRoot);
-        View centerColumn = dialog.findViewById(R.id.easterCenterColumn);
+        View rewardCard = dialog.findViewById(R.id.easterRewardCard);
+        View accentLine = dialog.findViewById(R.id.easterAccentLine);
         ImageButton closeButton = dialog.findViewById(R.id.easterCloseButton);
         ImageView centerLogo = dialog.findViewById(R.id.easterCenterLogo);
-        View nebulaOne = dialog.findViewById(R.id.easterNebulaOne);
-        View nebulaTwo = dialog.findViewById(R.id.easterNebulaTwo);
-        View orbitFast = dialog.findViewById(R.id.easterOrbitFast);
-        View orbitSlow = dialog.findViewById(R.id.easterOrbitSlow);
-        View ring = dialog.findViewById(R.id.easterOrbitRing);
-        View ringInner = dialog.findViewById(R.id.easterOrbitRingInner);
-        View glow = dialog.findViewById(R.id.easterGlow);
-        View starOne = dialog.findViewById(R.id.easterStarOne);
-        View starTwo = dialog.findViewById(R.id.easterStarTwo);
-        View starThree = dialog.findViewById(R.id.easterStarThree);
-        View starFour = dialog.findViewById(R.id.easterStarFour);
+        TextView discoveryDate = dialog.findViewById(R.id.easterDiscoveryDate);
+        TextView discoveryCodeView = dialog.findViewById(R.id.easterDiscoveryCode);
+        View doneButton = dialog.findViewById(R.id.easterDoneButton);
 
-        ArrayList<ValueAnimator> loopingAnimators = new ArrayList<>();
+        Locale locale = getResources().getConfiguration().getLocales().get(0);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMM yyyy", locale);
+        discoveryDate.setText(Instant.ofEpochMilli(discoveredAt)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+                .format(formatter));
+        discoveryCodeView.setText(discoveryCode);
 
-        ObjectAnimator ringRotate = ObjectAnimator.ofFloat(ring, View.ROTATION, 0f, 360f);
-        startInfiniteAnimator(ringRotate, 8_500L, 0L, false, loopingAnimators);
-
-        ObjectAnimator ringInnerRotate = ObjectAnimator.ofFloat(ringInner, View.ROTATION, 360f, 0f);
-        startInfiniteAnimator(ringInnerRotate, 6_000L, 0L, false, loopingAnimators);
-
-        ObjectAnimator orbitFastRotate = ObjectAnimator.ofFloat(orbitFast, View.ROTATION, 0f, 360f);
-        startInfiniteAnimator(orbitFastRotate, 2_100L, 0L, false, loopingAnimators);
-
-        ObjectAnimator orbitSlowRotate = ObjectAnimator.ofFloat(orbitSlow, View.ROTATION, 360f, 0f);
-        startInfiniteAnimator(orbitSlowRotate, 3_800L, 120L, false, loopingAnimators);
-
-        ObjectAnimator logoPulse = ObjectAnimator.ofPropertyValuesHolder(
-                centerLogo,
-                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.09f, 1f),
-                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.09f, 1f));
-        startInfiniteAnimator(logoPulse, 1_120L, 0L, false, loopingAnimators);
-
-        ObjectAnimator glowPulse = ObjectAnimator.ofFloat(glow, View.ALPHA, 0.45f, 0.95f, 0.45f);
-        startInfiniteAnimator(glowPulse, 1_250L, 0L, false, loopingAnimators);
-
-        float nebulaOneBaseX = nebulaOne.getTranslationX();
-        float nebulaOneBaseY = nebulaOne.getTranslationY();
-        float nebulaTwoBaseX = nebulaTwo.getTranslationX();
-        float nebulaTwoBaseY = nebulaTwo.getTranslationY();
-
-        ObjectAnimator nebulaOneX = ObjectAnimator.ofFloat(
-                nebulaOne,
-                View.TRANSLATION_X,
-                nebulaOneBaseX,
-                nebulaOneBaseX + dpToPx(34f),
-                nebulaOneBaseX - dpToPx(2f));
-        startInfiniteAnimator(nebulaOneX, 12_000L, 0L, false, loopingAnimators);
-        ObjectAnimator nebulaOneY = ObjectAnimator.ofFloat(
-                nebulaOne,
-                View.TRANSLATION_Y,
-                nebulaOneBaseY,
-                nebulaOneBaseY + dpToPx(32f),
-                nebulaOneBaseY - dpToPx(4f));
-        startInfiniteAnimator(nebulaOneY, 11_000L, 0L, false, loopingAnimators);
-
-        ObjectAnimator nebulaTwoX = ObjectAnimator.ofFloat(
-                nebulaTwo,
-                View.TRANSLATION_X,
-                nebulaTwoBaseX,
-                nebulaTwoBaseX - dpToPx(29f),
-                nebulaTwoBaseX + dpToPx(6f));
-        startInfiniteAnimator(nebulaTwoX, 13_000L, 200L, false, loopingAnimators);
-        ObjectAnimator nebulaTwoY = ObjectAnimator.ofFloat(
-                nebulaTwo,
-                View.TRANSLATION_Y,
-                nebulaTwoBaseY,
-                nebulaTwoBaseY - dpToPx(36f),
-                nebulaTwoBaseY + dpToPx(6f));
-        startInfiniteAnimator(nebulaTwoY, 10_500L, 150L, false, loopingAnimators);
-
-        ObjectAnimator starOneTwinkle = ObjectAnimator.ofFloat(starOne, View.ALPHA, 0.35f, 1f, 0.35f);
-        startInfiniteAnimator(starOneTwinkle, 920L, 40L, false, loopingAnimators);
-        ObjectAnimator starTwoTwinkle = ObjectAnimator.ofFloat(starTwo, View.ALPHA, 0.25f, 0.95f, 0.25f);
-        startInfiniteAnimator(starTwoTwinkle, 1_360L, 180L, false, loopingAnimators);
-        ObjectAnimator starThreeTwinkle = ObjectAnimator.ofFloat(starThree, View.ALPHA, 0.3f, 1f, 0.3f);
-        startInfiniteAnimator(starThreeTwinkle, 1_090L, 90L, false, loopingAnimators);
-        ObjectAnimator starFourTwinkle = ObjectAnimator.ofFloat(starFour, View.ALPHA, 0.28f, 0.9f, 0.28f);
-        startInfiniteAnimator(starFourTwinkle, 1_520L, 240L, false, loopingAnimators);
-
-        centerLogo.setOnClickListener(v -> {
-            centerLogo.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-            centerLogo.animate()
-                    .rotationBy(540f)
-                    .scaleX(1.2f)
-                    .scaleY(1.2f)
-                    .setDuration(280L)
-                    .withEndAction(() -> centerLogo.animate()
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(320L)
-                            .start())
-                    .start();
-            centerColumn.animate()
-                    .scaleX(1.03f)
-                    .scaleY(1.03f)
-                    .setDuration(220L)
-                    .withEndAction(() -> centerColumn.animate()
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(260L)
-                            .start())
-                    .start();
-        });
         root.setOnClickListener(v -> dialog.dismiss());
-        centerColumn.setOnClickListener(v -> {
-            // Consume clicks so tap-outside closes only when touching the backdrop.
-        });
+        rewardCard.setOnClickListener(v -> { });
         closeButton.setOnClickListener(v -> dialog.dismiss());
+        doneButton.setOnClickListener(v -> {
+            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            dialog.dismiss();
+        });
 
-        dialog.setOnDismissListener(dialogInterface -> {
-            for (ValueAnimator animator : loopingAnimators) {
-                animator.cancel();
-            }
+        rewardCard.setAlpha(0f);
+        rewardCard.setTranslationY(dpToPx(28f));
+        rewardCard.setScaleX(0.98f);
+        rewardCard.setScaleY(0.98f);
+        centerLogo.setScaleX(0.82f);
+        centerLogo.setScaleY(0.82f);
+        centerLogo.setRotation(-8f);
+        accentLine.setPivotX(0f);
+        accentLine.setScaleX(0f);
+        doneButton.setAlpha(0f);
+        doneButton.setTranslationY(dpToPx(10f));
+
+        dialog.setOnShowListener(ignored -> {
+            DecelerateInterpolator interpolator = new DecelerateInterpolator();
+            rewardCard.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(420L)
+                    .setInterpolator(interpolator)
+                    .start();
+            centerLogo.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .rotation(0f)
+                    .setStartDelay(90L)
+                    .setDuration(480L)
+                    .setInterpolator(interpolator)
+                    .start();
+            accentLine.animate()
+                    .scaleX(1f)
+                    .setStartDelay(120L)
+                    .setDuration(520L)
+                    .setInterpolator(interpolator)
+                    .start();
+            doneButton.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(220L)
+                    .setDuration(320L)
+                    .setInterpolator(interpolator)
+                    .start();
         });
 
         dialog.show();
-    }
-
-    private void startInfiniteAnimator(
-            ValueAnimator animator,
-            long durationMs,
-            long startDelayMs,
-            boolean reverseMode,
-            ArrayList<ValueAnimator> bucket) {
-        animator.setDuration(durationMs);
-        animator.setStartDelay(startDelayMs);
-        animator.setInterpolator(new LinearInterpolator());
-        animator.setRepeatCount(ValueAnimator.INFINITE);
-        animator.setRepeatMode(reverseMode ? ValueAnimator.REVERSE : ValueAnimator.RESTART);
-        animator.start();
-        bucket.add(animator);
+        rewardCard.post(() -> {
+            int availableWidth = root.getWidth() - Math.round(dpToPx(32f));
+            int targetWidth = Math.min(availableWidth, Math.round(dpToPx(440f)));
+            ViewGroup.LayoutParams layoutParams = rewardCard.getLayoutParams();
+            layoutParams.width = Math.max(0, targetWidth);
+            rewardCard.setLayoutParams(layoutParams);
+        });
     }
 
     private float dpToPx(float dp) {
@@ -527,7 +356,5 @@ public class AboutActivity extends PhoneAwareActivity {
     protected void onDestroy() {
         super.onDestroy();
         easterHandler.removeCallbacksAndMessages(null);
-        handler.removeCallbacksAndMessages(null);
-        executor.shutdownNow();
     }
 }

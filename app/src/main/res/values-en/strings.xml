@@ -255,6 +255,7 @@
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Room 123</string>
   <string name="plan_widget_empty_state">No classes to display</string>
+  <string name="plan_widget_preview_refreshed">Refreshed: 10:24</string>
   <string name="about_title">About the app</string>
   <string name="about_project_description_1">
         ZUTnik is an unofficial, lightweight university student assistant for quick access to timetable, grades, student data, and news without clicking through heavy web panels.
@@ -403,8 +404,8 @@
   <string name="home_reset_dialog_no">No</string>
   <string name="home_open_url_error">Invalid URL</string>
   <string name="home_open_error">Error opening: %1$s</string>
-  <string name="offline_mode_label">Offline mode</string>
-  <string name="online_mode_label">Online mode</string>
+  <string name="offline_mode_label">Offline · cached data</string>
+  <string name="online_mode_label">Connection restored</string>
   <string name="app_update_available">A new app version is available</string>
   <string name="app_update_action">Update</string>
   <string name="app_update_dismiss">Not now</string>
@@ -507,4 +508,16 @@
   <string name="about_logo_desc">ZUTnik logo</string>
   <string name="common_close">Close</string>
   <!-- Missing Strings -->
+  <string name="about_play_store_action">Google Play</string>
+  <string name="about_share_action">Share</string>
+  <string name="about_share_subject">ZUTnik</string>
+  <string name="about_share_text">Try ZUTnik – your timetable, grades and essential student tools in one place.\n%1$s</string>
+  <string name="about_share_chooser">Share ZUTnik</string>
+  <string name="easter_achievement_label">HIDDEN ACHIEVEMENT</string>
+  <string name="easter_reward_title">ZUTnik explorer</string>
+  <string name="easter_reward_message">This place does not open by accident. You found it, so this badge stays with you.</string>
+  <string name="easter_discovered_label">DISCOVERED</string>
+  <string name="easter_identifier_label">IDENTIFIER</string>
+  <string name="easter_saved_message">Badge saved on this device</string>
+  <string name="easter_done_action">Keep the badge</string>
 </resources>

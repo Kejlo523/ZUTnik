@@ -175,6 +175,7 @@
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Kajuta 123</string>
   <string name="plan_widget_empty_state">Brak zajęć do pokazania</string>
+  <string name="plan_widget_preview_refreshed">Sprawdzono: 10:24</string>
   <string name="about_title">O tej łajbie</string>
   <string name="about_project_description_1">
         ZUTnik powstał, bo oryginalne mapy były do niczego. Szybko i bez zbędnego balastu.

@@ -26,6 +26,8 @@ public class MainShellActivity extends ZutnikBaseActivity {
     public static final String EXTRA_REQUEST_NOTIF_PERMISSION = "extra_request_notif_permission";
 
     private AppUpdateHelper appUpdateHelper;
+    @Nullable
+    private InAppReviewPrompter inAppReviewPrompter;
 
     private final ActivityResultLauncher<IntentSenderRequest> appUpdateLauncher =
             registerForActivityResult(
@@ -65,6 +67,9 @@ public class MainShellActivity extends ZutnikBaseActivity {
 
         appUpdateHelper = new AppUpdateHelper(this, appUpdateLauncher);
         appUpdateHelper.bindBanner(findViewById(R.id.updateBanner));
+        if (!ZutnikSession.getInstance().isDemoLogin()) {
+            inAppReviewPrompter = new InAppReviewPrompter(this, savedInstanceState == null);
+        }
 
         bottomNavigation = findViewById(R.id.bottomNavigation);
         navigationRail = findViewById(R.id.navigationRail);
@@ -265,6 +270,9 @@ public class MainShellActivity extends ZutnikBaseActivity {
         if (appUpdateHelper != null) {
             appUpdateHelper.onResume();
         }
+        if (inAppReviewPrompter != null) {
+            inAppReviewPrompter.onResume();
+        }
         if (!initialTabApplied && getSupportFragmentManager().getFragments().isEmpty()) {
             switchToTab(MainNavHelper.Screen.HOME, true);
             initialTabApplied = true;
@@ -277,6 +285,9 @@ public class MainShellActivity extends ZutnikBaseActivity {
         if (appUpdateHelper != null) {
             appUpdateHelper.onPause();
         }
+        if (inAppReviewPrompter != null) {
+            inAppReviewPrompter.onPause();
+        }
         super.onPause();
     }
 
@@ -288,6 +299,9 @@ public class MainShellActivity extends ZutnikBaseActivity {
     protected void onDestroy() {
         if (appUpdateHelper != null) {
             appUpdateHelper.onDestroy();
+        }
+        if (inAppReviewPrompter != null) {
+            inAppReviewPrompter.onDestroy();
         }
         MainNavHelper.dismissMoreSheetIfShowing();
         super.onDestroy();

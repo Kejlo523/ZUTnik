@@ -178,6 +178,7 @@
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Аудиторія 123</string>
   <string name="plan_widget_empty_state">Немає занять для відображення</string>
+  <string name="plan_widget_preview_refreshed">Оновлено: 10:24</string>
   <string name="about_title">Про застосунок</string>
   <string name="about_project_description_1">
         ZUTnik створено як неофіційну, легку альтернативу для швидкого перегляду розкладу, оцінок та інформації про навчання в університеті без необхідності переходити через важкі веб-панелі.
