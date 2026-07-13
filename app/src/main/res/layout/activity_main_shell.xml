@@ -17,5 +17,9 @@
         android:clipChildren="true"
         android:clipToPadding="true" />
 
+    <include
+        android:id="@+id/updateBanner"
+        layout="@layout/layout_update_banner" />
+
     <include layout="@layout/include_bottom_navigation" />
 </LinearLayout>

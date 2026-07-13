@@ -279,6 +279,12 @@
   <string name="home_open_error">Помилка відкриття: %1$s</string>
   <string name="offline_mode_label">Офлайн режим</string>
   <string name="online_mode_label">Онлайн режим</string>
+  <string name="app_update_available">Доступна нова версія застосунку</string>
+  <string name="app_update_action">Оновити</string>
+  <string name="app_update_dismiss">Не зараз</string>
+  <string name="app_update_downloading">Завантаження оновлення…</string>
+  <string name="app_update_ready">Оновлення готове до встановлення</string>
+  <string name="app_update_restart">Перезапустити</string>
   <string name="data_status_online_now">Щойно оновлено</string>
   <string name="data_status_cache">Немає даних про оновлення</string>
   <string name="data_status_cache_since">Оновлено %1$s</string>

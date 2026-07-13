@@ -258,6 +258,12 @@
   <string name="theme_lime">Limonkowy Sztorm</string>
   <string name="offline_mode_label">Bez wiatru (Offline)</string>
   <string name="online_mode_label">Na pełnym morzu (Online)</string>
+  <string name="app_update_available">Nova versio de la apliko estas disponebla</string>
+  <string name="app_update_action">Ĝisdatigi</string>
+  <string name="app_update_dismiss">Ne nun</string>
+  <string name="app_update_downloading">Elŝutado de ĝisdatigo…</string>
+  <string name="app_update_ready">Ĝisdatigo pretas por instali</string>
+  <string name="app_update_restart">Restartigi</string>
   <string name="data_status_online_now">Odświeżono przed chwilą</string>
   <string name="data_status_cache">Brak informacji o odświeżeniu</string>
   <string name="data_status_cache_since">Odświeżono %1$s</string>

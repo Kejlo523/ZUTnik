@@ -498,6 +498,12 @@
   <string name="theme_lime">Limonka</string>
   <string name="offline_mode_label">Tryb offline</string>
   <string name="online_mode_label">Tryb online</string>
+  <string name="app_update_available">Dostępna nowa wersja aplikacji</string>
+  <string name="app_update_action">Aktualizuj</string>
+  <string name="app_update_dismiss">Nie teraz</string>
+  <string name="app_update_downloading">Pobieranie aktualizacji…</string>
+  <string name="app_update_ready">Aktualizacja gotowa do instalacji</string>
+  <string name="app_update_restart">Uruchom ponownie</string>
   <string name="data_status_online_now">Odświeżono przed chwilą</string>
   <string name="data_status_cache">Brak informacji o odświeżeniu</string>
   <string name="data_status_cache_since">Odświeżono %1$s</string>

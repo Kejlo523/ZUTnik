@@ -408,6 +408,12 @@
   <string name="home_open_error">Error opening: %1$s</string>
   <string name="offline_mode_label">Offline mode</string>
   <string name="online_mode_label">Online mode</string>
+  <string name="app_update_available">A new app version is available</string>
+  <string name="app_update_action">Update</string>
+  <string name="app_update_dismiss">Not now</string>
+  <string name="app_update_downloading">Downloading update…</string>
+  <string name="app_update_ready">Update ready to install</string>
+  <string name="app_update_restart">Restart</string>
   <string name="data_status_online_now">Refreshed just now</string>
   <string name="data_status_cache">No refresh info</string>
   <string name="data_status_cache_since">Refreshed %1$s</string>

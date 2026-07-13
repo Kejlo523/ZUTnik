@@ -19,6 +19,8 @@ import java.util.List;
 public class TileGridLayout extends ViewGroup {
 
     private static final int COLUMN_COUNT = 4;
+    /** Height as a fraction of cell width — tuned so 2×2 tiles fit title + description. */
+    private static final float CELL_HEIGHT_RATIO = 0.84f;
     private int cellWidth;
     private int cellHeight;
     private int gap = 0;
@@ -519,7 +521,7 @@ public class TileGridLayout extends ViewGroup {
             cellWidth = 0;
         }
 
-        cellHeight = Math.round(cellWidth * 0.78f);
+        cellHeight = Math.round(cellWidth * CELL_HEIGHT_RATIO);
 
         int maxRow = 0;
         for (Tile t : tiles) {

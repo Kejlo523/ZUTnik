@@ -182,7 +182,11 @@ public class TileView extends FrameLayout {
             return;
         }
         float density = getResources().getDisplayMetrics().density;
-        boolean compact = width < 150f * density || height < 132f * density;
+        // Estimate available content height (card margin + vertical padding)
+        float contentHeight = height - (6f + 28f) * density;
+        // icon + margin + title line + desc gap + one desc line
+        float minForDescription = (36f + 22f + 4f + 16f) * density;
+        boolean compact = width < 150f * density || contentHeight < minForDescription;
         textDesc.setVisibility(compact ? GONE : VISIBLE);
         textTitle.setMaxLines(compact ? 2 : 3);
         ViewGroup.MarginLayoutParams iconParams = (ViewGroup.MarginLayoutParams) iconView.getLayoutParams();

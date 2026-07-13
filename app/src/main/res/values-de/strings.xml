@@ -262,6 +262,12 @@
   <string name="theme_lime">Limette</string>
   <string name="offline_mode_label">Offline-Modus</string>
   <string name="online_mode_label">Online-Modus</string>
+  <string name="app_update_available">Eine neue App-Version ist verfügbar</string>
+  <string name="app_update_action">Aktualisieren</string>
+  <string name="app_update_dismiss">Nicht jetzt</string>
+  <string name="app_update_downloading">Update wird heruntergeladen…</string>
+  <string name="app_update_ready">Update ist bereit zur Installation</string>
+  <string name="app_update_restart">Neu starten</string>
   <string name="data_status_online_now">Gerade aktualisiert</string>
   <string name="data_status_cache">Keine Aktualisierungsinfo</string>
   <string name="data_status_cache_since">Aktualisiert %1$s</string>

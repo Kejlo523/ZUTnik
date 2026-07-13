@@ -29,12 +29,23 @@
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
-    <FrameLayout
-        android:id="@+id/fragmentContainer"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:clipChildren="true"
-        android:clipToPadding="true" />
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:id="@+id/fragmentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipChildren="true"
+            android:clipToPadding="true" />
+
+        <include
+            android:id="@+id/updateBanner"
+            layout="@layout/layout_update_banner" />
+    </LinearLayout>
 
 </LinearLayout>

@@ -6,6 +6,9 @@ import android.os.Bundle;
 import android.view.View;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +24,13 @@ public class MainShellActivity extends ZutnikBaseActivity {
 
     public static final String EXTRA_INITIAL_TAB = "extra_initial_tab";
     public static final String EXTRA_REQUEST_NOTIF_PERMISSION = "extra_request_notif_permission";
+
+    private final ActivityResultLauncher<IntentSenderRequest> appUpdateLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartIntentSenderForResult(),
+                    result -> { /* Play handles flexible update state via listener */ });
+
+    private AppUpdateHelper appUpdateHelper;
 
     private BottomNavigationView bottomNavigation;
     private NavigationRailView navigationRail;
@@ -48,6 +58,9 @@ public class MainShellActivity extends ZutnikBaseActivity {
 
         setContentView(R.layout.activity_main_shell);
         ThemeManager.applySystemBars(this);
+
+        appUpdateHelper = new AppUpdateHelper(this, appUpdateLauncher);
+        appUpdateHelper.bindBanner(findViewById(R.id.updateBanner));
 
         bottomNavigation = findViewById(R.id.bottomNavigation);
         navigationRail = findViewById(R.id.navigationRail);
@@ -245,11 +258,22 @@ public class MainShellActivity extends ZutnikBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (appUpdateHelper != null) {
+            appUpdateHelper.onResume();
+        }
         if (!initialTabApplied && getSupportFragmentManager().getFragments().isEmpty()) {
             switchToTab(MainNavHelper.Screen.HOME, true);
             initialTabApplied = true;
         }
         postHandleNotificationPermission();
+    }
+
+    @Override
+    protected void onPause() {
+        if (appUpdateHelper != null) {
+            appUpdateHelper.onPause();
+        }
+        super.onPause();
     }
 
     private void postHandleNotificationPermission() {
@@ -258,6 +282,9 @@ public class MainShellActivity extends ZutnikBaseActivity {
 
     @Override
     protected void onDestroy() {
+        if (appUpdateHelper != null) {
+            appUpdateHelper.onDestroy();
+        }
         MainNavHelper.dismissMoreSheetIfShowing();
         super.onDestroy();
     }

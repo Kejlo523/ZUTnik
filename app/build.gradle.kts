@@ -18,8 +18,8 @@ android {
         applicationId = "pl.kejlo.zutnik"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.08"
+        versionCode = 11
+        versionName = "1.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -63,4 +63,5 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation(libs.play.review)
+    implementation(libs.play.app.update)
 }

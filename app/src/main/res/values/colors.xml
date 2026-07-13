@@ -26,6 +26,8 @@
 
     <color name="offline_bar_bg">#D75A3A</color>
     <color name="online_bar_bg">#24855F</color>
+    <color name="update_bar_bg">#087F73</color>
+    <color name="update_bar_ripple">#33FFFFFF</color>
 
     <color name="plan_time_column_text">#68747D</color>
     <color name="plan_hour_line">#2BDDE3E6</color>
