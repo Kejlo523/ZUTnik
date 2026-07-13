@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="tile_cell_max">140dp</dimen>
+    <dimen name="tile_editor_preview_height">104dp</dimen>
+    <dimen name="tile_editor_tile_width">116dp</dimen>
+    <dimen name="tile_editor_tile_height">88dp</dimen>
 </resources>

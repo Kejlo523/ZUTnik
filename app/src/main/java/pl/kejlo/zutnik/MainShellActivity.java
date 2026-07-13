@@ -25,12 +25,16 @@ public class MainShellActivity extends ZutnikBaseActivity {
     public static final String EXTRA_INITIAL_TAB = "extra_initial_tab";
     public static final String EXTRA_REQUEST_NOTIF_PERMISSION = "extra_request_notif_permission";
 
+    private AppUpdateHelper appUpdateHelper;
+
     private final ActivityResultLauncher<IntentSenderRequest> appUpdateLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.StartIntentSenderForResult(),
-                    result -> { /* Play handles flexible update state via listener */ });
-
-    private AppUpdateHelper appUpdateHelper;
+                    result -> {
+                        if (appUpdateHelper != null) {
+                            appUpdateHelper.onUpdateFlowResult(result.getResultCode());
+                        }
+                    });
 
     private BottomNavigationView bottomNavigation;
     private NavigationRailView navigationRail;

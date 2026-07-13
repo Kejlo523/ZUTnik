@@ -127,6 +127,7 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         WebSettings ws = webView.getSettings();
+        ws.setUserAgentString(ZutnikNetwork.getBrowserUserAgent());
         ws.setJavaScriptEnabled(true);
         ws.setDomStorageEnabled(true);
         ws.setLoadWithOverviewMode(true);

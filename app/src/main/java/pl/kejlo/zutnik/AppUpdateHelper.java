@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.IntentSenderRequest;
@@ -49,6 +50,12 @@ public final class AppUpdateHelper implements InstallStateUpdatedListener {
     @Nullable
     private AppUpdateInfo pendingUpdateInfo;
 
+    private boolean listenerRegistered;
+    private boolean updateFlowStarting;
+    private boolean updateDownloaded;
+    private boolean completionStarting;
+    private int updateInfoRequestGeneration;
+
     public AppUpdateHelper(
             @NonNull AppCompatActivity activity,
             @NonNull ActivityResultLauncher<IntentSenderRequest> updateLauncher) {
@@ -76,16 +83,28 @@ public final class AppUpdateHelper implements InstallStateUpdatedListener {
     }
 
     public void onResume() {
-        appUpdateManager.registerListener(this);
+        if (!listenerRegistered) {
+            appUpdateManager.registerListener(this);
+            listenerRegistered = true;
+        }
         checkForUpdates();
     }
 
     public void onPause() {
-        appUpdateManager.unregisterListener(this);
+        if (listenerRegistered) {
+            appUpdateManager.unregisterListener(this);
+            listenerRegistered = false;
+        }
+        updateInfoRequestGeneration++;
+        pendingUpdateInfo = null;
     }
 
     public void onDestroy() {
-        appUpdateManager.unregisterListener(this);
+        if (listenerRegistered) {
+            appUpdateManager.unregisterListener(this);
+            listenerRegistered = false;
+        }
+        updateInfoRequestGeneration++;
         bannerRoot = null;
         messageView = null;
         actionButton = null;
@@ -93,81 +112,217 @@ public final class AppUpdateHelper implements InstallStateUpdatedListener {
     }
 
     private void checkForUpdates() {
-        appUpdateManager.getAppUpdateInfo().addOnSuccessListener(info -> {
+        requestUpdateInfo(false);
+    }
+
+    private void requestUpdateInfo(boolean startWhenAvailable) {
+        int requestGeneration = ++updateInfoRequestGeneration;
+        pendingUpdateInfo = null;
+
+        appUpdateManager.getAppUpdateInfo()
+                .addOnSuccessListener(activity, info -> {
+                    if (requestGeneration != updateInfoRequestGeneration) {
+                        return;
+                    }
+                    handleUpdateInfo(info, startWhenAvailable);
+                })
+                .addOnFailureListener(activity, error -> {
+                    if (requestGeneration != updateInfoRequestGeneration) {
+                        return;
+                    }
+                    pendingUpdateInfo = null;
+                    if (startWhenAvailable) {
+                        updateFlowStarting = false;
+                        showAvailableBanner();
+                        showUpdateStartFailure();
+                    }
+                });
+    }
+
+    private void handleUpdateInfo(@NonNull AppUpdateInfo info, boolean startWhenAvailable) {
+        int installStatus = info.installStatus();
+        if (installStatus == InstallStatus.DOWNLOADED) {
             pendingUpdateInfo = info;
+            updateDownloaded = true;
+            updateFlowStarting = false;
+            showReadyToInstallBanner();
+            return;
+        }
 
-            if (info.installStatus() == InstallStatus.DOWNLOADED) {
-                showReadyToInstallBanner();
-                return;
+        if (installStatus == InstallStatus.PENDING
+                || installStatus == InstallStatus.DOWNLOADING) {
+            pendingUpdateInfo = info;
+            updateDownloaded = false;
+            updateFlowStarting = false;
+            showDownloadingBanner();
+            return;
+        }
+
+        if (installStatus == InstallStatus.INSTALLING) {
+            pendingUpdateInfo = info;
+            updateDownloaded = false;
+            updateFlowStarting = false;
+            showInstallingBanner();
+            return;
+        }
+
+        if (installStatus == InstallStatus.INSTALLED) {
+            pendingUpdateInfo = null;
+            updateDownloaded = false;
+            updateFlowStarting = false;
+            completionStarting = false;
+            hideBanner();
+            return;
+        }
+
+        boolean updateAvailable = info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE;
+        boolean flexibleAllowed = info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE);
+        if (!updateAvailable || !flexibleAllowed) {
+            pendingUpdateInfo = null;
+            updateDownloaded = false;
+            updateFlowStarting = false;
+            hideBanner();
+            if (startWhenAvailable && updateAvailable) {
+                showUpdateStartFailure();
             }
+            return;
+        }
 
-            if (info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
-                    && info.installStatus() == InstallStatus.DOWNLOADING) {
-                showDownloadingBanner();
-                return;
-            }
-
-            if (info.updateAvailability() != UpdateAvailability.UPDATE_AVAILABLE
-                    || !info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
-                hideBanner();
-                return;
-            }
-
-            if (isSnoozed()) {
-                hideBanner();
-                return;
-            }
-
+        pendingUpdateInfo = info;
+        updateDownloaded = false;
+        if (startWhenAvailable) {
+            startUpdateFlow(info, false);
+        } else if (isSnoozed()) {
+            updateFlowStarting = false;
+            hideBanner();
+        } else {
+            updateFlowStarting = false;
             showAvailableBanner();
-        });
+        }
     }
 
     @Override
     public void onStateUpdate(@NonNull InstallState state) {
         switch (state.installStatus()) {
+            case InstallStatus.PENDING:
             case InstallStatus.DOWNLOADING:
+                updateDownloaded = false;
+                updateFlowStarting = false;
                 showDownloadingBanner();
                 break;
             case InstallStatus.DOWNLOADED:
+                updateDownloaded = true;
+                updateFlowStarting = false;
                 showReadyToInstallBanner();
+                break;
+            case InstallStatus.INSTALLING:
+                updateDownloaded = false;
+                updateFlowStarting = false;
+                showInstallingBanner();
+                break;
+            case InstallStatus.INSTALLED:
+                updateDownloaded = false;
+                updateFlowStarting = false;
+                completionStarting = false;
+                hideBanner();
                 break;
             case InstallStatus.CANCELED:
             case InstallStatus.FAILED:
-                if (!isSnoozed()) {
-                    showAvailableBanner();
-                } else {
-                    hideBanner();
+                pendingUpdateInfo = null;
+                updateDownloaded = false;
+                updateFlowStarting = false;
+                completionStarting = false;
+                if (state.installStatus() == InstallStatus.FAILED) {
+                    showUpdateStartFailure();
                 }
+                requestUpdateInfo(false);
                 break;
             default:
                 break;
         }
     }
 
+    public void onUpdateFlowResult(int resultCode) {
+        updateFlowStarting = false;
+        pendingUpdateInfo = null;
+
+        if (resultCode == Activity.RESULT_OK) {
+            showDownloadingBanner();
+        } else {
+            showAvailableBanner();
+            if (resultCode
+                    == com.google.android.play.core.install.model.ActivityResult.RESULT_IN_APP_UPDATE_FAILED) {
+                showUpdateStartFailure();
+            }
+        }
+
+        requestUpdateInfo(false);
+    }
+
     private void onActionClicked() {
+        if (updateFlowStarting || completionStarting) {
+            return;
+        }
+
+        if (updateDownloaded) {
+            completeDownloadedUpdate();
+            return;
+        }
+
         AppUpdateInfo info = pendingUpdateInfo;
-        if (info == null) {
+        if (info == null
+                || info.updateAvailability() != UpdateAvailability.UPDATE_AVAILABLE
+                || !info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
+            requestFreshInfoAndStart();
             return;
         }
 
-        if (info.installStatus() == InstallStatus.DOWNLOADED) {
-            appUpdateManager.completeUpdate();
+        startUpdateFlow(info, true);
+    }
+
+    private void requestFreshInfoAndStart() {
+        updateFlowStarting = true;
+        showStartingBanner();
+        requestUpdateInfo(true);
+    }
+
+    private void startUpdateFlow(@NonNull AppUpdateInfo info, boolean retryWithFreshInfo) {
+        updateFlowStarting = true;
+        pendingUpdateInfo = null;
+        showStartingBanner();
+
+        boolean started;
+        try {
+            started = appUpdateManager.startUpdateFlowForResult(
+                    info,
+                    updateLauncher,
+                    AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build());
+        } catch (RuntimeException error) {
+            started = false;
+        }
+
+        if (started) {
             return;
         }
 
-        if (info.updateAvailability() != UpdateAvailability.UPDATE_AVAILABLE
-                && info.updateAvailability() != UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
-            return;
+        updateFlowStarting = false;
+        if (retryWithFreshInfo) {
+            requestFreshInfoAndStart();
+        } else {
+            showAvailableBanner();
+            showUpdateStartFailure();
         }
+    }
 
-        if (!info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
-            return;
-        }
-
-        appUpdateManager.startUpdateFlowForResult(
-                info,
-                updateLauncher,
-                AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build());
+    private void completeDownloadedUpdate() {
+        completionStarting = true;
+        showInstallingBanner();
+        appUpdateManager.completeUpdate().addOnFailureListener(activity, error -> {
+            completionStarting = false;
+            updateDownloaded = true;
+            showReadyToInstallBanner();
+            showUpdateStartFailure();
+        });
     }
 
     private void showAvailableBanner() {
@@ -204,6 +359,38 @@ public final class AppUpdateHelper implements InstallStateUpdatedListener {
         }
     }
 
+    private void showStartingBanner() {
+        if (bannerRoot == null) {
+            return;
+        }
+        bannerRoot.setVisibility(View.VISIBLE);
+        if (messageView != null) {
+            messageView.setText(R.string.app_update_starting);
+        }
+        if (actionButton != null) {
+            actionButton.setVisibility(View.GONE);
+        }
+        if (dismissButton != null) {
+            dismissButton.setVisibility(View.GONE);
+        }
+    }
+
+    private void showInstallingBanner() {
+        if (bannerRoot == null) {
+            return;
+        }
+        bannerRoot.setVisibility(View.VISIBLE);
+        if (messageView != null) {
+            messageView.setText(R.string.app_update_installing);
+        }
+        if (actionButton != null) {
+            actionButton.setVisibility(View.GONE);
+        }
+        if (dismissButton != null) {
+            dismissButton.setVisibility(View.GONE);
+        }
+    }
+
     private void showReadyToInstallBanner() {
         if (bannerRoot == null) {
             return;
@@ -230,6 +417,10 @@ public final class AppUpdateHelper implements InstallStateUpdatedListener {
     private boolean isSnoozed() {
         long snoozeUntil = prefs.getLong(KEY_SNOOZE_UNTIL, 0L);
         return snoozeUntil > System.currentTimeMillis();
+    }
+
+    private void showUpdateStartFailure() {
+        Toast.makeText(activity, R.string.app_update_start_failed, Toast.LENGTH_SHORT).show();
     }
 
     private void hideBanner() {

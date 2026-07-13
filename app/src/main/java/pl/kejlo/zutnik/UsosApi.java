@@ -85,7 +85,7 @@ public final class UsosApi {
                 .url(fullUrl)
                 .get()
                 .header("Authorization", authHeader)
-                .header("User-Agent", "ZUTnik-Android/2.0")
+                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
@@ -136,7 +136,7 @@ public final class UsosApi {
                 .url(fullUrl)
                 .get()
                 .header("Authorization", authHeader)
-                .header("User-Agent", "ZUTnik-Android/2.0")
+                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
@@ -168,7 +168,7 @@ public final class UsosApi {
                 .url(fullUrl)
                 .get()
                 .header("Authorization", authHeader)
-                .header("User-Agent", "ZUTnik-Android/2.0")
+                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
