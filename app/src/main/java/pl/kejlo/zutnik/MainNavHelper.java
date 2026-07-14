@@ -401,9 +401,9 @@ public class MainNavHelper {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 if (isRail) {
                     view.setPadding(
-                            baseLeft,
+                            baseLeft + bars.left,
                             baseTop,
-                            baseRight + bars.right,
+                            baseRight,
                             baseBottom);
                 } else {
                     view.setPadding(
@@ -418,20 +418,24 @@ public class MainNavHelper {
         }
 
         if (shellNav != null) {
+            final int baseLeft = shellNav.getPaddingLeft();
+            final int baseTop = shellNav.getPaddingTop();
+            final int baseRight = shellNav.getPaddingRight();
+            final int baseBottom = shellNav.getPaddingBottom();
             ViewCompat.setOnApplyWindowInsetsListener(shellNav, (view, insets) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 if (isRail) {
                     view.setPadding(
-                            bars.left,
-                            bars.top,
-                            view.getPaddingRight(),
-                            bars.bottom);
+                            baseLeft,
+                            baseTop + bars.top,
+                            baseRight + bars.right,
+                            baseBottom + bars.bottom);
                 } else {
                     view.setPadding(
-                            view.getPaddingLeft(),
-                            view.getPaddingTop(),
-                            view.getPaddingRight(),
-                            bars.bottom);
+                            baseLeft,
+                            baseTop,
+                            baseRight,
+                            baseBottom + bars.bottom);
                 }
                 return insets;
             });

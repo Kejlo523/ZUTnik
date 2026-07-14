@@ -11,23 +11,6 @@
     android:fitsSystemWindows="false"
     android:orientation="horizontal">
 
-    <com.google.android.material.navigationrail.NavigationRailView
-        android:id="@+id/navigationRail"
-        android:layout_width="68dp"
-        android:layout_height="match_parent"
-        android:background="@drawable/bg_bottom_nav"
-        android:elevation="0dp"
-        app:itemActiveIndicatorStyle="@style/Widget.ZUTnik.Navigation.ActiveIndicator"
-        app:itemIconSize="20dp"
-        app:itemIconTint="@color/bottom_nav_item_color"
-        app:itemPaddingBottom="5dp"
-        app:itemPaddingTop="5dp"
-        app:itemTextAppearanceActive="@style/TextAppearance.ZUTnik.Navigation.Active"
-        app:itemTextAppearanceInactive="@style/TextAppearance.ZUTnik.Navigation.Inactive"
-        app:itemTextColor="@color/bottom_nav_item_color"
-        app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_menu" />
-
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
@@ -46,4 +29,23 @@
             android:id="@+id/updateBanner"
             layout="@layout/layout_update_banner" />
     </LinearLayout>
+
+    <com.google.android.material.navigationrail.NavigationRailView
+        android:id="@+id/navigationRail"
+        android:layout_width="68dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_bottom_nav"
+        android:elevation="0dp"
+        app:contentMarginTop="0dp"
+        app:itemActiveIndicatorStyle="@style/Widget.ZUTnik.Navigation.ActiveIndicator"
+        app:itemIconSize="20dp"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemMinHeight="48dp"
+        app:itemPaddingBottom="5dp"
+        app:itemPaddingTop="5dp"
+        app:itemTextAppearanceActive="@style/TextAppearance.ZUTnik.Navigation.Active"
+        app:itemTextAppearanceInactive="@style/TextAppearance.ZUTnik.Navigation.Inactive"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu" />
 </LinearLayout>

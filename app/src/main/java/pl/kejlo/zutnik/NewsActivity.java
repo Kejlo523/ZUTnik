@@ -60,10 +60,10 @@ public class NewsActivity extends ZutnikBaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        repo = new NewsRepository(this);
         ThemeManager.applyTheme(this);
+        super.onCreate(savedInstanceState);
         ThemeManager.applySystemBars(this);
+        repo = new NewsRepository(this);
 
         openLatestOnLoad = getIntent().getBooleanExtra("EXTRA_OPEN_LATEST", false);
 
@@ -82,6 +82,7 @@ public class NewsActivity extends ZutnikBaseActivity {
         btnNewsRefresh = content.findViewById(R.id.btnNewsRefresh);
 
         listNews.setLayoutManager(new LinearLayoutManager(this));
+        listNews.setItemAnimator(null);
 
         adapter = new NewsAdapter(this);
         listNews.setAdapter(adapter);
