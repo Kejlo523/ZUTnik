@@ -30,6 +30,7 @@ import androidx.fragment.app.Fragment;
 import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -177,6 +178,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     private SharedPreferences prefs;
     private Set<String> hiddenSubjectKeys = new HashSet<>();
+    private final Set<String> achievementViewedModes = new HashSet<>();
 
     private PlanRepository.SearchParams currentSearchQuery = null;
 
@@ -495,8 +497,6 @@ public class PlanTabFragment extends ZutnikTabFragment {
         if (viewPager != null) {
             setupHeightForViewPager();
             pagerAdapter = new PlanPagerAdapter(requireContext());
-            viewPager.setAdapter(pagerAdapter);
-            viewPager.setCurrentItem(VP_START_POSITION, false);
             viewPager.setOffscreenPageLimit(ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT);
             viewPager.setNestedScrollingEnabled(false);
             View pagerChild = viewPager.getChildAt(0);
@@ -531,6 +531,22 @@ public class PlanTabFragment extends ZutnikTabFragment {
                             updateFixedWeekHeaders(Collections.emptyList());
                         }
                     }
+                }
+            });
+
+            ViewTreeObserver pagerObserver = viewPager.getViewTreeObserver();
+            pagerObserver.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    if (viewPager == null || viewPager.getWidth() <= 0) {
+                        return true;
+                    }
+                    ViewTreeObserver observer = viewPager.getViewTreeObserver();
+                    if (observer.isAlive()) {
+                        observer.removeOnPreDrawListener(this);
+                    }
+                    attachMeasuredPlanPagerAdapter();
+                    return false;
                 }
             });
         }
@@ -602,6 +618,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
         loadPlanForCurrentMode();
         runIntroAnimations();
+        achievementViewedModes.add(viewModeId);
+        handler.postDelayed(this::maybeUnlockAmbientPlanAchievement, 900L);
     }
 
     private void setupFab() {
@@ -751,13 +769,26 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     @Override
     public void onDestroyView() {
-        super.onDestroyView();
         nowLineHandler.removeCallbacks(nowLineRunnable);
         handler.removeCallbacks(resumePlanRecoveryRunnable);
         if (mRefreshAnimator != null) {
             mRefreshAnimator.cancel();
             mRefreshAnimator = null;
         }
+        if (viewPager != null) {
+            viewPager.setAdapter(null);
+        }
+        pagerAdapter = null;
+        pagerRecyclerView = null;
+        super.onDestroyView();
+    }
+
+    private void attachMeasuredPlanPagerAdapter() {
+        if (!isAdded() || viewPager == null || pagerAdapter == null || viewPager.getAdapter() != null) {
+            return;
+        }
+        viewPager.setAdapter(pagerAdapter);
+        viewPager.setCurrentItem(VP_START_POSITION, false);
     }
 
     @Override
@@ -897,6 +928,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 }
                 loadPlanForCurrentMode();
             }
+            recordViewedPlanMode(newMode);
         };
 
         btnViewDay.setOnClickListener(modeClick);
@@ -1554,11 +1586,72 @@ public class PlanTabFragment extends ZutnikTabFragment {
         currentSearchQuery.category = categoryKey;
         currentSearchQuery.query = query;
 
+        boolean revealedAchievement = maybeUnlockOwnAlbumAchievement(categoryKey, query);
+
         planCache.clear();
         loadPlanForCurrentMode();
 
-        String msg = getString(R.string.plan_toast_search_prefix, categoryLabel, query);
-        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+        if (!revealedAchievement) {
+            String msg = getString(R.string.plan_toast_search_prefix, categoryLabel, query);
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean maybeUnlockOwnAlbumAchievement(String categoryKey, String query) {
+        String ownStudentNumber = ZutnikSession.getInstance(requireContext()).getStudentNumber();
+        if (!AchievementManager.isOwnAlbumSearch(categoryKey, query, ownStudentNumber)) {
+            return false;
+        }
+
+        return unlockAndRevealAchievement(AchievementManager.Achievement.OWN_ALBUM, 220L);
+    }
+
+    private void maybeUnlockAmbientPlanAchievement() {
+        if (!isAdded() || getView() == null) {
+            return;
+        }
+        if (AchievementManager.isNightPlanVisit(LocalTime.now())
+                && unlockAndRevealAchievement(AchievementManager.Achievement.NIGHT_PLAN, 120L)) {
+            return;
+        }
+        if (!NetworkStatusHelper.isNetworkAvailable(requireContext())) {
+            unlockAndRevealAchievement(AchievementManager.Achievement.OFFLINE_PLAN, 120L);
+        }
+    }
+
+    private void recordViewedPlanMode(ViewMode mode) {
+        if (mode == null) {
+            return;
+        }
+        achievementViewedModes.add(mode.getId());
+        if (AchievementManager.hasViewedAllPlanModes(achievementViewedModes)) {
+            unlockAndRevealAchievement(AchievementManager.Achievement.FULL_VIEW, 180L);
+        }
+    }
+
+    private boolean unlockAndRevealAchievement(
+            AchievementManager.Achievement achievement,
+            long delayMs) {
+        if (!isAdded()) {
+            return false;
+        }
+        AchievementManager.UnlockResult result = AchievementManager.unlock(requireContext(), achievement);
+        if (!result.newlyUnlocked) {
+            return false;
+        }
+
+        Runnable reveal = () -> {
+            if (isAdded()) {
+                AchievementRewardDialog.show(requireActivity(), result.record);
+            }
+        };
+        View root = getView();
+        if (root != null) {
+            root.postDelayed(reveal, delayMs);
+        } else {
+            handler.postDelayed(reveal, delayMs);
+        }
+        return true;
     }
 
     private String resolveSearchCategoryLabel(String categoryKey) {
@@ -1780,7 +1873,6 @@ public class PlanTabFragment extends ZutnikTabFragment {
                         0,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         1f);
-                dayLp.setMargins(dpToPx(1), 0, dpToPx(1), 0);
                 dayColumn.setLayoutParams(dayLp);
 
                 FrameLayoutWithChildren dayBody = new FrameLayoutWithChildren(context);
@@ -1854,7 +1946,14 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 if (i > 0) {
                     LocalDate prevDate = dayColumnDates.get(i - 1);
                     LocalDate curDate = dayColumnDates.get(i);
-                    addSessionMarkerLines(columnsContainer, prevDate, curDate, columnHeight);
+                    boolean hasSessionMarker = addSessionMarkerLines(
+                            columnsContainer,
+                            prevDate,
+                            curDate,
+                            columnHeight);
+                    if (!hasSessionMarker) {
+                        columnsContainer.addView(buildWeekColumnDivider(columnHeight));
+                    }
                 }
                 columnsContainer.addView(dayColumnViews.get(i));
             }
@@ -2481,11 +2580,23 @@ public class PlanTabFragment extends ZutnikTabFragment {
         if (line == null) {
             line = new NowLineView(requireContext());
             line.setTag("NOW_LINE");
+            line.setLongClickable(true);
+            line.setOnLongClickListener(v -> {
+                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                unlockAndRevealAchievement(AchievementManager.Achievement.TIMEKEEPER, 100L);
+                return true;
+            });
             parent.addView(line);
         } else if (!(line instanceof NowLineView)) {
             parent.removeView(line);
             line = new NowLineView(requireContext());
             line.setTag("NOW_LINE");
+            line.setLongClickable(true);
+            line.setOnLongClickListener(v -> {
+                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                unlockAndRevealAchievement(AchievementManager.Achievement.TIMEKEEPER, 100L);
+                return true;
+            });
             parent.addView(line);
         }
 
@@ -3269,12 +3380,16 @@ public class PlanTabFragment extends ZutnikTabFragment {
      * Adds one shared marker separator for the gap between prevDate and curDate.
      * End markers are placed first (top), start markers next (bottom).
      */
-    private void addSessionMarkerLines(LinearLayout container, LocalDate prevDate, LocalDate curDate, int columnHeight) {
+    private boolean addSessionMarkerLines(
+            LinearLayout container,
+            LocalDate prevDate,
+            LocalDate curDate,
+            int columnHeight) {
         if (sessionDates == null || sessionDates.isEmpty()) {
-            return;
+            return false;
         }
         if (prevDate == null || curDate == null) {
-            return;
+            return false;
         }
 
         List<MarkerSpec> markers = new ArrayList<>();
@@ -3326,10 +3441,22 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
 
         if (markers.isEmpty()) {
-            return;
+            return false;
         }
 
         container.addView(buildCombinedMarkerLine(markers, columnHeight));
+        return true;
+    }
+
+    private View buildWeekColumnDivider(int columnHeight) {
+        View divider = new View(requireContext());
+        int dividerWidth = dpToPx(1);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dividerWidth, columnHeight);
+        params.setMargins(0, 0, -dividerWidth, 0);
+        divider.setLayoutParams(params);
+        divider.setBackgroundColor(ThemeManager.resolveColor(requireContext(), R.attr.mzPlanHourLine));
+        divider.setZ(dpToPx(1));
+        return divider;
     }
 
     private String buildPeriodMarkerLabel(PlanRepository.SessionPeriod period, boolean start) {
@@ -3395,7 +3522,13 @@ public class PlanTabFragment extends ZutnikTabFragment {
         separator.setClipChildren(false);
         separator.setClipToPadding(false);
         LinearLayout.LayoutParams sepLp = new LinearLayout.LayoutParams(markerSide, columnHeight);
+        int leadingOverlap = markerSide / 2;
+        int trailingOverlap = markerSide - leadingOverlap;
+        sepLp.setMargins(-leadingOverlap, 0, -trailingOverlap, 0);
         separator.setLayoutParams(sepLp);
+        separator.setZ(dpToPx(2));
+
+        addSessionMarkerGridNotches(separator, markerSide);
 
         View line = new View(requireContext());
         FrameLayout.LayoutParams lineLp = new FrameLayout.LayoutParams(
@@ -3449,6 +3582,36 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
 
         return separator;
+    }
+
+    private void addSessionMarkerGridNotches(FrameLayout separator, int markerSide) {
+        int centerGap = dpToPx(3);
+        int segmentWidth = Math.max(0, markerSide / 2 - centerGap);
+        if (segmentWidth == 0) {
+            return;
+        }
+
+        int lineColor = ThemeManager.resolveColor(requireContext(), R.attr.mzPlanHourLine);
+        for (int hour = START_HOUR; hour < END_HOUR; hour++) {
+            int minutesFromStart = (hour - START_HOUR) * 60;
+            int top = Math.round((minutesFromStart / 60f) * dpToPx(HOUR_HEIGHT_DP));
+
+            View left = new View(requireContext());
+            FrameLayout.LayoutParams leftParams = new FrameLayout.LayoutParams(segmentWidth, dpToPx(1));
+            leftParams.gravity = Gravity.TOP | Gravity.START;
+            leftParams.topMargin = top;
+            left.setLayoutParams(leftParams);
+            left.setBackgroundColor(lineColor);
+            separator.addView(left);
+
+            View right = new View(requireContext());
+            FrameLayout.LayoutParams rightParams = new FrameLayout.LayoutParams(segmentWidth, dpToPx(1));
+            rightParams.gravity = Gravity.TOP | Gravity.END;
+            rightParams.topMargin = top;
+            right.setLayoutParams(rightParams);
+            right.setBackgroundColor(lineColor);
+            separator.addView(right);
+        }
     }
 
     private TextView buildMarkerBadge(
@@ -3963,7 +4126,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                     .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                     .setIncludePad(false)
                     .setLineSpacing(0f, 0.92f)
-                    .setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE)
+                    .setBreakStrategy(android.graphics.text.LineBreaker.BREAK_STRATEGY_SIMPLE)
                     .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE)
                     .setMaxLines(safeMaxLines)
                     .setEllipsize(TextUtils.TruncateAt.END)
@@ -3978,7 +4141,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                     .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                     .setIncludePad(false)
                     .setLineSpacing(0f, 0.92f)
-                    .setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE)
+                    .setBreakStrategy(android.graphics.text.LineBreaker.BREAK_STRATEGY_SIMPLE)
                     .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE)
                     .setMaxLines(Math.max(1, maxLines))
                     .setEllipsize(TextUtils.TruncateAt.END)

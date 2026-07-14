@@ -1,12 +1,9 @@
 package pl.kejlo.zutnik;
 
 import android.animation.ValueAnimator;
-import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,24 +12,15 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.GridLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import java.util.List;
 
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+import com.google.android.material.card.MaterialCardView;
 
 public class AboutActivity extends PhoneAwareActivity {
 
@@ -45,14 +33,14 @@ public class AboutActivity extends PhoneAwareActivity {
 
     private TextView aboutVersion;
     private ImageView aboutLogo;
+    private View achievementsSection;
+    private GridLayout achievementsGrid;
+    private TextView achievementsProgress;
 
     private final Handler easterHandler = new Handler(Looper.getMainLooper());
 
     private static final long EASTER_HOLD_DURATION_MS = 5_000L;
     private static final float EASTER_HOLD_MAX_SCALE = 1.14f;
-    private static final String PREFS_EASTER_EGG = "about_easter_egg";
-    private static final String KEY_EASTER_DISCOVERED_AT = "discovered_at";
-    private static final String KEY_EASTER_DISCOVERY_CODE = "discovery_code";
 
     private Runnable easterUnlockRunnable;
     private ValueAnimator easterHoldAnimator;
@@ -73,6 +61,9 @@ public class AboutActivity extends PhoneAwareActivity {
         drawerContentRoot = findViewById(R.id.drawerContentRoot);
         aboutVersion = findViewById(R.id.aboutVersion);
         aboutLogo = findViewById(R.id.aboutLogo);
+        achievementsSection = findViewById(R.id.achievementsSection);
+        achievementsGrid = findViewById(R.id.achievementsGrid);
+        achievementsProgress = findViewById(R.id.achievementsProgress);
         easterTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
         setupUI();
@@ -111,6 +102,7 @@ public class AboutActivity extends PhoneAwareActivity {
         });
 
         setupEasterEggHold();
+        renderAchievements();
     }
     private void openUrl(String url, String title) {
         try {
@@ -158,7 +150,11 @@ public class AboutActivity extends PhoneAwareActivity {
             easterUnlockedFromHold = true;
             cancelHoldAnimation(false);
             aboutLogo.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-            showEasterEggDialog();
+            AchievementManager.UnlockResult result = AchievementManager.unlock(
+                    this,
+                    AchievementManager.Achievement.EXPLORER);
+            AchievementRewardDialog.show(this, result.record);
+            renderAchievements();
             aboutLogo.animate()
                     .scaleX(1f)
                     .scaleY(1f)
@@ -235,121 +231,96 @@ public class AboutActivity extends PhoneAwareActivity {
         }
     }
 
-    private void showEasterEggDialog() {
-        SharedPreferences rewardPreferences = getSharedPreferences(PREFS_EASTER_EGG, MODE_PRIVATE);
-        long discoveredAt = rewardPreferences.getLong(KEY_EASTER_DISCOVERED_AT, 0L);
-        String discoveryCode = rewardPreferences.getString(KEY_EASTER_DISCOVERY_CODE, null);
-        if (discoveredAt <= 0L || discoveryCode == null || discoveryCode.isEmpty()) {
-            discoveredAt = System.currentTimeMillis();
-            discoveryCode = String.format(
-                    Locale.ROOT,
-                    "ZN-%04X",
-                    new SecureRandom().nextInt(0x10000));
-            rewardPreferences.edit()
-                    .putLong(KEY_EASTER_DISCOVERED_AT, discoveredAt)
-                    .putString(KEY_EASTER_DISCOVERY_CODE, discoveryCode)
-                    .apply();
+    private void renderAchievements() {
+        if (achievementsSection == null || achievementsGrid == null || achievementsProgress == null) {
+            return;
         }
 
-        Dialog dialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_about_easter_egg);
-        dialog.setCanceledOnTouchOutside(true);
-
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        List<AchievementManager.Record> records = AchievementManager.getAll(this);
+        int unlockedCount = 0;
+        for (AchievementManager.Record record : records) {
+            if (record.isUnlocked()) {
+                unlockedCount++;
+            }
         }
 
-        View root = dialog.findViewById(R.id.easterRoot);
-        View rewardCard = dialog.findViewById(R.id.easterRewardCard);
-        View accentLine = dialog.findViewById(R.id.easterAccentLine);
-        ImageButton closeButton = dialog.findViewById(R.id.easterCloseButton);
-        ImageView centerLogo = dialog.findViewById(R.id.easterCenterLogo);
-        TextView discoveryDate = dialog.findViewById(R.id.easterDiscoveryDate);
-        TextView discoveryCodeView = dialog.findViewById(R.id.easterDiscoveryCode);
-        View doneButton = dialog.findViewById(R.id.easterDoneButton);
+        achievementsGrid.removeAllViews();
+        if (unlockedCount == 0) {
+            achievementsSection.setVisibility(View.GONE);
+            return;
+        }
 
-        Locale locale = getResources().getConfiguration().getLocales().get(0);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMM yyyy", locale);
-        discoveryDate.setText(Instant.ofEpochMilli(discoveredAt)
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate()
-                .format(formatter));
-        discoveryCodeView.setText(discoveryCode);
+        achievementsSection.setVisibility(View.VISIBLE);
+        achievementsProgress.setText(getString(
+                R.string.achievements_progress,
+                unlockedCount,
+                records.size()));
 
-        root.setOnClickListener(v -> dialog.dismiss());
-        rewardCard.setOnClickListener(v -> { });
-        closeButton.setOnClickListener(v -> dialog.dismiss());
-        doneButton.setOnClickListener(v -> {
-            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-            dialog.dismiss();
-        });
+        int primary = ThemeManager.resolveColor(this, R.attr.mzPrimary);
+        int muted = ThemeManager.resolveColor(this, R.attr.mzMuted);
+        int border = ThemeManager.resolveColor(this, R.attr.mzBorderSoft);
+        int columns = getResources().getConfiguration().screenWidthDp >= 600 ? 3 : 2;
+        achievementsGrid.setColumnCount(columns);
 
-        rewardCard.setAlpha(0f);
-        rewardCard.setTranslationY(dpToPx(28f));
-        rewardCard.setScaleX(0.98f);
-        rewardCard.setScaleY(0.98f);
-        centerLogo.setScaleX(0.82f);
-        centerLogo.setScaleY(0.82f);
-        centerLogo.setRotation(-8f);
-        accentLine.setPivotX(0f);
-        accentLine.setScaleX(0f);
-        doneButton.setAlpha(0f);
-        doneButton.setTranslationY(dpToPx(10f));
+        for (int index = 0; index < records.size(); index++) {
+            AchievementManager.Record record = records.get(index);
+            View item = getLayoutInflater().inflate(R.layout.item_achievement, achievementsGrid, false);
+            MaterialCardView card = item.findViewById(R.id.achievementCard);
+            ImageView icon = item.findViewById(R.id.achievementIcon);
+            TextView title = item.findViewById(R.id.achievementTitle);
+            TextView meta = item.findViewById(R.id.achievementMeta);
 
-        dialog.setOnShowListener(ignored -> {
-            DecelerateInterpolator interpolator = new DecelerateInterpolator();
-            rewardCard.animate()
+            AchievementManager.Achievement achievement = record.achievement;
+            boolean unlocked = record.isUnlocked();
+            title.setText(achievement.titleRes);
+            icon.setImageResource(achievement.iconRes);
+            icon.setContentDescription(getString(achievement.titleRes));
+            icon.setImageTintList(null);
+
+            if (unlocked) {
+                meta.setText(R.string.achievement_tile_unlocked);
+                card.setStrokeColor(primary);
+                icon.setAlpha(1f);
+            } else {
+                meta.setText(R.string.achievement_tile_locked);
+                card.setStrokeColor(border);
+                icon.setAlpha(0.34f);
+                title.setAlpha(0.68f);
+                meta.setTextColor(muted);
+            }
+
+            card.setClickable(true);
+            card.setFocusable(true);
+            card.setOnClickListener(v -> AchievementDetailsDialog.show(this, record));
+
+            GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams();
+            layoutParams.width = 0;
+            layoutParams.height = dpToPx(164);
+            layoutParams.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            layoutParams.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+            item.setLayoutParams(layoutParams);
+
+            item.setAlpha(0f);
+            item.setTranslationY(dpToPx(8));
+            achievementsGrid.addView(item);
+            item.animate()
                     .alpha(1f)
                     .translationY(0f)
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(420L)
-                    .setInterpolator(interpolator)
+                    .setStartDelay(index * 55L)
+                    .setDuration(220L)
                     .start();
-            centerLogo.animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .rotation(0f)
-                    .setStartDelay(90L)
-                    .setDuration(480L)
-                    .setInterpolator(interpolator)
-                    .start();
-            accentLine.animate()
-                    .scaleX(1f)
-                    .setStartDelay(120L)
-                    .setDuration(520L)
-                    .setInterpolator(interpolator)
-                    .start();
-            doneButton.animate()
-                    .alpha(1f)
-                    .translationY(0f)
-                    .setStartDelay(220L)
-                    .setDuration(320L)
-                    .setInterpolator(interpolator)
-                    .start();
-        });
-
-        dialog.show();
-        rewardCard.post(() -> {
-            int availableWidth = root.getWidth() - Math.round(dpToPx(32f));
-            int targetWidth = Math.min(availableWidth, Math.round(dpToPx(440f)));
-            ViewGroup.LayoutParams layoutParams = rewardCard.getLayoutParams();
-            layoutParams.width = Math.max(0, targetWidth);
-            rewardCard.setLayoutParams(layoutParams);
-        });
+        }
     }
 
-    private float dpToPx(float dp) {
-        return dp * getResources().getDisplayMetrics().density;
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         ThemeManager.applySystemBars(this);
+        renderAchievements();
     }
 
     @Override
