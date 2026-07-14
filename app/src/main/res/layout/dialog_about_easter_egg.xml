@@ -51,6 +51,7 @@
                         android:background="#3BC7B8" />
 
                     <TextView
+                        android:id="@+id/easterAchievementLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_easter_reward_label"
@@ -72,6 +73,7 @@
                         android:src="@drawable/ic_zut_logo_inapp" />
 
                     <TextView
+                        android:id="@+id/easterRewardTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="22dp"
@@ -82,6 +84,7 @@
                         android:textSize="26sp" />
 
                     <TextView
+                        android:id="@+id/easterRewardMessage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -159,6 +162,7 @@
                     </LinearLayout>
 
                     <TextView
+                        android:id="@+id/easterSavedMessage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="22dp"

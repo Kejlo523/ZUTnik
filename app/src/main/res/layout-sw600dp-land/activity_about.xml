@@ -411,6 +411,8 @@
                     android:textSize="12sp"
                     android:alpha="0.5"/>
 
+                <include layout="@layout/include_achievements_section" />
+
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </LinearLayout>
