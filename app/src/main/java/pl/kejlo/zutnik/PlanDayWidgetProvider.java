@@ -8,6 +8,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -74,6 +75,21 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
             }
             // Schedule next refresh
             schedulePeriodicRefresh(context);
+            result.finish();
+        });
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(
+            Context context,
+            AppWidgetManager appWidgetManager,
+            int appWidgetId,
+            Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+        final PendingResult result = goAsync();
+        executor.execute(() -> {
+            updateOneWidget(context, appWidgetManager, appWidgetId);
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetList);
             result.finish();
         });
     }
@@ -241,14 +257,24 @@ public class PlanDayWidgetProvider extends AppWidgetProvider {
         if (!showList && emptyStateText.equals(subtitleText)) {
             showSubtitle = false;
         }
-        views.setViewVisibility(R.id.widgetSubtitle, showSubtitle ? android.view.View.VISIBLE : android.view.View.GONE);
+        views.setViewVisibility(R.id.widgetStatusRow, showSubtitle ? android.view.View.VISIBLE : android.view.View.GONE);
         views.setViewVisibility(R.id.widgetList, showList ? android.view.View.VISIBLE : android.view.View.GONE);
         views.setViewVisibility(R.id.widgetEmptyState, showList ? android.view.View.GONE : android.view.View.VISIBLE);
         views.setTextViewText(R.id.widgetEmptyState, emptyStateText);
 
-        String refreshedLabel = context.getString(R.string.plan_widget_refreshed_prefix)
-                + " " + LocalTime.now().format(TIME_LABEL);
+        String refreshedLabel = context.getString(
+                R.string.plan_widget_cached_at,
+                LocalTime.now().format(TIME_LABEL));
         views.setTextViewText(R.id.widgetLastRefresh, refreshedLabel);
+        Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
+        int minHeight = options != null
+                ? options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+                : 0;
+        views.setViewVisibility(
+                R.id.widgetLastRefresh,
+                minHeight >= 230
+                        ? android.view.View.VISIBLE
+                        : android.view.View.GONE);
 
         Intent svcIntent = new Intent(context, PlanDayWidgetService.class);
         svcIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);

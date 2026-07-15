@@ -248,7 +248,7 @@ public class NewsActivity extends ZutnikBaseActivity {
 
     private void loadNewsFromCacheIfAvailable() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NEWS_CACHE, MODE_PRIVATE);
-        String json = prefs.getString(KEY_NEWS_LIST_JSON, null);
+        String json = SecureLocalData.readString(this, prefs, KEY_NEWS_LIST_JSON, null);
         if (json == null || json.trim().isEmpty()) {
             return;
         }
@@ -308,8 +308,8 @@ public class NewsActivity extends ZutnikBaseActivity {
                 arr.put(obj);
             }
 
+            SecureLocalData.putString(this, prefs, KEY_NEWS_LIST_JSON, arr.toString());
             prefs.edit()
-                    .putString(KEY_NEWS_LIST_JSON, arr.toString())
                     .putLong(KEY_NEWS_TIMESTAMP, System.currentTimeMillis())
                     .apply();
 

@@ -64,4 +64,6 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     implementation(libs.play.review)
     implementation(libs.play.app.update)
+    implementation(libs.recyclerview)
+    implementation(libs.biometric)
 }

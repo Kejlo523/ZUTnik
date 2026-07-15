@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
+import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -171,17 +172,15 @@ public class GradesTabFragment extends ZutnikTabFragment {
                     return;
                 }
                 inflater.inflate(R.menu.grades_menu, menu);
+                MenuItem optionsItem = menu.findItem(R.id.action_toggle_grouping);
+                if (optionsItem != null && optionsItem.getActionView() != null) {
+                    optionsItem.getActionView().setOnClickListener(
+                            GradesTabFragment.this::showGradesOptionsMenu);
+                }
             }
 
             @Override
             public void onPrepareMenu(@NonNull Menu menu) {
-                if (!isTabCurrentlyVisible()) {
-                    return;
-                }
-                MenuItem item = menu.findItem(R.id.action_toggle_grouping);
-                if (item != null) {
-                    item.setChecked(groupingEnabled);
-                }
             }
 
             @Override
@@ -190,14 +189,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
                     return false;
                 }
                 if (item.getItemId() == R.id.action_toggle_grouping) {
-                    groupingEnabled = !groupingEnabled;
-                    requireContext()
-                            .getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, Context.MODE_PRIVATE)
-                            .edit()
-                            .putBoolean(KEY_GRADES_GROUPING, groupingEnabled)
-                            .apply();
-                    applyGradesView();
-                    invalidateActivityMenu();
+                    toggleGradesGrouping();
                     return true;
                 }
                 return false;
@@ -207,6 +199,36 @@ public class GradesTabFragment extends ZutnikTabFragment {
         showCachedCurrentGradesIfAvailable();
         runInitialLoad();
         loadPlanFilterItemsAsync(false);
+    }
+
+    private void showGradesOptionsMenu(@NonNull View anchor) {
+        PopupMenu popup = ZutnikPopupMenu.create(requireContext(), anchor);
+        MenuItem grouping = popup.getMenu().add(
+                0,
+                R.id.action_toggle_grouping,
+                0,
+                R.string.grades_grouping_toggle);
+        grouping.setCheckable(true);
+        grouping.setChecked(groupingEnabled);
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_toggle_grouping) {
+                toggleGradesGrouping();
+                return true;
+            }
+            return false;
+        });
+        popup.show();
+    }
+
+    private void toggleGradesGrouping() {
+        groupingEnabled = !groupingEnabled;
+        requireContext()
+                .getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(KEY_GRADES_GROUPING, groupingEnabled)
+                .apply();
+        applyGradesView();
+        invalidateActivityMenu();
     }
 
     @Override
@@ -1248,7 +1270,8 @@ public class GradesTabFragment extends ZutnikTabFragment {
         if (key == null) {
             return null;
         }
-        String raw = getGradesCachePrefs().getString(key, null);
+        String raw = SecureLocalData.readString(
+                requireContext(), getGradesCachePrefs(), key, null);
         if (raw == null || raw.isEmpty()) {
             return null;
         }
@@ -1340,10 +1363,8 @@ public class GradesTabFragment extends ZutnikTabFragment {
                 }
             }
             wrapper.put("programmes", programmes);
-            getGradesCachePrefs()
-                    .edit()
-                    .putString(key, wrapper.toString())
-                    .apply();
+            SecureLocalData.putString(
+                    requireContext(), getGradesCachePrefs(), key, wrapper.toString());
         } catch (JSONException ignored) {
         }
     }
@@ -1566,10 +1587,8 @@ public class GradesTabFragment extends ZutnikTabFragment {
             wrapper.put("grades", arr);
 
             String key = buildCacheKey(studyId, semester);
-            getGradesCachePrefs()
-                    .edit()
-                    .putString(key, wrapper.toString())
-                    .apply();
+            SecureLocalData.putString(
+                    requireContext(), getGradesCachePrefs(), key, wrapper.toString());
         } catch (JSONException e) {
             // Ignore - cache is optional
         }
@@ -1586,7 +1605,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
 
         String key = buildCacheKey(studyId, semester);
         SharedPreferences prefs = getGradesCachePrefs();
-        String json = prefs.getString(key, null);
+        String json = SecureLocalData.readString(requireContext(), prefs, key, null);
         if (json == null) {
             return null;
         }
@@ -1671,10 +1690,11 @@ public class GradesTabFragment extends ZutnikTabFragment {
             wrapper.put("ts", System.currentTimeMillis());
             wrapper.put("data", arr);
 
-            requireContext().getSharedPreferences(PREFS_GRADES_SEMESTERS_CACHE, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(key, wrapper.toString())
-                    .apply();
+            SecureLocalData.putString(
+                    requireContext(),
+                    requireContext().getSharedPreferences(PREFS_GRADES_SEMESTERS_CACHE, Context.MODE_PRIVATE),
+                    key,
+                    wrapper.toString());
 
         } catch (JSONException ignored) {
         }
@@ -1692,7 +1712,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
         String key = userId + "_" + study.przynaleznoscId;
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_GRADES_SEMESTERS_CACHE, Context.MODE_PRIVATE);
 
-        String json = prefs.getString(key, null);
+        String json = SecureLocalData.readString(requireContext(), prefs, key, null);
         if (json == null)
             return null;
 

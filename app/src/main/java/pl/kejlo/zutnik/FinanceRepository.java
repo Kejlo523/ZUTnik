@@ -243,7 +243,7 @@ public class FinanceRepository {
         }
 
         SharedPreferences prefs = appContext.getSharedPreferences(PREFS_FINANCE_CACHE, Context.MODE_PRIVATE);
-        String raw = prefs.getString(cacheKey, null);
+        String raw = SecureLocalData.readString(appContext, prefs, cacheKey, null);
         if (raw == null || raw.trim().isEmpty()) {
             return null;
         }
@@ -295,10 +295,11 @@ public class FinanceRepository {
             }
             root.put("records", recordsJson);
 
-            appContext.getSharedPreferences(PREFS_FINANCE_CACHE, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(cacheKey, root.toString())
-                    .apply();
+            SecureLocalData.putString(
+                    appContext,
+                    appContext.getSharedPreferences(PREFS_FINANCE_CACHE, Context.MODE_PRIVATE),
+                    cacheKey,
+                    root.toString());
         } catch (JSONException ignored) {
         }
     }

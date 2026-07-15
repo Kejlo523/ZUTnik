@@ -39,7 +39,7 @@ public class CustomPlanEventRepository {
      */
     public List<CustomPlanEvent> loadAll() {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String json = prefs.getString(KEY_EVENTS, null);
+        String json = SecureLocalData.readString(context, prefs, KEY_EVENTS, null);
 
         List<CustomPlanEvent> list = new ArrayList<>();
         if (json == null || json.isEmpty()) {
@@ -97,10 +97,11 @@ public class CustomPlanEventRepository {
             }
         }
 
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .edit()
-                .putString(KEY_EVENTS, arr.toString())
-                .apply();
+        SecureLocalData.putString(
+                context,
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
+                KEY_EVENTS,
+                arr.toString());
     }
 
     /**

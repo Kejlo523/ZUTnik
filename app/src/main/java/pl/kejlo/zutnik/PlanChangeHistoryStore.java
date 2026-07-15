@@ -51,7 +51,7 @@ public final class PlanChangeHistoryStore {
         for (ChangeRecord entry : merged) {
             arr.put(entry.toJson());
         }
-        prefs.edit().putString(key, arr.toString()).apply();
+        SecureLocalData.putString(context, prefs, key, arr.toString());
     }
 
     public static List<ChangeRecord> read(Context context) {
@@ -62,7 +62,8 @@ public final class PlanChangeHistoryStore {
 
         SharedPreferences prefs = context.getApplicationContext()
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String json = prefs.getString(scopedKey(context), "[]");
+        String json = SecureLocalData.readString(
+                context, prefs, scopedKey(context), "[]");
         if (json.isEmpty()) {
             return out;
         }
@@ -91,7 +92,7 @@ public final class PlanChangeHistoryStore {
         }
         SharedPreferences prefs = context.getApplicationContext()
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putString(scopedKey(context), "[]").apply();
+        SecureLocalData.putString(context, prefs, scopedKey(context), "[]");
     }
 
     private static String scopedKey(Context context) {

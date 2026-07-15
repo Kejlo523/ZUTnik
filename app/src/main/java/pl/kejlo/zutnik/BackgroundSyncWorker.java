@@ -235,17 +235,24 @@ public class BackgroundSyncWorker extends Worker {
     }
 
     private void notifyGrades(Context context, int count, List<String> lines) {
-        if (!NotificationSyncManager.hasNotificationPermission(context)) {
-            return;
-        }
-
-        NotificationSyncManager.ensureChannels(context);
-
         String summary = context.getString(R.string.notif_grades_summary, count);
         String title = count == 1 && lines != null && !lines.isEmpty()
                 ? context.getString(R.string.notif_grades_single_title)
                 : context.getString(R.string.notif_grades_title);
         String content = lines != null && !lines.isEmpty() ? lines.get(0) : summary;
+        ChangeCenterStore.append(
+                context,
+                ChangeCenterStore.CATEGORY_GRADES,
+                "new",
+                title,
+                summary,
+                lines);
+
+        if (!NotificationSyncManager.hasNotificationPermission(context)) {
+            return;
+        }
+
+        NotificationSyncManager.ensureChannels(context);
 
         NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle()
                 .setBigContentTitle(title)
@@ -328,7 +335,8 @@ public class BackgroundSyncWorker extends Worker {
         List<FinanceRecord> candidates = FinanceNotificationPlanner.findDueReminders(currentRecords, LocalDate.now());
         String dueSentKey = NotificationSyncManager.scopedPrefKey(KEY_FINANCE_DUE_SENT_JSON, scope);
         Set<String> sentKeys = pruneFinanceDueReminderKeys(
-                readStringSetJson(prefs.getString(dueSentKey, "[]")),
+                readStringSetJson(SecureLocalData.readString(
+                        context, prefs, dueSentKey, "[]")),
                 LocalDate.now());
 
         List<FinanceRecord> freshReminders = new ArrayList<>();
@@ -347,12 +355,6 @@ public class BackgroundSyncWorker extends Worker {
     }
 
     private void notifyFinanceDue(Context context, List<FinanceRecord> records) {
-        if (!NotificationSyncManager.hasNotificationPermission(context)) {
-            return;
-        }
-
-        NotificationSyncManager.ensureChannels(context);
-
         List<String> lines = new ArrayList<>();
         for (FinanceRecord record : records) {
             lines.add(buildFinanceDueLine(context, record));
@@ -360,6 +362,19 @@ public class BackgroundSyncWorker extends Worker {
 
         String title = context.getString(R.string.notif_finance_due_title);
         String summary = context.getString(R.string.notif_finance_due_summary, records.size());
+        ChangeCenterStore.append(
+                context,
+                ChangeCenterStore.CATEGORY_FINANCE,
+                "due",
+                title,
+                summary,
+                lines);
+
+        if (!NotificationSyncManager.hasNotificationPermission(context)) {
+            return;
+        }
+
+        NotificationSyncManager.ensureChannels(context);
         NotificationCompat.InboxStyle style = buildInboxStyle(title, summary, lines, 6);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationSyncManager.CHANNEL_FINANCE)
@@ -383,12 +398,6 @@ public class BackgroundSyncWorker extends Worker {
     }
 
     private void notifyFinanceBooked(Context context, List<FinanceRecord> records) {
-        if (!NotificationSyncManager.hasNotificationPermission(context)) {
-            return;
-        }
-
-        NotificationSyncManager.ensureChannels(context);
-
         List<String> lines = new ArrayList<>();
         for (FinanceRecord record : records) {
             lines.add(buildFinanceBookedLine(context, record));
@@ -396,6 +405,19 @@ public class BackgroundSyncWorker extends Worker {
 
         String title = context.getString(R.string.notif_finance_booked_title);
         String summary = context.getString(R.string.notif_finance_booked_summary, records.size());
+        ChangeCenterStore.append(
+                context,
+                ChangeCenterStore.CATEGORY_FINANCE,
+                "booked",
+                title,
+                summary,
+                lines);
+
+        if (!NotificationSyncManager.hasNotificationPermission(context)) {
+            return;
+        }
+
+        NotificationSyncManager.ensureChannels(context);
         NotificationCompat.InboxStyle style = buildInboxStyle(title, summary, lines, 6);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationSyncManager.CHANNEL_FINANCE)
@@ -559,14 +581,22 @@ public class BackgroundSyncWorker extends Worker {
             Context context,
             List<String> lines,
             List<PlanChangeHistoryStore.ChangeRecord> historyEntries) {
+        String title = context.getString(R.string.notif_plan_title);
+        String summary = context.getString(R.string.notif_plan_summary, lines.size());
+        ChangeCenterStore.append(
+                context,
+                ChangeCenterStore.CATEGORY_PLAN,
+                "changed",
+                title,
+                summary,
+                lines);
+        PlanChangeHistoryStore.append(context, historyEntries);
+
         if (!NotificationSyncManager.hasNotificationPermission(context)) {
             return;
         }
 
         NotificationSyncManager.ensureChannels(context);
-
-        String title = context.getString(R.string.notif_plan_title);
-        String summary = context.getString(R.string.notif_plan_summary, lines.size());
         NotificationCompat.InboxStyle style = buildInboxStyle(title, summary, lines, 7);
         PendingIntent pi = buildPlanPendingIntent(context);
 
@@ -588,10 +618,22 @@ public class BackgroundSyncWorker extends Worker {
             return;
         }
         NotificationManagerCompat.from(context).notify(NOTIF_ID_PLAN, builder.build());
-        PlanChangeHistoryStore.append(context, historyEntries);
     }
 
     private void notifyPlanRefreshed(Context context, PlanChangeHistoryStore.ChangeRecord historyEntry) {
+        String title = context.getString(R.string.notif_plan_refreshed_title);
+        String message = context.getString(R.string.notif_plan_refreshed_text);
+        ChangeCenterStore.append(
+                context,
+                ChangeCenterStore.CATEGORY_PLAN,
+                PlanChangeHistoryStore.TYPE_REFRESHED,
+                title,
+                message,
+                Collections.emptyList());
+        List<PlanChangeHistoryStore.ChangeRecord> entries = new ArrayList<>();
+        entries.add(historyEntry);
+        PlanChangeHistoryStore.append(context, entries);
+
         if (!NotificationSyncManager.hasNotificationPermission(context)) {
             return;
         }
@@ -602,10 +644,9 @@ public class BackgroundSyncWorker extends Worker {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationSyncManager.CHANNEL_PLAN)
                 .setSmallIcon(R.drawable.ic_calendar)
-                .setContentTitle(context.getString(R.string.notif_plan_refreshed_title))
-                .setContentText(context.getString(R.string.notif_plan_refreshed_text))
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(
-                        context.getString(R.string.notif_plan_refreshed_text)))
+                .setContentTitle(title)
+                .setContentText(message)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                 .setAutoCancel(true)
                 .setContentIntent(pi)
                 .setCategory(NotificationCompat.CATEGORY_EVENT)
@@ -618,9 +659,6 @@ public class BackgroundSyncWorker extends Worker {
             return;
         }
         NotificationManagerCompat.from(context).notify(NOTIF_ID_PLAN, builder.build());
-        List<PlanChangeHistoryStore.ChangeRecord> entries = new ArrayList<>();
-        entries.add(historyEntry);
-        PlanChangeHistoryStore.append(context, entries);
     }
 
     private PendingIntent buildPlanPendingIntent(Context context) {
@@ -666,19 +704,25 @@ public class BackgroundSyncWorker extends Worker {
     }
 
     private PlanNotificationDiffEngine.Snapshot readPlanBaselineSnapshot(SharedPreferences prefs, String storageKey) {
-        return PlanNotificationDiffEngine.Snapshot.fromJsonString(prefs.getString(storageKey, ""));
+        return PlanNotificationDiffEngine.Snapshot.fromJsonString(SecureLocalData.readString(
+                getApplicationContext(), prefs, storageKey, ""));
     }
 
     private void savePlanBaselineSnapshot(
             SharedPreferences prefs,
             String storageKey,
             PlanNotificationDiffEngine.Snapshot snapshot) {
-        prefs.edit().putString(storageKey, snapshot != null ? snapshot.toJsonString() : "").apply();
+        SecureLocalData.putString(
+                getApplicationContext(),
+                prefs,
+                storageKey,
+                snapshot != null ? snapshot.toJsonString() : "");
     }
 
     private List<FinanceRecord> readFinanceBaselineSnapshot(SharedPreferences prefs, String storageKey) {
         List<FinanceRecord> records = new ArrayList<>();
-        String raw = prefs.getString(storageKey, "[]");
+        String raw = SecureLocalData.readString(
+                getApplicationContext(), prefs, storageKey, "[]");
         if (raw == null || raw.isEmpty()) {
             return records;
         }
@@ -712,7 +756,8 @@ public class BackgroundSyncWorker extends Worker {
                 }
             }
         }
-        prefs.edit().putString(storageKey, arr.toString()).apply();
+        SecureLocalData.putString(
+                getApplicationContext(), prefs, storageKey, arr.toString());
     }
 
     private NotificationCompat.InboxStyle buildInboxStyle(
@@ -891,7 +936,8 @@ public class BackgroundSyncWorker extends Worker {
         for (String value : values) {
             arr.put(value);
         }
-        prefs.edit().putString(storageKey, arr.toString()).apply();
+        SecureLocalData.putString(
+                getApplicationContext(), prefs, storageKey, arr.toString());
     }
 
     private Set<String> pruneFinanceDueReminderKeys(Set<String> values, LocalDate today) {

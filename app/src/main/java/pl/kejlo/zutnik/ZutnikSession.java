@@ -202,17 +202,20 @@ public final class ZutnikSession {
     private void loadFromPreferences(Context context) {
         SharedPreferences prefs = getPreferences(context);
 
-        this.userId               = prefs.getString(KEY_USER_ID, null);
-        this.username             = prefs.getString(KEY_USERNAME, null);
-        this.imageUrl             = prefs.getString(KEY_IMAGE_URL, null);
+        this.userId = SecureLocalData.readString(context, prefs, KEY_USER_ID, null);
+        this.username = SecureLocalData.readString(context, prefs, KEY_USERNAME, null);
+        this.imageUrl = SecureLocalData.readString(context, prefs, KEY_IMAGE_URL, null);
         this.activeStudyIndex     = prefs.getInt(KEY_ACTIVE_STUDY_INDEX, 0);
-        this.activeStudyId        = prefs.getString(KEY_ACTIVE_STUDY_ID, null);
+        this.activeStudyId = SecureLocalData.readString(context, prefs, KEY_ACTIVE_STUDY_ID, null);
         this.loginType            = prefs.getString(KEY_LOGIN_TYPE, null);
-        this.usosAccessToken      = prefs.getString(KEY_USOS_ACCESS_TOKEN, null);
-        this.usosAccessTokenSecret = prefs.getString(KEY_USOS_ACCESS_TOKEN_SEC, null);
-        this.studentNumber        = prefs.getString(KEY_USOS_STUDENT_NUMBER, null);
+        this.usosAccessToken = SecureLocalData.readString(
+                context, prefs, KEY_USOS_ACCESS_TOKEN, null);
+        this.usosAccessTokenSecret = SecureLocalData.readString(
+                context, prefs, KEY_USOS_ACCESS_TOKEN_SEC, null);
+        this.studentNumber = SecureLocalData.readString(
+                context, prefs, KEY_USOS_STUDENT_NUMBER, null);
 
-        String studiesJson = prefs.getString(KEY_STUDIES_JSON, null);
+        String studiesJson = SecureLocalData.readString(context, prefs, KEY_STUDIES_JSON, null);
         if (studiesJson != null) {
             try {
                 JSONArray arr = new JSONArray(studiesJson);
@@ -266,37 +269,26 @@ public final class ZutnikSession {
         SharedPreferences prefs = getPreferences(context);
 
         SharedPreferences.Editor e = prefs.edit();
-        e.putString(KEY_USER_ID, userId);
-        e.putString(KEY_USERNAME, username);
-        e.putString(KEY_IMAGE_URL, imageUrl);
+        e.remove(KEY_USER_ID);
+        e.remove(KEY_USERNAME);
+        e.remove(KEY_IMAGE_URL);
         if (loginType != null) {
             e.putString(KEY_LOGIN_TYPE, loginType);
         } else {
             e.remove(KEY_LOGIN_TYPE);
         }
-        if (usosAccessToken != null) {
-            e.putString(KEY_USOS_ACCESS_TOKEN, usosAccessToken);
-        } else {
+        if (usosAccessToken == null) {
             e.remove(KEY_USOS_ACCESS_TOKEN);
         }
-        if (usosAccessTokenSecret != null) {
-            e.putString(KEY_USOS_ACCESS_TOKEN_SEC, usosAccessTokenSecret);
-        } else {
+        if (usosAccessTokenSecret == null) {
             e.remove(KEY_USOS_ACCESS_TOKEN_SEC);
         }
-        if (studentNumber != null) {
-            e.putString(KEY_USOS_STUDENT_NUMBER, studentNumber);
-        } else {
-            e.remove(KEY_USOS_STUDENT_NUMBER);
-        }
+        e.remove(KEY_USOS_STUDENT_NUMBER);
         reconcileActiveStudySelection();
         e.putInt(KEY_ACTIVE_STUDY_INDEX, activeStudyIndex);
-        if (activeStudyId != null && !activeStudyId.trim().isEmpty()) {
-            e.putString(KEY_ACTIVE_STUDY_ID, activeStudyId.trim());
-        } else {
-            e.remove(KEY_ACTIVE_STUDY_ID);
-        }
+        e.remove(KEY_ACTIVE_STUDY_ID);
 
+        String studiesJsonToPersist = null;
         if (studies != null && !studies.isEmpty()) {
             JSONArray arr = new JSONArray();
             for (Study s : studies) {
@@ -308,12 +300,33 @@ public final class ZutnikSession {
                 } catch (JSONException ignored) {
                 }
             }
-            e.putString(KEY_STUDIES_JSON, arr.toString());
+            e.remove(KEY_STUDIES_JSON);
+            studiesJsonToPersist = arr.toString();
         } else {
             e.remove(KEY_STUDIES_JSON);
         }
 
         e.apply();
+        SecureLocalData.putString(context, prefs, KEY_USER_ID, userId);
+        SecureLocalData.putString(context, prefs, KEY_USERNAME, username);
+        SecureLocalData.putString(context, prefs, KEY_IMAGE_URL, imageUrl);
+        SecureLocalData.putString(context, prefs, KEY_USOS_STUDENT_NUMBER, studentNumber);
+        SecureLocalData.putString(
+                context,
+                prefs,
+                KEY_ACTIVE_STUDY_ID,
+                activeStudyId != null && !activeStudyId.trim().isEmpty()
+                        ? activeStudyId.trim()
+                        : null);
+        if (usosAccessToken != null) {
+            SecureLocalData.putString(context, prefs, KEY_USOS_ACCESS_TOKEN, usosAccessToken);
+        }
+        if (usosAccessTokenSecret != null) {
+            SecureLocalData.putString(context, prefs, KEY_USOS_ACCESS_TOKEN_SEC, usosAccessTokenSecret);
+        }
+        if (studiesJsonToPersist != null) {
+            SecureLocalData.putString(context, prefs, KEY_STUDIES_JSON, studiesJsonToPersist);
+        }
     }
 
     /**

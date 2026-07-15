@@ -6,6 +6,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.net.Uri;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -13,9 +16,13 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
+import android.view.WindowManager;
+import android.content.res.ColorStateList;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.activity.result.ActivityResult;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
@@ -23,8 +30,22 @@ import androidx.core.graphics.Insets;
 import androidx.core.os.LocaleListCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.content.ContextCompat;
+import androidx.biometric.BiometricPrompt;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SettingsActivity extends PhoneAwareActivity {
 
@@ -41,10 +62,19 @@ public class SettingsActivity extends PhoneAwareActivity {
     private SwitchMaterial switchNotifPlanRemoved;
     private LinearLayout layoutFinanceNotifCategories;
     private LinearLayout layoutPlanNotifCategories;
+    private SwitchMaterial switchPrivacyMode;
+    private View privacyStatusDot;
+    private android.widget.TextView privacyStatus;
+    private View btnPrivacyChangePin;
 
     private boolean internalNotifUiChange = false;
     private boolean pendingEnableByPermission = false;
     private ActivityResultLauncher<String> notificationPermissionLauncher;
+    private ActivityResultLauncher<Intent> privacyAuthLauncher;
+    private ActivityResultLauncher<String> settingsExportLauncher;
+    private ActivityResultLauncher<String[]> settingsImportLauncher;
+    private final ExecutorService settingsIoExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -55,6 +85,8 @@ public class SettingsActivity extends PhoneAwareActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setupNotificationPermissionLauncher();
+        setupPrivacyAuthLauncher();
+        setupSettingsBackupLaunchers();
         ThemeManager.applyTheme(this);
         ThemeManager.applySystemBars(this);
         setContentView(R.layout.activity_settings);
@@ -198,6 +230,273 @@ public class SettingsActivity extends PhoneAwareActivity {
         });
 
         setupNotificationSettings();
+        setupPrivacySettings();
+        setupSettingsBackupButtons();
+    }
+
+    private void setupSettingsBackupLaunchers() {
+        settingsExportLauncher = registerForActivityResult(
+                new ActivityResultContracts.CreateDocument("application/json"),
+                uri -> {
+                    if (uri != null) exportSettings(uri);
+                });
+        settingsImportLauncher = registerForActivityResult(
+                new ActivityResultContracts.OpenDocument(),
+                uri -> {
+                    if (uri != null) readSettingsForImport(uri);
+                });
+    }
+
+    private void setupSettingsBackupButtons() {
+        View export = findViewById(R.id.btnSettingsExport);
+        View importButton = findViewById(R.id.btnSettingsImport);
+        if (export != null) {
+            export.setOnClickListener(v -> settingsExportLauncher.launch(
+                    getString(R.string.settings_backup_file_name)));
+        }
+        if (importButton != null) {
+            importButton.setOnClickListener(v -> settingsImportLauncher.launch(new String[] {
+                    "application/json",
+                    "text/plain"
+            }));
+        }
+    }
+
+    private void exportSettings(Uri uri) {
+        settingsIoExecutor.execute(() -> {
+            try (OutputStream stream = getContentResolver().openOutputStream(uri, "wt");
+                 OutputStreamWriter writer = stream != null
+                         ? new OutputStreamWriter(stream, StandardCharsets.UTF_8)
+                         : null) {
+                if (writer == null) throw new IllegalStateException("No output stream");
+                writer.write(SettingsBackupManager.exportToJson(this));
+                writer.flush();
+                mainHandler.post(() -> Toast.makeText(
+                        this,
+                        R.string.settings_backup_exported,
+                        Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                mainHandler.post(this::showSettingsBackupError);
+            }
+        });
+    }
+
+    private void readSettingsForImport(Uri uri) {
+        settingsIoExecutor.execute(() -> {
+            try (InputStream stream = getContentResolver().openInputStream(uri);
+                 BufferedReader reader = stream != null
+                         ? new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
+                         : null) {
+                if (reader == null) throw new IllegalStateException("No input stream");
+                StringBuilder json = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (json.length() > 2_000_000) {
+                        throw new IllegalArgumentException("Settings file too large");
+                    }
+                    json.append(line).append('\n');
+                }
+                new org.json.JSONObject(json.toString());
+                mainHandler.post(() -> confirmSettingsImport(json.toString()));
+            } catch (Exception e) {
+                mainHandler.post(this::showSettingsBackupError);
+            }
+        });
+    }
+
+    private void confirmSettingsImport(String json) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.settings_backup_import_title)
+                .setMessage(R.string.settings_backup_import_message)
+                .setPositiveButton(R.string.settings_backup_import, (dialog, which) ->
+                        settingsIoExecutor.execute(() -> {
+                            try {
+                                SettingsBackupManager.importFromJson(this, json);
+                                mainHandler.post(() -> {
+                                    Toast.makeText(
+                                            this,
+                                            R.string.settings_backup_imported,
+                                            Toast.LENGTH_SHORT).show();
+                                    restartMainShell();
+                                });
+                            } catch (Exception e) {
+                                mainHandler.post(this::showSettingsBackupError);
+                            }
+                        }))
+                .setNegativeButton(R.string.dialog_add_edit_tile_btn_cancel, null)
+                .show();
+    }
+
+    private void showSettingsBackupError() {
+        Toast.makeText(this, R.string.settings_backup_error, Toast.LENGTH_LONG).show();
+    }
+
+    private void setupPrivacyAuthLauncher() {
+        privacyAuthLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+                        PrivacyManager.disable(this);
+                        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                    }
+                    bindPrivacyUi();
+                });
+    }
+
+    private void setupPrivacySettings() {
+        switchPrivacyMode = findViewById(R.id.switchPrivacyMode);
+        privacyStatusDot = findViewById(R.id.privacyStatusDot);
+        privacyStatus = findViewById(R.id.privacyStatus);
+        btnPrivacyChangePin = findViewById(R.id.btnPrivacyChangePin);
+        if (switchPrivacyMode == null || privacyStatus == null || privacyStatusDot == null) {
+            return;
+        }
+        switchPrivacyMode.setUseMaterialThemeColors(true);
+        bindPrivacyUi();
+        switchPrivacyMode.setOnCheckedChangeListener((button, checked) -> {
+            if (internalNotifUiChange) {
+                return;
+            }
+            if (checked) {
+                internalNotifUiChange = true;
+                switchPrivacyMode.setChecked(false);
+                internalNotifUiChange = false;
+                showPinSetupDialog();
+            } else if (PrivacyManager.isEnabled(this)) {
+                internalNotifUiChange = true;
+                switchPrivacyMode.setChecked(true);
+                internalNotifUiChange = false;
+                Intent intent = new Intent(this, PrivacyLockActivity.class);
+                intent.putExtra(PrivacyLockActivity.EXTRA_AUTH_ONLY, true);
+                privacyAuthLauncher.launch(intent);
+                overridePendingTransition(R.anim.fade_in, 0);
+            }
+        });
+        btnPrivacyChangePin.setOnClickListener(v -> showPinSetupDialog());
+    }
+
+    private void bindPrivacyUi() {
+        if (switchPrivacyMode == null || privacyStatus == null || privacyStatusDot == null) {
+            return;
+        }
+        boolean enabled = PrivacyManager.isEnabled(this);
+        internalNotifUiChange = true;
+        switchPrivacyMode.setChecked(enabled);
+        internalNotifUiChange = false;
+        if (!enabled) {
+            privacyStatus.setText(R.string.settings_privacy_mode_status_off);
+            privacyStatusDot.setBackgroundTintList(ColorStateList.valueOf(
+                    ThemeManager.resolveColor(this, R.attr.mzMuted)));
+        } else if (PrivacyManager.isBiometricEnabled(this)) {
+            privacyStatus.setText(R.string.settings_privacy_mode_status_biometric);
+            privacyStatusDot.setBackgroundTintList(ColorStateList.valueOf(
+                    ThemeManager.resolveColor(this, R.attr.mzSuccess)));
+        } else {
+            privacyStatus.setText(R.string.settings_privacy_mode_status_pin);
+            privacyStatusDot.setBackgroundTintList(ColorStateList.valueOf(
+                    ThemeManager.resolveColor(this, R.attr.mzSuccess)));
+        }
+        if (btnPrivacyChangePin != null) {
+            btnPrivacyChangePin.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void showPinSetupDialog() {
+        View content = getLayoutInflater().inflate(R.layout.dialog_privacy_pin_setup, null);
+        TextInputEditText pinInput = content.findViewById(R.id.privacyPinInput);
+        TextInputEditText confirmInput = content.findViewById(R.id.privacyPinConfirmInput);
+        TextInputLayout pinLayout = content.findViewById(R.id.privacyPinLayout);
+        TextInputLayout confirmLayout = content.findViewById(R.id.privacyPinConfirmLayout);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.privacy_setup_title)
+                .setMessage(R.string.privacy_setup_message)
+                .setView(content)
+                .setPositiveButton(R.string.dialog_add_edit_tile_btn_save, null)
+                .setNegativeButton(R.string.dialog_add_edit_tile_btn_cancel, null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    String pin = pinInput.getText() != null ? pinInput.getText().toString() : "";
+                    String confirmation = confirmInput.getText() != null
+                            ? confirmInput.getText().toString()
+                            : "";
+                    pinLayout.setError(null);
+                    confirmLayout.setError(null);
+                    if (!pin.matches("\\d{4}")) {
+                        pinLayout.setError(getString(R.string.privacy_pin_invalid));
+                        return;
+                    }
+                    if (!pin.equals(confirmation)) {
+                        confirmLayout.setError(getString(R.string.privacy_pin_mismatch));
+                        return;
+                    }
+                    if (!PrivacyManager.setPinAndEnable(this, pin)) {
+                        pinLayout.setError(getString(R.string.privacy_pin_invalid));
+                        return;
+                    }
+                    pinInput.setText(null);
+                    confirmInput.setText(null);
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                    dialog.dismiss();
+                    bindPrivacyUi();
+                    offerBiometricSetup();
+                }));
+        dialog.show();
+    }
+
+    private void offerBiometricSetup() {
+        if (!PrivacyManager.isBiometricAvailable(this)) {
+            showPrivacyReadyConfirmation();
+            return;
+        }
+        BiometricPrompt prompt = new BiometricPrompt(
+                this,
+                ContextCompat.getMainExecutor(this),
+                new BiometricPrompt.AuthenticationCallback() {
+                    private boolean completed;
+
+                    @Override
+                    public void onAuthenticationSucceeded(
+                            @androidx.annotation.NonNull BiometricPrompt.AuthenticationResult result) {
+                        if (completed) return;
+                        completed = true;
+                        PrivacyManager.setBiometricEnabled(SettingsActivity.this, true);
+                        bindPrivacyUi();
+                        showPrivacyReadyConfirmation();
+                    }
+
+                    @Override
+                    public void onAuthenticationError(
+                            int errorCode,
+                            @androidx.annotation.NonNull CharSequence errString) {
+                        if (completed) return;
+                        completed = true;
+                        PrivacyManager.setBiometricEnabled(SettingsActivity.this, false);
+                        bindPrivacyUi();
+                        showPrivacyReadyConfirmation();
+                    }
+                });
+        BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle(getString(R.string.privacy_biometric_setup_title))
+                .setSubtitle(getString(R.string.privacy_biometric_setup_subtitle))
+                .setNegativeButtonText(getString(R.string.privacy_biometric_skip))
+                .build();
+        prompt.authenticate(info);
+    }
+
+    private void showPrivacyReadyConfirmation() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.privacy_enabled_title)
+                .setMessage(R.string.privacy_enabled_message)
+                .setPositiveButton(R.string.privacy_test_lock, (dialog, which) -> {
+                    PrivacyManager.lock();
+                    if (PrivacyManager.beginLockActivityLaunch()) {
+                        startActivity(new Intent(this, PrivacyLockActivity.class));
+                        overridePendingTransition(R.anim.fade_in, 0);
+                    }
+                })
+                .show();
     }
 
     private void setupNotificationPermissionLauncher() {
@@ -540,5 +839,12 @@ public class SettingsActivity extends PhoneAwareActivity {
             }
         }
         return fallback;
+    }
+
+    @Override
+    protected void onDestroy() {
+        mainHandler.removeCallbacksAndMessages(null);
+        settingsIoExecutor.shutdownNow();
+        super.onDestroy();
     }
 }

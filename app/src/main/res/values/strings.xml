@@ -58,9 +58,28 @@
   <string name="home_tile_info_desc">Status i przebieg studiów.</string>
   <string name="home_tile_news_title">Aktualności uczelni</string>
   <string name="home_tile_news_desc">Komunikaty z uczelni.</string>
+  <string name="home_plan_search_error">To wyszukiwanie nie ma już zapisanych parametrów. Edytuj kafelek i wybierz je ponownie.</string>
   <string name="home_footer_meta">
         Dane są pobierane z systemów uczelni i cache’owane lokalnie. Jeśli coś wygląda podejrzanie, zawsze zweryfikuj też w oficjalnych panelach.
     </string>
+  <string name="change_center_title">Centrum zmian</string>
+  <string name="change_center_summary_empty">Zmiany z ocen, planu i finansów pojawią się tutaj.</string>
+  <plurals name="change_center_summary">
+    <item quantity="one">%1$d zapisanych zmian, %2$d nieprzeczytana</item>
+    <item quantity="few">%1$d zapisanych zmian, %2$d nieprzeczytane</item>
+    <item quantity="many">%1$d zapisanych zmian, %2$d nieprzeczytanych</item>
+    <item quantity="other">%1$d zapisanych zmian, %2$d nieprzeczytanych</item>
+  </plurals>
+  <string name="change_center_filter_all">Wszystkie</string>
+  <string name="change_center_category_grades">Oceny</string>
+  <string name="change_center_category_plan">Plan</string>
+  <string name="change_center_category_finance">Finanse</string>
+  <string name="change_center_mark_read">Oznacz przeczytane</string>
+  <string name="change_center_clear_action">Wyczyść</string>
+  <string name="change_center_clear_title">Wyczyścić Centrum zmian?</string>
+  <string name="change_center_clear_message">Zapisane lokalnie informacje o zmianach zostaną usunięte.</string>
+  <string name="change_center_empty">Na razie spokojnie. Brak zmian w tej kategorii.</string>
+  <string name="change_center_today_at">Dzisiaj, %1$s</string>
   <string name="info_title">Studia</string>
   <string name="info_study_selector_label">Kierunek studiów</string>
   <string name="info_user_id">ID użytkownika: %1$s</string>
@@ -140,7 +159,8 @@
   <string name="plan_title">Plan zajęć</string>
   <string name="plan_filters_error">Błąd ładowania listy przedmiotów: %1$s</string>
   <string name="plan_filters_empty">Brak przedmiotów do filtrowania.</string>
-  <string name="plan_filters_dialog_title">Filtr przedmiotów – wyklucz z widoku</string>
+  <string name="plan_filters_dialog_title">Filtr przedmiotów</string>
+  <string name="plan_filters_dialog_description">Zaznaczone pozycje nie będą wyświetlane w planie.</string>
   <string name="plan_filters_apply">Zastosuj</string>
   <string name="plan_filters_reset">Reset</string>
   <string name="plan_filters_cancel">Anuluj</string>
@@ -229,6 +249,7 @@
   <string name="grades_ects_breakdown_item">%1$s: %2$s ECTS</string>
   <string name="grades_ects_breakdown_remaining">pozostałe: %1$s ECTS</string>
   <string name="grades_grouping_toggle">Grupuj oceny</string>
+  <string name="grades_actions_label">Opcje ocen</string>
   <string name="grades_final_grade_label">Ocena końcowa</string>
   <string name="grades_no_grades_label">Brak ocen</string>
   <string name="grades_new_badge">Nowe</string>
@@ -273,6 +294,10 @@
   <string name="plan_widget_item_title_placeholder">Przedmiot</string>
   <string name="plan_widget_item_time_placeholder">08:00–09:30</string>
   <string name="plan_widget_item_room_placeholder">Sala 123</string>
+  <string name="plan_widget_item_type_placeholder">W</string>
+  <string name="plan_widget_room_format">Sala %1$s</string>
+  <string name="plan_widget_group_format">gr. %1$s</string>
+  <string name="plan_widget_cached_at">Plan z pamięci · %1$s</string>
   <string name="plan_widget_empty_state">Brak zajęć do wyświetlenia</string>
   <string name="plan_widget_preview_title_first" translatable="false">Matematyka II</string>
   <string name="plan_widget_preview_time_first" translatable="false">10:15–11:45</string>
@@ -281,6 +306,15 @@
   <string name="plan_widget_preview_time_second" translatable="false">12:15–13:45</string>
   <string name="plan_widget_preview_room_second" translatable="false">WI2-227</string>
   <string name="plan_widget_preview_refreshed">Odświeżono: 10:24</string>
+  <string name="plan_widget_subtitle_next_preview">Najbliższe za 24 min</string>
+  <string name="plan_widget_preview_room_group_first">Sala WI1-12  ·  gr. K1</string>
+  <string name="plan_widget_preview_meta_first" translatable="false">10:15–11:45   W</string>
+  <string name="plan_widget_preview_meta_second" translatable="false">12:15–13:45   Ć</string>
+  <string name="plan_widget_preview_meta_third" translatable="false">14:15–15:45   L</string>
+  <string name="plan_widget_preview_room_group_second" translatable="false">Sala WI2-227  ·  gr. S1</string>
+  <string name="plan_widget_preview_title_third" translatable="false">Grafika i wizualizacja</string>
+  <string name="plan_widget_preview_room_group_third" translatable="false">Sala WI2-216  ·  gr. L2</string>
+  <string name="plan_widget_preview_cached">Plan z pamięci · 10:24</string>
   <string name="about_title">O aplikacji</string>
   <string name="about_rate_title">Oceń aplikację</string>
   <string name="about_rate_desc">Twoja opinia pomaga nam rozwijać ZUTnika!</string>
@@ -292,6 +326,43 @@
   <string name="about_contact_app_website">Strona projektu: ZUTnik</string>
   <string name="about_privacy_policy_url">Polityka prywatności</string>
   <string name="settings_title">Ustawienia</string>
+  <string name="settings_section_privacy">Prywatność i dane</string>
+  <string name="settings_privacy_mode_label">Tryb pełnej prywatności</string>
+  <string name="settings_privacy_mode_desc">Blokuje aplikację PIN-em lub biometrią i ukrywa jej podgląd po opuszczeniu aplikacji.</string>
+  <string name="settings_privacy_mode_status_off">Wyłączony</string>
+  <string name="settings_privacy_mode_status_pin">Aktywny · PIN</string>
+  <string name="settings_privacy_mode_status_biometric">Aktywny · PIN i biometria</string>
+  <string name="settings_privacy_change_pin">Zmień PIN</string>
+  <string name="settings_backup_title">Kopia ustawień</string>
+  <string name="settings_backup_desc">Przenosi wygląd, powiadomienia, widżet, kafelki i zapisane wyszukiwania. Nie zawiera konta ani danych z USOS.</string>
+  <string name="settings_backup_export">Eksportuj</string>
+  <string name="settings_backup_import">Importuj</string>
+  <string name="settings_backup_file_name">zutnik-ustawienia.json</string>
+  <string name="settings_backup_exported">Ustawienia zostały wyeksportowane.</string>
+  <string name="settings_backup_import_title">Zaimportować ustawienia?</string>
+  <string name="settings_backup_import_message">Bieżący wygląd, powiadomienia, układ kafelków i zapisane wyszukiwania zostaną zastąpione.</string>
+  <string name="settings_backup_imported">Ustawienia zostały zaimportowane.</string>
+  <string name="settings_backup_error">Nie udało się odczytać tego pliku ustawień.</string>
+  <string name="privacy_setup_title">Ustaw PIN</string>
+  <string name="privacy_setup_message">Utwórz 4-cyfrowy PIN awaryjny. Nie da się go odzyskać bez ponownego logowania.</string>
+  <string name="privacy_pin_label">PIN</string>
+  <string name="privacy_pin_confirm_label">Powtórz PIN</string>
+  <string name="privacy_pin_invalid">PIN musi mieć dokładnie 4 cyfry.</string>
+  <string name="privacy_pin_mismatch">Wpisane PIN-y nie są takie same.</string>
+  <string name="privacy_biometric_setup_title">Włącz biometrię</string>
+  <string name="privacy_biometric_setup_subtitle">Potwierdź odcisk palca lub rozpoznanie twarzy.</string>
+  <string name="privacy_biometric_skip">Pomiń</string>
+  <string name="privacy_enabled_title">Ochrona jest gotowa</string>
+  <string name="privacy_enabled_message">ZUTnik ukryje podgląd i poprosi o odblokowanie po powrocie. Sprawdźmy teraz, czy PIN działa.</string>
+  <string name="privacy_test_lock">Sprawdź blokadę</string>
+  <string name="privacy_unlock_title">ZUTnik jest zablokowany</string>
+  <string name="privacy_unlock_message">Wpisz PIN, aby wrócić do swoich danych.</string>
+  <string name="privacy_pin_wrong">Nieprawidłowy PIN</string>
+  <string name="privacy_biometric_subtitle">Potwierdź swoją tożsamość</string>
+  <string name="privacy_biometric_failed">Nie udało się rozpoznać. Spróbuj ponownie lub użyj PIN-u.</string>
+  <string name="privacy_use_pin">Użyj PIN-u</string>
+  <string name="privacy_use_biometric">Użyj biometrii</string>
+  <string name="privacy_backspace">Usuń ostatnią cyfrę</string>
   <string name="settings_section_appearance">Wygląd i język</string>
   <string name="settings_section_widget">Widget</string>
   <string name="settings_language_label">Język aplikacji</string>
@@ -517,6 +588,26 @@
   <string name="data_status_syncing">Odświeżanie…</string>
   <!-- Attendance / Obecności -->
   <string name="attendance_title">Obecności</string>
+  <string name="attendance_percent_placeholder">100%</string>
+  <string name="attendance_percent_value">%1$.0f%%</string>
+  <string name="attendance_percent_label">frekwencja</string>
+  <string name="attendance_absences_label">nieobecności</string>
+  <string name="attendance_assistant_ok_summary">Brak zajęć zagrożonych limitem.</string>
+  <plurals name="attendance_risk_summary">
+    <item quantity="one">%1$d przedmiot jest poniżej wymaganego progu.</item>
+    <item quantity="few">%1$d przedmioty są poniżej wymaganego progu.</item>
+    <item quantity="many">%1$d przedmiotów jest poniżej wymaganego progu.</item>
+    <item quantity="other">%1$d przedmiotów jest poniżej wymaganego progu.</item>
+  </plurals>
+  <string name="attendance_assistant_set_hours">Ustaw liczbę godzin, aby uruchomić asystenta.</string>
+  <string name="attendance_assistant_below_limit">%1$d%% frekwencji, poniżej progu %2$d%%.</string>
+  <string name="attendance_assistant_at_limit">%1$d%% frekwencji. Kolejna nieobecność przekroczy próg.</string>
+  <plurals name="attendance_assistant_remaining">
+    <item quantity="one">%1$d%% frekwencji. Możesz opuścić zajęcia jeszcze %2$d raz.</item>
+    <item quantity="few">%1$d%% frekwencji. Możesz opuścić zajęcia jeszcze %2$d razy.</item>
+    <item quantity="many">%1$d%% frekwencji. Możesz opuścić zajęcia jeszcze %2$d razy.</item>
+    <item quantity="other">%1$d%% frekwencji. Możesz opuścić zajęcia jeszcze %2$d razy.</item>
+  </plurals>
   <string name="attendance_hours_format">Godzin: %1$d</string>
   <string name="attendance_empty_state">Brak przedmiotów w planie.\nOdśwież plan zajęć, aby załadować przedmioty.</string>
   <string name="attendance_refreshing">Odświeżam listę przedmiotów…</string>
@@ -525,7 +616,7 @@
   <string name="attendance_edit_hours_title">Edytuj liczbę godzin</string>
   <string name="attendance_edit_hours_message">Wprowadź łączną liczbę godzin dla przedmiotu:\n%1$s</string>
   <string name="attendance_hours_tap_to_set">Kliknij aby ustawić godziny</string>
-  <string name="attendance_summary_title">Łącznie nieobecności</string>
+  <string name="attendance_summary_title">Asystent obecności</string>
   <string name="attendance_no_absences">Brak nieobecności</string>
   <string name="attendance_one_absence">1 nieobecność</string>
   <string name="attendance_absences_count">%1$d nieobecności</string>

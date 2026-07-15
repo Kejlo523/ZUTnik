@@ -71,7 +71,8 @@ public class UsosOAuthCallbackActivity extends PhoneAwareActivity {
         }
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String requestTokenSecret = prefs.getString(KEY_TEMP_RT_SECRET, null);
+        String requestTokenSecret = SecureLocalData.readString(
+                this, prefs, KEY_TEMP_RT_SECRET, null);
 
         if (requestTokenSecret == null) {
             failWithError(getString(R.string.login_usos_error_auth, "brak request token secret"));

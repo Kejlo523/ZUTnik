@@ -210,11 +210,14 @@
     <style name="ThemeOverlay.ZUTnik.Toolbar" parent="ThemeOverlay.AppCompat.ActionBar">
         <item name="colorControlNormal">?attr/mzText</item>
         <item name="android:textColorPrimary">?attr/mzText</item>
+        <item name="popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
     </style>
 
     <style name="Widget.ZUTnik.Toolbar" parent="Widget.AppCompat.Toolbar">
         <item name="android:background">@drawable/bg_toolbar</item>
         <item name="android:theme">@style/ThemeOverlay.ZUTnik.Toolbar</item>
+        <item name="popupTheme">@style/ThemeOverlay.ZUTnik.PopupMenu</item>
         <item name="android:minHeight">?attr/actionBarSize</item>
         <item name="titleTextColor">?attr/mzText</item>
         <item name="subtitleTextColor">?attr/mzText</item>
@@ -283,6 +286,21 @@
         <item name="android:textAllCaps">false</item>
         <item name="android:letterSpacing">0</item>
         <item name="android:elevation">0dp</item>
+    </style>
+
+    <style name="Widget.ZUTnik.PrivacyKey" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:layout_width">72dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:textColor">?attr/mzText</item>
+        <item name="android:textSize">20sp</item>
+        <item name="backgroundTint">?attr/mzCard</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="strokeColor">?attr/mzBorderSoft</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="rippleColor">?attr/mzBgSoft</item>
     </style>
 
     <style name="ShapeAppearance.ZUTnik.NavigationIndicator" parent="ShapeAppearance.MaterialComponents.SmallComponent">
@@ -372,6 +390,19 @@
     <style name="ThemeOverlay.ZUTnik.PopupMenu" parent="ThemeOverlay.MaterialComponents">
         <item name="popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
         <item name="android:popupMenuStyle">@style/Widget.ZUTnik.PopupMenu</item>
+        <item name="colorControlActivated">?attr/mzPrimary</item>
+        <item name="android:colorAccent">?attr/mzPrimary</item>
+    </style>
+
+    <style name="ThemeOverlay.ZUTnik.FilterDialog" parent="ThemeOverlay.ZUTnik.AlertDialog">
+        <item name="android:windowBackground">@drawable/bg_popup_menu</item>
+        <item name="colorSurface">?attr/mzBgSurface</item>
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.ZUTnik.FilterDialog.Title</item>
+    </style>
+
+    <style name="TextAppearance.ZUTnik.FilterDialog.Title" parent="TextAppearance.ZUTnik.AlertDialog.Title">
+        <item name="android:textSize">20sp</item>
     </style>
 
     <style name="Widget.ZUTnik.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">

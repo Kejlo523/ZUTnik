@@ -116,4 +116,24 @@
             android:textSize="12sp" />
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/attendanceBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="10dp"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="0"
+        android:progressBackgroundTint="?attr/mzBorderSoft" />
+
+    <TextView
+        android:id="@+id/tvAttendanceStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/attendance_assistant_set_hours"
+        android:textColor="?attr/mzMuted"
+        android:textSize="12sp" />
+
 </LinearLayout>

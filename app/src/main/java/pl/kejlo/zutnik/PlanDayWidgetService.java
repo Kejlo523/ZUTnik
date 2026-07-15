@@ -138,7 +138,8 @@ public class PlanDayWidgetService extends RemoteViewsService {
             PlanRepository.PlanEventUi ev = events.get(position);
             RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_item_glass);
 
-            rv.setTextViewText(R.id.itemTitle, ev.title != null ? ev.title : "");
+            String type = shortType(ev.typeLabel, ev.typeClass);
+            rv.setTextViewText(R.id.itemTitle, compactTitle(ev.title, type));
 
             // Apply Theme Text Color
             int textColorPrimary = context.getColor(R.color.glass_text_primary); // Default White
@@ -147,16 +148,21 @@ public class PlanDayWidgetService extends RemoteViewsService {
             rv.setTextColor(R.id.itemTitle, textColorPrimary);
             rv.setTextColor(R.id.itemTime, textColorSecondary);
             rv.setTextColor(R.id.itemRoom, textColorSecondary);
+            rv.setTextColor(R.id.itemType, textColorSecondary);
 
             String start = ev.startStr != null ? ev.startStr : "";
             String end = ev.endStr != null ? ev.endStr : "";
             rv.setTextViewText(R.id.itemTime, start + " - " + end);
+            rv.setTextViewText(R.id.itemType, type);
 
             String roomStr = "";
-            if (ev.room != null && !ev.room.isEmpty())
-                roomStr = ev.room;
-            if (ev.group != null && !ev.group.isEmpty())
-                roomStr += (roomStr.isEmpty() ? "" : " | ") + ev.group;
+            if (ev.room != null && !ev.room.trim().isEmpty()) {
+                roomStr = context.getString(R.string.plan_widget_room_format, ev.room.trim());
+            }
+            if (ev.group != null && !ev.group.trim().isEmpty()) {
+                String group = context.getString(R.string.plan_widget_group_format, ev.group.trim());
+                roomStr += (roomStr.isEmpty() ? "" : "  ·  ") + group;
+            }
 
             rv.setTextViewText(R.id.itemRoom, roomStr);
 
@@ -167,6 +173,30 @@ public class PlanDayWidgetService extends RemoteViewsService {
             rv.setOnClickFillInIntent(R.id.itemRoot, fillIntent);
 
             return rv;
+        }
+
+        private String compactTitle(String title, String type) {
+            String value = title != null ? title.trim() : "";
+            if (type == null || type.isEmpty()) {
+                return value;
+            }
+            String suffix = " (" + type + ")";
+            if (value.length() >= suffix.length()
+                    && value.regionMatches(true, value.length() - suffix.length(), suffix, 0, suffix.length())) {
+                return value.substring(0, value.length() - suffix.length()).trim();
+            }
+            return value;
+        }
+
+        private String shortType(String typeLabel, String typeClass) {
+            String value = typeLabel != null ? typeLabel.trim().toLowerCase(java.util.Locale.ROOT) : "";
+            if (value.contains("labor")) return "L";
+            if (value.contains("wyk") || value.contains("lecture")) return "W";
+            if (value.contains("ćw") || value.contains("cw") || value.contains("aud")) return "Ć";
+            if (value.contains("projekt")) return "P";
+            if (value.contains("semin")) return "S";
+            String fallback = typeClass != null ? typeClass.trim().toUpperCase(java.util.Locale.ROOT) : "";
+            return fallback.length() > 2 ? fallback.substring(0, 2) : fallback;
         }
 
         @Override

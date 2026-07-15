@@ -287,7 +287,11 @@ public class UsosLoginWebActivity extends PhoneAwareActivity {
         }
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String requestTokenSecret = prefs.getString(UsosOAuthCallbackActivity.KEY_TEMP_RT_SECRET, null);
+        String requestTokenSecret = SecureLocalData.readString(
+                this,
+                prefs,
+                UsosOAuthCallbackActivity.KEY_TEMP_RT_SECRET,
+                null);
 
         if (requestTokenSecret == null) {
             Toast.makeText(this, getString(

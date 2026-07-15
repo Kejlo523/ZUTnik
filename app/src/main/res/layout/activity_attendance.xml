@@ -68,14 +68,57 @@
                         android:textSize="13sp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvAbsenceTotal"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/common_zero"
-                    android:textColor="?attr/mzText"
-                    android:textSize="36sp"
-                    android:textStyle="bold" />
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvAttendancePercent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/attendance_percent_placeholder"
+                        android:textColor="?attr/mzText"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/attendance_percent_label"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="34dp"
+                    android:layout_marginHorizontal="14dp"
+                    android:background="?attr/mzBorderSoft" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvAbsenceTotal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/common_zero"
+                        android:textColor="?attr/mzText"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/attendance_absences_label"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="10sp" />
+                </LinearLayout>
 
                 <ImageView
                     android:id="@+id/btnAttendanceRefresh"

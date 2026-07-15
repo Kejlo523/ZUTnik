@@ -93,7 +93,7 @@ public class AttendanceRepository {
             return null;
         }
 
-        String json = prefs.getString(KEY_SUBJECTS_CACHE, null);
+        String json = SecureLocalData.readString(context, prefs, KEY_SUBJECTS_CACHE, null);
         if (json == null || json.isEmpty()) {
             return null;
         }
@@ -131,11 +131,9 @@ public class AttendanceRepository {
                 obj.put("type", item.typeLabel);
                 arr.put(obj);
             }
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(KEY_SUBJECTS_CACHE, arr.toString())
-                    .putLong(KEY_SUBJECTS_CACHE_TS, System.currentTimeMillis())
-                    .apply();
+            SharedPreferences preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            SecureLocalData.putString(context, preferences, KEY_SUBJECTS_CACHE, arr.toString());
+            preferences.edit().putLong(KEY_SUBJECTS_CACHE_TS, System.currentTimeMillis()).apply();
         } catch (JSONException e) {
             Log.w(TAG, "Failed to save subjects cache: " + e.getMessage());
         }
@@ -153,7 +151,7 @@ public class AttendanceRepository {
     private Map<String, Integer> loadSavedHoursFromDisk() {
         Map<String, Integer> result = new HashMap<>();
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String json = prefs.getString(KEY_HOURS, null);
+        String json = SecureLocalData.readString(context, prefs, KEY_HOURS, null);
         if (json == null) {
             return result;
         }
@@ -189,10 +187,11 @@ public class AttendanceRepository {
             for (Map.Entry<String, Integer> entry : hoursMap.entrySet()) {
                 obj.put(entry.getKey(), entry.getValue());
             }
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(KEY_HOURS, obj.toString())
-                    .apply();
+            SecureLocalData.putString(
+                    context,
+                    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
+                    KEY_HOURS,
+                    obj.toString());
         } catch (JSONException e) {
             Log.w(TAG, "Failed to save hours: " + e.getMessage());
         }
@@ -201,7 +200,7 @@ public class AttendanceRepository {
     private Map<String, Integer> loadSavedAbsencesFromDisk() {
         Map<String, Integer> result = new HashMap<>();
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String json = prefs.getString(KEY_ABSENCES, null);
+        String json = SecureLocalData.readString(context, prefs, KEY_ABSENCES, null);
         if (json == null) {
             return result;
         }
@@ -237,10 +236,11 @@ public class AttendanceRepository {
             for (Map.Entry<String, Integer> entry : absencesMap.entrySet()) {
                 obj.put(entry.getKey(), entry.getValue());
             }
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(KEY_ABSENCES, obj.toString())
-                    .apply();
+            SecureLocalData.putString(
+                    context,
+                    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
+                    KEY_ABSENCES,
+                    obj.toString());
         } catch (JSONException e) {
             Log.w(TAG, "Failed to save absences: " + e.getMessage());
         }
@@ -248,17 +248,21 @@ public class AttendanceRepository {
 
     public double calculateOverallAttendance(List<Absence> absences) {
         int totalHours = 0;
-        int totalAbsences = 0;
+        int totalMissedHours = 0;
 
         for (Absence a : absences) {
             totalHours += a.totalHours;
-            totalAbsences += a.absenceCount;
+            totalMissedHours += a.getMissedHours();
         }
 
         if (totalHours <= 0) {
             return 100.0;
         }
-        int attended = Math.max(0, totalHours - totalAbsences);
+        int attended = Math.max(0, totalHours - totalMissedHours);
         return (attended / (double) totalHours) * 100.0;
+    }
+
+    public void close() {
+        persistExecutor.shutdown();
     }
 }

@@ -806,7 +806,7 @@ public class PlanRepository {
         if (context == null)
             return new ArrayList<>();
         SharedPreferences prefs = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
-        String json = prefs.getString(KEY_SAVED_SEARCHES, null);
+        String json = SecureLocalData.readString(context, prefs, KEY_SAVED_SEARCHES, null);
         List<SavedSearch> list = new ArrayList<>();
         if (json == null)
             return list;
@@ -837,7 +837,7 @@ public class PlanRepository {
             } catch (Exception ignored) {
             }
         }
-        prefs.edit().putString(KEY_SAVED_SEARCHES, arr.toString()).apply();
+        SecureLocalData.putString(context, prefs, KEY_SAVED_SEARCHES, arr.toString());
     }
 
     private static String lower(String s) {
@@ -1352,7 +1352,12 @@ public class PlanRepository {
             while ((line = br.readLine()) != null)
                 sb.append(line);
 
-            JSONObject root = new JSONObject(sb.toString());
+            String stored = sb.toString();
+            String plain = SecureLocalData.decrypt(appContext, stored);
+            if (plain == null) {
+                return null;
+            }
+            JSONObject root = new JSONObject(plain);
             FullPlanCache cache = new FullPlanCache();
             cache.album = root.optString("album", null);
             cache.timestampMs = root.optLong("timestamp", 0L);
@@ -1450,8 +1455,12 @@ public class PlanRepository {
             }
             root.put("scopeTimestamps", scopesJson);
 
+            String encrypted = SecureLocalData.encrypt(appContext, root.toString());
+            if (encrypted == null) {
+                return;
+            }
             fos = appContext.openFileOutput(CACHE_FILE_NAME, Context.MODE_PRIVATE);
-            fos.write(root.toString().getBytes(StandardCharsets.UTF_8));
+            fos.write(encrypted.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             Log.w(TAG, "Failed to write cache: " + e.getMessage());
         } finally {
@@ -2225,7 +2234,8 @@ public class PlanRepository {
             SharedPreferences sp = appContext.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
             long ts = sp.getLong(KEY_SESSION_CACHE_TS, 0);
             if ((now - ts) < SESSION_CACHE_TTL_MS) {
-                String json = sp.getString(KEY_SESSION_CACHE_JSON, null);
+                String json = SecureLocalData.readString(
+                        appContext, sp, KEY_SESSION_CACHE_JSON, null);
                 if (json != null) {
                     List<SessionPeriod> cached = parseSessionJson(json);
                     if (!cached.isEmpty()) {
@@ -2243,10 +2253,9 @@ public class PlanRepository {
             sCachedSessionsTs = now;
             if (appContext != null) {
                 SharedPreferences sp = appContext.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
-                sp.edit()
-                        .putString(KEY_SESSION_CACHE_JSON, sessionToJson(sessions))
-                        .putLong(KEY_SESSION_CACHE_TS, now)
-                        .apply();
+                SecureLocalData.putString(
+                        appContext, sp, KEY_SESSION_CACHE_JSON, sessionToJson(sessions));
+                sp.edit().putLong(KEY_SESSION_CACHE_TS, now).apply();
             }
         }
         return sessions;
@@ -2263,7 +2272,7 @@ public class PlanRepository {
         }
 
         SharedPreferences sp = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
-        String json = sp.getString(KEY_SESSION_CACHE_JSON, null);
+        String json = SecureLocalData.readString(context, sp, KEY_SESSION_CACHE_JSON, null);
         if (json == null || json.isEmpty()) {
             return new ArrayList<>();
         }

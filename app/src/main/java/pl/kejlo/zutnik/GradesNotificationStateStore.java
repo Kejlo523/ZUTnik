@@ -51,7 +51,9 @@ final class GradesNotificationStateStore {
         String scope = NotificationSyncManager.buildCurrentSyncScope(appContext);
         synchronized (STATE_LOCK) {
             SharedPreferences preferences = prefs(appContext);
-            Set<String> merged = readSet(preferences.getString(
+            Set<String> merged = readSet(SecureLocalData.readString(
+                    appContext,
+                    preferences,
                     scopedKey(KEY_BASELINE_JSON, scope),
                     "[]"));
             merged.addAll(current.keySet());
@@ -76,7 +78,8 @@ final class GradesNotificationStateStore {
             String readyKey = scopedKey(KEY_BASELINE_READY, scope);
             String jsonKey = scopedKey(KEY_BASELINE_JSON, scope);
             boolean ready = preferences.getBoolean(readyKey, false);
-            Set<String> previous = readSet(preferences.getString(jsonKey, "[]"));
+            Set<String> previous = readSet(SecureLocalData.readString(
+                    appContext, preferences, jsonKey, "[]"));
 
             if (!ready) {
                 saveBaseline(appContext, scope, current.keySet());
@@ -111,8 +114,13 @@ final class GradesNotificationStateStore {
         for (String key : keys) {
             array.put(key);
         }
-        prefs(context).edit()
-                .putString(scopedKey(KEY_BASELINE_JSON, scope), array.toString())
+        SharedPreferences preferences = prefs(context);
+        SecureLocalData.putString(
+                context,
+                preferences,
+                scopedKey(KEY_BASELINE_JSON, scope),
+                array.toString());
+        preferences.edit()
                 .putBoolean(scopedKey(KEY_BASELINE_READY, scope), true)
                 .apply();
     }

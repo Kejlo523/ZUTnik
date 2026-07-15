@@ -149,6 +149,18 @@ public class MainShellActivity extends ZutnikBaseActivity {
         MainNavHelper.setShellNavigationVisible(shellNavigation, visible);
     }
 
+    public void openPlanSearch(@NonNull String category, @NonNull String query) {
+        Fragment existing = findFragment(MainNavHelper.Screen.PLAN);
+        getIntent().putExtra("EXTRA_SEARCH_CATEGORY", category);
+        getIntent().putExtra("EXTRA_SEARCH_QUERY", query);
+        switchToTab(MainNavHelper.Screen.PLAN, false);
+        if (existing instanceof PlanTabFragment) {
+            ((PlanTabFragment) existing).applyExternalSearch(category, query);
+            getIntent().removeExtra("EXTRA_SEARCH_CATEGORY");
+            getIntent().removeExtra("EXTRA_SEARCH_QUERY");
+        }
+    }
+
     public void switchToTab(@NonNull MainNavHelper.Screen screen, boolean animateFirstShow) {
         if (!MainNavHelper.isMainTab(screen)) {
             return;

@@ -256,10 +256,11 @@ public class LoginActivity extends PhoneAwareActivity {
                         BuildConfig.USOS_CONSUMER_SECRET,
                         scopes);
 
-                getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                        .edit()
-                        .putString(UsosOAuthCallbackActivity.KEY_TEMP_RT_SECRET, rt.tokenSecret)
-                        .apply();
+                SecureLocalData.putString(
+                        this,
+                        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
+                        UsosOAuthCallbackActivity.KEY_TEMP_RT_SECRET,
+                        rt.tokenSecret);
 
                 String authUrl = UsosOAuth.authorizationUrl(rt.token);
 
