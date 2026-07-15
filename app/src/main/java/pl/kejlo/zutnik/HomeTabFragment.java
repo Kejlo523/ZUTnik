@@ -168,7 +168,12 @@ public class HomeTabFragment extends ZutnikTabFragment {
             }
         }, getViewLifecycleOwner());
 
-        view.post(() -> revealContent(skeleton, contentRoot));
+        view.post(() -> {
+            revealContent(skeleton, contentRoot);
+            if (tileGrid != null) {
+                tileGrid.refreshTileContent();
+            }
+        });
     }
 
     void handleNotificationPermissionFlow(Intent activityIntent) {

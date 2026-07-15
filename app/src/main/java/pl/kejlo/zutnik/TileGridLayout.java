@@ -237,6 +237,10 @@ public class TileGridLayout extends ViewGroup {
         }
     }
 
+    public void refreshTileContent() {
+        forEachTileView(TileView::refreshResponsiveContent);
+    }
+
     public void prepareTilesForEntrance() {
         entrancePrepared = true;
         float offset = dp(12);

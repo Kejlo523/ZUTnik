@@ -113,7 +113,7 @@ public class TileView extends FrameLayout {
     public void setTile(Tile tile) {
         this.tile = tile;
         bindContent();
-        post(this::applyResponsiveContent);
+        refreshResponsiveContent();
     }
 
     private void bindContent() {
@@ -130,6 +130,11 @@ public class TileView extends FrameLayout {
         } else {
             textDesc.setText(tile.description);
         }
+        // Safe initial state until the measured size selects the final compact layout.
+        textTitle.setVisibility(VISIBLE);
+        textTitle.setAlpha(1f);
+        textDesc.setAlpha(1f);
+        iconSurface.setAlpha(1f);
         iconView.setImageResource(getIconForAction(tile));
         updateSizeBadge();
         applyColors();
@@ -164,13 +169,13 @@ public class TileView extends FrameLayout {
         cardContent.setStrokeWidth(dp(manipulating ? 2 : 1));
     }
 
-    private void applyResponsiveContent() {
-        if (tile == null || getWidth() <= 0 || getHeight() <= 0) {
+    private void applyResponsiveContent(int width, int height) {
+        if (tile == null || width <= 0 || height <= 0) {
             return;
         }
         float density = getResources().getDisplayMetrics().density;
-        float widthDp = getWidth() / density;
-        float heightDp = getHeight() / density;
+        float widthDp = width / density;
+        float heightDp = height / density;
         boolean iconOnly = widthDp < 92f && heightDp < 96f;
         boolean narrow = widthDp < 124f;
         boolean shortTile = heightDp < 112f;
@@ -180,8 +185,15 @@ public class TileView extends FrameLayout {
 
         int horizontalPadding = narrow ? 11 : 15;
         int verticalPadding = shortTile ? 10 : 14;
-        contentContainer.setPadding(dp(horizontalPadding), dp(verticalPadding),
-                dp(horizontalPadding), dp(verticalPadding));
+        int horizontalPaddingPx = dp(horizontalPadding);
+        int verticalPaddingPx = dp(verticalPadding);
+        if (contentContainer.getPaddingLeft() != horizontalPaddingPx
+                || contentContainer.getPaddingTop() != verticalPaddingPx
+                || contentContainer.getPaddingRight() != horizontalPaddingPx
+                || contentContainer.getPaddingBottom() != verticalPaddingPx) {
+            contentContainer.setPadding(horizontalPaddingPx, verticalPaddingPx,
+                    horizontalPaddingPx, verticalPaddingPx);
+        }
 
         if (iconOnly) {
             contentContainer.setGravity(Gravity.CENTER);
@@ -202,14 +214,26 @@ public class TileView extends FrameLayout {
         textDesc.setMaxLines(heightDp >= 196f ? 3 : 2);
 
         LinearLayout.LayoutParams iconParams = (LinearLayout.LayoutParams) iconSurface.getLayoutParams();
-        iconParams.bottomMargin = dp(heightDp < 154f ? 7 : 11);
-        iconSurface.setLayoutParams(iconParams);
+        int iconBottomMargin = dp(heightDp < 154f ? 7 : 11);
+        if (iconParams.bottomMargin != iconBottomMargin) {
+            iconParams.bottomMargin = iconBottomMargin;
+            iconSurface.setLayoutParams(iconParams);
+        }
     }
 
     @Override
-    protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
-        super.onSizeChanged(width, height, oldWidth, oldHeight);
-        applyResponsiveContent();
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        applyResponsiveContent(
+                MeasureSpec.getSize(widthMeasureSpec),
+                MeasureSpec.getSize(heightMeasureSpec));
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    public void refreshResponsiveContent() {
+        if (getWidth() > 0 && getHeight() > 0) {
+            applyResponsiveContent(getWidth(), getHeight());
+        }
+        requestLayout();
     }
 
     public Tile getTile() {
@@ -224,7 +248,7 @@ public class TileView extends FrameLayout {
         setControlVisible(btnResize, enabled, 70L);
         setControlVisible(textSize, enabled && hasRoomForSizeBadge(), 80L);
         cardContent.setForeground(enabled ? null : selectableForeground());
-        applyResponsiveContent();
+        refreshResponsiveContent();
     }
 
     private void setControlVisible(View view, boolean visible, long delay) {
