@@ -224,7 +224,11 @@ final class PlanSubjectFilterHelper {
             return null;
         }
 
-        String json = prefs.getString(getFilterCacheJsonKey(context), null);
+        String json = SecureLocalData.readString(
+                context,
+                prefs,
+                getFilterCacheJsonKey(context),
+                null);
         if (json == null || json.isEmpty()) {
             return null;
         }
@@ -269,9 +273,15 @@ final class PlanSubjectFilterHelper {
                 obj.put("typeKey", item.typeKey != null ? item.typeKey : "");
                 arr.put(obj);
             }
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(getFilterCacheJsonKey(context), arr.toString())
+            SharedPreferences preferences = context.getSharedPreferences(
+                    PREFS_NAME,
+                    Context.MODE_PRIVATE);
+            SecureLocalData.putString(
+                    context,
+                    preferences,
+                    getFilterCacheJsonKey(context),
+                    arr.toString());
+            preferences.edit()
                     .putLong(getFilterCacheTsKey(context), System.currentTimeMillis())
                     .apply();
         } catch (JSONException ignored) {

@@ -367,8 +367,8 @@ public class InfoTabFragment extends ZutnikTabFragment {
         String keyDetails = getCacheKey(KEY_INFO_DETAILS_JSON, scopeKey);
         String keyHistory = getCacheKey(KEY_INFO_HISTORY_JSON, scopeKey);
 
-        String detailsJson = prefs.getString(keyDetails, null);
-        String historyJson = prefs.getString(keyHistory, null);
+        String detailsJson = SecureLocalData.readString(requireContext(), prefs, keyDetails, null);
+        String historyJson = SecureLocalData.readString(requireContext(), prefs, keyHistory, null);
 
         if (detailsJson == null && historyJson == null) {
             return false;
@@ -455,9 +455,17 @@ public class InfoTabFragment extends ZutnikTabFragment {
                 }
             }
 
+            SecureLocalData.putString(
+                    requireContext(),
+                    prefs,
+                    getCacheKey(KEY_INFO_DETAILS_JSON, scopeKey),
+                    detailsObj.toString());
+            SecureLocalData.putString(
+                    requireContext(),
+                    prefs,
+                    getCacheKey(KEY_INFO_HISTORY_JSON, scopeKey),
+                    historyArr.toString());
             prefs.edit()
-                    .putString(getCacheKey(KEY_INFO_DETAILS_JSON, scopeKey), detailsObj.toString())
-                    .putString(getCacheKey(KEY_INFO_HISTORY_JSON, scopeKey), historyArr.toString())
                     .putLong(getCacheKey(KEY_INFO_TIMESTAMP, scopeKey), System.currentTimeMillis())
                     .apply();
 

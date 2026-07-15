@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import android.content.res.ColorStateList;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -34,6 +35,7 @@ public class AttendanceActivity extends PhoneAwareActivity {
     private RecyclerView listSubjects;
     private TextView tvAbsenceTotal;
     private TextView tvAttendanceSubtitle;
+    private TextView tvAttendancePercent;
     private TextView tvEmpty;
     private ProgressBar attendanceProgress;
     private ImageView btnRefresh;
@@ -68,6 +70,7 @@ public class AttendanceActivity extends PhoneAwareActivity {
         listSubjects = content.findViewById(R.id.listSubjects);
         tvAbsenceTotal = content.findViewById(R.id.tvAbsenceTotal);
         tvAttendanceSubtitle = content.findViewById(R.id.tvAttendanceSubtitle);
+        tvAttendancePercent = content.findViewById(R.id.tvAttendancePercent);
         tvEmpty = content.findViewById(R.id.tvEmpty);
         attendanceProgress = content.findViewById(R.id.attendanceProgress);
         btnRefresh = content.findViewById(R.id.btnAttendanceRefresh);
@@ -107,6 +110,9 @@ public class AttendanceActivity extends PhoneAwareActivity {
             loadFuture.cancel(true);
         }
         loadExecutor.shutdownNow();
+        if (repository != null) {
+            repository.close();
+        }
         super.onDestroy();
     }
 
@@ -143,18 +149,27 @@ public class AttendanceActivity extends PhoneAwareActivity {
 
     private void updateSummary() {
         int totalAbsences = 0;
+        int atRisk = 0;
         for (Absence a : absenceList) {
             totalAbsences += a.absenceCount;
+            if (a.isBelowRequiredAttendance()) {
+                atRisk++;
+            }
         }
 
         tvAbsenceTotal.setText(String.valueOf(totalAbsences));
+        double overall = repository.calculateOverallAttendance(absenceList);
+        tvAttendancePercent.setText(getString(R.string.attendance_percent_value, overall));
 
-        if (totalAbsences == 0) {
-            tvAttendanceSubtitle.setText(R.string.attendance_no_absences);
-        } else if (totalAbsences == 1) {
-            tvAttendanceSubtitle.setText(R.string.attendance_one_absence);
+        if (atRisk > 0) {
+            tvAttendanceSubtitle.setText(getResources().getQuantityString(
+                    R.plurals.attendance_risk_summary,
+                    atRisk,
+                    atRisk));
+            tvAttendanceSubtitle.setTextColor(ThemeManager.resolveColor(this, R.attr.mzDanger));
         } else {
-            tvAttendanceSubtitle.setText(getString(R.string.attendance_absences_count, totalAbsences));
+            tvAttendanceSubtitle.setText(R.string.attendance_assistant_ok_summary);
+            tvAttendanceSubtitle.setTextColor(ThemeManager.resolveColor(this, R.attr.mzMuted));
         }
     }
 
@@ -198,8 +213,9 @@ public class AttendanceActivity extends PhoneAwareActivity {
                     }
 
                     absence.totalHours = newHours;
-                    if (absence.absenceCount > newHours) {
-                        absence.absenceCount = newHours;
+                    int maximumAbsences = absence.getMaximumAbsenceCount();
+                    if (absence.absenceCount > maximumAbsences) {
+                        absence.absenceCount = maximumAbsences;
                         repository.saveAbsence(absence.subjectKey, absence.absenceCount);
                     }
                     repository.saveHours(absence.subjectKey, newHours);
@@ -231,9 +247,10 @@ public class AttendanceActivity extends PhoneAwareActivity {
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvSubjectName, tvSubjectType, tvHours, tvAbsenceCount;
+            TextView tvSubjectName, tvSubjectType, tvHours, tvAbsenceCount, tvAttendanceStatus;
             ImageView btnMinus, btnPlus;
             View hoursContainer;
+            ProgressBar attendanceBar;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
@@ -244,11 +261,15 @@ public class AttendanceActivity extends PhoneAwareActivity {
                 btnMinus = itemView.findViewById(R.id.btnMinus);
                 btnPlus = itemView.findViewById(R.id.btnPlus);
                 hoursContainer = itemView.findViewById(R.id.hoursContainer);
+                attendanceBar = itemView.findViewById(R.id.attendanceBar);
+                tvAttendanceStatus = itemView.findViewById(R.id.tvAttendanceStatus);
             }
 
             void bind(Absence absence) {
                 tvSubjectName.setText(absence.subjectName);
-                tvSubjectType.setText(absence.subjectType);
+                tvSubjectType.setText(GradesTextUtils.formatTypeDisplay(
+                        AttendanceActivity.this,
+                        absence.subjectType));
 
                 if (absence.totalHours > 0) {
                     tvHours.setText(getString(R.string.attendance_hours_format, absence.totalHours));
@@ -257,6 +278,7 @@ public class AttendanceActivity extends PhoneAwareActivity {
                 }
 
                 tvAbsenceCount.setText(String.valueOf(absence.absenceCount));
+                bindAssistant(absence);
 
                 hoursContainer.setOnClickListener(v ->
                         showEditHoursDialog(absence, getBindingAdapterPosition()));
@@ -271,13 +293,58 @@ public class AttendanceActivity extends PhoneAwareActivity {
                 });
 
                 btnPlus.setOnClickListener(v -> {
-                    if (absence.totalHours == 0 || absence.absenceCount < absence.totalHours) {
+                    if (absence.totalHours == 0
+                            || absence.absenceCount < absence.getMaximumAbsenceCount()) {
                         absence.absenceCount++;
                         repository.saveAbsence(absence.subjectKey, absence.absenceCount);
                         notifyItemChanged(getBindingAdapterPosition());
                         updateSummary();
                     }
                 });
+            }
+
+            private void bindAssistant(Absence absence) {
+                if (absence.totalHours <= 0) {
+                    attendanceBar.setProgress(0);
+                    attendanceBar.setProgressTintList(ColorStateList.valueOf(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzBorderStrong)));
+                    tvAttendanceStatus.setText(R.string.attendance_assistant_set_hours);
+                    tvAttendanceStatus.setTextColor(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzMuted));
+                    return;
+                }
+
+                int percent = (int) Math.round(absence.getAttendancePercent());
+                attendanceBar.setProgress(Math.max(0, Math.min(100, percent)));
+                if (absence.isBelowRequiredAttendance()) {
+                    attendanceBar.setProgressTintList(ColorStateList.valueOf(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzDanger)));
+                    tvAttendanceStatus.setText(getString(
+                            R.string.attendance_assistant_below_limit,
+                            percent,
+                            Absence.DEFAULT_REQUIRED_ATTENDANCE_PERCENT));
+                    tvAttendanceStatus.setTextColor(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzDanger));
+                } else if (absence.getRemainingSafeAbsenceCount() == 0) {
+                    attendanceBar.setProgressTintList(ColorStateList.valueOf(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzAccent)));
+                    tvAttendanceStatus.setText(getString(
+                            R.string.attendance_assistant_at_limit,
+                            percent));
+                    tvAttendanceStatus.setTextColor(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzAccent));
+                } else {
+                    attendanceBar.setProgressTintList(ColorStateList.valueOf(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzSuccess)));
+                    int remaining = absence.getRemainingSafeAbsenceCount();
+                    tvAttendanceStatus.setText(getResources().getQuantityString(
+                            R.plurals.attendance_assistant_remaining,
+                            remaining,
+                            percent,
+                            remaining));
+                    tvAttendanceStatus.setTextColor(
+                            ThemeManager.resolveColor(AttendanceActivity.this, R.attr.mzMuted));
+                }
             }
         }
     }

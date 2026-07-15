@@ -6,6 +6,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationBarView;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -42,7 +43,6 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
-import android.view.ContextThemeWrapper;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -65,6 +65,7 @@ import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -572,6 +573,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
         if (requireActivity().getIntent().hasExtra("EXTRA_SEARCH_QUERY")) {
             String q = requireActivity().getIntent().getStringExtra("EXTRA_SEARCH_QUERY");
             String c = requireActivity().getIntent().getStringExtra("EXTRA_SEARCH_CATEGORY");
+            requireActivity().getIntent().removeExtra("EXTRA_SEARCH_QUERY");
+            requireActivity().getIntent().removeExtra("EXTRA_SEARCH_CATEGORY");
             if (q != null && !q.isEmpty()) {
                 currentSearchQuery = new PlanRepository.SearchParams();
                 currentSearchQuery.query = q;
@@ -947,9 +950,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private void setupMenuButton() {
         if (btnMenu != null) {
             btnMenu.setOnClickListener(v -> {
-                PopupMenu popup = new PopupMenu(
-                        new ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_ZUTnik_PopupMenu),
-                        v);
+                PopupMenu popup = ZutnikPopupMenu.create(requireContext(), v);
 
                 popup.getMenu().add(0, 1, 0, R.string.plan_button_today);
                 popup.getMenu().add(0, 2, 1, R.string.plan_button_add_event);
@@ -1597,6 +1598,32 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
     }
 
+    public void applyExternalSearch(String categoryKey, String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return;
+        }
+        String normalizedCategory = categoryKey == null || categoryKey.trim().isEmpty()
+                ? "album"
+                : categoryKey.trim();
+        performSearch(normalizedCategory, categoryLabel(normalizedCategory), query.trim());
+    }
+
+    private String categoryLabel(String categoryKey) {
+        switch (categoryKey) {
+            case "teacher":
+                return getString(R.string.plan_search_cat_teacher);
+            case "room":
+                return getString(R.string.plan_search_cat_room);
+            case "subject":
+                return getString(R.string.plan_search_cat_subject);
+            case "group":
+                return getString(R.string.plan_search_cat_group);
+            case "album":
+            default:
+                return getString(R.string.plan_search_cat_album);
+        }
+    }
+
     private boolean maybeUnlockOwnAlbumAchievement(String categoryKey, String query) {
         String ownStudentNumber = ZutnikSession.getInstance(requireContext()).getStudentNumber();
         if (!AchievementManager.isOwnAlbumSearch(categoryKey, query, ownStudentNumber)) {
@@ -2238,19 +2265,35 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     private void showFiltersDialog(List<PlanRepository.SubjectFilterItem> items) {
         String[] labels = new String[items.size()];
+        String[] typeLabels = new String[items.size()];
         boolean[] checked = new boolean[items.size()];
 
         for (int i = 0; i < items.size(); i++) {
             PlanRepository.SubjectFilterItem it = items.get(i);
-            String label = it.label != null ? it.label : "";
-            String typeLabel = resolveLocalizedFilterTypeLabel(it);
-            labels[i] = label + " (" + typeLabel + ")";
+            labels[i] = it.label != null ? it.label : "";
+            typeLabels[i] = resolveLocalizedFilterTypeLabel(it);
             checked[i] = hiddenSubjectKeys.contains(it.filterKey);
         }
 
-        new MaterialAlertDialogBuilder(requireContext())
+        View content = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_plan_filters, null, false);
+        RecyclerView list = content.findViewById(R.id.planFilterList);
+        list.setLayoutManager(new LinearLayoutManager(requireContext()));
+        list.setAdapter(new PlanFilterAdapter(labels, typeLabels, checked));
+
+        int rowHeight = Math.round(56f * getResources().getDisplayMetrics().density);
+        int maxHeight = Math.round(Math.min(
+                280f * getResources().getDisplayMetrics().density,
+                getResources().getDisplayMetrics().heightPixels * 0.38f));
+        ViewGroup.LayoutParams params = list.getLayoutParams();
+        params.height = Math.min(Math.max(rowHeight * items.size(), rowHeight * 2), maxHeight);
+        list.setLayoutParams(params);
+
+        new MaterialAlertDialogBuilder(
+                requireContext(),
+                R.style.ThemeOverlay_ZUTnik_FilterDialog)
                 .setTitle(R.string.plan_filters_dialog_title)
-                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> checked[which] = isChecked)
+                .setView(content)
                 .setPositiveButton(R.string.plan_filters_apply, (dialog, which) -> {
                     hiddenSubjectKeys.clear();
                     for (int i = 0; i < items.size(); i++) {
@@ -2270,6 +2313,62 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 })
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .show();
+    }
+
+    private static final class PlanFilterAdapter
+            extends RecyclerView.Adapter<PlanFilterAdapter.Holder> {
+
+        private final String[] labels;
+        private final String[] types;
+        private final boolean[] checked;
+
+        PlanFilterAdapter(String[] labels, String[] types, boolean[] checked) {
+            this.labels = labels;
+            this.types = types;
+            this.checked = checked;
+        }
+
+        @NonNull
+        @Override
+        public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_plan_filter, parent, false);
+            return new Holder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull Holder holder, int position) {
+            holder.title.setText(labels[position]);
+            holder.type.setText(types[position]);
+            holder.check.setChecked(checked[position]);
+            holder.itemView.setContentDescription(labels[position] + ", " + types[position]);
+            holder.itemView.setOnClickListener(v -> {
+                int adapterPosition = holder.getBindingAdapterPosition();
+                if (adapterPosition == RecyclerView.NO_POSITION) {
+                    return;
+                }
+                checked[adapterPosition] = !checked[adapterPosition];
+                notifyItemChanged(adapterPosition);
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return labels.length;
+        }
+
+        static final class Holder extends RecyclerView.ViewHolder {
+            final MaterialCheckBox check;
+            final TextView title;
+            final TextView type;
+
+            Holder(@NonNull View itemView) {
+                super(itemView);
+                check = itemView.findViewById(R.id.planFilterCheck);
+                title = itemView.findViewById(R.id.planFilterTitle);
+                type = itemView.findViewById(R.id.planFilterType);
+            }
+        }
     }
 
     private boolean isFilterCacheForcedRefreshPending() {
@@ -2378,7 +2477,11 @@ public class PlanTabFragment extends ZutnikTabFragment {
         if (now - ts > FILTER_CACHE_TTL_MS)
             return null;
 
-        String json = prefs.getString(getFilterCacheJsonKey(), null);
+        String json = SecureLocalData.readString(
+                requireContext(),
+                prefs,
+                getFilterCacheJsonKey(),
+                null);
         if (json == null || json.isEmpty())
             return null;
 
@@ -2419,8 +2522,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 obj.put("typeKey", it.typeKey != null ? it.typeKey : "");
                 arr.put(obj);
             }
+            SecureLocalData.putString(
+                    requireContext(),
+                    prefs,
+                    getFilterCacheJsonKey(),
+                    arr.toString());
             prefs.edit()
-                    .putString(getFilterCacheJsonKey(), arr.toString())
                     .putLong(getFilterCacheTsKey(), System.currentTimeMillis())
                     .apply();
         } catch (org.json.JSONException ignored) {

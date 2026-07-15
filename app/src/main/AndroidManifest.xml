@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
     <application
+        android:name=".ZutnikApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -69,6 +70,8 @@
 
         <activity android:name=".PlanChangeHistoryActivity" />
 
+        <activity android:name=".ChangeCenterActivity" />
+
         <activity android:name=".CalendarExportActivity" />
 
         <activity android:name=".UsefulLinksActivity" />
@@ -76,6 +79,12 @@
         <activity android:name=".WebLinkActivity" />
 
         <activity android:name=".SettingsActivity" />
+
+        <activity
+            android:name=".PrivacyLockActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop" />
 
         <activity android:name=".AboutActivity" />
 

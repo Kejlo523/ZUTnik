@@ -1375,7 +1375,11 @@ public class GradesRepository {
         }
         SharedPreferences prefs = appContext.getSharedPreferences(PREFS_CURRENT_GRADES_CACHE, Context.MODE_PRIVATE);
         String suffix = Integer.toHexString(scope.hashCode());
-        String raw = prefs.getString(KEY_CURRENT_GRADES_JSON_PREFIX + suffix, null);
+        String raw = SecureLocalData.readString(
+                appContext,
+                prefs,
+                KEY_CURRENT_GRADES_JSON_PREFIX + suffix,
+                null);
         if (raw == null || raw.isEmpty()) {
             return null;
         }
@@ -1405,9 +1409,15 @@ public class GradesRepository {
                 arr.put(gradeToJson(grade));
             }
             String suffix = Integer.toHexString(scope.hashCode());
-            appContext.getSharedPreferences(PREFS_CURRENT_GRADES_CACHE, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(KEY_CURRENT_GRADES_JSON_PREFIX + suffix, arr.toString())
+            SharedPreferences preferences = appContext.getSharedPreferences(
+                    PREFS_CURRENT_GRADES_CACHE,
+                    Context.MODE_PRIVATE);
+            SecureLocalData.putString(
+                    appContext,
+                    preferences,
+                    KEY_CURRENT_GRADES_JSON_PREFIX + suffix,
+                    arr.toString());
+            preferences.edit()
                     .putLong(KEY_CURRENT_GRADES_TS_PREFIX + suffix, System.currentTimeMillis())
                     .apply();
         } catch (Exception ignored) {

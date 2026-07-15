@@ -138,6 +138,11 @@ public class HomeTabFragment extends ZutnikTabFragment {
                     return;
                 }
                 boolean isEdit = tileGrid.isEditMode();
+                MenuItem changeCenterItem = menu.findItem(R.id.action_change_center);
+                if (changeCenterItem != null) {
+                    changeCenterItem.setVisible(!isEdit);
+                    bindChangeCenterAction(changeCenterItem);
+                }
                 MenuItem editItem = menu.findItem(R.id.action_edit_home);
                 if (editItem != null) {
                     editItem.setVisible(!isEdit);
@@ -236,7 +241,10 @@ public class HomeTabFragment extends ZutnikTabFragment {
     }
 
     private boolean onHomeMenuItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_edit_home) {
+        if (item.getItemId() == R.id.action_change_center) {
+            openChangeCenter();
+            return true;
+        } else if (item.getItemId() == R.id.action_edit_home) {
             if (tileGrid.isEditMode()) {
                 saveAndExitEditMode();
             } else {
@@ -256,12 +264,43 @@ public class HomeTabFragment extends ZutnikTabFragment {
         return false;
     }
 
+    private void bindChangeCenterAction(@NonNull MenuItem item) {
+        View actionView = item.getActionView();
+        if (actionView == null) {
+            return;
+        }
+        actionView.setContentDescription(getString(R.string.change_center_title));
+        actionView.setOnClickListener(v -> openChangeCenter());
+        TextView badge = actionView.findViewById(R.id.changeCenterBadge);
+        if (badge == null) {
+            return;
+        }
+        int unread = ChangeCenterStore.unreadCount(requireContext());
+        if (unread <= 0) {
+            badge.setVisibility(View.GONE);
+        } else {
+            badge.setText(unread > 99 ? "99+" : String.valueOf(unread));
+            badge.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void openChangeCenter() {
+        startActivity(new Intent(requireContext(), ChangeCenterActivity.class));
+        requireActivity().overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
+    }
+
     @Override
     protected void onTabActivated() {
         if (!isTabCurrentlyVisible()) {
             return;
         }
         ensureHomeToolbarActive();
+        invalidateActivityMenu();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
         invalidateActivityMenu();
     }
 
@@ -598,7 +637,20 @@ public class HomeTabFragment extends ZutnikTabFragment {
                     requireActivity().overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
                     return;
                 case Tile.ACTION_PLAN_SEARCH:
-                    shellActivity().switchToTab(MainNavHelper.Screen.PLAN, false);
+                    try {
+                        org.json.JSONObject search = new org.json.JSONObject(tile.actionData);
+                        String category = search.optString("ck", "album").trim();
+                        String query = search.optString("q", "").trim();
+                        if (query.isEmpty()) {
+                            throw new org.json.JSONException("Missing search query");
+                        }
+                        shellActivity().openPlanSearch(category, query);
+                    } catch (Exception e) {
+                        Toast.makeText(
+                                requireContext(),
+                                R.string.home_plan_search_error,
+                                Toast.LENGTH_SHORT).show();
+                    }
                     return;
                 case Tile.ACTION_ACTIVITY:
                     try {

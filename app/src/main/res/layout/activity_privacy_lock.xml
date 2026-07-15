@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:fillViewport="true"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <ImageView
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_privacy_lock_icon"
+            android:contentDescription="@null"
+            android:padding="13dp"
+            android:src="@drawable/ic_lock"
+            app:tint="?attr/mzPrimary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/privacy_unlock_title"
+            android:textColor="?attr/mzText"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="@string/privacy_unlock_message"
+            android:textColor="?attr/mzMuted"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:id="@+id/privacyPinPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/privacyPinDots"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans"
+                android:letterSpacing="0"
+                android:textColor="?attr/mzText"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/privacyError"
+                android:layout_width="match_parent"
+                android:layout_height="22dp"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:textColor="?attr/mzDanger"
+                android:textSize="12sp"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <GridLayout
+            android:layout_width="264dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:alignmentMode="alignMargins"
+            android:columnCount="3"
+            android:rowCount="4">
+
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey1" style="@style/Widget.ZUTnik.PrivacyKey" android:text="1" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey2" style="@style/Widget.ZUTnik.PrivacyKey" android:text="2" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey3" style="@style/Widget.ZUTnik.PrivacyKey" android:text="3" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey4" style="@style/Widget.ZUTnik.PrivacyKey" android:text="4" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey5" style="@style/Widget.ZUTnik.PrivacyKey" android:text="5" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey6" style="@style/Widget.ZUTnik.PrivacyKey" android:text="6" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey7" style="@style/Widget.ZUTnik.PrivacyKey" android:text="7" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey8" style="@style/Widget.ZUTnik.PrivacyKey" android:text="8" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey9" style="@style/Widget.ZUTnik.PrivacyKey" android:text="9" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/privacyBiometric"
+                style="@style/Widget.ZUTnik.PrivacyKey"
+                android:contentDescription="@string/privacy_use_biometric"
+                android:text=""
+                app:icon="@drawable/ic_fingerprint"
+                app:iconGravity="textStart"
+                app:iconTint="?attr/mzPrimary" />
+
+            <com.google.android.material.button.MaterialButton android:id="@+id/privacyKey0" style="@style/Widget.ZUTnik.PrivacyKey" android:text="0" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/privacyBackspace"
+                style="@style/Widget.ZUTnik.PrivacyKey"
+                android:contentDescription="@string/privacy_backspace"
+                android:text=""
+                app:icon="@drawable/ic_backspace"
+                app:iconGravity="textStart"
+                app:iconTint="?attr/mzText" />
+        </GridLayout>
+    </LinearLayout>
+</ScrollView>

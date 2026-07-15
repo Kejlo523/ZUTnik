@@ -64,4 +64,6 @@
     <color name="glass_border">#26000000</color>
     <color name="glass_text_primary">#172026</color>
     <color name="glass_text_secondary">#68747D</color>
+    <color name="glass_item_bg">#66FFFFFF</color>
+    <color name="glass_item_border">#18000000</color>
 </resources>

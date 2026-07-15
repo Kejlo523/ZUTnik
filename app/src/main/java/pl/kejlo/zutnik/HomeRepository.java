@@ -32,12 +32,12 @@ public class HomeRepository {
         }
 
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putString(KEY_TILES, arr.toString()).apply();
+        SecureLocalData.putString(context, prefs, KEY_TILES, arr.toString());
     }
 
     public List<Tile> loadTiles() {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        String jsonStr = prefs.getString(KEY_TILES, null);
+        String jsonStr = SecureLocalData.readString(context, prefs, KEY_TILES, null);
 
         if (jsonStr == null) {
             return createDefaultTiles();

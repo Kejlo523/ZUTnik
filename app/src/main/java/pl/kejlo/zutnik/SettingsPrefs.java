@@ -76,4 +76,9 @@ public final class SettingsPrefs {
 
     public static final String KEY_NOTIFICATIONS_PLAN_REMOVED_ENABLED = "notifications_plan_removed_enabled";
     public static final boolean DEFAULT_NOTIFICATIONS_PLAN_REMOVED_ENABLED = true;
+
+    public static final String KEY_PRIVACY_MODE_ENABLED = "privacy_mode_enabled";
+    public static final String KEY_PRIVACY_BIOMETRIC_ENABLED = "privacy_biometric_enabled";
+    public static final String KEY_PRIVACY_PIN_SALT = "privacy_pin_salt";
+    public static final String KEY_PRIVACY_PIN_HASH = "privacy_pin_hash";
 }

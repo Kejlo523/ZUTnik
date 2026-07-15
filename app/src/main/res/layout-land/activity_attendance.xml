@@ -61,14 +61,38 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvAttendancePercent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/attendance_percent_placeholder"
+                        android:textColor="?attr/mzText"
+                        android:textSize="34sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/attendance_percent_label"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="11sp" />
+
+                    <TextView
                         android:id="@+id/tvAbsenceTotal"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="14dp"
                         android:text="@string/common_zero"
                         android:textColor="?attr/mzText"
-                        android:textSize="48sp"
+                        android:textSize="24sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/attendance_absences_label"
+                        android:textColor="?attr/mzMuted"
+                        android:textSize="11sp" />
 
                     <TextView
                         android:id="@+id/tvAttendanceSubtitle"

@@ -66,13 +66,15 @@ final class GradesTextUtils {
         }
 
         String normalized = normalizeKey(raw);
-        if (normalized.contains("wyklad")) {
+        if (normalized.contains("wyklad") || normalized.contains("lecture")) {
             return context.getString(R.string.plan_type_lecture);
         }
-        if (normalized.contains("laboratorium")) {
+        if (normalized.contains("laboratorium") || normalized.contains("laboratory")
+                || "lab".equals(normalized)) {
             return context.getString(R.string.plan_type_lab);
         }
-        if (normalized.contains("audytoryjne")) {
+        if (normalized.contains("audytoryjne") || normalized.contains("exercise")
+                || normalized.contains("tutorial")) {
             return context.getString(R.string.plan_type_auditory);
         }
         if (normalized.contains("egzamin")) {

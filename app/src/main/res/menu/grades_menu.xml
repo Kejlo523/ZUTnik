@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_toggle_grouping"
-        android:title="@string/grades_grouping_toggle"
-        android:checkable="true"
-        app:showAsAction="never" />
+        android:icon="@drawable/ic_more_vert"
+        android:title="@string/grades_actions_label"
+        app:actionLayout="@layout/menu_action_overflow"
+        app:showAsAction="always" />
 </menu>
