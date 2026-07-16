@@ -569,6 +569,14 @@ public class PlanTabFragment extends ZutnikTabFragment {
             }
         }
 
+        String shortcutAction = requireActivity().getIntent()
+                .getStringExtra(AppShortcutRouter.EXTRA_SHORTCUT_ACTION);
+        if (AppShortcutRouter.isPlanAction(shortcutAction)) {
+            requireActivity().getIntent().removeExtra(AppShortcutRouter.EXTRA_SHORTCUT_ACTION);
+            applyLauncherShortcut(shortcutAction, false);
+        }
+        updateViewModeButtonsUi();
+
         // Handle Search Intent (New Action)
         if (requireActivity().getIntent().hasExtra("EXTRA_SEARCH_QUERY")) {
             String q = requireActivity().getIntent().getStringExtra("EXTRA_SEARCH_QUERY");
@@ -623,6 +631,29 @@ public class PlanTabFragment extends ZutnikTabFragment {
         runIntroAnimations();
         achievementViewedModes.add(viewModeId);
         handler.postDelayed(this::maybeUnlockAmbientPlanAchievement, 900L);
+    }
+
+    public void handleLauncherShortcut(@NonNull String action) {
+        applyLauncherShortcut(action, true);
+    }
+
+    private void applyLauncherShortcut(@Nullable String action, boolean reload) {
+        if (AppShortcutRouter.ACTION_PLAN_TODAY.equals(action)) {
+            setCurrentViewMode(ViewMode.DAY);
+            currentSearchQuery = null;
+            currentDate = LocalDate.now();
+            baseDate = currentDate;
+            updateViewModeButtonsUi();
+            if (viewPager != null) {
+                viewPager.setCurrentItem(VP_START_POSITION, false);
+            }
+            if (reload) {
+                planCache.clear();
+                loadPlanForCurrentMode();
+            }
+        } else if (AppShortcutRouter.ACTION_PLAN_SEARCH.equals(action)) {
+            handler.postDelayed(this::showSearchDialog, 120L);
+        }
     }
 
     private void setupFab() {

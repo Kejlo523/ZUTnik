@@ -89,6 +89,7 @@ public class MainShellActivity extends ZutnikBaseActivity {
             }
             switchToTab(start, true);
             initialTabApplied = true;
+            dispatchShortcutAction(getIntent());
         }
     }
 
@@ -124,6 +125,32 @@ public class MainShellActivity extends ZutnikBaseActivity {
         MainNavHelper.Screen start = MainNavHelper.Screen.fromId(initialTab);
         if (start != null && MainNavHelper.isMainTab(start)) {
             switchToTab(start, false);
+        }
+        dispatchShortcutAction(intent);
+    }
+
+    private void dispatchShortcutAction(@Nullable Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        String action = intent.getStringExtra(AppShortcutRouter.EXTRA_SHORTCUT_ACTION);
+        intent.removeExtra(AppShortcutRouter.EXTRA_SHORTCUT_ACTION);
+        if (action == null) {
+            return;
+        }
+
+        View container = findViewById(R.id.fragmentContainer);
+        if (AppShortcutRouter.ACTION_ATTENDANCE.equals(action)) {
+            container.post(() -> startActivity(new Intent(this, AttendanceActivity.class)));
+            return;
+        }
+        if (AppShortcutRouter.isPlanAction(action)) {
+            container.post(() -> {
+                Fragment fragment = findFragment(MainNavHelper.Screen.PLAN);
+                if (fragment instanceof PlanTabFragment) {
+                    ((PlanTabFragment) fragment).handleLauncherShortcut(action);
+                }
+            });
         }
     }
 

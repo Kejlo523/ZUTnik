@@ -18,8 +18,8 @@ android {
         applicationId = "pl.kejlo.zutnik"
         minSdk = 26
         targetSdk = 36
-        versionCode = 16
-        versionName = "1.16"
+        versionCode = 18
+        versionName = "1.18"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

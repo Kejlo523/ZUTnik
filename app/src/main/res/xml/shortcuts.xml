@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="plan_today"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_today"
+        android:shortcutLongLabel="@string/shortcut_plan_today_long"
+        android:shortcutShortLabel="@string/shortcut_plan_today_short">
+        <intent
+            android:action="pl.kejlo.zutnik.shortcut.PLAN_TODAY"
+            android:targetClass="pl.kejlo.zutnik.LoginActivity"
+            android:targetPackage="pl.kejlo.zutnik" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="attendance"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_absence"
+        android:shortcutLongLabel="@string/shortcut_attendance_long"
+        android:shortcutShortLabel="@string/shortcut_attendance_short">
+        <intent
+            android:action="pl.kejlo.zutnik.shortcut.ATTENDANCE"
+            android:targetClass="pl.kejlo.zutnik.LoginActivity"
+            android:targetPackage="pl.kejlo.zutnik" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="grades"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_grades"
+        android:shortcutLongLabel="@string/shortcut_grades_long"
+        android:shortcutShortLabel="@string/shortcut_grades_short">
+        <intent
+            android:action="pl.kejlo.zutnik.shortcut.GRADES"
+            android:targetClass="pl.kejlo.zutnik.LoginActivity"
+            android:targetPackage="pl.kejlo.zutnik" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="plan_search"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_search"
+        android:shortcutLongLabel="@string/shortcut_plan_search_long"
+        android:shortcutShortLabel="@string/shortcut_plan_search_short">
+        <intent
+            android:action="pl.kejlo.zutnik.shortcut.PLAN_SEARCH"
+            android:targetClass="pl.kejlo.zutnik.LoginActivity"
+            android:targetPackage="pl.kejlo.zutnik" />
+    </shortcut>
+</shortcuts>

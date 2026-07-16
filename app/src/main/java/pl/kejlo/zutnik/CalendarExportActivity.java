@@ -40,10 +40,12 @@ public class CalendarExportActivity extends ZutnikBaseActivity {
 
     private ActivityResultLauncher<String[]> calendarPermissionLauncher;
     private ActivityResultLauncher<String> saveIcsLauncher;
+    private ActivityResultLauncher<String> savePdfLauncher;
 
     private PlanCalendarExportHelper exportHelper;
     private PlanCalendarExportHelper.ExportScope selectedScope = PlanCalendarExportHelper.ExportScope.CURRENT_VIEW;
     private String pendingIcsContent;
+    private byte[] pendingPdfContent;
     private CalendarAction pendingCalendarAction = CalendarAction.NONE;
 
     private AppCompatButton btnScopeCurrent;
@@ -92,6 +94,8 @@ public class CalendarExportActivity extends ZutnikBaseActivity {
 
         TextView btnSaveIcs = findViewById(R.id.btnSaveIcs);
         TextView btnShareIcs = findViewById(R.id.btnShareIcs);
+        TextView btnSavePdf = findViewById(R.id.btnSavePdf);
+        TextView btnSharePdf = findViewById(R.id.btnSharePdf);
         TextView btnImportDeviceCalendar = findViewById(R.id.btnImportDeviceCalendar);
         TextView btnClearDeviceCalendar = findViewById(R.id.btnClearDeviceCalendar);
 
@@ -100,6 +104,12 @@ public class CalendarExportActivity extends ZutnikBaseActivity {
         }
         if (btnShareIcs != null) {
             btnShareIcs.setOnClickListener(v -> shareIcs());
+        }
+        if (btnSavePdf != null) {
+            btnSavePdf.setOnClickListener(v -> runPdfExport(false));
+        }
+        if (btnSharePdf != null) {
+            btnSharePdf.setOnClickListener(v -> runPdfExport(true));
         }
         if (btnImportDeviceCalendar != null) {
             btnImportDeviceCalendar.setOnClickListener(v -> importToDeviceCalendar());
@@ -164,6 +174,16 @@ public class CalendarExportActivity extends ZutnikBaseActivity {
                         return;
                     }
                     writeIcsToUri(uri);
+                });
+
+        savePdfLauncher = registerForActivityResult(
+                new ActivityResultContracts.CreateDocument("application/pdf"),
+                uri -> {
+                    if (uri == null) {
+                        pendingPdfContent = null;
+                        return;
+                    }
+                    writePdfToUri(uri);
                 });
     }
 
@@ -266,6 +286,86 @@ public class CalendarExportActivity extends ZutnikBaseActivity {
         } catch (Exception e) {
             android.util.Log.e("CalendarExportActivity", "No app to share ICS", e);
             Toast.makeText(this, R.string.plan_export_ics_share_error, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void runPdfExport(boolean share) {
+        showProgress(true);
+        executor.execute(() -> {
+            try {
+                PlanCalendarExportHelper.ExportResult semester = exportHelper.buildExport(
+                        PlanCalendarExportHelper.ExportScope.SEMESTER);
+                if (semester.events == null || semester.events.isEmpty()) {
+                    postToast(R.string.calendar_export_pdf_no_events, Toast.LENGTH_SHORT);
+                    showProgress(false);
+                    return;
+                }
+
+                SemesterPdfExportHelper.PdfResult pdf = SemesterPdfExportHelper.build(
+                        this,
+                        semester.events);
+                if (share) {
+                    Uri uri = SemesterPdfExportHelper.writeShareCacheFile(
+                            this,
+                            pdf.content,
+                            pdf.fileName);
+                    runOnUiThread(() -> {
+                        showProgress(false);
+                        sharePdfFile(uri, pdf.fileName);
+                    });
+                    return;
+                }
+
+                runOnUiThread(() -> {
+                    showProgress(false);
+                    pendingPdfContent = pdf.content;
+                    savePdfLauncher.launch(pdf.fileName);
+                });
+            } catch (Exception e) {
+                android.util.Log.e("CalendarExportActivity", "PDF export failed", e);
+                postToast(R.string.calendar_export_pdf_error, Toast.LENGTH_LONG);
+                showProgress(false);
+            }
+        });
+    }
+
+    private void writePdfToUri(Uri uri) {
+        byte[] content = pendingPdfContent;
+        pendingPdfContent = null;
+        if (uri == null || content == null || content.length == 0) {
+            return;
+        }
+
+        try (OutputStream output = getContentResolver().openOutputStream(uri, "w")) {
+            if (output == null) {
+                throw new IllegalStateException("Output stream is null");
+            }
+            output.write(content);
+            output.flush();
+            Toast.makeText(this, R.string.calendar_export_pdf_saved, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            android.util.Log.e("CalendarExportActivity", "Failed to save PDF", e);
+            Toast.makeText(this, R.string.calendar_export_pdf_write_error, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void sharePdfFile(Uri uri, String fileName) {
+        if (uri == null) {
+            Toast.makeText(this, R.string.calendar_export_pdf_share_error, Toast.LENGTH_LONG).show();
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("application/pdf");
+        intent.putExtra(Intent.EXTRA_STREAM, uri);
+        intent.putExtra(Intent.EXTRA_SUBJECT, fileName);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            startActivity(Intent.createChooser(
+                    intent,
+                    getString(R.string.calendar_export_pdf_share_title)));
+        } catch (Exception e) {
+            android.util.Log.e("CalendarExportActivity", "No app to share PDF", e);
+            Toast.makeText(this, R.string.calendar_export_pdf_share_error, Toast.LENGTH_LONG).show();
         }
     }
 

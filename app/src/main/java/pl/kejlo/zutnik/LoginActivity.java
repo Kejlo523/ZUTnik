@@ -57,14 +57,18 @@ public class LoginActivity extends PhoneAwareActivity {
 
         ZutnikSession.initializeFromPreferences(this);
         ZutnikSession session = ZutnikSession.getInstance(this);
+        String shortcutAction = AppShortcutRouter.extractAction(getIntent());
 
         if (session.isLoggedIn()) {
-            Intent i = new Intent(LoginActivity.this, MainShellActivity.class);
+            AppShortcutRouter.clearPending(this);
+            Intent i = AppShortcutRouter.createMainIntent(this, shortcutAction);
             i.putExtra(MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
             startActivity(i);
             finish();
             return;
         }
+
+        AppShortcutRouter.rememberPending(this, shortcutAction);
 
         setContentView(R.layout.activity_login);
         ThemeManager.applySystemBars(this);
@@ -300,7 +304,7 @@ public class LoginActivity extends PhoneAwareActivity {
         session.saveToPreferences(this);
 
         Toast.makeText(this, R.string.login_demo_toast, Toast.LENGTH_SHORT).show();
-        Intent i = new Intent(LoginActivity.this, MainShellActivity.class);
+        Intent i = AppShortcutRouter.createMainIntent(this, AppShortcutRouter.consumePending(this));
         i.putExtra(MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
         startActivity(i);
         finish();

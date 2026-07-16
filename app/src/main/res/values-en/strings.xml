@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="app_name">ZUTnik</string>
+  <string name="shortcut_plan_today_short">Today</string>
+  <string name="shortcut_plan_today_long">Upcoming classes</string>
+  <string name="shortcut_attendance_short">Absence</string>
+  <string name="shortcut_attendance_long">Add an absence</string>
+  <string name="shortcut_grades_short">Grades</string>
+  <string name="shortcut_grades_long">Open grades</string>
+  <string name="shortcut_plan_search_short">Search</string>
+  <string name="shortcut_plan_search_long">Search timetable</string>
   <string name="app_version">Version %1$s</string>
   <string name="nav_header_default_username">Student</string>
   <string name="logout_success_message">Logged out</string>
@@ -550,4 +558,28 @@
   <string name="achievement_details_state_locked">Hidden trace</string>
   <string name="achievement_details_date">Discovered: %1$s</string>
   <string name="achievement_details_code">Find code: %1$s</string>
+  <string name="calendar_export_section_pdf">PDF report</string>
+  <string name="calendar_export_pdf_title">Full semester timetable</string>
+  <string name="calendar_export_pdf_desc">Creates a readable chronological report containing every class in the semester, including rooms, groups and teachers.</string>
+  <string name="calendar_export_pdf_save">Save PDF report</string>
+  <string name="calendar_export_pdf_share">Share PDF report</string>
+  <string name="calendar_export_pdf_document_title">Semester timetable</string>
+  <string name="calendar_export_pdf_schedule_title">Schedule</string>
+  <string name="calendar_export_pdf_generated">Generated: %1$s</string>
+  <string name="calendar_export_pdf_metric_events">classes and events</string>
+  <string name="calendar_export_pdf_metric_days">days with classes</string>
+  <string name="calendar_export_pdf_metric_subjects">subjects</string>
+  <string name="calendar_export_pdf_album">student ID %1$s</string>
+  <string name="calendar_export_pdf_continued">continued</string>
+  <string name="calendar_export_pdf_page">Page %1$d</string>
+  <string name="calendar_export_pdf_saved">Semester report saved</string>
+  <string name="calendar_export_pdf_no_events">No classes available for a semester report</string>
+  <string name="calendar_export_pdf_error">Could not create the PDF report</string>
+  <string name="calendar_export_pdf_write_error">Could not save the PDF report</string>
+  <string name="calendar_export_pdf_share_title">Share semester report</string>
+  <string name="calendar_export_pdf_share_error">Could not share the PDF report</string>
+  <string name="calendar_export_pdf_type_lecture">Lecture</string>
+  <string name="calendar_export_pdf_type_laboratory">Laboratory</string>
+  <string name="calendar_export_pdf_type_classes">Auditory classes</string>
+  <string name="calendar_export_pdf_type_exam">Exam</string>
 </resources>

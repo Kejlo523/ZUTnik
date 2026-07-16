@@ -203,6 +203,90 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
                     android:letterSpacing="0"
+                    android:text="@string/calendar_export_section_pdf"
+                    android:textAllCaps="true"
+                    android:textColor="?attr/mzPrimary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="?attr/mzCard"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/calendar_export_pdf_title"
+                            android:textColor="?attr/mzText"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"
+                            android:text="@string/calendar_export_pdf_desc"
+                            android:textColor="?attr/mzMuted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/btnSavePdf"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_card_outlined"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:minHeight="48dp"
+                            android:paddingStart="16dp"
+                            android:paddingTop="10dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="10dp"
+                            android:text="@string/calendar_export_pdf_save"
+                            android:textColor="?attr/mzText"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnSharePdf"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_card_outlined"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:minHeight="48dp"
+                            android:paddingStart="16dp"
+                            android:paddingTop="10dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="10dp"
+                            android:text="@string/calendar_export_pdf_share"
+                            android:textColor="?attr/mzText"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:letterSpacing="0"
                     android:text="@string/calendar_export_section_device"
                     android:textAllCaps="true"
                     android:textColor="?attr/mzPrimary"
