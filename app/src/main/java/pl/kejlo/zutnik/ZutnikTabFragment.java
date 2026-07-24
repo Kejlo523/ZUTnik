@@ -76,12 +76,7 @@ abstract class ZutnikTabFragment extends Fragment {
     }
 
     protected void showSkeleton(@Nullable View skeleton, @Nullable View content) {
-        if (skeleton != null) {
-            skeleton.setVisibility(View.VISIBLE);
-        }
-        if (content != null) {
-            content.setVisibility(View.GONE);
-        }
+        LoadingMotionController.showSkeleton(skeleton, content);
     }
 
     protected void revealContent(@Nullable View skeleton, @Nullable View content) {

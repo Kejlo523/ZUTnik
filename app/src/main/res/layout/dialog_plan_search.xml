@@ -103,9 +103,8 @@
                     android:textSize="14sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <ProgressBar
+            <pl.kejlo.zutnik.LoadingIndicatorView
                 android:id="@+id/loadingIndicator"
-                style="?android:attr/progressBarStyleSmall"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_marginStart="8dp"

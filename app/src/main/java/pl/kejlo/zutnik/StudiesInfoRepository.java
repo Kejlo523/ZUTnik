@@ -1,5 +1,7 @@
 package pl.kejlo.zutnik;
 
+import android.content.Context;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -305,6 +307,11 @@ public class StudiesInfoRepository {
             GradesRepository.CreditSummary credits = new GradesRepository().loadCreditSummary();
             details.ectsProgramme = credits != null ? credits.programmeUsed : null;
             details.ectsOverall = credits != null ? credits.overallUsed : null;
+            Context appContext = ZutnikSession.getAppContextOrNull();
+            Study activeStudy = session.getActiveStudy();
+            if (appContext != null && activeStudy != null && credits != null) {
+                CreditSummaryStore.save(appContext, activeStudy, credits);
+            }
         } catch (Exception ignored) {
             details.ectsProgramme = null;
             details.ectsOverall = null;

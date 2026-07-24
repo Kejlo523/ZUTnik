@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,7 +50,7 @@ public class CalendarExportActivity extends ZutnikBaseActivity {
     private AppCompatButton btnScopeCurrent;
     private AppCompatButton btnScopeSemester;
     private TextView tvScopeSummary;
-    private ProgressBar progress;
+    private android.view.View progress;
 
     @Override
     protected void attachBaseContext(Context newBase) {

@@ -58,12 +58,11 @@
                 app:tint="?attr/mzPrimary" />
         </LinearLayout>
 
-        <ProgressBar
+        <pl.kejlo.zutnik.LoadingIndicatorView
             android:id="@+id/linkImageLoading"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:layout_gravity="center"
-            android:indeterminateTint="?attr/mzAccent"
             android:visibility="gone" />
     </FrameLayout>
 

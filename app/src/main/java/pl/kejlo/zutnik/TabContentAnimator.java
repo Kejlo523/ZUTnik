@@ -27,9 +27,6 @@ final class TabContentAnimator {
     }
 
     static void revealContent(View skeleton, View content) {
-        if (skeleton != null) {
-            skeleton.setVisibility(View.GONE);
-        }
         if (content == null) {
             return;
         }
@@ -41,6 +38,6 @@ final class TabContentAnimator {
                 fadeTarget = group.getChildAt(1);
             }
         }
-        playFadeIn(fadeTarget);
+        LoadingMotionController.revealContent(skeleton, fadeTarget);
     }
 }

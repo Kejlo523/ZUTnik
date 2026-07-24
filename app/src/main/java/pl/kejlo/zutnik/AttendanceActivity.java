@@ -37,7 +37,7 @@ public class AttendanceActivity extends PhoneAwareActivity {
     private TextView tvAttendanceSubtitle;
     private TextView tvAttendancePercent;
     private TextView tvEmpty;
-    private ProgressBar attendanceProgress;
+    private View attendanceProgress;
     private ImageView btnRefresh;
 
     private AttendanceRepository repository;
@@ -174,10 +174,16 @@ public class AttendanceActivity extends PhoneAwareActivity {
     }
 
     private void showLoading(boolean loading) {
-        attendanceProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
-        if (loading) {
+        LoadingMotionController.setRefreshing(btnRefresh, loading);
+        boolean coldLoad = loading && absenceList.isEmpty();
+        if (coldLoad) {
+            attendanceProgress.setVisibility(View.VISIBLE);
+            LoadingMotionController.startSkeleton(attendanceProgress);
             listSubjects.setVisibility(View.GONE);
             tvEmpty.setVisibility(View.GONE);
+        } else {
+            LoadingMotionController.stopSkeleton(attendanceProgress);
+            attendanceProgress.setVisibility(View.GONE);
         }
     }
 

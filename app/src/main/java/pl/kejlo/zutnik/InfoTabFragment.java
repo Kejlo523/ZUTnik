@@ -67,7 +67,10 @@ public class InfoTabFragment extends ZutnikTabFragment {
     private LinearLayout historyContainer;
     private View progress;
     private View infoContentRoot;
+    private View infoScroll;
+    private View infoSkeleton;
     private Spinner spinnerStudies;
+    private boolean hasBoundInfoContent;
     private boolean spinnerInitialized = false;
     private ArrayAdapter<String> studiesAdapter;
     private AdapterView.OnItemSelectedListener studiesSpinnerListener;
@@ -128,11 +131,7 @@ public class InfoTabFragment extends ZutnikTabFragment {
         progress = view.findViewById(R.id.infoProgress);
         infoContentRoot = view.findViewById(R.id.infoContent);
         spinnerStudies = view.findViewById(R.id.spinnerStudies);
-
-        if (infoContentRoot != null) {
-            infoContentRoot.setAlpha(0f);
-            infoContentRoot.setTranslationY(32f);
-        }
+        setupInfoSkeleton();
 
         // Session & basic user info
         ZutnikSession session = ZutnikSession.getInstance();
@@ -168,7 +167,7 @@ public class InfoTabFragment extends ZutnikTabFragment {
 
         // ── Shared load logic for study details ─────────────────────────────
         String currentScopeKey = getActiveStudyCacheScopeKey();
-        loadInfoFromCacheIfAvailable(currentScopeKey);
+        hasBoundInfoContent = loadInfoFromCacheIfAvailable(currentScopeKey);
         setupStudiesSpinner();
         
         if (shouldFetchFromNetwork(currentScopeKey)) {
@@ -197,14 +196,43 @@ public class InfoTabFragment extends ZutnikTabFragment {
     }
 
     private void revealInfoContent() {
-        if (infoContentRoot == null) {
+        if (infoScroll == null) {
             return;
         }
-        infoContentRoot.animate()
-                .translationY(0f)
-                .alpha(1f)
-                .setDuration(320)
-                .start();
+        hasBoundInfoContent = true;
+        LoadingMotionController.revealContent(infoSkeleton, infoScroll);
+    }
+
+    private void setupInfoSkeleton() {
+        if (infoContentRoot == null || !(infoContentRoot.getParent() instanceof View)) {
+            return;
+        }
+        infoScroll = (View) infoContentRoot.getParent();
+        if (!(infoScroll.getParent() instanceof LinearLayout)) {
+            return;
+        }
+        LinearLayout parent = (LinearLayout) infoScroll.getParent();
+        infoSkeleton = LayoutInflater.from(requireContext())
+                .inflate(R.layout.skeleton_info, parent, false);
+        infoSkeleton.setVisibility(View.GONE);
+        int index = parent.indexOfChild(infoScroll);
+        parent.addView(infoSkeleton, index + 1, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f));
+        LoadingMotionController.showSkeleton(infoSkeleton, infoScroll);
+    }
+
+    private void setInfoLoading(boolean loading) {
+        if (progress != null) {
+            progress.setVisibility(View.GONE);
+        }
+        LoadingMotionController.setRefreshing(btnInfoRefresh, loading);
+        if (loading && !hasBoundInfoContent) {
+            LoadingMotionController.showSkeleton(infoSkeleton, infoScroll);
+        } else if (!loading && !hasBoundInfoContent) {
+            LoadingMotionController.revealContent(infoSkeleton, infoScroll);
+        }
     }
 
     // region Network loading
@@ -223,8 +251,10 @@ public class InfoTabFragment extends ZutnikTabFragment {
     }
 
     private void executeLoadInfoTask(boolean forceRefreshStudies) {
-        progress.setVisibility(View.VISIBLE);
-        infoContentRoot.setAlpha(0.3f);
+        setInfoLoading(true);
+        if (hasBoundInfoContent && infoScroll != null) {
+            infoScroll.setAlpha(0.78f);
+        }
         Context appContext = requireContext().getApplicationContext();
         String loadScopeKey = getActiveStudyCacheScopeKey();
         NetworkRefreshPolicy.Mode loadMode = forceRefreshStudies
@@ -259,8 +289,10 @@ public class InfoTabFragment extends ZutnikTabFragment {
             final String finalScopeKey = getActiveStudyCacheScopeKey();
 
             handler.post(() -> {
-                progress.setVisibility(View.GONE);
-                infoContentRoot.setAlpha(1f);
+                setInfoLoading(false);
+                if (infoScroll != null) {
+                    infoScroll.setAlpha(1f);
+                }
                 if (finalScopeKey != null && !finalScopeKey.equals(getActiveStudyCacheScopeKey())) {
                     return;
                 }

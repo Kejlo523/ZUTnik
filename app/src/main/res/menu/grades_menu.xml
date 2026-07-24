@@ -2,6 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_refresh_grades"
+        android:icon="@drawable/ic_refresh"
+        android:title="@string/grades_refresh_toast"
+        app:actionLayout="@layout/menu_action_refresh"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_toggle_grouping"
         android:icon="@drawable/ic_more_vert"
         android:title="@string/grades_actions_label"

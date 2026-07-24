@@ -14,7 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ProgressBar;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -45,17 +44,15 @@ public class GradesTabFragment extends ZutnikTabFragment {
     // Core student data uses short TTL to keep study/semester/grades in sync.
     private static final long GRADES_CACHE_TTL_MS = CachePolicy.GRADES_TTL_MS;
     private static final long SEMESTERS_CACHE_TTL_MS = CachePolicy.SEMESTERS_TTL_MS;
-    private static final long CREDIT_SUMMARY_CACHE_TTL_MS = CachePolicy.INFO_TTL_MS;
     private static final String GRADES_CACHE_PREFS_NAME = "grades_cache";
     private static final String KEY_GRADES_GROUPING = "grades_grouping_enabled";
     private static final String ACTIVE_GRADES_CACHE_SEMESTER_ID = "active_terms_v4";
-    private static final String KEY_CREDIT_SUMMARY_CACHE_PREFIX = "credit_summary_";
     private static final String KEY_GRADES_LAST_NETWORK_TS_PREFIX = "grades_last_network_ts_";
 
     private Spinner spinnerStudies;
     private Spinner spinnerSemesters;
     private RecyclerView listGrades;
-    private ProgressBar gradesProgress;
+    private View gradesProgress;
     private TextView tvEmpty;
 
     // Summary tiles
@@ -64,6 +61,10 @@ public class GradesTabFragment extends ZutnikTabFragment {
     private TextView tvEctsTotalValue;
     private TextView tvEctsBreakdown;
     private Toolbar toolbar;
+    private View gradesRefreshAction;
+    private View gradesRefreshIcon;
+    private boolean gradesDataLoading;
+    private boolean creditSummaryLoading;
 
     private GradesAdapter flatAdapter;
     private GroupedGradesAdapter groupedAdapter;
@@ -84,6 +85,7 @@ public class GradesTabFragment extends ZutnikTabFragment {
     private java.util.concurrent.Future<?> currentPlanFilterFuture;
     private java.util.concurrent.Future<?> currentInitFuture;
     private java.util.concurrent.Future<?> currentCreditSummaryFuture;
+    private int creditSummaryRequestId;
 
     @Override
     @Nullable
@@ -122,8 +124,6 @@ public class GradesTabFragment extends ZutnikTabFragment {
         tvEctsBreakdown = view.findViewById(R.id.tvEctsBreakdown);
         updateGradesDataFreshness(false);
 
-        View btnGradesRefresh = view.findViewById(R.id.btnGradesRefresh);
-
         listGrades.setLayoutManager(new LinearLayoutManager(requireContext()));
         groupingEnabled = requireContext()
                 .getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, Context.MODE_PRIVATE)
@@ -136,35 +136,6 @@ public class GradesTabFragment extends ZutnikTabFragment {
 
         setupSemestersSpinner();
 
-        if (btnGradesRefresh != null) {
-            btnGradesRefresh.setOnClickListener(v -> {
-                NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
-                        requireContext(),
-                        NetworkRefreshPolicy.Module.GRADES,
-                        NetworkRefreshPolicy.Mode.MANUAL,
-                        null,
-                        0L);
-                if (!decision.allowNetwork) {
-                    Toast.makeText(
-                            requireContext(),
-                            NetworkRefreshPolicy.describeForUser(requireContext(), decision),
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                NetworkRefreshPolicy.recordAttempt(
-                        requireContext(),
-                        NetworkRefreshPolicy.Module.GRADES,
-                        NetworkRefreshPolicy.Mode.MANUAL,
-                        null);
-                updateGradesDataFreshnessText(getString(R.string.data_status_syncing));
-                Toast.makeText(
-                        requireContext(),
-                        R.string.grades_refresh_toast,
-                        Toast.LENGTH_SHORT).show();
-                reloadCurrentGrades(true);
-            });
-        }
-
         requireActivity().addMenuProvider(new MenuProvider() {
             @Override
             public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
@@ -172,6 +143,14 @@ public class GradesTabFragment extends ZutnikTabFragment {
                     return;
                 }
                 inflater.inflate(R.menu.grades_menu, menu);
+                MenuItem refreshItem = menu.findItem(R.id.action_refresh_grades);
+                if (refreshItem != null && refreshItem.getActionView() != null) {
+                    View actionView = refreshItem.getActionView();
+                    gradesRefreshAction = actionView;
+                    gradesRefreshIcon = actionView.findViewById(R.id.menuRefreshIcon);
+                    actionView.setOnClickListener(ignored -> requestManualRefresh());
+                    updateGradesRefreshMotion();
+                }
                 MenuItem optionsItem = menu.findItem(R.id.action_toggle_grouping);
                 if (optionsItem != null && optionsItem.getActionView() != null) {
                     optionsItem.getActionView().setOnClickListener(
@@ -190,6 +169,10 @@ public class GradesTabFragment extends ZutnikTabFragment {
                 }
                 if (item.getItemId() == R.id.action_toggle_grouping) {
                     toggleGradesGrouping();
+                    return true;
+                }
+                if (item.getItemId() == R.id.action_refresh_grades) {
+                    requestManualRefresh();
                     return true;
                 }
                 return false;
@@ -218,6 +201,50 @@ public class GradesTabFragment extends ZutnikTabFragment {
             return false;
         });
         popup.show();
+    }
+
+    private void requestManualRefresh() {
+        if (!isAdded()) {
+            return;
+        }
+        NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
+                requireContext(),
+                NetworkRefreshPolicy.Module.GRADES,
+                NetworkRefreshPolicy.Mode.MANUAL,
+                null,
+                0L);
+        if (!decision.allowNetwork) {
+            Toast.makeText(
+                    requireContext(),
+                    NetworkRefreshPolicy.describeForUser(requireContext(), decision),
+                    Toast.LENGTH_SHORT).show();
+            showCachedCreditSummaryOnly();
+            return;
+        }
+        NetworkRefreshPolicy.recordAttempt(
+                requireContext(),
+                NetworkRefreshPolicy.Module.GRADES,
+                NetworkRefreshPolicy.Mode.MANUAL,
+                null);
+        updateGradesDataFreshnessText(getString(R.string.data_status_syncing));
+        Toast.makeText(
+                requireContext(),
+                R.string.grades_refresh_toast,
+                Toast.LENGTH_SHORT).show();
+        reloadCurrentGrades(true);
+        refreshCreditSummaryForActiveStudyAsync(true);
+    }
+
+    private void showCachedCreditSummaryOnly() {
+        Study activeStudy = getActiveStudySnapshot();
+        GradesRepository.CreditSummary cached = CreditSummaryStore.load(
+                requireContext(),
+                activeStudy,
+                CachePolicy.INFO_TTL_MS,
+                true);
+        if (cached != null) {
+            setEctsSummary(cached);
+        }
     }
 
     private void toggleGradesGrouping() {
@@ -259,6 +286,11 @@ public class GradesTabFragment extends ZutnikTabFragment {
         if (currentCreditSummaryFuture != null) {
             currentCreditSummaryFuture.cancel(true);
         }
+        LoadingMotionController.setRefreshing(gradesRefreshIcon, false);
+        gradesRefreshAction = null;
+        gradesRefreshIcon = null;
+        gradesDataLoading = false;
+        creditSummaryLoading = false;
         executor.shutdownNow();
     }
 
@@ -1253,128 +1285,30 @@ public class GradesTabFragment extends ZutnikTabFragment {
         }
     }
 
-    private String buildCreditSummaryCacheKey(Study study) {
-        if (study == null || study.przynaleznoscId == null) {
-            return null;
-        }
-        ZutnikSession s = ZutnikSession.getInstance();
-        String userId = s.getUserId();
-        if (userId == null) {
-            userId = "unknown";
-        }
-        return KEY_CREDIT_SUMMARY_CACHE_PREFIX + userId + "_" + study.przynaleznoscId;
-    }
-
     private GradesRepository.CreditSummary loadCreditSummaryFromCache(Study study) {
-        String key = buildCreditSummaryCacheKey(study);
-        if (key == null) {
-            return null;
-        }
-        String raw = SecureLocalData.readString(
-                requireContext(), getGradesCachePrefs(), key, null);
-        if (raw == null || raw.isEmpty()) {
-            return null;
-        }
-
-        try {
-            JSONObject wrapper = new JSONObject(raw);
-            long ts = wrapper.optLong("timestamp", 0L);
-            if (ts <= 0L) {
-                return null;
-            }
-
-            if ((System.currentTimeMillis() - ts) > CREDIT_SUMMARY_CACHE_TTL_MS
-                    && NetworkStatusHelper.isNetworkAvailable(requireContext())) {
-                return null;
-            }
-
-            Double programme = wrapper.has("programme")
-                    ? wrapper.optDouble("programme", Double.NaN)
-                    : null;
-            if (programme != null && (Double.isNaN(programme) || programme < 0.0)) {
-                programme = null;
-            }
-            Double overall = wrapper.has("overall")
-                    ? wrapper.optDouble("overall", Double.NaN)
-                    : null;
-            if (overall != null && (Double.isNaN(overall) || overall < 0.0)) {
-                overall = null;
-            }
-            List<GradesRepository.ProgrammeCredit> programmeCredits = new ArrayList<>();
-            JSONArray programmes = wrapper.optJSONArray("programmes");
-            if (programmes != null) {
-                for (int i = 0; i < programmes.length(); i++) {
-                    JSONObject obj = programmes.optJSONObject(i);
-                    if (obj == null) {
-                        continue;
-                    }
-                    Double used = obj.has("used")
-                            ? obj.optDouble("used", Double.NaN)
-                            : null;
-                    if (used != null && (Double.isNaN(used) || used < 0.0)) {
-                        used = null;
-                    }
-                    programmeCredits.add(new GradesRepository.ProgrammeCredit(
-                            obj.optString("id", ""),
-                            obj.optString("label", ""),
-                            used));
-                }
-            }
-
-            return new GradesRepository.CreditSummary(
-                    wrapper.optString("studentProgrammeId", ""),
-                    programme,
-                    overall,
-                    programmeCredits);
-        } catch (JSONException e) {
-            return null;
-        }
+        boolean allowExpired = !NetworkStatusHelper.isNetworkAvailable(requireContext());
+        return CreditSummaryStore.load(
+                requireContext(),
+                study,
+                CachePolicy.INFO_TTL_MS,
+                allowExpired);
     }
 
     private void saveCreditSummaryToCache(Study study, GradesRepository.CreditSummary summary) {
-        String key = buildCreditSummaryCacheKey(study);
-        if (key == null) {
-            return;
-        }
-
-        try {
-            JSONObject wrapper = new JSONObject();
-            wrapper.put("timestamp", System.currentTimeMillis());
-            wrapper.put("studentProgrammeId", summary != null ? summary.studentProgrammeId : "");
-            if (summary != null && summary.programmeUsed != null) {
-                wrapper.put("programme", Math.max(0.0, summary.programmeUsed));
-            }
-            if (summary != null && summary.overallUsed != null) {
-                wrapper.put("overall", Math.max(0.0, summary.overallUsed));
-            }
-            JSONArray programmes = new JSONArray();
-            if (summary != null && summary.programmeCredits != null) {
-                for (GradesRepository.ProgrammeCredit credit : summary.programmeCredits) {
-                    if (credit == null) {
-                        continue;
-                    }
-                    JSONObject obj = new JSONObject();
-                    obj.put("id", credit.studentProgrammeId != null ? credit.studentProgrammeId : "");
-                    obj.put("label", credit.label != null ? credit.label : "");
-                    if (credit.used != null && credit.used >= 0.0 && !Double.isNaN(credit.used)) {
-                        obj.put("used", credit.used);
-                    }
-                    programmes.put(obj);
-                }
-            }
-            wrapper.put("programmes", programmes);
-            SecureLocalData.putString(
-                    requireContext(), getGradesCachePrefs(), key, wrapper.toString());
-        } catch (JSONException ignored) {
-        }
+        CreditSummaryStore.save(requireContext(), study, summary);
     }
 
     private void refreshCreditSummaryForActiveStudyAsync() {
+        refreshCreditSummaryForActiveStudyAsync(false);
+    }
+
+    private void refreshCreditSummaryForActiveStudyAsync(boolean forceNetwork) {
         final Study activeStudy = getActiveStudySnapshot();
         final int expectedStudyIndex = ZutnikSession.getInstance().getActiveStudyIndex();
 
         if (activeStudy == null || activeStudy.przynaleznoscId == null) {
             setEctsSummary(null, null);
+            setCreditSummaryLoading(false);
             return;
         }
 
@@ -1382,7 +1316,10 @@ public class GradesTabFragment extends ZutnikTabFragment {
         GradesRepository.CreditSummary cached = loadCreditSummaryFromCache(activeStudy);
         if (cached != null) {
             setEctsSummary(cached);
-            return;
+            if (!forceNetwork) {
+                setCreditSummaryLoading(false);
+                return;
+            }
         } else {
             setEctsSummary((GradesRepository.CreditSummary) null);
         }
@@ -1391,6 +1328,8 @@ public class GradesTabFragment extends ZutnikTabFragment {
             currentCreditSummaryFuture.cancel(true);
         }
 
+        final int requestId = ++creditSummaryRequestId;
+        setCreditSummaryLoading(true);
         currentCreditSummaryFuture = executor.submit(() -> {
             GradesRepository.CreditSummary summary = null;
             try {
@@ -1400,6 +1339,10 @@ public class GradesTabFragment extends ZutnikTabFragment {
 
             final GradesRepository.CreditSummary finalSummary = summary;
             handler.post(() -> {
+                if (requestId != creditSummaryRequestId) {
+                    return;
+                }
+                setCreditSummaryLoading(false);
                 if (!isExpectedStudyContext(expectedStudyIndex, expectedStudyId)) {
                     return;
                 }
@@ -1748,9 +1691,40 @@ public class GradesTabFragment extends ZutnikTabFragment {
 
     // UI helpers
     private void showLoading(boolean loading) {
-        if (gradesProgress != null) {
-            gradesProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
+        gradesDataLoading = loading;
+        updateGradesRefreshMotion();
+        if (gradesProgress == null) {
+            return;
         }
+        boolean coldLoad = loading && currentGradesRaw.isEmpty();
+        if (coldLoad) {
+            gradesProgress.setVisibility(View.VISIBLE);
+            LoadingMotionController.startSkeleton(gradesProgress);
+            if (listGrades != null) {
+                listGrades.setVisibility(View.GONE);
+            }
+            if (tvEmpty != null) {
+                tvEmpty.setVisibility(View.GONE);
+            }
+        } else {
+            LoadingMotionController.stopSkeleton(gradesProgress);
+            gradesProgress.setVisibility(View.GONE);
+        }
+    }
+
+    private void setCreditSummaryLoading(boolean loading) {
+        creditSummaryLoading = loading;
+        updateGradesRefreshMotion();
+    }
+
+    private void updateGradesRefreshMotion() {
+        boolean refreshing = gradesDataLoading || creditSummaryLoading;
+        if (gradesRefreshAction != null) {
+            gradesRefreshAction.setEnabled(!refreshing);
+        }
+        LoadingMotionController.setRefreshing(
+                gradesRefreshIcon,
+                refreshing);
     }
 
     private String friendlyUsosErrorMessage(Exception error) {
@@ -1759,11 +1733,13 @@ public class GradesTabFragment extends ZutnikTabFragment {
     }
 
     private void showEmptyState(boolean empty) {
+        boolean showEmpty = empty && !gradesDataLoading;
+        boolean coldLoad = gradesDataLoading && currentGradesRaw.isEmpty();
         if (tvEmpty != null) {
-            tvEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+            tvEmpty.setVisibility(showEmpty ? View.VISIBLE : View.GONE);
         }
         if (listGrades != null) {
-            listGrades.setVisibility(empty ? View.GONE : View.VISIBLE);
+            listGrades.setVisibility(showEmpty || coldLoad ? View.GONE : View.VISIBLE);
         }
     }
 }

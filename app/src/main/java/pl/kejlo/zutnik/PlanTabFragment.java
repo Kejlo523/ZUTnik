@@ -45,7 +45,6 @@ import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -166,7 +165,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private RecyclerView pagerRecyclerView;
     private PlanPagerAdapter pagerAdapter;
 
-    private ProgressBar progress;
+    private View progress;
 
     private String viewModeId = ViewMode.WEEK.getId();
 
@@ -529,7 +528,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                         updatePlanDataFreshness(false);
                     } else {
                         if (!isMonthMode()) {
-                            updateFixedWeekHeaders(Collections.emptyList());
+                            updateFixedWeekHeaders(buildLoadingDayColumns(currentDate));
                         }
                     }
                 }
@@ -881,6 +880,36 @@ public class PlanTabFragment extends ZutnikTabFragment {
         baseDate = anchor;
     }
 
+    private String formatLoadingHeader(LocalDate anchor) {
+        LocalDate safeDate = anchor != null ? anchor : LocalDate.now();
+        if (!isWeekMode()) {
+            return safeDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        }
+        LocalDate weekStart = safeDate.minusDays(safeDate.getDayOfWeek().getValue() - 1L);
+        LocalDate weekEnd = weekStart.plusDays(6);
+        return weekStart.format(DateTimeFormatter.ofPattern("dd.MM"))
+                + " - "
+                + weekEnd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    }
+
+    private List<PlanRepository.DayColumn> buildLoadingDayColumns(LocalDate anchor) {
+        LocalDate safeDate = anchor != null ? anchor : LocalDate.now();
+        LocalDate firstDate = safeDate;
+        int count = 1;
+        if (isWeekMode()) {
+            firstDate = safeDate.minusDays(safeDate.getDayOfWeek().getValue() - 1L);
+            count = 5;
+        }
+
+        List<PlanRepository.DayColumn> columns = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            PlanRepository.DayColumn column = new PlanRepository.DayColumn();
+            column.date = firstDate.plusDays(i);
+            columns.add(column);
+        }
+        return columns;
+    }
+
     private void updateCurrentDateFromPosition(int position) {
         int diff = position - VP_START_POSITION;
         LocalDate newDate;
@@ -905,7 +934,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
             if (isMonthMode()) {
                 tvHeaderLabel.setText(currentDate.format(DateTimeFormatter.ofPattern("MM.yyyy")));
             } else {
-                tvHeaderLabel.setText(currentDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+                tvHeaderLabel.setText(formatLoadingHeader(currentDate));
             }
         }
     }
@@ -939,7 +968,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 updatePlanDataFreshness(false);
             } else {
                 if (!isMonthMode())
-                    updateFixedWeekHeaders(Collections.emptyList());
+                    updateFixedWeekHeaders(buildLoadingDayColumns(currentDate));
             }
         }
     }
@@ -1247,7 +1276,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
         TextInputLayout inputCategoryLayout = layout.findViewById(R.id.inputCategoryLayout);
         MaterialAutoCompleteTextView categoryView = layout.findViewById(R.id.editCategory);
         TextInputEditText input = layout.findViewById(R.id.editQuery);
-        ProgressBar loadingIndicator = layout.findViewById(R.id.loadingIndicator);
+        View loadingIndicator = layout.findViewById(R.id.loadingIndicator);
         RecyclerView suggestionsRecycler = layout.findViewById(R.id.suggestionsRecycler);
         ImageButton btnClipboard = layout.findViewById(R.id.btnSavedSearches);
         Button btnSaveQuery = layout.findViewById(R.id.btnSaveQuery);
@@ -1318,11 +1347,6 @@ public class PlanTabFragment extends ZutnikTabFragment {
         categoryView.setOnClickListener(v -> categoryView.showDropDown());
         if (inputCategoryLayout != null) {
             inputCategoryLayout.setEndIconOnClickListener(v -> categoryView.showDropDown());
-        }
-
-        if (loadingIndicator != null) {
-            loadingIndicator.setIndeterminateTintList(
-                    android.content.res.ColorStateList.valueOf(ThemeManager.resolveColor(requireContext(), R.attr.mzPrimary)));
         }
 
         suggestionsRecycler.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(requireContext()));
@@ -1872,18 +1896,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
             holder.container.addView(skeleton, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
-            android.animation.ObjectAnimator pulse = android.animation.ObjectAnimator.ofFloat(
-                    skeleton,
-                    View.ALPHA,
-                    0.48f,
-                    0.95f,
-                    0.48f);
-            pulse.setDuration(880L);
-            pulse.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            pulse.setRepeatMode(android.animation.ValueAnimator.RESTART);
-            pulse.setInterpolator(new DecelerateInterpolator());
-            pulse.start();
-            holder.container.setTag(pulse);
+            LoadingMotionController.startSkeleton(skeleton);
+            holder.container.setTag(skeleton);
         }
 
         private void renderWeekPage(PlanPageViewHolder holder,
@@ -3084,6 +3098,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
         Object tag = container.getTag();
         if (tag instanceof android.animation.Animator) {
             ((android.animation.Animator) tag).cancel();
+        } else if (tag instanceof View) {
+            LoadingMotionController.stopSkeleton((View) tag);
         }
         container.setTag(null);
     }
@@ -3128,281 +3144,172 @@ public class PlanTabFragment extends ZutnikTabFragment {
             int accentStrokeColor) {
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.HORIZONTAL);
-        root.setClipToPadding(false);
         root.setClipChildren(false);
-        root.setPadding(dpToPx(14), dpToPx(12), dpToPx(14), dpToPx(18));
 
         int columnCount = isDayMode() ? 1 : 5;
         boolean singleColumn = columnCount == 1;
+        int columnHeight = (END_HOUR - START_HOUR) * dpToPx(HOUR_HEIGHT_DP);
+
         for (int i = 0; i < columnCount; i++) {
-            LinearLayout column = new LinearLayout(requireContext());
-            column.setOrientation(LinearLayout.VERTICAL);
-            column.setClipToPadding(false);
-            column.setClipChildren(false);
-            LinearLayout.LayoutParams columnLp = new LinearLayout.LayoutParams(
+            if (i > 0) {
+                root.addView(buildWeekColumnDivider(columnHeight));
+            }
+
+            FrameLayoutWithChildren dayBody = new FrameLayoutWithChildren(requireContext());
+            dayBody.setClipChildren(false);
+            dayBody.setBackground(buildPlanDayBackground(requireContext(), false));
+            addHourLines(dayBody);
+
+            LinearLayout.LayoutParams dayLp = new LinearLayout.LayoutParams(
                     0,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    columnHeight,
                     1f);
-            columnLp.setMargins(dpToPx(singleColumn ? 0 : 4), 0, dpToPx(singleColumn ? 0 : 4), 0);
-            column.setLayoutParams(columnLp);
-
-            boolean isAccentColumn = singleColumn || i == 2;
-            LinearLayout headerStack = new LinearLayout(requireContext());
-            headerStack.setOrientation(LinearLayout.VERTICAL);
-            headerStack.setGravity(Gravity.CENTER_HORIZONTAL);
-            LinearLayout.LayoutParams headerStackLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            headerStackLp.bottomMargin = dpToPx(singleColumn ? 14 : 12);
-            headerStack.setLayoutParams(headerStackLp);
-
-            View topDot = createSkeletonBlock(
-                    isAccentColumn ? accentFillColor : fillColor,
-                    isAccentColumn ? accentStrokeColor : strokeColor,
-                    999);
-            LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(
-                    dpToPx(singleColumn ? 12 : 8),
-                    dpToPx(singleColumn ? 12 : 8));
-            dotLp.bottomMargin = dpToPx(singleColumn ? 8 : 7);
-            headerStack.addView(topDot, dotLp);
-
-            View titleBlock = createSkeletonBlock(
-                    isAccentColumn ? accentFillColor : fillColor,
-                    isAccentColumn ? accentStrokeColor : strokeColor,
-                    999);
-            LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                    dpToPx(singleColumn ? 74 : 24 + (i % 2) * 4),
-                    dpToPx(singleColumn ? 11 : 9));
-            headerStack.addView(titleBlock, titleLp);
-
-            View subtitleBlock = createSkeletonBlock(
-                    ColorUtils.setAlphaComponent(fillColor, 232),
-                    ColorUtils.setAlphaComponent(strokeColor, 104),
-                    999);
-            LinearLayout.LayoutParams subtitleLp = new LinearLayout.LayoutParams(
-                    dpToPx(singleColumn ? 52 : 16 + ((i + 1) % 3) * 3),
-                    dpToPx(singleColumn ? 7 : 6));
-            subtitleLp.topMargin = dpToPx(6);
-            headerStack.addView(subtitleBlock, subtitleLp);
-            column.addView(headerStack);
-
-            FrameLayout body = new FrameLayout(requireContext());
-            LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    0,
-                    1f);
-            body.setLayoutParams(bodyLp);
-            body.setBackground(buildRoundedBg(
-                    ColorUtils.setAlphaComponent(fillColor, singleColumn ? 112 : 90),
-                    ColorUtils.setAlphaComponent(strokeColor, singleColumn ? 86 : 64),
-                    singleColumn ? 22 : 18));
-            body.setPadding(dpToPx(singleColumn ? 10 : 4), dpToPx(10), dpToPx(singleColumn ? 10 : 4), dpToPx(12));
-
-            addSkeletonGuideLine(
-                    body,
-                    isAccentColumn ? accentStrokeColor : strokeColor,
-                    18,
-                    singleColumn ? 14 : 8,
-                    singleColumn ? 14 : 8,
-                    isAccentColumn ? 86 : 68,
-                    4);
-            addSkeletonGuideLine(body, strokeColor, 86, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 44, 1);
-            addSkeletonGuideLine(body, strokeColor, 176, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
-            addSkeletonGuideLine(body, strokeColor, 266, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
-            addSkeletonGuideLine(body, strokeColor, 356, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
-            addSkeletonGuideLine(body, strokeColor, 446, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
-            addSkeletonGuideLine(body, strokeColor, 536, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
-            addSkeletonGuideLine(body, strokeColor, 626, singleColumn ? 16 : 8, singleColumn ? 16 : 8, 38, 1);
+            dayBody.setLayoutParams(dayLp);
 
             if (singleColumn) {
-                addSkeletonEventCard(
-                        body,
+                addScheduleSkeletonEvent(
+                        dayBody,
                         accentFillColor,
                         accentStrokeColor,
-                        82,
-                        84,
-                        8,
-                        42,
-                        18,
-                        40);
-                addSkeletonEventCard(
-                        body,
+                        8 * 60 + 30,
+                        90,
+                        true,
+                        true);
+                addScheduleSkeletonEvent(
+                        dayBody,
                         fillColor,
                         strokeColor,
-                        238,
-                        62,
-                        24,
-                        14,
-                        48,
-                        76);
-                addSkeletonEventCard(
-                        body,
+                        11 * 60 + 15,
+                        90,
+                        true,
+                        false);
+                addScheduleSkeletonEvent(
+                        dayBody,
                         accentFillColor,
                         accentStrokeColor,
-                        404,
-                        92,
-                        12,
-                        54,
-                        22,
-                        46);
-                addSkeletonEventCard(
-                        body,
-                        fillColor,
-                        strokeColor,
-                        578,
-                        56,
-                        36,
-                        18,
-                        60,
-                        92);
+                        14 * 60 + 15,
+                        105,
+                        true,
+                        true);
             } else {
-                addSkeletonEventCard(
-                        body,
-                        isAccentColumn ? accentFillColor : fillColor,
-                        isAccentColumn ? accentStrokeColor : strokeColor,
-                        84,
-                        74,
-                        4,
-                        4,
-                        6,
-                        12);
-                addSkeletonEventCard(
-                        body,
-                        fillColor,
-                        strokeColor,
-                        248,
-                        56,
-                        8,
-                        4,
-                        12,
-                        18);
-                addSkeletonEventCard(
-                        body,
-                        accentFillColor,
-                        accentStrokeColor,
-                        426,
-                        68,
-                        4,
-                        6,
-                        8,
-                        14);
+                if (i == 0) {
+                    addScheduleSkeletonEvent(
+                            dayBody,
+                            accentFillColor,
+                            accentStrokeColor,
+                            10 * 60 + 15,
+                            90,
+                            false,
+                            true);
+                } else if (i == 1) {
+                    addScheduleSkeletonEvent(
+                            dayBody,
+                            fillColor,
+                            strokeColor,
+                            12 * 60 + 15,
+                            90,
+                            false,
+                            false);
+                } else if (i == 3) {
+                    addScheduleSkeletonEvent(
+                            dayBody,
+                            accentFillColor,
+                            accentStrokeColor,
+                            10 * 60 + 15,
+                            105,
+                            false,
+                            true);
+                } else if (i == 4) {
+                    addScheduleSkeletonEvent(
+                            dayBody,
+                            fillColor,
+                            strokeColor,
+                            14 * 60,
+                            90,
+                            false,
+                            false);
+                }
             }
-            column.addView(body);
-
-            root.addView(column);
+            root.addView(dayBody);
         }
 
         return root;
     }
 
-    private void addSkeletonGuideLine(
+    private void addScheduleSkeletonEvent(
             FrameLayout body,
-            int strokeColor,
-            int topDp,
-            int startDp,
-            int endDp,
-            int alpha,
-            int heightDp) {
+            int cardColor,
+            int detailColor,
+            int startMinutes,
+            int durationMinutes,
+            boolean wide,
+            boolean accent) {
         if (body == null) {
             return;
         }
-        View line = new View(requireContext());
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(heightDp));
-        lp.topMargin = dpToPx(topDp);
-        lp.leftMargin = dpToPx(startDp);
-        lp.rightMargin = dpToPx(endDp);
-        line.setLayoutParams(lp);
-        line.setBackgroundColor(ColorUtils.setAlphaComponent(strokeColor, alpha));
-        body.addView(line);
-    }
 
-    private void addSkeletonEventCard(
-            FrameLayout body,
-            int fillColor,
-            int strokeColor,
-            int topDp,
-            int heightDp,
-            int startDp,
-            int endDp,
-            int titleEndInsetDp,
-            int metaEndInsetDp) {
-        if (body == null) {
-            return;
-        }
+        int textColor = ThemeManager.resolveColor(requireContext(), R.attr.mzText);
+        int cardFill = ColorUtils.blendARGB(
+                ThemeManager.resolveColor(requireContext(), R.attr.mzPlanGridBg),
+                cardColor,
+                accent ? 0.82f : 0.68f);
+        int strongBlock = ColorUtils.blendARGB(cardFill, textColor, accent ? 0.26f : 0.20f);
+        int softBlock = ColorUtils.blendARGB(cardFill, detailColor, accent ? 0.62f : 0.48f);
+
         LinearLayout card = new LinearLayout(requireContext());
-        card.setOrientation(LinearLayout.HORIZONTAL);
-        card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setClipToPadding(false);
-        card.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
-        card.setBackground(buildRoundedBg(
-                ColorUtils.setAlphaComponent(fillColor, 246),
-                ColorUtils.setAlphaComponent(strokeColor, 146),
-                16));
+        card.setOrientation(LinearLayout.VERTICAL);
+        int horizontalPadding = dpToPx(wide ? 10 : 5);
+        int verticalPadding = dpToPx(wide ? 9 : 6);
+        card.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+        card.setBackground(buildRoundedBg(cardFill, cardFill, wide ? 10 : 7));
 
-        FrameLayout.LayoutParams cardLp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(heightDp));
-        cardLp.topMargin = dpToPx(topDp);
-        cardLp.leftMargin = dpToPx(startDp);
-        cardLp.rightMargin = dpToPx(endDp);
+        int minutesFromStart = Math.max(0, startMinutes - START_HOUR * 60);
+        int top = Math.round((minutesFromStart / 60f) * dpToPx(HOUR_HEIGHT_DP));
+        int height = Math.max(
+                dpToPx(wide ? 64 : 52),
+                Math.round((durationMinutes / 60f) * dpToPx(HOUR_HEIGHT_DP)));
+        FrameLayoutWithChildren.LayoutParams cardLp = new FrameLayoutWithChildren.LayoutParams(
+                FrameLayoutWithChildren.LayoutParams.MATCH_PARENT,
+                height);
+        cardLp.topMargin = top;
+        cardLp.leftMargin = dpToPx(wide ? 8 : 3);
+        cardLp.rightMargin = dpToPx(wide ? 12 : 3);
         card.setLayoutParams(cardLp);
 
-        View accent = createSkeletonBlock(
-                ColorUtils.blendARGB(
-                        ColorUtils.setAlphaComponent(fillColor, 255),
-                        ColorUtils.setAlphaComponent(strokeColor, 196),
-                        0.28f),
-                ColorUtils.setAlphaComponent(strokeColor, 0),
-                999);
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(
-                dpToPx(3),
-                ViewGroup.LayoutParams.MATCH_PARENT);
-        accentLp.rightMargin = dpToPx(7);
-        card.addView(accent, accentLp);
+        View time = createSkeletonBlock(strongBlock, strongBlock, 999);
+        LinearLayout.LayoutParams timeLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(wide ? 8 : 6));
+        timeLp.rightMargin = dpToPx(wide ? 96 : 8);
+        card.addView(time, timeLp);
 
-        LinearLayout content = new LinearLayout(requireContext());
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setClipToPadding(false);
-        content.setLayoutParams(new LinearLayout.LayoutParams(
-                0,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                1f));
-
-        View title = createSkeletonBlock(
-                ColorUtils.setAlphaComponent(fillColor, 248),
-                ColorUtils.setAlphaComponent(strokeColor, 112),
-                999);
+        View title = createSkeletonBlock(strongBlock, strongBlock, 999);
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dpToPx(8));
-        titleLp.rightMargin = dpToPx(titleEndInsetDp);
-        content.addView(title, titleLp);
+                dpToPx(wide ? 9 : 7));
+        titleLp.topMargin = dpToPx(wide ? 9 : 7);
+        titleLp.rightMargin = dpToPx(wide ? 28 : 4);
+        card.addView(title, titleLp);
 
-        View meta = createSkeletonBlock(
-                ColorUtils.setAlphaComponent(fillColor, 222),
-                ColorUtils.setAlphaComponent(strokeColor, 92),
-                999);
+        if (wide || height >= dpToPx(72)) {
+            View titleContinuation = createSkeletonBlock(strongBlock, strongBlock, 999);
+            LinearLayout.LayoutParams continuationLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dpToPx(wide ? 9 : 7));
+            continuationLp.topMargin = dpToPx(5);
+            continuationLp.rightMargin = dpToPx(wide ? 72 : 12);
+            card.addView(titleContinuation, continuationLp);
+        }
+
+        View spacer = new View(requireContext());
+        card.addView(spacer, new LinearLayout.LayoutParams(1, 0, 1f));
+
+        View meta = createSkeletonBlock(softBlock, softBlock, 999);
         LinearLayout.LayoutParams metaLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dpToPx(6));
-        metaLp.topMargin = dpToPx(7);
-        metaLp.rightMargin = dpToPx(metaEndInsetDp);
-        content.addView(meta, metaLp);
-
-        View footer = createSkeletonBlock(
-                ColorUtils.setAlphaComponent(strokeColor, 132),
-                ColorUtils.setAlphaComponent(strokeColor, 72),
-                999);
-        LinearLayout.LayoutParams footerLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dpToPx(5));
-        footerLp.topMargin = dpToPx(6);
-        footerLp.rightMargin = dpToPx(metaEndInsetDp + 12);
-        content.addView(footer, footerLp);
-
-        card.addView(content);
+                dpToPx(wide ? 6 : 5));
+        metaLp.rightMargin = dpToPx(wide ? 48 : 10);
+        card.addView(meta, metaLp);
         body.addView(card);
     }
 
@@ -3413,38 +3320,25 @@ public class PlanTabFragment extends ZutnikTabFragment {
             int accentStrokeColor) {
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dpToPx(10), dpToPx(10), dpToPx(10), dpToPx(10));
-
-        GridLayout weekdayRow = new GridLayout(requireContext());
-        weekdayRow.setColumnCount(7);
-        weekdayRow.setUseDefaultMargins(false);
-        weekdayRow.setPadding(0, 0, 0, dpToPx(8));
-        for (int i = 0; i < 7; i++) {
-            View weekdayBlock = createSkeletonBlock(fillColor, strokeColor);
-            GridLayout.LayoutParams labelLp = new GridLayout.LayoutParams();
-            labelLp.width = 0;
-            labelLp.height = dpToPx(8);
-            labelLp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-            labelLp.setMargins(dpToPx(10), dpToPx(3), dpToPx(10), dpToPx(3));
-            weekdayBlock.setLayoutParams(labelLp);
-            weekdayRow.addView(weekdayBlock);
-        }
-        root.addView(weekdayRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
 
         GridLayout grid = new GridLayout(requireContext());
         grid.setColumnCount(7);
         grid.setUseDefaultMargins(false);
 
+        int cellBg = ThemeManager.resolveColor(requireContext(), R.attr.mzCardSoft);
+        int cellBorder = ThemeManager.resolveColor(requireContext(), R.attr.mzBorderSoft);
+        int numberFill = ColorUtils.blendARGB(cellBg, fillColor, 0.76f);
+        int eventFill = ColorUtils.blendARGB(cellBg, accentFillColor, 0.82f);
+        int eventDetail = ColorUtils.blendARGB(eventFill, accentStrokeColor, 0.58f);
+
         for (int i = 0; i < 42; i++) {
             LinearLayout cell = new LinearLayout(requireContext());
             cell.setOrientation(LinearLayout.VERTICAL);
             cell.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
-            boolean accentCell = i % 8 == 2 || i % 8 == 5;
+            boolean hasEvent = i == 8 || i == 9 || i == 17 || i == 24 || i == 31 || i == 32;
             cell.setBackground(buildRoundedBg(
-                    accentCell ? ColorUtils.setAlphaComponent(accentFillColor, 214) : ColorUtils.setAlphaComponent(fillColor, 202),
-                    accentCell ? ColorUtils.setAlphaComponent(accentStrokeColor, 112) : ColorUtils.setAlphaComponent(strokeColor, 84)));
+                    hasEvent ? ColorUtils.blendARGB(cellBg, accentFillColor, 0.22f) : cellBg,
+                    hasEvent ? ColorUtils.blendARGB(cellBorder, accentStrokeColor, 0.34f) : cellBorder));
 
             GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
             lp.width = 0;
@@ -3454,31 +3348,33 @@ public class PlanTabFragment extends ZutnikTabFragment {
             cell.setLayoutParams(lp);
 
             View dayNumber = createSkeletonBlock(
-                    accentCell ? accentFillColor : fillColor,
-                    accentCell ? accentStrokeColor : strokeColor);
+                    hasEvent ? eventFill : numberFill,
+                    hasEvent ? eventFill : numberFill,
+                    999);
             LinearLayout.LayoutParams dayNumberLp = new LinearLayout.LayoutParams(
-                    dpToPx((i % 3 == 0) ? 14 : 18),
-                    dpToPx(8));
-            dayNumberLp.bottomMargin = dpToPx(10);
+                    dpToPx((i % 3 == 0) ? 13 : 17),
+                    dpToPx(7));
+            dayNumberLp.bottomMargin = dpToPx(12);
             dayNumber.setLayoutParams(dayNumberLp);
             cell.addView(dayNumber);
 
-            if (i % 5 != 0) {
-                View hintBlock = createSkeletonBlock(fillColor, strokeColor);
-                LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(
-                        dpToPx(8),
-                        dpToPx(8));
-                hintLp.topMargin = dpToPx(2);
-                cell.addView(hintBlock, hintLp);
-            }
-
-            if (i % 7 == 3 || i % 7 == 6 || accentCell) {
-                View secondHint = createSkeletonBlock(accentFillColor, accentStrokeColor);
-                LinearLayout.LayoutParams secondHintLp = new LinearLayout.LayoutParams(
-                        dpToPx(8),
+            if (hasEvent) {
+                View event = createSkeletonBlock(eventDetail, eventDetail, 999);
+                LinearLayout.LayoutParams eventLp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
                         dpToPx(6));
-                secondHintLp.topMargin = dpToPx(5);
-                cell.addView(secondHint, secondHintLp);
+                eventLp.rightMargin = dpToPx(i % 2 == 0 ? 3 : 9);
+                cell.addView(event, eventLp);
+
+                if (i == 9 || i == 31) {
+                    View secondEvent = createSkeletonBlock(eventFill, eventFill, 999);
+                    LinearLayout.LayoutParams secondEventLp = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dpToPx(5));
+                    secondEventLp.topMargin = dpToPx(6);
+                    secondEventLp.rightMargin = dpToPx(7);
+                    cell.addView(secondEvent, secondEventLp);
+                }
             }
 
             grid.addView(cell);
@@ -3498,6 +3394,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
         View block = new View(requireContext());
         block.setBackground(buildRoundedBg(fillColor, strokeColor, radiusDp));
         block.setAlpha(0.96f);
+        block.setTag("skeleton_block");
         return block;
     }
 
