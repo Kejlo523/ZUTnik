@@ -232,9 +232,15 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
         }
 
         updateFinanceDataFreshnessText(getString(R.string.data_status_syncing));
-        progressView.setVisibility(android.view.View.VISIBLE);
+        boolean coldLoad = currentRecords.isEmpty();
+        progressView.setVisibility(coldLoad ? android.view.View.VISIBLE : android.view.View.GONE);
+        if (coldLoad) {
+            LoadingMotionController.startSkeleton(progressView);
+            listFinance.setVisibility(View.GONE);
+        }
+        LoadingMotionController.setRefreshing(refreshButton, true);
         emptyView.setVisibility(android.view.View.GONE);
-        listFinance.setAlpha(0.35f);
+        listFinance.setAlpha(coldLoad ? 1f : 0.72f);
 
         currentLoadFuture = executor.submit(() -> {
             List<Study> studies = new ArrayList<>();
@@ -266,7 +272,9 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
             final String finalStudyId = resultingStudyId;
 
             handler.post(() -> {
+                LoadingMotionController.stopSkeleton(progressView);
                 progressView.setVisibility(android.view.View.GONE);
+                LoadingMotionController.setRefreshing(refreshButton, false);
                 listFinance.setAlpha(1f);
 
                 if (finalStudyId != null && !finalStudyId.equals(getCurrentStudyScopeKey())) {
@@ -381,9 +389,11 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
 
         financeAdapter.submitList(filtered);
         if (filtered.isEmpty()) {
+            listFinance.setVisibility(android.view.View.GONE);
             emptyView.setVisibility(android.view.View.VISIBLE);
             emptyView.setText(getEmptyStateText());
         } else {
+            listFinance.setVisibility(android.view.View.VISIBLE);
             emptyView.setVisibility(android.view.View.GONE);
         }
     }

@@ -58,7 +58,9 @@
                         android:layout_weight="1"
                         android:background="@drawable/bg_grades_metric_card"
                         android:minWidth="0dp"
+                        android:gravity="center_horizontal"
                         android:orientation="vertical"
+                        android:textAlignment="center"
                         android:paddingStart="8dp"
                         android:paddingTop="8dp"
                         android:paddingEnd="8dp"
@@ -68,6 +70,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
+                            android:gravity="center"
                             android:includeFontPadding="false"
                             android:maxLines="2"
                             android:text="@string/grades_summary_average_label"
@@ -82,6 +85,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:ellipsize="end"
+                            android:gravity="center"
                             android:includeFontPadding="false"
                             android:maxLines="1"
                             android:text="@string/grades_average_placeholder"
@@ -98,7 +102,9 @@
                         android:layout_weight="1"
                         android:background="@drawable/bg_grades_metric_card"
                         android:minWidth="0dp"
+                        android:gravity="center_horizontal"
                         android:orientation="vertical"
+                        android:textAlignment="center"
                         android:paddingStart="8dp"
                         android:paddingTop="8dp"
                         android:paddingEnd="8dp"
@@ -108,6 +114,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
+                            android:gravity="center"
                             android:includeFontPadding="false"
                             android:maxLines="2"
                             android:text="@string/grades_summary_ects_label"
@@ -122,6 +129,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:ellipsize="end"
+                            android:gravity="center"
                             android:includeFontPadding="false"
                             android:maxLines="1"
                             android:text="@string/common_zero"
@@ -137,7 +145,9 @@
                         android:layout_weight="1"
                         android:background="@drawable/bg_grades_metric_card"
                         android:minWidth="0dp"
+                        android:gravity="center_horizontal"
                         android:orientation="vertical"
+                        android:textAlignment="center"
                         android:paddingStart="8dp"
                         android:paddingTop="8dp"
                         android:paddingEnd="8dp"
@@ -147,6 +157,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
+                            android:gravity="center"
                             android:includeFontPadding="false"
                             android:maxLines="2"
                             android:text="@string/grades_summary_ects_total_label"
@@ -162,6 +173,7 @@
                             android:layout_marginTop="2dp"
                             android:contentDescription="@string/grades_summary_ects_total_label"
                             android:ellipsize="end"
+                            android:gravity="center"
                             android:includeFontPadding="false"
                             android:maxLines="1"
                             android:text="@string/common_zero"
@@ -170,18 +182,6 @@
                             android:textSize="23sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-                    <ImageView
-                        android:id="@+id/btnGradesRefresh"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_marginStart="6dp"
-                        android:alpha="0.8"
-                        android:background="@drawable/bg_circle_soft"
-                        android:contentDescription="@string/grades_refresh_toast"
-                        android:padding="8dp"
-                        android:src="@android:drawable/ic_popup_sync"
-                        app:tint="?attr/mzMuted" />
-
                 </LinearLayout>
 
                 <TextView
@@ -191,6 +191,7 @@
                     android:layout_marginTop="6dp"
                     android:background="@android:color/transparent"
                     android:ellipsize="end"
+                    android:gravity="center"
                     android:includeFontPadding="false"
                     android:lineSpacingExtra="1dp"
                     android:maxLines="2"
@@ -269,12 +270,11 @@
                     android:visibility="gone"
                     android:drawableTint="?attr/mzMuted" />
 
-                <ProgressBar
+                <include
                     android:id="@+id/gradesProgress"
-                    style="?android:attr/progressBarStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
+                    layout="@layout/skeleton_grades"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:visibility="gone" />
             </FrameLayout>
 

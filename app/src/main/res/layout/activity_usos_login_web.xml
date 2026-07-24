@@ -55,11 +55,9 @@
             android:visibility="gone"
             android:padding="32dp">
 
-            <ProgressBar
+            <pl.kejlo.zutnik.LoadingIndicatorView
                 android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:indeterminate="true"
-                android:indeterminateTint="?attr/mzPrimary" />
+                android:layout_height="48dp" />
 
             <TextView
                 android:id="@+id/loadingText"

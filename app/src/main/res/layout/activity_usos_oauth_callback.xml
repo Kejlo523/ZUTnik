@@ -9,12 +9,10 @@
     android:padding="32dp"
     android:fitsSystemWindows="true">
 
-    <ProgressBar
+    <pl.kejlo.zutnik.LoadingIndicatorView
         android:id="@+id/usosProgress"
         android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:indeterminate="true"
-        android:indeterminateTint="?attr/mzPrimary" />
+        android:layout_height="48dp" />
 
     <TextView
         android:id="@+id/usosStatusText"

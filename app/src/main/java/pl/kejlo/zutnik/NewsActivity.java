@@ -15,7 +15,6 @@ import android.text.format.DateUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,7 +40,7 @@ public class NewsActivity extends ZutnikBaseActivity {
     private LinearLayout drawerContentRoot;
 
     private RecyclerView listNews;
-    private ProgressBar progress;
+    private View progress;
     private TextView tvEmpty;
     private TextView tvInfo;
     private ImageView btnNewsRefresh;
@@ -148,7 +147,13 @@ public class NewsActivity extends ZutnikBaseActivity {
     }
 
     private void executeLoadNewsTask(NetworkRefreshPolicy.Mode mode) {
-        progress.setVisibility(View.VISIBLE);
+        boolean coldLoad = items.isEmpty();
+        progress.setVisibility(coldLoad ? View.VISIBLE : View.GONE);
+        if (coldLoad) {
+            LoadingMotionController.startSkeleton(progress);
+            listNews.setVisibility(View.GONE);
+        }
+        LoadingMotionController.setRefreshing(btnNewsRefresh, true);
         tvEmpty.setVisibility(View.GONE);
         setRefreshing(true);
 
@@ -175,7 +180,9 @@ public class NewsActivity extends ZutnikBaseActivity {
             final boolean finalSuccess = success;
 
             handler.post(() -> {
+                LoadingMotionController.stopSkeleton(progress);
                 progress.setVisibility(View.GONE);
+                LoadingMotionController.setRefreshing(btnNewsRefresh, false);
                 setRefreshing(false);
 
                 if (!finalSuccess || finalLoaded == null) {
@@ -338,7 +345,9 @@ public class NewsActivity extends ZutnikBaseActivity {
         if (tvEmpty == null) {
             return;
         }
-        tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+        boolean empty = items.isEmpty();
+        tvEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+        listNews.setVisibility(empty ? View.GONE : View.VISIBLE);
     }
 
     @Override

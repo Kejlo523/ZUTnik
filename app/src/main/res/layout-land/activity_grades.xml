@@ -19,7 +19,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="76dp"
             android:background="@drawable/bg_toolbar"
             android:elevation="0dp"
             android:paddingStart="16dp"
@@ -47,47 +47,37 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:background="@android:color/transparent"
-                    android:padding="8dp">
-
-                    <ImageView
-                        android:id="@+id/btnGradesRefresh"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="top|end"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@android:drawable/ic_popup_sync"
-                        app:tint="?attr/mzText"
-                        android:alpha="0.6" />
+                    android:padding="8dp"
+                    android:textAlignment="center">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
                         android:orientation="vertical">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:gravity="center"
                                 android:text="@string/grades_summary_average_label"
                                 android:textAllCaps="true"
                                 android:textColor="?attr/mzMuted"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
 
-                            <Space
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1" />
-
                             <TextView
                                 android:id="@+id/tvAverageValue"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:gravity="center"
                                 android:text="@string/grades_average_placeholder"
                                 android:fontFamily="sans-serif-condensed"
                                 android:textColor="?attr/mzText"
@@ -105,11 +95,13 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
                             android:orientation="vertical">
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:gravity="center"
                                 android:text="@string/grades_summary_ects_label"
                                 android:textAllCaps="true"
                                 android:textColor="?attr/mzMuted"
@@ -121,6 +113,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-condensed"
+                                android:gravity="center"
                                 android:text="@string/common_zero"
                                 android:textColor="?attr/mzText"
                                 android:textSize="32sp"
@@ -137,12 +130,14 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
                                 android:background="@android:color/transparent"
+                                android:gravity="center_horizontal"
                                 android:orientation="vertical"
                                 android:padding="0dp">
 
                                 <TextView
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:gravity="center"
                                     android:text="@string/grades_summary_ects_total_label"
                                     android:textAllCaps="true"
                                     android:textColor="?attr/mzMuted"
@@ -151,11 +146,12 @@
 
                                 <TextView
                                     android:id="@+id/tvEctsTotalValue"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
                                     android:contentDescription="@string/grades_summary_ects_total_label"
                                     android:fontFamily="sans-serif-condensed"
+                                    android:gravity="center"
                                     android:text="@string/common_zero"
                                     android:textColor="?attr/mzText"
                                     android:textSize="32sp"
@@ -226,12 +222,11 @@
                     android:textSize="14sp"
                     android:visibility="gone" />
 
-                <ProgressBar
+                <include
                     android:id="@+id/gradesProgress"
-                    style="?android:attr/progressBarStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
+                    layout="@layout/skeleton_grades"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:visibility="gone" />
             </FrameLayout>
 
