@@ -763,4 +763,10 @@
   <string name="nav_tab_studies">Studia</string>
   <string name="nav_tab_grades">Oceny</string>
   <string name="nav_tab_more">Więcej</string>
+  <string name="plan_sync_progress">Synchronizacja planu · %1$d z %2$d</string>
+  <string name="plan_sync_preparing">Synchronizacja planu USOS…</string>
+  <string name="plan_sync_paused">Synchronizacja przerwana · dostępne pobrane dane</string>
+  <string name="plan_sync_unavailable">Nie udało się pobrać planu · spróbuj ponownie później</string>
+  <string name="plan_sync_fallback">Plan z awaryjnego źródła · USOS niedostępny</string>
+  <string name="plan_sync_export_incomplete">Plan nie jest jeszcze w pełni zsynchronizowany. Połącz się z siecią i spróbuj ponownie.</string>
 </resources>

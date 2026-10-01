@@ -5,6 +5,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -24,6 +27,35 @@ import okhttp3.Response;
  * while USOS API expects literal commas in field-selector values.
  */
 public final class UsosApi {
+
+    static final class HttpException extends IOException {
+        final int statusCode;
+        final long retryAfterMs;
+
+        HttpException(Response response, String body) {
+            super("USOS API HTTP " + response.code() + ": " + body);
+            statusCode = response.code();
+            retryAfterMs = retryAfterMillis(response.header("Retry-After"), System.currentTimeMillis());
+        }
+    }
+
+    static long retryAfterMillis(String value, long now) {
+        if (value == null) return 0L;
+        String header = value.trim();
+        try {
+            long seconds = Long.parseLong(header);
+            if (seconds <= 0L) return 0L;
+            return seconds > Long.MAX_VALUE / 1000L ? Long.MAX_VALUE : seconds * 1000L;
+        } catch (NumberFormatException ignored) {
+            try {
+                long deadline = ZonedDateTime.parse(header, DateTimeFormatter.RFC_1123_DATE_TIME)
+                        .toInstant().toEpochMilli();
+                return Math.max(0L, deadline - now);
+            } catch (DateTimeParseException ignoredDate) {
+                return 0L;
+            }
+        }
+    }
 
     /**
      * Signed GET request using tokens stored in the current session.
@@ -91,7 +123,7 @@ public final class UsosApi {
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
             String body = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
-                throw new IOException("USOS API HTTP " + response.code() + ": " + body);
+                throw new HttpException(response, body);
             }
             return body.isEmpty() ? new JSONArray() : new JSONArray(body);
         }
@@ -142,7 +174,7 @@ public final class UsosApi {
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
             String body = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
-                throw new IOException("USOS API HTTP " + response.code() + ": " + body);
+                throw new HttpException(response, body);
             }
             return body.isEmpty() ? new JSONObject() : new JSONObject(body);
         }
@@ -174,7 +206,7 @@ public final class UsosApi {
         try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
             String body = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
-                throw new IOException("USOS API HTTP " + response.code() + ": " + body);
+                throw new HttpException(response, body);
             }
             return body;
         }

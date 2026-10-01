@@ -582,4 +582,10 @@
   <string name="calendar_export_pdf_type_laboratory">Laboratory</string>
   <string name="calendar_export_pdf_type_classes">Auditory classes</string>
   <string name="calendar_export_pdf_type_exam">Exam</string>
+  <string name="plan_sync_progress">Syncing timetable · %1$d of %2$d</string>
+  <string name="plan_sync_preparing">Syncing USOS timetable…</string>
+  <string name="plan_sync_paused">Sync paused · downloaded data available</string>
+  <string name="plan_sync_unavailable">Could not load timetable · try again later</string>
+  <string name="plan_sync_fallback">Backup timetable source · USOS unavailable</string>
+  <string name="plan_sync_export_incomplete">Your timetable is not fully synced yet. Connect to the network and try again.</string>
 </resources>

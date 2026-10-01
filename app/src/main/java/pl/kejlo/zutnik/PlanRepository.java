@@ -77,10 +77,15 @@ public class PlanRepository {
         public String hours;
         public String color;
         public String borderColor;
+        public String sourceId;
+        public String sourceUnitId;
+        public String sourceGroupNumber;
+        public String sourceType;
     }
 
     // UI event model
     public static class PlanEventUi {
+        public String sourceId;
         public int startMin;
         public int endMin;
         public float topPx;
@@ -172,6 +177,8 @@ public class PlanRepository {
         public LocalDate today;
 
         public String headerLabel;
+        public boolean cachedRangeAvailable;
+        public boolean verifiedRange;
 
         public PlanDebug debug = new PlanDebug();
     }
@@ -298,7 +305,7 @@ public class PlanRepository {
                 sCachedAlbumStudyId = "usos_" + userId;
                 return sn;
             }
-            return null;
+            return userId != null && !userId.isEmpty() ? "usos:" + userId : null;
         }
 
         if (session.isDemoLogin()) {
@@ -964,6 +971,7 @@ public class PlanRepository {
             ev.put("typeLabel", eventTypeLabel(e));
             ev.put("subjectKey", subjectKey);
             ev.put("teacher", teacher);
+            ev.put("sourceId", e.sourceId);
 
             events.add(ev);
         }
@@ -1039,6 +1047,7 @@ public class PlanRepository {
 
         for (Map<String, Object> ev : finalEvents) {
             PlanEventUi ui = new PlanEventUi();
+            ui.sourceId = (String) ev.get("sourceId");
             ui.startMin = mapInt(ev, "startMin");
             ui.endMin = mapInt(ev, "endMin");
             ui.topPx = mapFloat(ev, "topPx");
@@ -1249,6 +1258,12 @@ public class PlanRepository {
             boolean forceScopeRefresh,
             boolean allowNetworkRefresh,
             PlanDebug debug) throws IOException, JSONException {
+        if (appContext != null && ZutnikSession.getInstance(appContext).isUsosLogin()) {
+            boolean partialAllowed = "day".equals(viewMode) || "week".equals(viewMode)
+                    || "month".equals(viewMode);
+            return UsosTimetableStore.get(appContext).loadRange(
+                    rangeStart, rangeEnd, allowNetworkRefresh, forceScopeRefresh, partialAllowed, debug);
+        }
         long now = System.currentTimeMillis();
 
         synchronized (PlanRepository.class) {
@@ -1487,6 +1502,17 @@ public class PlanRepository {
         return loadPlanInternal(viewMode, currentDate, false, false, false);
     }
 
+    public boolean hasVerifiedRange(LocalDate start, LocalDate end) {
+        return appContext == null || !ZutnikSession.getInstance(appContext).isUsosLogin()
+                || UsosTimetableStore.get(appContext).hasVerifiedRange(start, end);
+    }
+
+    public void prepareExportRange(LocalDate start, LocalDate end) throws IOException, JSONException {
+        if (appContext != null && ZutnikSession.getInstance(appContext).isUsosLogin()) {
+            UsosTimetableStore.get(appContext).prepareExportRange(start, end);
+        }
+    }
+
     @SuppressWarnings("unused")
     public PlanResult reloadScope(String viewMode, LocalDate currentDate) throws IOException, JSONException {
         return loadPlanInternal(viewMode, currentDate, false, true, true);
@@ -1536,7 +1562,8 @@ public class PlanRepository {
         r.debug.rangeStart = rangeStart.format(YMD);
         r.debug.rangeEnd = rangeEnd.format(YMD);
 
-        if (forceFullRefresh && allowNetworkRefresh) {
+        boolean usosPlan = appContext != null && ZutnikSession.getInstance(appContext).isUsosLogin();
+        if (forceFullRefresh && allowNetworkRefresh && !usosPlan) {
             try {
                 long now = System.currentTimeMillis();
                 List<PlanEventRaw> allEvents = fetchFullPlanByAlbum(album, r.debug);
@@ -1561,7 +1588,12 @@ public class PlanRepository {
         // Ensure we iterate through the requested dates to build the result
         // If not force refresh, ensureScopeData will fetch if needed
         Map<LocalDate, List<PlanEventRaw>> byDate = ensureScopeData(album, rangeStart, rangeEnd, viewMode,
-                forceScopeRefresh, allowNetworkRefresh, r.debug);
+                forceScopeRefresh || (usosPlan && forceFullRefresh), allowNetworkRefresh, r.debug);
+        if (usosPlan) {
+            UsosTimetableStore store = UsosTimetableStore.get(appContext);
+            r.cachedRangeAvailable = store.isRangeCached(rangeStart, rangeEnd);
+            r.verifiedRange = store.hasVerifiedRange(rangeStart, rangeEnd);
+        }
 
         List<PlanEventRaw> entries = new ArrayList<>();
         LocalDate iterDate = rangeStart;
@@ -1692,11 +1724,11 @@ public class PlanRepository {
                 true,
                 new PlanDebug());
 
-        if (byDate == null || byDate.isEmpty()) {
+        if (byDate == null) {
             return Collections.emptyList();
         }
 
-        return buildSubjectFilterItems(byDate, range.start, range.end);
+        return buildAvailableSubjectFilterItems(byDate, range.start, range.end);
     }
 
     public List<SubjectFilterItem> loadSubjectsForSemester(Semester semester)
@@ -1725,11 +1757,33 @@ public class PlanRepository {
                 true,
                 new PlanDebug());
 
-        if (byDate == null || byDate.isEmpty()) {
+        if (byDate == null) {
             return Collections.emptyList();
         }
 
-        return buildSubjectFilterItems(byDate, range.start, range.end);
+        return buildAvailableSubjectFilterItems(byDate, range.start, range.end);
+    }
+
+    private List<SubjectFilterItem> buildAvailableSubjectFilterItems(
+            Map<LocalDate, List<PlanEventRaw>> byDate, LocalDate start, LocalDate end) {
+        if (appContext == null || !ZutnikSession.getInstance(appContext).isUsosLogin()) {
+            return buildSubjectFilterItems(byDate, start, end);
+        }
+        Map<LocalDate, List<PlanEventRaw>> enriched = new HashMap<>(byDate);
+        List<PlanEventRaw> subjects = new ArrayList<>(enriched.getOrDefault(start, Collections.emptyList()));
+        for (JSONObject group : UsosTimetableStore.get(appContext).getCachedGroups(start, end)) {
+            PlanEventRaw raw = new PlanEventRaw();
+            JSONObject name = group.optJSONObject("course_name");
+            JSONObject type = group.optJSONObject("class_type");
+            raw.subject = name != null ? name.optString("pl", "") : "";
+            if (raw.subject.isEmpty() && name != null) raw.subject = name.optString("en", "");
+            raw.lessonForm = type != null ? type.optString("pl", "") : "";
+            if (raw.lessonForm.isEmpty() && type != null) raw.lessonForm = type.optString("en", "");
+            raw.lessonFormShort = group.optString("class_type_id", "");
+            subjects.add(raw);
+        }
+        enriched.put(start, subjects);
+        return buildSubjectFilterItems(enriched, start, end);
     }
 
     private List<SubjectFilterItem> buildSubjectFilterItems(
@@ -1981,13 +2035,13 @@ public class PlanRepository {
         }
 
         String formShort = normalizeFilterString(e.lessonFormShort);
-        if ("l".equals(formShort) || formShort.contains("lab")) {
+        if ("l".equals(formShort) || "lb".equals(formShort) || formShort.contains("lab")) {
             return "lab";
         }
-        if ("a".equals(formShort) || formShort.contains("aud")) {
+        if ("a".equals(formShort) || "cw".equals(formShort) || formShort.contains("aud")) {
             return "aud";
         }
-        if ("w".equals(formShort) || formShort.contains("wyk") || formShort.contains("lec")) {
+        if ("w".equals(formShort) || "wk".equals(formShort) || formShort.contains("wyk") || formShort.contains("lec")) {
             return "lec";
         }
         if ("le".equals(formShort) || "lek".equals(formShort) || formShort.contains("lector")) {

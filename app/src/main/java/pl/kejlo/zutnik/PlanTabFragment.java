@@ -66,6 +66,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -80,6 +81,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,8 +128,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private static final String PREFS_NAME = "zutnik_plan";
     private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
 
-    private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
-    private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
+    private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json_usos_v1";
+    private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts_usos_v1";
     private static final String KEY_FILTER_CACHE_FORCE_REFRESH = "plan_filters_force_refresh_v1";
     private static final String KEY_PLAN_LAST_NETWORK_SYNC_TS = "plan_last_network_sync_ts";
     private static final String FILTER_CACHE_JSON_PREFIX = KEY_FILTER_CACHE_JSON + "_";
@@ -153,6 +155,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     private TextView tvHeaderLabel;
     private TextView tvPlanToolbarSubtitle;
+    private LinearProgressIndicator planSyncProgress;
     private Toolbar toolbar;
 
     private LinearLayout layoutTimeColumn;
@@ -173,6 +176,14 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private LocalDate currentDate = LocalDate.now();
 
     private PlanRepository planRepository;
+    private UsosTimetableStore timetableStore;
+    private boolean usesUsosTimetable;
+    private boolean timetableInitializationFailed;
+    private boolean syncListenerAttached;
+    private long renderedSyncRevision = Long.MIN_VALUE;
+    private long pendingSyncRevision = Long.MIN_VALUE;
+    private final UsosTimetableStore.Listener timetableListener = this::onTimetableSyncStateChanged;
+    private final Runnable syncRevisionRefreshRunnable = this::refreshTimetableRevision;
 
     private final DateTimeFormatter YMD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -189,6 +200,10 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     private volatile List<PlanRepository.SessionPeriod> sessionDates = new ArrayList<>();
     private final Object forceRefreshLock = new Object();
+    private int planSelectionVersion;
+    private final Set<Integer> deferredPageRefreshes = new HashSet<>();
+    private final Map<PlanKey, Integer> planCacheVersions = new HashMap<>();
+    private final Map<PlanKey, Integer> pageAutoLoadSelections = new HashMap<>();
     private boolean pendingForceRefresh = false;
     private LocalDate pendingForceRefreshDate = null;
     private String pendingForceRefreshMode = null;
@@ -222,7 +237,19 @@ public class PlanTabFragment extends ZutnikTabFragment {
             20, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<PlanKey, PlanRepository.PlanResult> eldest) {
-            return size() > 20;
+            boolean remove = size() > 20;
+            if (remove) {
+                planCacheVersions.remove(eldest.getKey());
+                pageAutoLoadSelections.remove(eldest.getKey());
+            }
+            return remove;
+        }
+
+        @Override
+        public void clear() {
+            super.clear();
+            planCacheVersions.clear();
+            pageAutoLoadSelections.clear();
         }
     };
 
@@ -261,12 +288,16 @@ public class PlanTabFragment extends ZutnikTabFragment {
     }
 
     private final Set<PageLoadRequest> activePageLoads = Collections.synchronizedSet(new HashSet<>());
+    private final Set<PlanKey> failedPlanPages = new HashSet<>();
     private int planRenderContextVersion = 0;
+    private int planDataVersion = 0;
 
-    private void putPlanInCache(String modeId, LocalDate date, PlanRepository.PlanResult result) {
+    private void putPlanInCache(String modeId, LocalDate date, PlanRepository.PlanResult result, int dataVersion) {
         if (modeId == null || date == null || result == null)
             return;
-        planCache.put(new PlanKey(modeId, date), result);
+        PlanKey key = new PlanKey(modeId, date);
+        planCache.put(key, result);
+        planCacheVersions.put(key, dataVersion);
     }
 
     private PlanRepository.PlanResult getPlanFromCache(String modeId, LocalDate date) {
@@ -275,9 +306,30 @@ public class PlanTabFragment extends ZutnikTabFragment {
         return planCache.get(new PlanKey(modeId, date));
     }
 
+    private PlanRepository.PlanResult getVisiblePlanResult() {
+        PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, currentDate);
+        if (cached != null || pagerRecyclerView == null || viewPager == null) {
+            return cached;
+        }
+        RecyclerView.ViewHolder holder = pagerRecyclerView.findViewHolderForAdapterPosition(viewPager.getCurrentItem());
+        if (holder instanceof PlanPageViewHolder) {
+            PlanPageViewHolder page = (PlanPageViewHolder) holder;
+            if (page.boundContextVersion == planRenderContextVersion
+                    && viewModeId.equals(page.boundModeId) && currentDate.equals(page.boundDate)) {
+                return page.renderedResult;
+            }
+        }
+        return null;
+    }
+
     private void beginPlanRenderContext() {
         planRenderContextVersion++;
+        pageAutoLoadSelections.clear();
+        deferredPageRefreshes.clear();
         activePageLoads.clear();
+        failedPlanPages.clear();
+        discardObsoleteForceRefresh();
+        stopRefreshAnimation();
 
         if (viewPager != null) {
             viewPager.animate().cancel();
@@ -408,6 +460,32 @@ public class PlanTabFragment extends ZutnikTabFragment {
         rootView = view;
 
         planRepository = new PlanRepository(requireContext().getApplicationContext());
+        usesUsosTimetable = ZutnikSession.getInstance(requireContext()).isUsosLogin();
+        timetableStore = null;
+        timetableInitializationFailed = false;
+        if (usesUsosTimetable) {
+            Context storeContext = requireContext().getApplicationContext();
+            executor.execute(() -> {
+                UsosTimetableStore store = null;
+                try {
+                    // Initial acquisition can read and parse the persisted cache.
+                    store = UsosTimetableStore.get(storeContext);
+                } catch (Exception ignored) {
+                }
+                UsosTimetableStore loadedStore = store;
+                handler.post(() -> {
+                    if (rootView != view || !isAdded()) {
+                        return;
+                    }
+                    timetableStore = loadedStore;
+                    timetableInitializationFailed = loadedStore == null;
+                    if (isResumed()) {
+                        subscribeTimetableListener();
+                    }
+                    updatePlanDataFreshness(false);
+                });
+            });
+        }
         prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         hiddenSubjectKeys = new HashSet<>(prefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>()));
         purgeExpiredFilterCaches();
@@ -475,6 +553,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
         tvHeaderLabel = tabFind(R.id.tvHeaderLabel);
         tvPlanToolbarSubtitle = tabFind(R.id.tvPlanToolbarSubtitle);
+        planSyncProgress = tabFind(R.id.planSyncProgress);
         updatePlanDataFreshness(false);
 
         layoutTimeColumn = tabFind(R.id.layoutTimeColumn);
@@ -497,21 +576,23 @@ public class PlanTabFragment extends ZutnikTabFragment {
         if (viewPager != null) {
             setupHeightForViewPager();
             pagerAdapter = new PlanPagerAdapter(requireContext());
-            viewPager.setOffscreenPageLimit(ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT);
+            viewPager.setOffscreenPageLimit(1);
             viewPager.setNestedScrollingEnabled(false);
             View pagerChild = viewPager.getChildAt(0);
             if (pagerChild instanceof RecyclerView) {
                 pagerRecyclerView = (RecyclerView) pagerChild;
                 pagerRecyclerView.setItemAnimator(null);
-                pagerRecyclerView.setItemViewCacheSize(0);
-                pagerRecyclerView.getRecycledViewPool().setMaxRecycledViews(0, 1);
+                pagerRecyclerView.setItemViewCacheSize(2);
+                pagerRecyclerView.getRecycledViewPool().setMaxRecycledViews(0, 3);
             }
 
             viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
                 @Override
                 public void onPageSelected(int position) {
                     super.onPageSelected(position);
+                    planSelectionVersion++;
                     updateCurrentDateFromPosition(position);
+                    discardObsoleteForceRefresh();
 
                     if (!isMonthMode()) {
                         updateNowLineInVisiblePage();
@@ -525,12 +606,25 @@ public class PlanTabFragment extends ZutnikTabFragment {
                         } else {
                             updateFixedWeekHeaders(cached.dayColumns);
                         }
-                        updatePlanDataFreshness(false);
                     } else {
                         if (!isMonthMode()) {
                             updateFixedWeekHeaders(buildLoadingDayColumns(currentDate));
                         }
                     }
+                    updatePlanDataFreshness(false);
+                    requestPageRefresh(position);
+                }
+
+                @Override
+                public void onPageScrollStateChanged(int state) {
+                    if (state != ViewPager2.SCROLL_STATE_IDLE) return;
+                    if (pendingSyncRevision != Long.MIN_VALUE) {
+                        handler.removeCallbacks(syncRevisionRefreshRunnable);
+                        handler.post(syncRevisionRefreshRunnable);
+                    }
+                    List<Integer> pending = new ArrayList<>(deferredPageRefreshes);
+                    deferredPageRefreshes.clear();
+                    for (int position : pending) requestPageRefresh(position);
                 }
             });
 
@@ -784,6 +878,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
     @Override
     public void onResume() {
         super.onResume();
+        subscribeTimetableListener();
         nowLineHandler.removeCallbacks(nowLineRunnable);
         handler.removeCallbacks(resumePlanRecoveryRunnable);
         if (!isMonthMode()) {
@@ -795,6 +890,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     @Override
     public void onPause() {
+        detachTimetableListener();
+        stopRefreshAnimation();
         super.onPause();
         nowLineHandler.removeCallbacks(nowLineRunnable);
         handler.removeCallbacks(resumePlanRecoveryRunnable);
@@ -802,6 +899,10 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     @Override
     public void onDestroyView() {
+        detachTimetableListener();
+        planRenderContextVersion++;
+        activePageLoads.clear();
+        deferredPageRefreshes.clear();
         nowLineHandler.removeCallbacks(nowLineRunnable);
         handler.removeCallbacks(resumePlanRecoveryRunnable);
         if (mRefreshAnimator != null) {
@@ -813,6 +914,11 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
         pagerAdapter = null;
         pagerRecyclerView = null;
+        viewPager = null;
+        planSyncProgress = null;
+        tvPlanToolbarSubtitle = null;
+        toolbar = null;
+        rootView = null;
         super.onDestroyView();
     }
 
@@ -971,6 +1077,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                     updateFixedWeekHeaders(buildLoadingDayColumns(currentDate));
             }
         }
+        updatePlanDataFreshness(false);
     }
 
     private void setupViewModeButtons() {
@@ -1076,11 +1183,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private void setupRefreshButton() {
         if (btnRefresh != null) {
             btnRefresh.setOnClickListener(v -> {
+                String refreshScope = usesUsosTimetable ? "usos_timetable" : viewModeId;
                 NetworkRefreshPolicy.Decision decision = NetworkRefreshPolicy.evaluate(
                         requireContext(),
                         NetworkRefreshPolicy.Module.PLAN,
                         NetworkRefreshPolicy.Mode.MANUAL,
-                        viewModeId,
+                        refreshScope,
                         0L);
                 if (!decision.allowNetwork) {
                     Toast.makeText(
@@ -1093,22 +1201,30 @@ public class PlanTabFragment extends ZutnikTabFragment {
                         requireContext(),
                         NetworkRefreshPolicy.Module.PLAN,
                         NetworkRefreshPolicy.Mode.MANUAL,
-                        viewModeId);
+                        refreshScope);
                 startRefreshAnimation();
                 updatePlanDataFreshnessText(getString(R.string.data_status_syncing));
-                if (currentSearchQuery != null) {
+                boolean resettingSearch = currentSearchQuery != null;
+                if (resettingSearch) {
                     currentSearchQuery = null;
                     Toast.makeText(requireContext(), R.string.plan_toast_resetting_search, Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(requireContext(), R.string.plan_toast_refreshed, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), R.string.data_status_syncing, Toast.LENGTH_SHORT).show();
                 }
                 synchronized (forceRefreshLock) {
                     pendingForceRefresh = true;
                     pendingForceRefreshDate = currentDate;
                     pendingForceRefreshMode = viewModeId;
                 }
-                planCache.clear();
-                loadPlanForCurrentMode();
+                if (!resettingSearch && isPrimaryUsosPlan() && viewPager != null) {
+                    planCache.clear();
+                    failedPlanPages.clear();
+                    planDataVersion++;
+                    requestPageRefresh(viewPager.getCurrentItem());
+                } else {
+                    planCache.clear();
+                    loadPlanForCurrentMode();
+                }
             });
         }
     }
@@ -1214,13 +1330,45 @@ public class PlanTabFragment extends ZutnikTabFragment {
     }
 
     private void updatePlanDataFreshness(boolean fetchedFromNetwork) {
-        if (prefs == null) {
+        if (prefs == null || rootView == null || !isAdded()) {
             return;
         }
 
+        if (isPrimaryUsosPlan()) {
+            if (timetableStore != null) {
+                updateTimetableSyncUi(timetableStore.getSyncState());
+            } else {
+                updateSyncIndicator(null);
+                updatePlanDataFreshnessText(getString(timetableInitializationFailed
+                        ? R.string.plan_sync_unavailable : R.string.plan_sync_preparing));
+            }
+            return;
+        }
+        updateSyncIndicator(null);
         long now = System.currentTimeMillis();
         if (fetchedFromNetwork) {
             prefs.edit().putLong(KEY_PLAN_LAST_NETWORK_SYNC_TS, now).apply();
+        }
+        boolean failed = failedPlanPages.contains(new PlanKey(viewModeId, currentDate));
+        if (currentSearchQuery != null) {
+            String caption = getString(R.string.plan_toast_search_prefix,
+                    categoryLabel(currentSearchQuery.category != null ? currentSearchQuery.category : "album"),
+                    currentSearchQuery.query != null ? currentSearchQuery.query : "");
+            if (failed) {
+                caption += " \u00b7 " + getString(R.string.plan_sync_unavailable);
+            }
+            updatePlanDataFreshnessText(caption);
+            return;
+        }
+        if (failed) {
+            PlanRepository.PlanResult cached = getVisiblePlanResult();
+            boolean cachedAvailable = (cached != null && cached.hasAnyEventsInRange)
+                    || prefs.getLong(KEY_PLAN_LAST_NETWORK_SYNC_TS, 0L) > 0L;
+            updatePlanDataFreshnessText(getString(cachedAvailable
+                    ? R.string.plan_sync_paused : R.string.plan_sync_unavailable));
+            return;
+        }
+        if (fetchedFromNetwork) {
             updatePlanDataFreshnessText(getString(R.string.data_status_online_now));
             return;
         }
@@ -1240,6 +1388,140 @@ public class PlanTabFragment extends ZutnikTabFragment {
         } else {
             updatePlanDataFreshnessText(getString(R.string.data_status_cache));
         }
+    }
+
+    private boolean isPrimaryUsosPlan() {
+        return currentSearchQuery == null && usesUsosTimetable;
+    }
+
+    private void subscribeTimetableListener() {
+        if (timetableStore != null && !syncListenerAttached) {
+            syncListenerAttached = true;
+            timetableStore.addListener(timetableListener);
+            onTimetableSyncStateChanged(timetableStore.getSyncState());
+        }
+    }
+
+    private void detachTimetableListener() {
+        if (syncListenerAttached && timetableStore != null) {
+            timetableStore.removeListener(timetableListener);
+        }
+        syncListenerAttached = false;
+        handler.removeCallbacks(syncRevisionRefreshRunnable);
+        pendingSyncRevision = Long.MIN_VALUE;
+    }
+
+    private void onTimetableSyncStateChanged(UsosTimetableStore.SyncState state) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            handler.post(() -> onTimetableSyncStateChanged(state));
+            return;
+        }
+        if (!syncListenerAttached || rootView == null || !isAdded()) {
+            return;
+        }
+        updatePlanDataFreshness(false);
+        if (isPrimaryUsosPlan() && state.revision != renderedSyncRevision
+                && state.revision != pendingSyncRevision) {
+            pendingSyncRevision = state.revision;
+            handler.removeCallbacks(syncRevisionRefreshRunnable);
+            handler.postDelayed(syncRevisionRefreshRunnable, 150L);
+        }
+    }
+
+    private void refreshTimetableRevision() {
+        if (!syncListenerAttached || rootView == null || !isPrimaryUsosPlan() || timetableStore == null) {
+            return;
+        }
+        if (viewPager != null && viewPager.getScrollState() != ViewPager2.SCROLL_STATE_IDLE) return;
+        pendingSyncRevision = Long.MIN_VALUE;
+        renderedSyncRevision = timetableStore.getSyncState().revision;
+        planDataVersion++;
+        failedPlanPages.clear();
+        // Retain ready pages and refresh adjacent cache-only pages too, so a week fetched
+        // during synchronization is already rendered before the next swipe.
+        notifyAllPlanPagesChanged();
+    }
+
+    private void updateTimetableSyncUi(UsosTimetableStore.SyncState state) {
+        updateSyncIndicator(state);
+        if (state.running) {
+            updatePlanDataFreshnessText(state.total > 0
+                    ? getString(R.string.plan_sync_progress,
+                            Math.max(0, Math.min(state.completed, state.total)), state.total)
+                    : getString(R.string.plan_sync_preparing));
+            return;
+        }
+
+        LocalDate rangeStart = currentDate != null ? currentDate : LocalDate.now();
+        LocalDate rangeEnd = rangeStart;
+        if (isWeekMode()) {
+            rangeStart = rangeStart.minusDays(rangeStart.getDayOfWeek().getValue() - 1L);
+            rangeEnd = rangeStart.plusDays(6);
+        } else if (isMonthMode()) {
+            rangeStart = rangeStart.withDayOfMonth(1);
+            rangeEnd = rangeStart.withDayOfMonth(rangeStart.lengthOfMonth());
+        }
+        long rangeTimestamp = timetableStore.getRangeTimestamp(rangeStart, rangeEnd);
+        PlanRepository.PlanResult cached = getVisiblePlanResult();
+        boolean cachedAvailable = rangeTimestamp > 0L || (cached != null
+                && (cached.cachedRangeAvailable || cached.verifiedRange || cached.hasAnyEventsInRange));
+        if (state.fallbackUsed) {
+            updatePlanDataFreshnessText(getString(R.string.plan_sync_fallback));
+        } else if (!TextUtils.isEmpty(state.error)
+                || failedPlanPages.contains(new PlanKey(viewModeId, currentDate))) {
+            updatePlanDataFreshnessText(getString(cachedAvailable
+                    ? R.string.plan_sync_paused : R.string.plan_sync_unavailable));
+        } else if (rangeTimestamp > 0L) {
+            long now = System.currentTimeMillis();
+            if (now - rangeTimestamp < DateUtils.MINUTE_IN_MILLIS) {
+                updatePlanDataFreshnessText(getString(R.string.data_status_online_now));
+            } else {
+                CharSequence relativeTime = DateUtils.getRelativeTimeSpanString(
+                        rangeTimestamp, now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+                updatePlanDataFreshnessText(getString(R.string.data_status_cache_since, relativeTime));
+            }
+        } else if (cached != null && !cached.cachedRangeAvailable && !cached.verifiedRange) {
+            updatePlanDataFreshnessText(getString(cachedAvailable
+                    ? R.string.plan_sync_paused : R.string.plan_sync_unavailable));
+        } else {
+            updatePlanDataFreshnessText(getString(R.string.data_status_cache));
+        }
+        if (!hasActiveVisiblePageLoad() && !pendingForceRefresh) {
+            stopRefreshAnimation();
+        }
+    }
+
+    private void updateSyncIndicator(@Nullable UsosTimetableStore.SyncState state) {
+        if (planSyncProgress == null) {
+            return;
+        }
+        if (state == null || !state.running || currentSearchQuery != null) {
+            planSyncProgress.setVisibility(View.INVISIBLE);
+            return;
+        }
+        boolean indeterminate = state.total <= 0;
+        if (planSyncProgress.isIndeterminate() != indeterminate) {
+            // Material requires the indicator to be hidden when changing modes.
+            planSyncProgress.setVisibility(View.INVISIBLE);
+            planSyncProgress.setIndeterminate(indeterminate);
+        }
+        if (!indeterminate) {
+            planSyncProgress.setMax(state.total);
+            planSyncProgress.setProgressCompat(Math.max(0, Math.min(state.completed, state.total)), false);
+        }
+        planSyncProgress.setVisibility(View.VISIBLE);
+    }
+
+    private boolean hasActiveVisiblePageLoad() {
+        synchronized (activePageLoads) {
+            for (PageLoadRequest request : activePageLoads) {
+                if (request.renderContextVersion == planRenderContextVersion
+                        && viewModeId.equals(request.viewModeId) && currentDate.equals(request.date)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void updatePlanDataFreshnessText(String text) {
@@ -1851,8 +2133,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 pageDate = baseDate.plusMonths(diff).with(TemporalAdjusters.firstDayOfMonth());
             }
 
-            boolean animateEntrance = holder.boundContextVersion != renderContextVersion || holder.wasLoading;
-            clearPlanPageHolder(holder);
+            boolean samePage = holder.boundContextVersion == renderContextVersion
+                    && viewModeId.equals(holder.boundModeId) && pageDate.equals(holder.boundDate)
+                    && holder.container.getChildCount() > 0;
+            boolean keepRenderedPlan = samePage
+                    && !holder.wasLoading && holder.renderedResult != null
+                    && holder.container.getChildCount() > 0;
             holder.boundContextVersion = renderContextVersion;
             holder.boundModeId = viewModeId;
             holder.boundDate = pageDate;
@@ -1860,19 +2146,43 @@ public class PlanTabFragment extends ZutnikTabFragment {
             PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, pageDate);
 
             if (cached != null) {
+                if (!keepRenderedPlan) clearPlanPageHolder(holder);
+                holder.renderedResult = cached;
                 holder.wasLoading = false;
                 if (isMonthMode()) {
                     renderMonthPage(holder, cached);
                 } else {
                     renderWeekPage(holder, cached);
                 }
-                if (animateEntrance) {
-                    animatePlanPageEntrance(holder.container);
-                }
             } else {
-                showLoadingState(holder);
-                holder.wasLoading = true;
-                loadPageAsync(position, pageDate, viewModeId, renderContextVersion);
+                boolean failed = failedPlanPages.contains(new PlanKey(viewModeId, pageDate));
+                if (!keepRenderedPlan && (!samePage || failed || !holder.wasLoading)) {
+                    clearPlanPageHolder(holder);
+                    if (failed) {
+                        showFailedState(holder);
+                        holder.wasLoading = false;
+                    } else {
+                        showLoadingState(holder);
+                        holder.wasLoading = true;
+                    }
+                }
+            }
+
+            PlanKey key = new PlanKey(viewModeId, pageDate);
+            if (!failedPlanPages.contains(key)) {
+                if (isPrimaryUsosPlan()) {
+                    boolean selected = viewPager != null && position == viewPager.getCurrentItem();
+                    boolean autoDue = selected && (hasPendingForceRefresh(pageDate, viewModeId)
+                            || !Integer.valueOf(planSelectionVersion).equals(pageAutoLoadSelections.get(key)));
+                    boolean stale = !Integer.valueOf(planDataVersion).equals(planCacheVersions.get(key));
+                    if (autoDue || stale) {
+                        // Adjacent pages and sync revisions read only the shared cache. Network
+                        // verification happens once per selection, never as a side effect of swiping.
+                        loadPageAsync(position, pageDate, viewModeId, renderContextVersion, !autoDue);
+                    }
+                } else if (cached == null) {
+                    loadPageAsync(position, pageDate, viewModeId, renderContextVersion, false);
+                }
             }
         }
 
@@ -1900,153 +2210,174 @@ public class PlanTabFragment extends ZutnikTabFragment {
             holder.container.setTag(skeleton);
         }
 
+        private void showFailedState(PlanPageViewHolder holder) {
+            TextView message = new TextView(context);
+            message.setText(R.string.plan_sync_unavailable);
+            message.setTextColor(ThemeManager.resolveColor(context, R.attr.mzMuted));
+            message.setGravity(Gravity.CENTER);
+            message.setPadding(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20));
+            holder.container.addView(message, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+
         private void renderWeekPage(PlanPageViewHolder holder,
                 PlanRepository.PlanResult result) {
-
-            LinearLayout columnsContainer = new LinearLayout(context);
-            columnsContainer.setOrientation(LinearLayout.HORIZONTAL);
-            columnsContainer.setClipChildren(false);
-            columnsContainer.setClipToPadding(false);
-            holder.container.addView(columnsContainer, new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT));
-
-            float totalHours = END_HOUR - START_HOUR;
-            int columnHeight = (int) (dpToPx(HOUR_HEIGHT_DP) * totalHours);
-
+            if (holder.weekColumns == null) {
+                holder.weekColumns = new LinearLayout(context);
+                holder.weekColumns.setOrientation(LinearLayout.HORIZONTAL);
+                holder.weekColumns.setClipChildren(false);
+                holder.weekColumns.setClipToPadding(false);
+                holder.container.addView(holder.weekColumns, new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            }
+            int columnHeight = (int) (dpToPx(HOUR_HEIGHT_DP) * (END_HOUR - START_HOUR));
             List<PlanRepository.DayColumn> rawCols = result.dayColumns != null ? result.dayColumns
                     : Collections.emptyList();
             List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
             boolean weekendsHidden = areWeekendsHidden(rawCols, cols);
-
             if (cols.isEmpty()) {
-                TextView empty = new TextView(context);
-                empty.setText(R.string.plan_no_classes_in_range);
-                empty.setGravity(Gravity.CENTER);
-                columnsContainer.addView(empty, new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT));
+                if (holder.emptyWeek == null) {
+                    holder.emptyWeek = new TextView(context);
+                    holder.emptyWeek.setText(R.string.plan_no_classes_in_range);
+                    holder.emptyWeek.setGravity(Gravity.CENTER);
+                }
+                reconcileChildren(holder.weekColumns, Collections.singletonList(holder.emptyWeek));
+                holder.weekStructure = Collections.emptyList();
+                holder.days.clear();
                 return;
             }
-
             LocalDate today = LocalDate.now();
-
-            // Build day columns first, track them with their dates
+            List<Object> structure = new ArrayList<>();
+            structure.add(today);
+            structure.add(weekendsHidden);
             List<View> dayColumnViews = new ArrayList<>();
             List<LocalDate> dayColumnDates = new ArrayList<>();
-
+            Set<LocalDate> dates = new HashSet<>();
             for (PlanRepository.DayColumn col : cols) {
-
-                boolean highlight = col.date != null && col.date.equals(today);
-
-                LinearLayout dayColumn = new LinearLayout(context);
-                dayColumn.setOrientation(LinearLayout.VERTICAL);
-                LinearLayout.LayoutParams dayLp = new LinearLayout.LayoutParams(
-                        0,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        1f);
-                dayColumn.setLayoutParams(dayLp);
-
-                FrameLayoutWithChildren dayBody = new FrameLayoutWithChildren(context);
-                LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        columnHeight);
-                dayBody.setLayoutParams(bodyLp);
-                dayBody.setBackground(buildPlanDayBackground(context, highlight));
-
-                addHourLines(dayBody);
-                attachEmptySlotAdd(dayBody, col.date);
-
-                List<PlanRepository.PlanEventUi> events = col.events != null ? col.events : Collections.emptyList();
-                List<PlanRepository.PlanEventUi> visibleEvents = new ArrayList<>();
-                for (PlanRepository.PlanEventUi ev : events) {
-                    if (!shouldHideEvent(ev)) {
-                        visibleEvents.add(ev);
-                    }
+                RenderedDay day = holder.days.get(col.date);
+                if (day == null) {
+                    day = createRenderedDay(col.date, columnHeight);
+                    holder.days.put(col.date, day);
                 }
-                if (visibleEvents.size() != events.size() && planRepository != null) {
-                    planRepository.relayoutDayEvents(visibleEvents);
+                boolean highlight = today.equals(col.date);
+                if (day.highlighted != highlight) {
+                    day.highlighted = highlight;
+                    day.body.setBackground(buildPlanDayBackground(context, highlight));
+                    day.body.setTag(highlight ? "TODAY_BODY" : null);
+                    View line = day.body.findViewWithTag("NOW_LINE");
+                    if (!highlight && line != null) day.body.removeView(line);
                 }
-
-                List<RenderedEvent> renderedEvents = new ArrayList<>();
-                for (PlanRepository.PlanEventUi ev : visibleEvents) {
-                    View evView = createEventView(ev, col.date);
-                    evView.setVisibility(View.INVISIBLE);
-                    dayBody.addView(evView);
-                    renderedEvents.add(new RenderedEvent(ev, evView));
-                }
-
-                LocalDate colDate = col.date;
-                boolean isTodayColumn = colDate != null && colDate.equals(today);
-                if (isTodayColumn) {
-                    dayBody.setTag("TODAY_BODY");
-                }
-                dayBody.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                    @Override
-                    public boolean onPreDraw() {
-                        int width = dayBody.getWidth();
-                        if (width <= 0) {
-                            return true;
-                        }
-                        ViewTreeObserver observer = dayBody.getViewTreeObserver();
-                        if (observer.isAlive()) {
-                            observer.removeOnPreDrawListener(this);
-                        }
-                        layoutEventsInDayBody(renderedEvents, width);
-                        if (isTodayColumn) {
-                            updateNowLineInVisiblePage();
-                        }
-                        return true;
-                    }
-                });
-
-                dayColumn.addView(dayBody);
-                dayColumnViews.add(dayColumn);
+                updateDayEvents(day, col);
+                dates.add(col.date);
+                structure.add(col.date);
+                dayColumnViews.add(day.column);
                 dayColumnDates.add(col.date);
             }
-
-            // Add columns to container, inserting session separators between them
-            for (int i = 0; i < dayColumnViews.size(); i++) {
-                // Before first column: leading check (e.g. Sunday session)
-                if (i == 0) {
-                    LocalDate firstDate = dayColumnDates.get(0);
-                    LocalDate dayBefore = firstDate.minusDays(1);
-                    addSessionMarkerLines(columnsContainer, dayBefore, firstDate, columnHeight);
-                }
-
-                // Between adjacent columns: end markers then start markers
-                if (i > 0) {
-                    LocalDate prevDate = dayColumnDates.get(i - 1);
-                    LocalDate curDate = dayColumnDates.get(i);
-                    boolean hasSessionMarker = addSessionMarkerLines(
-                            columnsContainer,
-                            prevDate,
-                            curDate,
-                            columnHeight);
-                    if (!hasSessionMarker) {
-                        columnsContainer.addView(buildWeekColumnDivider(columnHeight));
-                    }
-                }
-                columnsContainer.addView(dayColumnViews.get(i));
+            holder.days.keySet().retainAll(dates);
+            for (PlanRepository.SessionPeriod period : sessionDates) {
+                structure.add(period.name);
+                structure.add(period.startDate);
+                structure.add(period.endDate);
             }
-
-            // After last column: trailing check (e.g. Saturday session, or session starting on last day)
-            if (!dayColumnDates.isEmpty()) {
-                LocalDate lastDate = dayColumnDates.get(dayColumnDates.size() - 1);
-                long trailingGapDays = (weekendsHidden && lastDate.getDayOfWeek() == DayOfWeek.FRIDAY) ? 3L : 1L;
-                LocalDate dayAfter = lastDate.plusDays(trailingGapDays);
-                addSessionMarkerLines(columnsContainer, lastDate, dayAfter, columnHeight);
+            if (!structure.equals(holder.weekStructure)) {
+                List<View> children = new ArrayList<>();
+                for (int i = 0; i < dayColumnViews.size(); i++) {
+                    LocalDate date = dayColumnDates.get(i);
+                    if (i == 0) appendSessionMarkers(children, date.minusDays(1), date, columnHeight);
+                    if (i > 0 && !appendSessionMarkers(children, dayColumnDates.get(i - 1), date, columnHeight)) {
+                        children.add(buildWeekColumnDivider(columnHeight));
+                    }
+                    children.add(dayColumnViews.get(i));
+                }
+                LocalDate last = dayColumnDates.get(dayColumnDates.size() - 1);
+                long gap = weekendsHidden && last.getDayOfWeek() == DayOfWeek.FRIDAY ? 3L : 1L;
+                appendSessionMarkers(children, last, last.plusDays(gap), columnHeight);
+                reconcileChildren(holder.weekColumns, children);
+                holder.weekStructure = structure;
             }
         }
 
-        private void renderMonthPage(PlanPageViewHolder holder, PlanRepository.PlanResult result) {
-            GridLayout grid = new GridLayout(context);
-            grid.setColumnCount(7);
-            grid.setUseDefaultMargins(false);
+        private RenderedDay createRenderedDay(LocalDate date, int height) {
+            LinearLayout column = new LinearLayout(context);
+            column.setOrientation(LinearLayout.VERTICAL);
+            column.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+            FrameLayoutWithChildren body = new FrameLayoutWithChildren(context);
+            body.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height));
+            body.setBackground(buildPlanDayBackground(context, false));
+            addHourLines(body);
+            attachEmptySlotAdd(body, date);
+            column.addView(body);
+            RenderedDay day = new RenderedDay(column, body);
+            body.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                if (right - left != oldRight - oldLeft) scheduleDayLayout(day);
+            });
+            return day;
+        }
 
-            holder.container.addView(grid, new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
+        private void updateDayEvents(RenderedDay day, PlanRepository.DayColumn col) {
+            List<PlanRepository.PlanEventUi> events = col.events != null ? col.events : Collections.emptyList();
+            List<PlanRepository.PlanEventUi> visible = new ArrayList<>();
+            for (PlanRepository.PlanEventUi event : events) {
+                if (event != null && !shouldHideEvent(event)) visible.add(event);
+            }
+            if (visible.size() != events.size() && planRepository != null) {
+                visible = planRepository.relayoutDayEvents(visible);
+            }
+            Map<List<Object>, RenderedEvent> next = new LinkedHashMap<>();
+            Map<List<Object>, Integer> occurrences = new HashMap<>();
+            boolean layoutChanged = false;
+            for (PlanRepository.PlanEventUi event : visible) {
+                PlanEventSnapshot snapshot = new PlanEventSnapshot(event);
+                int occurrence = occurrences.containsKey(snapshot.identity) ? occurrences.get(snapshot.identity) : 0;
+                occurrences.put(snapshot.identity, occurrence + 1);
+                List<Object> key = new ArrayList<>(snapshot.identity);
+                key.add(occurrence);
+                RenderedEvent rendered = day.events.get(key);
+                if (rendered == null) {
+                    rendered = new RenderedEvent(event, createEventView(event, col.date));
+                    day.body.addView(rendered.view);
+                    layoutChanged = true;
+                } else {
+                    if (!rendered.snapshot.sameContent(snapshot)) bindEventView((PlanEventBlockView) rendered.view, event);
+                    layoutChanged |= !rendered.snapshot.sameBounds(snapshot);
+                    rendered.ev = event;
+                    rendered.snapshot = snapshot;
+                }
+                next.put(key, rendered);
+            }
+            for (Map.Entry<List<Object>, RenderedEvent> previous : day.events.entrySet()) {
+                if (!next.containsKey(previous.getKey())) {
+                    day.body.removeView(previous.getValue().view);
+                    layoutChanged = true;
+                }
+            }
+            if (!new ArrayList<>(next.keySet()).equals(new ArrayList<>(day.events.keySet()))) {
+                for (RenderedEvent rendered : next.values()) rendered.view.bringToFront();
+            }
+            day.events = next;
+            if (layoutChanged) scheduleDayLayout(day);
+        }
+
+        private boolean appendSessionMarkers(List<View> children, LocalDate before, LocalDate after, int height) {
+            LinearLayout staging = new LinearLayout(context);
+            boolean added = addSessionMarkerLines(staging, before, after, height);
+            while (staging.getChildCount() > 0) {
+                View marker = staging.getChildAt(0);
+                staging.removeViewAt(0);
+                children.add(marker);
+            }
+            return added;
+        }
+
+        private void renderMonthPage(PlanPageViewHolder holder, PlanRepository.PlanResult result) {
+            if (holder.monthGrid == null) {
+                holder.monthGrid = new GridLayout(context);
+                holder.monthGrid.setColumnCount(7);
+                holder.monthGrid.setUseDefaultMargins(false);
+                holder.container.addView(holder.monthGrid, new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            }
+            GridLayout grid = holder.monthGrid;
 
             List<List<PlanRepository.MonthCell>> gridData = result.monthGrid != null ? result.monthGrid
                     : Collections.emptyList();
@@ -2055,8 +2386,9 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 TextView empty = new TextView(context);
                 empty.setText(R.string.plan_no_classes_in_range);
                 empty.setGravity(Gravity.CENTER);
-                holder.container.removeAllViews();
-                holder.container.addView(empty);
+                reconcileChildren(grid, Collections.singletonList(empty));
+                holder.monthCells.clear();
+                holder.monthSpacers.clear();
                 return;
             }
 
@@ -2068,42 +2400,44 @@ public class PlanTabFragment extends ZutnikTabFragment {
             int dayText = ThemeManager.resolveColor(context, R.attr.mzText);
             int hintText = ThemeManager.resolveColor(context, R.attr.mzMuted);
 
+            List<View> children = new ArrayList<>();
+            Set<LocalDate> dates = new HashSet<>();
+            int position = 0;
             for (List<PlanRepository.MonthCell> week : gridData) {
                 for (PlanRepository.MonthCell cell : week) {
                     if (cell == null) {
-                        View spacer = new View(context);
+                        View spacer = holder.monthSpacers.get(position);
+                        if (spacer == null) {
+                            spacer = new View(context);
+                            GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+                            lp.width = 0;
+                            lp.height = dpToPx(MONTH_CELL_HEIGHT_DP);
+                            lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+                            spacer.setLayoutParams(lp);
+                            holder.monthSpacers.put(position, spacer);
+                        }
+                        children.add(spacer);
+                        position++;
+                        continue;
+                    }
+                    LinearLayout cellRoot = holder.monthCells.get(cell.date);
+                    boolean created = cellRoot == null;
+                    if (created) {
+                        cellRoot = new LinearLayout(context);
+                        cellRoot.setOrientation(LinearLayout.VERTICAL);
+                        cellRoot.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
                         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
                         lp.width = 0;
                         lp.height = dpToPx(MONTH_CELL_HEIGHT_DP);
+                        lp.setMargins(dpToPx(2), dpToPx(2), dpToPx(2), dpToPx(2));
                         lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-                        spacer.setLayoutParams(lp);
-                        grid.addView(spacer);
-                        continue;
-                    }
-
-                    LinearLayout cellRoot = new LinearLayout(context);
-                    cellRoot.setOrientation(LinearLayout.VERTICAL);
-                    cellRoot.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
-
-                    GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
-                    lp.width = 0;
-                    lp.height = dpToPx(MONTH_CELL_HEIGHT_DP);
-                    lp.setMargins(dpToPx(2), dpToPx(2), dpToPx(2), dpToPx(2));
-                    lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-                    cellRoot.setLayoutParams(lp);
-
-                    int fill = cell.hasPlan ? eventBg : cellBg;
-                    int stroke = cell.hasPlan ? eventBorder : cellBorder;
-                    cellRoot.setBackground(buildRoundedBg(fill, stroke));
-
-                    TextView tvNum = new TextView(context);
-                    tvNum.setText(String.valueOf(cell.date.getDayOfMonth()));
-                    tvNum.setTextColor(dayText);
-                    tvNum.setTextSize(14f);
-                    tvNum.setTypeface(Typeface.DEFAULT_BOLD);
-                    cellRoot.addView(tvNum);
-
-                    if (cell.hasPlan) {
+                        cellRoot.setLayoutParams(lp);
+                        TextView tvNum = new TextView(context);
+                        tvNum.setText(String.valueOf(cell.date.getDayOfMonth()));
+                        tvNum.setTextColor(dayText);
+                        tvNum.setTextSize(14f);
+                        tvNum.setTypeface(Typeface.DEFAULT_BOLD);
+                        cellRoot.addView(tvNum);
                         TextView tvHint = new TextView(context);
                         tvHint.setText(R.string.plan_month_cell_has_events_hint);
                         tvHint.setTextSize(9f);
@@ -2116,19 +2450,28 @@ public class PlanTabFragment extends ZutnikTabFragment {
                         hintLp.topMargin = dpToPx(2);
                         tvHint.setLayoutParams(hintLp);
                         cellRoot.addView(tvHint);
-
-                        cellRoot.setOnClickListener(v -> {
+                        holder.monthCells.put(cell.date, cellRoot);
+                    }
+                    if (created || cellRoot.isActivated() != cell.hasPlan) {
+                        cellRoot.setActivated(cell.hasPlan);
+                        cellRoot.setBackground(buildRoundedBg(cell.hasPlan ? eventBg : cellBg,
+                                cell.hasPlan ? eventBorder : cellBorder));
+                        cellRoot.getChildAt(1).setVisibility(cell.hasPlan ? View.VISIBLE : View.GONE);
+                        cellRoot.setOnClickListener(cell.hasPlan ? v -> {
                             setCurrentViewMode(ViewMode.DAY);
                             currentDate = cell.date;
                             baseDate = currentDate;
-                            if (viewPager != null)
-                                viewPager.setCurrentItem(VP_START_POSITION, false);
+                            if (viewPager != null) viewPager.setCurrentItem(VP_START_POSITION, false);
                             loadPlanForCurrentMode();
-                        });
+                        } : null);
                     }
-                    grid.addView(cellRoot);
+                    children.add(cellRoot);
+                    dates.add(cell.date);
+                    position++;
                 }
             }
+            holder.monthCells.keySet().retainAll(dates);
+            reconcileChildren(grid, children);
         }
     }
 
@@ -2138,6 +2481,14 @@ public class PlanTabFragment extends ZutnikTabFragment {
         LocalDate boundDate;
         int boundContextVersion = -1;
         boolean wasLoading;
+        PlanRepository.PlanResult renderedResult;
+        LinearLayout weekColumns;
+        TextView emptyWeek;
+        List<Object> weekStructure = Collections.emptyList();
+        final Map<LocalDate, RenderedDay> days = new LinkedHashMap<>();
+        GridLayout monthGrid;
+        final Map<LocalDate, LinearLayout> monthCells = new HashMap<>();
+        final Map<Integer, View> monthSpacers = new HashMap<>();
 
         PlanPageViewHolder(FrameLayout container) {
             super(container);
@@ -2154,9 +2505,29 @@ public class PlanTabFragment extends ZutnikTabFragment {
         container.animate().cancel();
         container.clearAnimation();
         container.removeAllViews();
+        holder.renderedResult = null;
+        holder.weekColumns = null;
+        holder.emptyWeek = null;
+        holder.weekStructure = Collections.emptyList();
+        holder.days.clear();
+        holder.monthGrid = null;
+        holder.monthCells.clear();
+        holder.monthSpacers.clear();
     }
 
-    private void loadPageAsync(int position, LocalDate date, String modeId, int renderContextVersion) {
+    private static void reconcileChildren(ViewGroup parent, List<? extends View> children) {
+        for (int i = parent.getChildCount() - 1; i >= 0; i--) {
+            if (!children.contains(parent.getChildAt(i))) parent.removeViewAt(i);
+        }
+        for (int i = 0; i < children.size(); i++) {
+            View child = children.get(i);
+            if (parent.getChildAt(i) == child) continue;
+            if (child.getParent() == parent) parent.removeView(child);
+            parent.addView(child, i);
+        }
+    }
+
+    private void loadPageAsync(int position, LocalDate date, String modeId, int renderContextVersion, boolean cacheOnly) {
         PageLoadRequest request = new PageLoadRequest(renderContextVersion, modeId, date);
         synchronized (activePageLoads) {
             if (activePageLoads.contains(request)) {
@@ -2166,12 +2537,22 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
 
         PlanRepository.SearchParams searchSnapshot = snapshotCurrentSearchQuery();
-        final boolean forceRefreshThisLoad = consumePendingForceRefresh(date, modeId);
+        final int requestedDataVersion = planDataVersion;
+        final boolean forceRefreshThisLoad = !cacheOnly && consumePendingForceRefresh(date, modeId);
+        if (!cacheOnly && searchSnapshot == null && isPrimaryUsosPlan()) {
+            pageAutoLoadSelections.put(new PlanKey(modeId, date), planSelectionVersion);
+        }
+        if (forceRefreshThisLoad) {
+            startRefreshAnimation();
+            updatePlanDataFreshnessText(getString(R.string.data_status_syncing));
+        }
         executor.execute(() -> {
             PlanRepository.PlanResult res = null;
             try {
                 if (searchSnapshot != null) {
                     res = planRepository.searchPlan(modeId, date, searchSnapshot);
+                } else if (cacheOnly) {
+                    res = planRepository.loadPlanFromCache(modeId, date);
                 } else {
                     res = planRepository.loadPlan(modeId, date, forceRefreshThisLoad);
                 }
@@ -2182,32 +2563,82 @@ public class PlanTabFragment extends ZutnikTabFragment {
             handler.post(() -> {
                 activePageLoads.remove(request);
                 androidx.fragment.app.FragmentActivity activity = getActivity();
-                if (!isAdded() || activity == null || activity.isFinishing())
+                if (!isAdded() || rootView == null || activity == null || activity.isFinishing())
                     return;
                 if (request.renderContextVersion != planRenderContextVersion) {
                     return;
                 }
+                if (searchSnapshot == null && isPrimaryUsosPlan() && requestedDataVersion != planDataVersion) {
+                    requestPageRefresh(position);
+                    updatePlanDataFreshness(false);
+                    return;
+                }
+
+                if (cacheOnly && finalRes != null && !finalRes.cachedRangeAvailable
+                        && !finalRes.verifiedRange && !finalRes.hasAnyEventsInRange) {
+                    // A missing offscreen cache is not a confirmed empty timetable. Keep its
+                    // placeholder until selected or a later sync revision supplies data.
+                    planCacheVersions.put(new PlanKey(modeId, date), requestedDataVersion);
+                    if (viewPager != null && position == viewPager.getCurrentItem()) requestPageRefresh(position);
+                    return;
+                }
+
+                boolean fetchedFromNetwork = hasSuccessfulPlanRequest(finalRes);
+                boolean loadFailed = finalRes == null || hasFailedPlanRequest(finalRes)
+                        || (forceRefreshThisLoad && !isPrimaryUsosPlan() && !fetchedFromNetwork);
+                PlanKey key = new PlanKey(modeId, date);
+                if (loadFailed) {
+                    failedPlanPages.add(key);
+                } else {
+                    failedPlanPages.remove(key);
+                }
 
                 if (finalRes != null) {
-                    putPlanInCache(modeId, date, finalRes);
-                    requestPageRefresh(position);
+                    putPlanInCache(modeId, date, finalRes, requestedDataVersion);
 
-                    if (date.equals(currentDate)) {
+                    if (modeId.equals(viewModeId) && date.equals(currentDate)) {
                         if (finalRes.headerLabel != null) {
                             tvHeaderLabel.setText(finalRes.headerLabel);
                         }
                         if (!isMonthMode()) {
                             updateFixedWeekHeaders(finalRes.dayColumns);
                         }
-                        boolean fetchedFromNetwork = finalRes.debug != null
-                                && finalRes.debug.requests != null
-                                && !finalRes.debug.requests.isEmpty();
-                        updatePlanDataFreshness(fetchedFromNetwork);
                     }
                 }
-                stopRefreshAnimation();
+                requestPageRefresh(position);
+                if (modeId.equals(viewModeId) && date.equals(currentDate)) {
+                    updatePlanDataFreshness(fetchedFromNetwork && !loadFailed);
+                }
+                if (!hasActiveVisiblePageLoad() && !pendingForceRefresh
+                        && (!isPrimaryUsosPlan() || timetableStore == null || !timetableStore.getSyncState().running)) {
+                    stopRefreshAnimation();
+                }
             });
         });
+    }
+
+    private boolean hasSuccessfulPlanRequest(@Nullable PlanRepository.PlanResult result) {
+        if (result == null || result.debug == null || result.debug.requests == null) {
+            return false;
+        }
+        for (PlanRepository.PlanDebug.RequestDebug request : result.debug.requests) {
+            if (request != null && request.jsonOk && request.httpCode >= 200 && request.httpCode < 300) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasFailedPlanRequest(@Nullable PlanRepository.PlanResult result) {
+        if (result == null || result.debug == null || result.debug.requests == null) {
+            return false;
+        }
+        for (PlanRepository.PlanDebug.RequestDebug request : result.debug.requests) {
+            if (request == null || !request.jsonOk || request.httpCode < 200 || request.httpCode >= 300) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean consumePendingForceRefresh(LocalDate date, String modeId) {
@@ -2227,6 +2658,25 @@ public class PlanTabFragment extends ZutnikTabFragment {
             pendingForceRefreshDate = null;
             pendingForceRefreshMode = null;
             return true;
+        }
+    }
+
+    private boolean hasPendingForceRefresh(LocalDate date, String modeId) {
+        synchronized (forceRefreshLock) {
+            return pendingForceRefresh && (pendingForceRefreshDate == null || pendingForceRefreshDate.equals(date))
+                    && (pendingForceRefreshMode == null || pendingForceRefreshMode.equals(modeId));
+        }
+    }
+
+    private void discardObsoleteForceRefresh() {
+        synchronized (forceRefreshLock) {
+            if (pendingForceRefresh && (currentSearchQuery != null
+                    || !viewModeId.equals(pendingForceRefreshMode)
+                    || !currentDate.equals(pendingForceRefreshDate))) {
+                pendingForceRefresh = false;
+                pendingForceRefreshDate = null;
+                pendingForceRefreshMode = null;
+            }
         }
     }
 
@@ -2781,13 +3231,47 @@ public class PlanTabFragment extends ZutnikTabFragment {
     }
 
     private static class RenderedEvent {
-        final PlanRepository.PlanEventUi ev;
+        PlanRepository.PlanEventUi ev;
+        PlanEventSnapshot snapshot;
         final View view;
 
         RenderedEvent(PlanRepository.PlanEventUi e, View v) {
             this.ev = e;
+            snapshot = new PlanEventSnapshot(e);
             this.view = v;
         }
+    }
+
+    private static final class RenderedDay {
+        final LinearLayout column;
+        final FrameLayoutWithChildren body;
+        Map<List<Object>, RenderedEvent> events = new LinkedHashMap<>();
+        boolean highlighted;
+        boolean layoutPending;
+
+        RenderedDay(LinearLayout column, FrameLayoutWithChildren body) {
+            this.column = column;
+            this.body = body;
+        }
+    }
+
+    private void scheduleDayLayout(RenderedDay day) {
+        if (day.layoutPending) return;
+        day.layoutPending = true;
+        day.body.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                if (day.body.getWidth() <= 0) return true;
+                ViewTreeObserver observer = day.body.getViewTreeObserver();
+                if (observer.isAlive()) observer.removeOnPreDrawListener(this);
+                day.layoutPending = false;
+                layoutEventsInDayBody(new ArrayList<>(day.events.values()), day.body.getWidth());
+                if (day.highlighted) drawNowLine(day.body);
+                // Complete the requested child layout before drawing, never a frame of
+                // full-width/unpositioned events followed by their final geometry.
+                return false;
+            }
+        });
+        day.body.invalidate();
     }
 
     private void layoutEventsInDayBody(List<RenderedEvent> renderedEvents,
@@ -2833,44 +3317,18 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
             FrameLayoutWithChildren.LayoutParams lp =
                     (FrameLayoutWithChildren.LayoutParams) re.view.getLayoutParams();
-            lp.topMargin = (int) topPx;
-            lp.height = (int) heightPx;
-            lp.leftMargin = marginPx + leftInset;
-            lp.width = Math.max(0, itemWidth - marginPx);
-            re.view.setLayoutParams(lp);
-            if (re.view.getVisibility() != View.VISIBLE) {
-                animateScheduleEventEntrance(re.view, i);
-            } else {
-                re.view.animate().cancel();
-                re.view.setAlpha(1f);
-                re.view.setScaleX(1f);
-                re.view.setScaleY(1f);
-                re.view.setTranslationY(0f);
-                re.view.setVisibility(View.VISIBLE);
+            int itemLeft = marginPx + leftInset;
+            int finalWidth = Math.max(0, itemWidth - marginPx);
+            if (lp.topMargin != (int) topPx || lp.height != (int) heightPx
+                    || lp.leftMargin != itemLeft || lp.width != finalWidth) {
+                lp.topMargin = (int) topPx;
+                lp.height = (int) heightPx;
+                lp.leftMargin = itemLeft;
+                lp.width = finalWidth;
+                re.view.setLayoutParams(lp);
             }
+            re.view.setVisibility(View.VISIBLE);
         }
-    }
-
-    private void animateScheduleEventEntrance(View view, int order) {
-        if (view == null) {
-            return;
-        }
-        long startDelay = Math.min(96L, Math.max(0, order) * 20L);
-        view.animate().cancel();
-        view.setAlpha(0f);
-        view.setScaleX(0.92f);
-        view.setScaleY(0.92f);
-        view.setTranslationY(dpToPx(8));
-        view.setVisibility(View.VISIBLE);
-        view.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .translationY(0f)
-                .setStartDelay(startDelay)
-                .setDuration(220L)
-                .setInterpolator(new DecelerateInterpolator(1.4f))
-                .start();
     }
 
     private void refreshAfterCustomEvent() {
@@ -2880,11 +3338,19 @@ public class PlanTabFragment extends ZutnikTabFragment {
     }
 
     private void notifyAllPlanPagesChanged() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            handler.post(this::notifyAllPlanPagesChanged);
+            return;
+        }
         if (pagerAdapter == null) {
             return;
         }
         Runnable refresh = () -> {
-            if (pagerAdapter == null) {
+            if (pagerAdapter == null || rootView == null) {
+                return;
+            }
+            if (pagerRecyclerView != null && pagerRecyclerView.isComputingLayout()) {
+                pagerRecyclerView.post(this::notifyAllPlanPagesChanged);
                 return;
             }
             int itemCount = pagerAdapter.getItemCount();
@@ -2894,7 +3360,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
             int center = resolvePagerRefreshCenter(itemCount);
             int start = Math.max(0, center - PAGE_REFRESH_RADIUS);
             int end = Math.min(itemCount - 1, center + PAGE_REFRESH_RADIUS);
-            pagerAdapter.notifyItemRangeChanged(start, end - start + 1);
+            for (int position = start; position <= end; position++) requestPageRefresh(position);
         };
         if (pagerRecyclerView != null) {
             pagerRecyclerView.post(refresh);
@@ -2906,11 +3372,26 @@ public class PlanTabFragment extends ZutnikTabFragment {
     }
 
     private void requestPageRefresh(int position) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            handler.post(() -> requestPageRefresh(position));
+            return;
+        }
         if (pagerAdapter == null || position < 0 || position >= pagerAdapter.getItemCount()) {
             return;
         }
         Runnable refresh = () -> {
-            if (pagerAdapter != null && position < pagerAdapter.getItemCount()) {
+            if (pagerAdapter == null || rootView == null) {
+                return;
+            }
+            if (pagerRecyclerView != null && pagerRecyclerView.isComputingLayout()) {
+                pagerRecyclerView.post(() -> requestPageRefresh(position));
+                return;
+            }
+            if (position < pagerAdapter.getItemCount()) {
+                if (viewPager != null && viewPager.getScrollState() != ViewPager2.SCROLL_STATE_IDLE) {
+                    deferredPageRefreshes.add(position);
+                    return;
+                }
                 pagerAdapter.notifyItemChanged(position);
             }
         };
@@ -3102,23 +3583,6 @@ public class PlanTabFragment extends ZutnikTabFragment {
             LoadingMotionController.stopSkeleton((View) tag);
         }
         container.setTag(null);
-    }
-
-    private void animatePlanPageEntrance(View container) {
-        if (container == null) {
-            return;
-        }
-        container.animate().cancel();
-        container.setAlpha(0f);
-        container.setScaleX(0.985f);
-        container.setScaleY(0.985f);
-        container.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(220L)
-                .setInterpolator(new DecelerateInterpolator(1.35f))
-                .start();
     }
 
     private View createPlanLoadingSkeletonView() {
@@ -3689,7 +4153,6 @@ public class PlanTabFragment extends ZutnikTabFragment {
             return;
 
         List<PlanRepository.DayColumn> cols = getVisibleColumns(rawCols);
-        layoutWeekHeadersRow.removeAllViews();
 
         if (cols.isEmpty()) {
             layoutWeekHeadersFixed.setVisibility(View.GONE);
@@ -3698,28 +4161,33 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
         layoutWeekHeadersFixed.setVisibility(View.VISIBLE);
         LocalDate today = LocalDate.now();
-
-        for (PlanRepository.DayColumn col : cols) {
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    1f);
-            lp.setMargins(dpToPx(2), 0, dpToPx(2), 0);
-
-            TextView tv = new TextView(requireContext());
-            tv.setLayoutParams(lp);
-            tv.setText(formatDayHeader(col.date));
-            tv.setTextColor(ThemeManager.resolveColor(requireContext(), R.attr.mzPlanHeaderText));
-            tv.setTextSize(11.5f);
-            tv.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
-            tv.setGravity(Gravity.CENTER);
-            tv.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
-
-            if (col.date != null && col.date.equals(today)) {
-                tv.setBackgroundResource(R.drawable.bg_week_header_selected);
+        while (layoutWeekHeadersRow.getChildCount() > cols.size()) {
+            layoutWeekHeadersRow.removeViewAt(layoutWeekHeadersRow.getChildCount() - 1);
+        }
+        for (int i = 0; i < cols.size(); i++) {
+            PlanRepository.DayColumn col = cols.get(i);
+            TextView tv;
+            if (i < layoutWeekHeadersRow.getChildCount()) {
+                tv = (TextView) layoutWeekHeadersRow.getChildAt(i);
+            } else {
+                tv = new TextView(requireContext());
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+                lp.setMargins(dpToPx(2), 0, dpToPx(2), 0);
+                tv.setLayoutParams(lp);
+                tv.setTextColor(ThemeManager.resolveColor(requireContext(), R.attr.mzPlanHeaderText));
+                tv.setTextSize(11.5f);
+                tv.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+                tv.setGravity(Gravity.CENTER);
+                tv.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
+                layoutWeekHeadersRow.addView(tv);
             }
-
-            layoutWeekHeadersRow.addView(tv);
+            String text = formatDayHeader(col.date);
+            if (!TextUtils.equals(tv.getText(), text)) tv.setText(text);
+            boolean selected = today.equals(col.date);
+            if (tv.isSelected() != selected) {
+                tv.setSelected(selected);
+                tv.setBackgroundResource(selected ? R.drawable.bg_week_header_selected : 0);
+            }
         }
     }
 
@@ -3733,6 +4201,16 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
     private View createEventView(PlanRepository.PlanEventUi ev, LocalDate eventDate) {
         PlanEventBlockView eventView = new PlanEventBlockView(requireContext());
+        bindEventView(eventView, ev);
+        FrameLayoutWithChildren.LayoutParams lp = new FrameLayoutWithChildren.LayoutParams(
+                FrameLayoutWithChildren.LayoutParams.MATCH_PARENT,
+                FrameLayoutWithChildren.LayoutParams.WRAP_CONTENT);
+        eventView.setLayoutParams(lp);
+        eventView.setOnClickListener(v -> showEventDetails((PlanRepository.PlanEventUi) v.getTag(), eventDate));
+        return eventView;
+    }
+
+    private void bindEventView(PlanEventBlockView eventView, PlanRepository.PlanEventUi ev) {
         eventView.setTag(ev);
         int color = ThemeManager.resolveEventColor(requireContext(), ev.typeClass);
         int surface = ThemeManager.resolveColor(requireContext(), R.attr.mzCard);
@@ -3760,13 +4238,6 @@ public class PlanTabFragment extends ZutnikTabFragment {
         List<String> displayLines = buildEventDisplayLines(ev);
         eventView.bind(ev, textColor, bg, buildEventContentDescription(displayLines));
 
-        FrameLayoutWithChildren.LayoutParams lp = new FrameLayoutWithChildren.LayoutParams(
-                FrameLayoutWithChildren.LayoutParams.MATCH_PARENT,
-                FrameLayoutWithChildren.LayoutParams.WRAP_CONTENT);
-        eventView.setLayoutParams(lp);
-
-        eventView.setOnClickListener(v -> showEventDetails(ev, eventDate));
-        return eventView;
     }
 
     private void showEventDetails(PlanRepository.PlanEventUi ev, LocalDate eventDate) {
