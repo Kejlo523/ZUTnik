@@ -261,6 +261,9 @@ public final class PlanCalendarExportHelper {
 
         if (scope == ExportScope.SEMESTER) {
             LocalDate[] semesterRange = resolveSemesterRange();
+            if (searchParams == null) {
+                planRepository.prepareExportRange(semesterRange[0], semesterRange[1]);
+            }
             LocalDate cursor = semesterRange[0];
             while (!cursor.isAfter(semesterRange[1])) {
                 PlanRepository.PlanResult result = loadPlanResult("week", cursor);
@@ -270,6 +273,9 @@ public final class PlanCalendarExportHelper {
         } else if ("month".equals(viewModeId)) {
             LocalDate monthStart = currentDate.with(TemporalAdjusters.firstDayOfMonth());
             LocalDate monthEnd = currentDate.with(TemporalAdjusters.lastDayOfMonth());
+            if (searchParams == null) {
+                planRepository.prepareExportRange(monthStart, monthEnd);
+            }
             LocalDate cursor = monthStart;
             while (!cursor.isAfter(monthEnd)) {
                 PlanRepository.PlanResult result = loadPlanResult("week", cursor);
@@ -277,6 +283,12 @@ public final class PlanCalendarExportHelper {
                 cursor = cursor.plusWeeks(1);
             }
         } else {
+            if (searchParams == null) {
+                LocalDate start = "week".equals(viewModeId)
+                        ? currentDate.minusDays(currentDate.getDayOfWeek().getValue() - 1L) : currentDate;
+                LocalDate end = "week".equals(viewModeId) ? start.plusDays(6) : start;
+                planRepository.prepareExportRange(start, end);
+            }
             PlanRepository.PlanResult result = loadPlanResult(viewModeId, currentDate);
             appendEvents(collected, result, null, null);
         }
@@ -324,6 +336,9 @@ public final class PlanCalendarExportHelper {
     private PlanRepository.PlanResult loadPlanResult(String modeId, LocalDate date) throws Exception {
         if (searchParams != null && searchParams.category != null && searchParams.query != null) {
             return planRepository.searchPlan(modeId, date, searchParams);
+        }
+        if (ZutnikSession.getInstance(appContext).isUsosLogin()) {
+            return planRepository.loadPlanFromCache(modeId, date);
         }
         return planRepository.loadPlan(modeId, date);
     }
@@ -766,7 +781,18 @@ public final class PlanCalendarExportHelper {
         return lines.isEmpty() ? "" : TextUtils.join("\n", lines);
     }
 
-    private LocalDate[] resolveSemesterRange() {
+    private LocalDate[] resolveSemesterRange() throws Exception {
+        if (ZutnikSession.getInstance(appContext).isUsosLogin()) {
+            UsosTimetableStore store = UsosTimetableStore.get(appContext);
+            LocalDate[] term = store.getCachedTermRange(currentDate);
+            if (term == null) {
+                LocalDate start = currentDate.withDayOfMonth(1);
+                store.loadRange(start, start.plusMonths(1).minusDays(1), true, false, false,
+                        new PlanRepository.PlanDebug());
+                term = store.getCachedTermRange(currentDate);
+            }
+            if (term != null) return term;
+        }
         LocalDate fallbackStart = defaultSemesterStart(currentDate);
         LocalDate fallbackEnd = defaultSemesterEnd(currentDate);
 

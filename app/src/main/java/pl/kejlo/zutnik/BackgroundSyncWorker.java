@@ -193,8 +193,12 @@ public class BackgroundSyncWorker extends Worker {
         }
         try {
             PlanRepository repo = new PlanRepository(context);
-            repo.loadPlan("week", LocalDate.now(), true);
-            Log.d(TAG, "Bootstrap prefetch: plan full-refresh completed");
+            LocalDate start = LocalDate.now();
+            repo.loadRawPlanRange(start, start.plusDays(13), "notifications");
+            if (!repo.hasVerifiedRange(start, start.plusDays(13))) {
+                return false;
+            }
+            Log.d(TAG, "Bootstrap prefetch: upcoming plan loaded");
             return true;
         } catch (Exception e) {
             Log.w(TAG, "Bootstrap prefetch: plan full-refresh failed", e);
@@ -450,9 +454,15 @@ public class BackgroundSyncWorker extends Worker {
         }
 
         PlanNotificationDiffEngine.Snapshot current = collectPlanNotificationSnapshot(context);
+        if (current == null) {
+            return;
+        }
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_BG, Context.MODE_PRIVATE);
         String scope = NotificationSyncManager.buildCurrentSyncScope(context);
+        if (ZutnikSession.getInstance(context).isUsosLogin()) {
+            scope += "|plan_usos_v1";
+        }
         String planBaselineReadyKey = NotificationSyncManager.scopedPrefKey(KEY_PLAN_BASELINE_READY, scope);
         String planBaselineJsonKey = NotificationSyncManager.scopedPrefKey(KEY_PLAN_BASELINE_JSON, scope);
         String planAlertHashKey = NotificationSyncManager.scopedPrefKey(KEY_LAST_PLAN_ALERT_HASH, scope);
@@ -700,6 +710,24 @@ public class BackgroundSyncWorker extends Worker {
         LocalDate start = LocalDate.now();
         LocalDate end = start.plusDays(13);
         Map<LocalDate, List<PlanRepository.PlanEventRaw>> rawRange = repo.loadRawPlanRange(start, end, "notifications");
+        if (!repo.hasVerifiedRange(start, end)) {
+            return null;
+        }
+        if (ZutnikSession.getInstance(context).isUsosLogin()) {
+            Set<String> knownGroups = new HashSet<>();
+            for (org.json.JSONObject group : UsosTimetableStore.get(context).getCachedGroups(start, end)) {
+                knownGroups.add(group.optString("course_unit_id") + ":" + group.optString("group_number"));
+            }
+            // Catalog hydration supplies lecturers; it must not look like a real teacher change.
+            for (List<PlanRepository.PlanEventRaw> events : rawRange.values()) {
+                for (PlanRepository.PlanEventRaw event : events) {
+                    if (("classgroup".equals(event.sourceType) || "classgroup2".equals(event.sourceType))
+                            && !knownGroups.contains(event.sourceUnitId + ":" + event.sourceGroupNumber)) {
+                        return null;
+                    }
+                }
+            }
+        }
         return PlanNotificationDiffEngine.buildSnapshot(start, end, rawRange);
     }
 

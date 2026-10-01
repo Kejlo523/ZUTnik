@@ -24,8 +24,8 @@ public class AttendanceRepository {
     private static final String PREFS_NAME = "attendance_prefs";
     private static final String KEY_ABSENCES = "absences_json";
     private static final String KEY_HOURS = "hours_json";
-    private static final String KEY_SUBJECTS_CACHE = "subjects_cache_json";
-    private static final String KEY_SUBJECTS_CACHE_TS = "subjects_cache_ts";
+    private static final String KEY_SUBJECTS_CACHE = "subjects_cache_json_usos_v1";
+    private static final String KEY_SUBJECTS_CACHE_TS = "subjects_cache_ts_usos_v1";
     private static final long SUBJECTS_CACHE_TTL_MS = 24L * 60L * 60L * 1000L;
 
     private final Context context;

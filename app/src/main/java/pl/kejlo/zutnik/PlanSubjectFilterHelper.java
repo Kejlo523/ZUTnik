@@ -20,8 +20,8 @@ final class PlanSubjectFilterHelper {
 
     static final String PREFS_NAME = "zutnik_plan";
     static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
-    private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json";
-    private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts";
+    private static final String KEY_FILTER_CACHE_JSON = "plan_filters_cache_json_usos_v1";
+    private static final String KEY_FILTER_CACHE_TS = "plan_filters_cache_ts_usos_v1";
     private static final long FILTER_CACHE_TTL_MS = CachePolicy.PLAN_FILTER_TTL_MS;
 
     private PlanSubjectFilterHelper() {
