@@ -40,6 +40,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -98,6 +99,7 @@ public final class UsosTimetableStore {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final CopyOnWriteArraySet<Listener> listeners = new CopyOnWriteArraySet<>();
     private final Object stateLock = new Object();
+    private final ThreadLocal<UsosApi.RequestControl> widgetRequest = new ThreadLocal<>();
     private volatile boolean retired;
     private volatile boolean authFailed;
     private State state = State.empty();
@@ -242,6 +244,21 @@ public final class UsosTimetableStore {
         if (firstJsonError != null) throw firstJsonError;
         refreshWidgetsIfChanged();
         return cachedRange(snapshot(), start, end);
+    }
+
+    /** Manual widget work has a hard deadline and never tries the retired plan host. */
+    void refreshWidgetRange(LocalDate start, LocalDate end, UsosApi.RequestControl control)
+            throws IOException, JSONException {
+        if (ChronoUnit.DAYS.between(start, end) >= 14L) throw new IllegalArgumentException("Widget range too wide");
+        UsosApi.RequestControl previous = widgetRequest.get();
+        widgetRequest.set(Objects.requireNonNull(control));
+        try {
+            control.remainingMs();
+            loadRange(start, end, true, true, false, null);
+        } finally {
+            if (previous == null) widgetRequest.remove();
+            else widgetRequest.set(previous);
+        }
     }
 
     /** Foreground opt-in only. Cache-only loads never call this method. */
@@ -615,7 +632,8 @@ public final class UsosTimetableStore {
             } catch (RequestFailure failure) {
                 recordFailure("student", weekKey(week), failure);
                 if (failure.stop) throw failure;
-                if (failure.httpCode != 401 && failure.httpCode != 403 && failure.httpCode != 429
+                if (widgetRequest.get() == null
+                        && failure.httpCode != 401 && failure.httpCode != 403 && failure.httpCode != 429
                         && !studentNumber.isEmpty()
                         && (existing == null || !"usos".equals(existing.source))
                         && getRangeTimestamp(week, week.plusDays(6)) == 0L
@@ -778,7 +796,7 @@ public final class UsosTimetableStore {
         paceRequest();
         JSONArray response;
         try {
-            response = UsosApi.getArray(endpoint, accessToken, accessSecret, params);
+            response = UsosApi.getArray(endpoint, accessToken, accessSecret, params, widgetRequest.get());
         } catch (IOException failure) {
             throw transportFailure(failure);
         }
@@ -1345,6 +1363,14 @@ public final class UsosTimetableStore {
     }
 
     private void checkCurrent() throws RequestFailure {
+        UsosApi.RequestControl control = widgetRequest.get();
+        if (control != null) {
+            try {
+                control.remainingMs();
+            } catch (java.io.InterruptedIOException stopped) {
+                throw new RequestFailure("cancelled", 0, true);
+            }
+        }
         if (Thread.currentThread().isInterrupted()) throw new RequestFailure("cancelled", 0, true);
         if (!isCurrent()) throw new RequestFailure("session_changed", 0, true);
         if (authFailed || userId.isEmpty() || accessToken.isEmpty() || accessSecret.isEmpty()) {
@@ -1366,7 +1392,13 @@ public final class UsosTimetableStore {
 
     private void acquireIo() throws RequestFailure {
         try {
-            IO_LOCK.lockInterruptibly();
+            UsosApi.RequestControl control = widgetRequest.get();
+            if (control == null) IO_LOCK.lockInterruptibly();
+            else if (!IO_LOCK.tryLock(control.remainingMs(), TimeUnit.MILLISECONDS)) {
+                throw new RequestFailure("cancelled", 0, true);
+            }
+        } catch (java.io.InterruptedIOException stopped) {
+            throw new RequestFailure("cancelled", 0, true);
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
             throw new RequestFailure("cancelled", 0, true);

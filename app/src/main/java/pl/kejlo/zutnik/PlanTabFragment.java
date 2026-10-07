@@ -325,6 +325,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private void beginPlanRenderContext() {
         planRenderContextVersion++;
         pageAutoLoadSelections.clear();
+        planCacheVersions.clear();
         deferredPageRefreshes.clear();
         activePageLoads.clear();
         failedPlanPages.clear();
@@ -677,11 +678,10 @@ public class PlanTabFragment extends ZutnikTabFragment {
             requireActivity().getIntent().removeExtra("EXTRA_SEARCH_QUERY");
             requireActivity().getIntent().removeExtra("EXTRA_SEARCH_CATEGORY");
             if (q != null && !q.isEmpty()) {
-                currentSearchQuery = new PlanRepository.SearchParams();
-                currentSearchQuery.query = q;
-                currentSearchQuery.category = c;
-                String toast = getString(R.string.plan_toast_search_prefix, q, c != null ? c : "");
-                Toast.makeText(requireContext(), toast.trim(), Toast.LENGTH_SHORT).show();
+                String category = c != null ? c : "album";
+                handler.post(() -> {
+                    if (isAdded()) performSearch(category, categoryLabel(category), q);
+                });
             }
         }
 
@@ -1346,7 +1346,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
         updateSyncIndicator(null);
         long now = System.currentTimeMillis();
-        if (fetchedFromNetwork) {
+        if (fetchedFromNetwork && currentSearchQuery == null) {
             prefs.edit().putLong(KEY_PLAN_LAST_NETWORK_SYNC_TS, now).apply();
         }
         boolean failed = failedPlanPages.contains(new PlanKey(viewModeId, currentDate));
@@ -1356,6 +1356,13 @@ public class PlanTabFragment extends ZutnikTabFragment {
                     currentSearchQuery.query != null ? currentSearchQuery.query : "");
             if (failed) {
                 caption += " \u00b7 " + getString(R.string.plan_sync_unavailable);
+            } else {
+                PlanRepository.PlanResult visible = getVisiblePlanResult();
+                if (visible != null && visible.cacheTimestampMs > 0L && !fetchedFromNetwork) {
+                    CharSequence age = DateUtils.getRelativeTimeSpanString(visible.cacheTimestampMs,
+                            now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+                    caption += " \u00b7 " + getString(R.string.data_status_cache_since, age);
+                }
             }
             updatePlanDataFreshnessText(caption);
             return;
@@ -1552,6 +1559,11 @@ public class PlanTabFragment extends ZutnikTabFragment {
     // Saved searches
 
     private void showSearchDialog() {
+        showSearchDialog(null, null);
+    }
+
+    private void showSearchDialog(@Nullable String initialCategory, @Nullable String initialQuery) {
+        if (!isAdded() || rootView == null) return;
         View layout = getLayoutInflater().inflate(R.layout.dialog_plan_search, null);
         View searchDialogScroll = layout.findViewById(R.id.searchDialogScroll);
 
@@ -1641,6 +1653,9 @@ public class PlanTabFragment extends ZutnikTabFragment {
         suggestionsRecycler.setNestedScrollingEnabled(true);
 
         final List<String> suggestionsList = new ArrayList<>();
+        final Map<String, UsosTimetableSearch.Suggestion> suggestionTargets = new HashMap<>();
+        final boolean[] acceptingSuggestion = { false };
+        final int[] suggestionGeneration = { 0 };
 
         final RecyclerView.Adapter<RecyclerView.ViewHolder> suggestionsAdapter = new RecyclerView.Adapter<>() {
             @NonNull
@@ -1663,8 +1678,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
                 holder.itemView.setOnClickListener(v -> {
                     if (!isPlaceholder) {
-                        input.setText(suggestion);
-                        input.setSelection(suggestion.length());
+                        UsosTimetableSearch.Suggestion target = suggestionTargets.get(suggestion);
+                        String nextQuery = target != null ? target.query : suggestion;
+                        acceptingSuggestion[0] = target != null && target.complete;
+                        input.setText(nextQuery);
+                        acceptingSuggestion[0] = false;
+                        input.setSelection(nextQuery.length());
                     }
                 });
 
@@ -1695,6 +1714,8 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
         categoryView.setOnItemClickListener((parent, view, position, id) -> {
             selectedCategory[0] = position;
+            suggestionTargets.clear();
+            input.setText("");
             refreshPlaceholder.run();
         });
         categoryView.setOnClickListener(v -> categoryView.showDropDown());
@@ -1735,8 +1756,14 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
             @Override
             public void afterTextChanged(Editable s) {
+                int generation = ++suggestionGeneration[0];
                 if (fetchRunnable[0] != null) {
                     debounceHandler.removeCallbacks(fetchRunnable[0]);
+                }
+
+                if (acceptingSuggestion[0]) {
+                    if (loadingIndicator != null) loadingIndicator.setVisibility(View.GONE);
+                    return;
                 }
 
                 String query = s.toString().trim();
@@ -1752,7 +1779,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                     return;
                 }
 
-                if (query.isEmpty()) {
+                if (query.length() < 2) {
                     if (loadingIndicator != null) {
                         loadingIndicator.setVisibility(View.GONE);
                     }
@@ -1769,50 +1796,46 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
                 fetchRunnable[0] = () -> executor.execute(() -> {
                     try {
-                        List<String> suggestions = planRepository.fetchSearchSuggestions(kind, query);
+                        List<UsosTimetableSearch.Suggestion> suggestions =
+                                planRepository.fetchPlanSearchSuggestions(kind, query, currentDate);
                         handler.post(() -> {
-                            if (isDialogDismissed[0]) {
+                            if (isDialogDismissed[0] || !isAdded() || generation != suggestionGeneration[0]) {
                                 return;
                             }
 
                             if (loadingIndicator != null) {
                                 loadingIndicator.setVisibility(View.GONE);
                             }
+                            suggestionTargets.clear();
                             List<String> nextItems = new ArrayList<>();
                             if (suggestions.isEmpty()) {
                                 nextItems.add(getString(R.string.plan_search_no_suggestions));
                             } else {
-                                nextItems.addAll(suggestions);
+                                for (UsosTimetableSearch.Suggestion suggestion : suggestions) {
+                                    suggestionTargets.put(suggestion.label, suggestion);
+                                    nextItems.add(suggestion.label);
+                                }
                             }
                             replaceSuggestionItems(suggestionsList, nextItems, suggestionsAdapter);
                         });
                     } catch (Exception e) {
                         handler.post(() -> {
+                            if (isDialogDismissed[0] || !isAdded() || generation != suggestionGeneration[0]) return;
                             if (loadingIndicator != null) {
                                 loadingIndicator.setVisibility(View.GONE);
                             }
                         });
-                        android.util.Log.w("PlanActivity", "Failed to fetch search suggestions", e);
+                        if (BuildConfig.DEBUG) android.util.Log.d("PlanActivity", "Search suggestions unavailable");
                     }
                 });
-                debounceHandler.postDelayed(fetchRunnable[0], 300);
+                debounceHandler.postDelayed(fetchRunnable[0], 650);
             }
         });
 
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_ZUTnik_AlertDialog_Dark)
                 .setTitle(R.string.plan_search_dialog_title)
                 .setView(layout)
-                .setPositiveButton(R.string.plan_search_button, (d, which) -> {
-                    int pos = selectedCategory[0];
-                    String categoryKey = (pos >= 0 && pos < categoryKeys.length) ? categoryKeys[pos]
-                            : categoryKeys[0];
-                    String categoryLabel = (pos >= 0 && pos < displayCategories.length) ? displayCategories[pos]
-                            : displayCategories[0];
-                    String query = input.getText() != null ? input.getText().toString().trim() : "";
-                    if (!query.isEmpty()) {
-                        performSearch(categoryKey, categoryLabel, query);
-                    }
-                })
+                .setPositiveButton(R.string.plan_search_button, null)
                 .setNegativeButton(R.string.plan_filters_cancel, null)
                 .create();
 
@@ -1840,6 +1863,14 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 Toast.makeText(requireContext(), R.string.plan_search_empty_query, Toast.LENGTH_SHORT).show();
                 return;
             }
+            if (usesUsosTimetable && q.endsWith("/")) {
+                Toast.makeText(requireContext(), R.string.plan_search_choose_result, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (needsUsosSearchSelection(categoryKeys[selectedCategory[0]], q)) {
+                Toast.makeText(requireContext(), R.string.plan_search_choose_item, Toast.LENGTH_SHORT).show();
+                return;
+            }
             int pos = selectedCategory[0];
             String catKey = (pos >= 0 && pos < categoryKeys.length) ? categoryKeys[pos] : categoryKeys[0];
             String catLabel = (pos >= 0 && pos < displayCategories.length) ? displayCategories[pos]
@@ -1850,6 +1881,24 @@ public class PlanTabFragment extends ZutnikTabFragment {
         });
 
         dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String query = input.getText() != null ? input.getText().toString().trim() : "";
+            if (query.isEmpty()) {
+                Toast.makeText(requireContext(), R.string.plan_search_empty_query, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (usesUsosTimetable && query.endsWith("/")) {
+                Toast.makeText(requireContext(), R.string.plan_search_choose_result, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int pos = selectedCategory[0];
+            if (needsUsosSearchSelection(categoryKeys[pos], query)) {
+                Toast.makeText(requireContext(), R.string.plan_search_choose_item, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            performSearch(categoryKeys[pos], displayCategories[pos], query);
+            dialog.dismiss();
+        });
         if (dialog.getWindow() != null) {
             dialog.getWindow().setSoftInputMode(
                     android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
@@ -1857,6 +1906,21 @@ public class PlanTabFragment extends ZutnikTabFragment {
         }
         if (searchDialogScroll != null) {
             ViewCompat.requestApplyInsets(searchDialogScroll);
+        }
+        if (initialCategory != null) {
+            for (int i = 0; i < categoryKeys.length; i++) {
+                if (categoryKeys[i].equals(initialCategory)) {
+                    selectedCategory[0] = i;
+                    categoryView.setText(displayCategories[i], false);
+                    break;
+                }
+            }
+        }
+        if (initialQuery != null) {
+            input.setText(initialQuery);
+            input.setSelection(initialQuery.length());
+        } else {
+            refreshPlaceholder.run();
         }
     }
 
@@ -1920,11 +1984,19 @@ public class PlanTabFragment extends ZutnikTabFragment {
     }
 
     private void performSearch(String categoryKey, String categoryLabel, String query) {
+        if (needsUsosSearchSelection(categoryKey, query)) {
+            showSearchDialog(categoryKey, query);
+            return;
+        }
         currentSearchQuery = new PlanRepository.SearchParams();
         currentSearchQuery.category = categoryKey;
         currentSearchQuery.query = query;
 
         boolean revealedAchievement = maybeUnlockOwnAlbumAchievement(categoryKey, query);
+        if (usesUsosTimetable && ("album".equals(categoryKey) || "number".equals(categoryKey))
+                && query.trim().equals(ZutnikSession.getInstance(requireContext()).getStudentNumber())) {
+            currentSearchQuery = null;
+        }
 
         planCache.clear();
         loadPlanForCurrentMode();
@@ -1933,6 +2005,11 @@ public class PlanTabFragment extends ZutnikTabFragment {
             String msg = getString(R.string.plan_toast_search_prefix, categoryLabel, query);
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private boolean needsUsosSearchSelection(String category, String query) {
+        return usesUsosTimetable && !"album".equals(category) && !"number".equals(category)
+                && !query.trim().matches("(?s).*\\[[^\\[\\]]+\\]$");
     }
 
     public void applyExternalSearch(String categoryKey, String query) {
@@ -2170,7 +2247,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
             PlanKey key = new PlanKey(viewModeId, pageDate);
             if (!failedPlanPages.contains(key)) {
-                if (isPrimaryUsosPlan()) {
+                if (usesUsosTimetable) {
                     boolean selected = viewPager != null && position == viewPager.getCurrentItem();
                     boolean autoDue = selected && (hasPendingForceRefresh(pageDate, viewModeId)
                             || !Integer.valueOf(planSelectionVersion).equals(pageAutoLoadSelections.get(key)));
@@ -2539,7 +2616,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
         PlanRepository.SearchParams searchSnapshot = snapshotCurrentSearchQuery();
         final int requestedDataVersion = planDataVersion;
         final boolean forceRefreshThisLoad = !cacheOnly && consumePendingForceRefresh(date, modeId);
-        if (!cacheOnly && searchSnapshot == null && isPrimaryUsosPlan()) {
+        if (!cacheOnly && usesUsosTimetable) {
             pageAutoLoadSelections.put(new PlanKey(modeId, date), planSelectionVersion);
         }
         if (forceRefreshThisLoad) {
@@ -2550,7 +2627,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
             PlanRepository.PlanResult res = null;
             try {
                 if (searchSnapshot != null) {
-                    res = planRepository.searchPlan(modeId, date, searchSnapshot);
+                    res = planRepository.searchPlan(modeId, date, searchSnapshot, cacheOnly);
                 } else if (cacheOnly) {
                     res = planRepository.loadPlanFromCache(modeId, date);
                 } else {
@@ -2585,6 +2662,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
 
                 boolean fetchedFromNetwork = hasSuccessfulPlanRequest(finalRes);
                 boolean loadFailed = finalRes == null || hasFailedPlanRequest(finalRes)
+                        || (finalRes != null && !TextUtils.isEmpty(finalRes.searchError))
                         || (forceRefreshThisLoad && !isPrimaryUsosPlan() && !fetchedFromNetwork);
                 PlanKey key = new PlanKey(modeId, date);
                 if (loadFailed) {
@@ -2593,7 +2671,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
                     failedPlanPages.remove(key);
                 }
 
-                if (finalRes != null) {
+                if (finalRes != null && TextUtils.isEmpty(finalRes.searchError)) {
                     putPlanInCache(modeId, date, finalRes, requestedDataVersion);
 
                     if (modeId.equals(viewModeId) && date.equals(currentDate)) {
@@ -2604,6 +2682,10 @@ public class PlanTabFragment extends ZutnikTabFragment {
                             updateFixedWeekHeaders(finalRes.dayColumns);
                         }
                     }
+                }
+                if (finalRes != null && !TextUtils.isEmpty(finalRes.searchError)
+                        && searchSnapshot != null && viewPager != null && position == viewPager.getCurrentItem()) {
+                    Toast.makeText(requireContext(), finalRes.searchError, Toast.LENGTH_LONG).show();
                 }
                 requestPageRefresh(position);
                 if (modeId.equals(viewModeId) && date.equals(currentDate)) {

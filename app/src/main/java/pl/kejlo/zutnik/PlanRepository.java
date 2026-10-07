@@ -179,6 +179,8 @@ public class PlanRepository {
         public String headerLabel;
         public boolean cachedRangeAvailable;
         public boolean verifiedRange;
+        public long cacheTimestampMs;
+        public String searchError;
 
         public PlanDebug debug = new PlanDebug();
     }
@@ -324,6 +326,10 @@ public class PlanRepository {
     // Search functionality
 
     public PlanResult searchPlan(String viewMode, LocalDate currentDate, SearchParams search) {
+        return searchPlan(viewMode, currentDate, search, false);
+    }
+
+    public PlanResult searchPlan(String viewMode, LocalDate currentDate, SearchParams search, boolean cacheOnly) {
         if (currentDate == null)
             currentDate = LocalDate.now();
         if (viewMode == null)
@@ -360,31 +366,43 @@ public class PlanRepository {
         r.rangeStart = rangeStart;
         r.rangeEnd = rangeEnd;
 
-        String url = buildSearchUrl(search, rangeStart, rangeEnd);
-
-        JSONArray arr;
-        try {
-            arr = httpGetJsonArray(url, r.debug);
-        } catch (Exception e) {
-            Log.w(TAG, "Search error: " + e.getMessage());
-            arr = new JSONArray();
-        }
-
         List<PlanEventRaw> rawEvents = new ArrayList<>();
-        for (int i = 0; i < arr.length(); i++) {
-            JSONObject obj = arr.optJSONObject(i);
-            if (obj != null) {
-                PlanEventRaw ev = parsePlanEventRaw(obj);
-                if (ev != null)
-                    rawEvents.add(ev);
+        boolean usos = appContext != null && ZutnikSession.getInstance(appContext).isUsosLogin();
+        try {
+            if (usos && search != null && ("album".equals(search.category) || "number".equals(search.category))) {
+                String ownAlbum = ZutnikSession.getInstance(appContext).getStudentNumber();
+                String query = search.query != null ? search.query.trim() : "";
+                if (ownAlbum == null || ownAlbum.isEmpty() || !ownAlbum.equals(query)) {
+                    r.searchError = appContext.getString(R.string.plan_search_own_album_only);
+                } else {
+                    return cacheOnly ? loadPlanFromCache(viewMode, currentDate) : loadPlan(viewMode, currentDate);
+                }
+            } else if (usos) {
+                UsosTimetableSearch.Result result = UsosTimetableSearch.get(appContext).load(
+                        search.category, search.query, rangeStart, rangeEnd, cacheOnly, r.debug);
+                rawEvents.addAll(result.events);
+                r.cachedRangeAvailable = result.timestamp > 0L;
+                r.verifiedRange = r.cachedRangeAvailable;
+                r.cacheTimestampMs = result.timestamp;
+            } else if (!cacheOnly) {
+                JSONArray arr = httpGetJsonArray(buildSearchUrl(search, rangeStart, rangeEnd), r.debug);
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject obj = arr.optJSONObject(i);
+                    PlanEventRaw ev = obj != null ? parsePlanEventRaw(obj) : null;
+                    if (ev != null) rawEvents.add(ev);
+                }
             }
+        } catch (Exception e) {
+            r.searchError = UsosApi.friendlyErrorMessage(e.getMessage());
+            if (r.searchError.isEmpty()) r.searchError = appContext != null
+                    ? appContext.getString(R.string.plan_sync_unavailable) : "Search unavailable";
+            if (BuildConfig.DEBUG) Log.d(TAG, "Search unavailable: " + e.getClass().getSimpleName());
         }
 
         Map<LocalDate, List<PlanEventRaw>> byDate = groupByDay(rawEvents);
 
-        // Search results are not cached in the main cache to avoid polluting the user's
-        // plan
-        // We just return them directly
+        // Search caches are separate from the student's personal timetable.
+        r.debug.entriesTotal = rawEvents.size();
 
         if ("day".equals(viewMode) || "week".equals(viewMode)) {
             LocalDate iter = rangeStart;
@@ -462,6 +480,13 @@ public class PlanRepository {
      * @return List of suggestion strings (item names)
      */
     public List<String> fetchSearchSuggestions(String kind, String query) throws IOException, JSONException {
+        if (appContext != null && ZutnikSession.getInstance(appContext).isUsosLogin()) {
+            List<String> labels = new ArrayList<>();
+            for (UsosTimetableSearch.Suggestion suggestion : fetchPlanSearchSuggestions(kind, query, LocalDate.now())) {
+                labels.add(suggestion.query);
+            }
+            return labels;
+        }
         List<String> suggestions = new ArrayList<>();
         if (kind == null || kind.isEmpty() || query == null || query.isEmpty()) {
             return suggestions;
@@ -496,6 +521,18 @@ public class PlanRepository {
         }
 
         return suggestions;
+    }
+
+    public List<UsosTimetableSearch.Suggestion> fetchPlanSearchSuggestions(
+            String kind, String query, LocalDate anchor) throws IOException, JSONException {
+        if (appContext != null && ZutnikSession.getInstance(appContext).isUsosLogin()) {
+            return UsosTimetableSearch.get(appContext).suggestions(kind, query, anchor);
+        }
+        List<UsosTimetableSearch.Suggestion> results = new ArrayList<>();
+        for (String label : fetchSearchSuggestions(kind, query)) {
+            results.add(new UsosTimetableSearch.Suggestion(label, label, true));
+        }
+        return results;
     }
 
     // Fetch range

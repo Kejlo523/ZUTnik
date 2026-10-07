@@ -2,7 +2,6 @@ package pl.kejlo.zutnik;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Binder;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -11,38 +10,31 @@ import android.widget.RemoteViewsService;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class PlanDayWidgetService extends RemoteViewsService {
 
     private static final String TAG = "ZUTnik-PlanWidgetSvc";
-    private static final String PREFS_PLAN = "zutnik_plan";
-    private static final String KEY_FILTER_HIDDEN = "plan_hidden_filters_v2";
-
-    public static final String EXTRA_DATE_ISO = "pl.kejlo.zutnik.PLAN_WIDGET_DATE_ISO";
+    public static final String EXTRA_DATE_ISO = PlanDayWidgetProvider.EXTRA_DATE_ISO;
 
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         return new PlanDayFactory(getApplicationContext(), intent);
     }
 
-    private static boolean ensureSessionFromPrefs(Context ctx) {
-        ZutnikSession.initializeFromPreferences(ctx);
-        ZutnikSession s = ZutnikSession.getInstance();
-        return s.isLoggedIn();
-    }
-
-    private static class PlanDayFactory implements RemoteViewsFactory {
+    static class PlanDayFactory implements RemoteViewsFactory {
 
         private final Context context;
-        private final List<PlanRepository.PlanEventUi> events = new ArrayList<>();
+        private volatile List<PlanRepository.PlanEventUi> events = Collections.emptyList();
+        private final String owner;
         private LocalDate targetDate;
 
         PlanDayFactory(Context context, Intent intent) {
             this.context = context;
+            String requestedOwner = intent != null ? intent.getStringExtra(PlanDayWidgetHelper.EXTRA_OWNER) : null;
+            owner = requestedOwner != null ? requestedOwner : PlanDayWidgetHelper.owner(context);
             updateDateFromIntent(intent);
         }
 
@@ -67,53 +59,33 @@ public class PlanDayWidgetService extends RemoteViewsService {
         public void onDataSetChanged() {
             final long token = Binder.clearCallingIdentity();
             try {
-                events.clear();
-
-                if (!ensureSessionFromPrefs(context))
+                if (!isCurrentOwner()) {
+                    events = Collections.emptyList();
                     return;
-
-                SharedPreferences planPrefs = context.getSharedPreferences(PREFS_PLAN, Context.MODE_PRIVATE);
-                Set<String> hiddenSubjectKeys = planPrefs.getStringSet(KEY_FILTER_HIDDEN, new HashSet<>());
+                }
+                Set<String> hiddenSubjectKeys = PlanDayWidgetHelper.hiddenKeys(context);
 
                 PlanRepository repo = new PlanRepository(context.getApplicationContext());
 
                 PlanRepository.PlanResult result = repo.loadPlanFromCache("day", targetDate);
 
-                if (result.dayColumns != null) {
-                    for (PlanRepository.DayColumn col : result.dayColumns) {
-                        if (targetDate.equals(col.date) && col.events != null) {
-                            for (PlanRepository.PlanEventUi ev : col.events) {
-                                if (ev.subjectKey != null && hiddenSubjectKeys.contains(ev.subjectKey))
-                                    continue;
-                                events.add(ev);
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                if (events.isEmpty())
-                    return;
-
-                events.sort(Comparator.comparingInt(ev -> ev.startMin));
-
+                if (result == null) return;
                 LocalDate today = LocalDate.now();
-                if (targetDate.equals(today)) {
-                    LocalTime now = LocalTime.now();
-                    int nowMin = now.getHour() * 60 + now.getMinute();
-
-                    List<PlanRepository.PlanEventUi> upcoming = new ArrayList<>();
-                    for (PlanRepository.PlanEventUi ev : events) {
-                        if (ev.endMin > nowMin) {
-                            upcoming.add(ev);
-                        }
-                    }
-                    events.clear();
-                    events.addAll(upcoming);
+                LocalTime now = LocalTime.now();
+                List<PlanRepository.PlanEventUi> next = PlanDayWidgetHelper.upcomingEvents(
+                        result, targetDate, today, now.getHour() * 60 + now.getMinute(), hiddenSubjectKeys);
+                if (next.isEmpty() && !result.cachedRangeAvailable
+                        && ZutnikSession.getInstance(context).isUsosLogin() && !events.isEmpty()) {
+                    // A missing/corrupt cache is not a successful empty USOS response.
+                    next = new ArrayList<>(events);
+                    next.removeIf(event -> hiddenSubjectKeys.contains(event.subjectKey)
+                            || (targetDate.equals(today) && event.endMin <= now.getHour() * 60 + now.getMinute()));
                 }
+                if (isCurrentOwner()) events = Collections.unmodifiableList(new ArrayList<>(next));
+                else events = Collections.emptyList();
 
             } catch (Exception e) {
-                events.clear();
+                if (!isCurrentOwner()) events = Collections.emptyList();
                 Log.w(TAG, "Widget list refresh failed", e);
             } finally {
                 Binder.restoreCallingIdentity(token);
@@ -122,20 +94,25 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
         @Override
         public void onDestroy() {
-            events.clear();
+            events = Collections.emptyList();
+        }
+
+        private boolean isCurrentOwner() {
+            return !owner.isEmpty() && owner.equals(PlanDayWidgetHelper.owner(context));
         }
 
         @Override
         public int getCount() {
-            return events.size();
+            return isCurrentOwner() ? events.size() : 0;
         }
 
         @Override
         public RemoteViews getViewAt(int position) {
-            if (position < 0 || position >= events.size())
+            List<PlanRepository.PlanEventUi> snapshot = events;
+            if (!isCurrentOwner() || position < 0 || position >= snapshot.size())
                 return null;
 
-            PlanRepository.PlanEventUi ev = events.get(position);
+            PlanRepository.PlanEventUi ev = snapshot.get(position);
             RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.widget_plan_day_item_glass);
 
             String type = shortType(ev.typeLabel, ev.typeClass);
@@ -170,6 +147,8 @@ public class PlanDayWidgetService extends RemoteViewsService {
             rv.setInt(R.id.itemColorStrip, "setBackgroundColor", color);
 
             Intent fillIntent = new Intent();
+            fillIntent.putExtra("currentDate", targetDate.toString());
+            fillIntent.putExtra("viewMode", "day");
             rv.setOnClickFillInIntent(R.id.itemRoot, fillIntent);
 
             return rv;
@@ -216,7 +195,7 @@ public class PlanDayWidgetService extends RemoteViewsService {
 
         @Override
         public boolean hasStableIds() {
-            return true;
+            return false;
         }
     }
 }

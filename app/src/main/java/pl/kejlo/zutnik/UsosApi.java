@@ -5,16 +5,20 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.URLEncoder;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.Call;
 
 /**
  * USOS API client.
@@ -22,11 +26,43 @@ import okhttp3.Response;
  * Makes OAuth 1.0a signed GET requests to the USOS API.
  * Requires the user to be logged in via USOS (see {@link ZutnikSession#isUsosLogin()}).
  *
- * Query parameters are appended to the URL as raw strings — OkHttp / HttpUrl
- * builders are intentionally avoided because they percent-encode commas (%2C),
- * while USOS API expects literal commas in field-selector values.
+ * Query values are encoded separately from the raw values used for OAuth signing.
+ * Literal commas in field selectors are retained for USOS compatibility.
  */
 public final class UsosApi {
+
+    /** A bounded, cancellable request batch; unrelated API requests keep their own lifecycle. */
+    static final class RequestControl {
+        final long deadlineMs;
+        private volatile boolean cancelled;
+        private Call activeCall;
+
+        RequestControl(long deadlineMs) {
+            this.deadlineMs = deadlineMs;
+        }
+
+        long remainingMs() throws InterruptedIOException {
+            long remaining = deadlineMs - android.os.SystemClock.elapsedRealtime();
+            if (cancelled || Thread.currentThread().isInterrupted() || remaining <= 0L) {
+                throw new InterruptedIOException("Request batch stopped or timed out");
+            }
+            return remaining;
+        }
+
+        synchronized void attach(Call call) throws InterruptedIOException {
+            call.timeout().timeout(Math.min(20_000L, remainingMs()), TimeUnit.MILLISECONDS);
+            activeCall = call;
+        }
+
+        synchronized void release(Call call) {
+            if (activeCall == call) activeCall = null;
+        }
+
+        synchronized void cancel() {
+            cancelled = true;
+            if (activeCall != null) activeCall.cancel();
+        }
+    }
 
     static final class HttpException extends IOException {
         final int statusCode;
@@ -101,32 +137,13 @@ public final class UsosApi {
             String endpoint,
             String accessToken, String accessTokenSecret,
             Map<String, String> queryParams) throws IOException, JSONException {
+        return getArray(endpoint, accessToken, accessTokenSecret, queryParams, null);
+    }
 
-        String baseUrl = BuildConfig.USOS_BASE_URL + endpoint;
-        String fullUrl = buildUrl(baseUrl, queryParams);
-        Map<String, String> paramsForSig = queryParams != null
-                ? new TreeMap<>(queryParams) : new TreeMap<>();
-
-        String authHeader = UsosOAuth.buildAuthHeader(
-                "GET", baseUrl,
-                BuildConfig.USOS_CONSUMER_KEY, BuildConfig.USOS_CONSUMER_SECRET,
-                accessToken, accessTokenSecret,
-                paramsForSig);
-
-        Request request = new Request.Builder()
-                .url(fullUrl)
-                .get()
-                .header("Authorization", authHeader)
-                .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
-                .build();
-
-        try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
-            String body = response.body() != null ? response.body().string() : "";
-            if (!response.isSuccessful()) {
-                throw new HttpException(response, body);
-            }
-            return body.isEmpty() ? new JSONArray() : new JSONArray(body);
-        }
+    static JSONArray getArray(String endpoint, String accessToken, String accessTokenSecret,
+            Map<String, String> queryParams, RequestControl control) throws IOException, JSONException {
+        String body = getRaw(endpoint, accessToken, accessTokenSecret, queryParams, control);
+        return body.isEmpty() ? new JSONArray() : new JSONArray(body);
     }
 
     /**
@@ -145,10 +162,7 @@ public final class UsosApi {
 
         String baseUrl = BuildConfig.USOS_BASE_URL + endpoint;
 
-        // Build the full URL manually so query parameter values (especially
-        // comma-separated USOS field selectors) are NOT percent-encoded.
-        // OkHttp's HttpUrl.Builder and addQueryParameter/addEncodedQueryParameter
-        // both encode commas to %2C, which USOS API rejects.
+        // Sign the original values, then encode them for transport.
         String fullUrl = buildUrl(baseUrl, queryParams);
 
         // Query params (raw values) go into the OAuth signature computation too.
@@ -161,9 +175,6 @@ public final class UsosApi {
                 accessToken, accessTokenSecret,
                 paramsForSig);
 
-        // Pass the raw URL string directly — OkHttp accepts String URLs and
-        // will not re-encode characters that are valid in query strings (commas
-        // are sub-delimiters per RFC 3986 and are preserved).
         Request request = new Request.Builder()
                 .url(fullUrl)
                 .get()
@@ -184,6 +195,12 @@ public final class UsosApi {
             String endpoint,
             String accessToken, String accessTokenSecret,
             Map<String, String> queryParams) throws IOException {
+        return getRaw(endpoint, accessToken, accessTokenSecret, queryParams, null);
+    }
+
+    private static String getRaw(String endpoint, String accessToken, String accessTokenSecret,
+            Map<String, String> queryParams, RequestControl control) throws IOException {
+        if (control != null) control.remainingMs();
 
         String baseUrl = BuildConfig.USOS_BASE_URL + endpoint;
         String fullUrl = buildUrl(baseUrl, queryParams);
@@ -203,12 +220,17 @@ public final class UsosApi {
                 .header("User-Agent", ZutnikNetwork.getBrowserUserAgent())
                 .build();
 
-        try (Response response = ZutnikNetwork.getClient().newCall(request).execute()) {
+        Call call = ZutnikNetwork.getClient().newCall(request);
+        if (control != null) control.attach(call);
+        try (Response response = call.execute()) {
             String body = response.body() != null ? response.body().string() : "";
+            if (control != null) control.remainingMs();
             if (!response.isSuccessful()) {
                 throw new HttpException(response, body);
             }
             return body;
+        } finally {
+            if (control != null) control.release(call);
         }
     }
 
@@ -242,8 +264,8 @@ public final class UsosApi {
         return cleaned;
     }
 
-    /** Appends query parameters to baseUrl as a plain string (no encoding of values). */
-    private static String buildUrl(String baseUrl, Map<String, String> queryParams) {
+    /** Encode user input without changing literal commas in USOS field selectors. */
+    static String buildUrl(String baseUrl, Map<String, String> queryParams) {
         if (queryParams == null || queryParams.isEmpty()) {
             return baseUrl;
         }
@@ -251,10 +273,19 @@ public final class UsosApi {
         boolean first = true;
         for (Map.Entry<String, String> e : queryParams.entrySet()) {
             if (!first) sb.append('&');
-            sb.append(e.getKey()).append('=').append(e.getValue());
+            sb.append(encodeQueryPart(e.getKey())).append('=').append(encodeQueryPart(e.getValue()));
             first = false;
         }
         return sb.toString();
+    }
+
+    private static String encodeQueryPart(String value) {
+        try {
+            return URLEncoder.encode(value != null ? value : "", "UTF-8")
+                    .replace("+", "%20").replace("%2C", ",");
+        } catch (java.io.UnsupportedEncodingException impossible) {
+            throw new AssertionError(impossible);
+        }
     }
 
     private UsosApi() {}
