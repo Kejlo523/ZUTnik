@@ -80,6 +80,8 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
             h.colEcts.setVisibility(View.GONE);
         }
 
+        h.distribution.setVisibility(GradeDistributionDialog.available(g) ? View.VISIBLE : View.GONE);
+        h.distribution.setOnClickListener(v -> GradeDistributionDialog.show(ctx, g));
         bindGradePills(h, g);
     }
 
@@ -212,6 +214,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
         TextView colType;
         TextView colDate;
         TextView colEcts;
+        TextView distribution;
         LinearLayout gradesContainer;
 
         public ViewHolder(@NonNull View v) {
@@ -221,6 +224,7 @@ public class GradesAdapter extends RecyclerView.Adapter<GradesAdapter.ViewHolder
             gradesContainer = v.findViewById(R.id.gradesContainer);
             colDate = v.findViewById(R.id.colDate);
             colEcts = v.findViewById(R.id.colEcts);
+            distribution = v.findViewById(R.id.colDistribution);
         }
     }
 }

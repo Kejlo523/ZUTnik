@@ -48,7 +48,7 @@ public final class SettingsPrefs {
 
     public static final String KEY_NOTIFICATIONS_PERMISSION_ASKED = "notifications_permission_asked";
     public static final String KEY_NOTIFICATIONS_MASTER_ENABLED = "notifications_master_enabled";
-    public static final boolean DEFAULT_NOTIFICATIONS_MASTER_ENABLED = true;
+    public static final boolean DEFAULT_NOTIFICATIONS_MASTER_ENABLED = false;
 
     public static final String KEY_NOTIFICATIONS_GRADES_ENABLED = "notifications_grades_enabled";
     public static final boolean DEFAULT_NOTIFICATIONS_GRADES_ENABLED = true;

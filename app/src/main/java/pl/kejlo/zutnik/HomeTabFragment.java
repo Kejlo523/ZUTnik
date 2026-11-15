@@ -182,46 +182,10 @@ public class HomeTabFragment extends ZutnikTabFragment {
     }
 
     void handleNotificationPermissionFlow(Intent activityIntent) {
-        if (activityIntent == null) {
-            return;
-        }
-        SharedPreferences settings = requireContext()
-                .getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, Context.MODE_PRIVATE);
-        boolean asked = settings.getBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, false);
-        boolean hasPermission = NotificationSyncManager.hasNotificationPermission(requireContext());
-        boolean shouldRequestPrompt = activityIntent.getBooleanExtra(
-                MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
-        if (shouldRequestPrompt) {
+        // Old login intents must never trigger a permission dialog on launch.
+        if (activityIntent != null) {
             activityIntent.removeExtra(MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION);
         }
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            if (!asked) {
-                settings.edit()
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
-                        .apply();
-            }
-            NotificationSyncManager.syncWorkerSchedule(requireContext().getApplicationContext());
-            return;
-        }
-
-        if (hasPermission) {
-            if (!asked) {
-                settings.edit()
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
-                        .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
-                        .apply();
-            }
-            NotificationSyncManager.syncWorkerSchedule(requireContext().getApplicationContext());
-            return;
-        }
-
-        if (shouldRequestPrompt && !asked) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-            return;
-        }
-
         NotificationSyncManager.syncWorkerSchedule(requireContext().getApplicationContext());
     }
 
@@ -238,6 +202,7 @@ public class HomeTabFragment extends ZutnikTabFragment {
         }
 
         NotificationSyncManager.syncWorkerSchedule(requireContext().getApplicationContext());
+        showChangeCenter();
     }
 
     private boolean onHomeMenuItemSelected(MenuItem item) {
@@ -285,6 +250,25 @@ public class HomeTabFragment extends ZutnikTabFragment {
     }
 
     private void openChangeCenter() {
+        SharedPreferences settings = requireContext()
+                .getSharedPreferences(SettingsPrefs.PREFS_SETTINGS, Context.MODE_PRIVATE);
+        boolean asked = settings.getBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, false);
+        if (!asked) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    && !NotificationSyncManager.hasNotificationPermission(requireContext())) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                return;
+            }
+            settings.edit()
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_PERMISSION_ASKED, true)
+                    .putBoolean(SettingsPrefs.KEY_NOTIFICATIONS_MASTER_ENABLED, true)
+                    .apply();
+            NotificationSyncManager.syncWorkerSchedule(requireContext().getApplicationContext());
+        }
+        showChangeCenter();
+    }
+
+    private void showChangeCenter() {
         startActivity(new Intent(requireContext(), ChangeCenterActivity.class));
         requireActivity().overridePendingTransition(R.anim.screen_enter, R.anim.screen_exit);
     }

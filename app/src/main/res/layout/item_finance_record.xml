@@ -53,6 +53,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:id="@+id/financeAmountLabel"
                 android:text="@string/finance_label_amount"
                 android:textAllCaps="true"
                 android:textColor="?attr/mzMuted"
@@ -82,6 +83,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:id="@+id/financeBalanceLabel"
                 android:text="@string/finance_label_balance"
                 android:textAllCaps="true"
                 android:textColor="?attr/mzMuted"
@@ -109,6 +111,31 @@
         android:orientation="vertical"
         android:paddingTop="8dp"
         android:paddingBottom="4dp">
+
+        <LinearLayout
+            android:id="@+id/financeChargeRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="4dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/finance_label_charge"
+                android:textColor="?attr/mzMuted"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/financeChargeValue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textColor="?attr/mzText"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/financePaidRow"

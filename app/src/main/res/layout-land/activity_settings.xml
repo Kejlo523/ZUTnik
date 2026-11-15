@@ -37,6 +37,7 @@
 
                 <include layout="@layout/include_settings_privacy" />
                 <include layout="@layout/include_settings_backup" />
+                <include layout="@layout/include_settings_plan_sync" />
 
                 <TextView
                     android:layout_width="wrap_content"

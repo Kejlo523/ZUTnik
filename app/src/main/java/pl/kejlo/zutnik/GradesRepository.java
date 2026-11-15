@@ -40,7 +40,7 @@ public class GradesRepository {
     private static final String GRADE_FIELDS =
             "value_symbol|passes|value_description|exam_id|exam_session_number|date_modified|date_acquisition|counts_into_average|grade_type_id";
     private static final String GRADE_WITH_CONTEXT_FIELDS =
-            "value_symbol|passes|value_description|date_modified|date_acquisition|counts_into_average|grade_type_id|course_edition[course_id|term_id|course[id|name|ects_credits_simplified]|ects_credits_simplified]|course[id|name|ects_credits_simplified]";
+            "value_symbol|passes|value_description|exam_id|exam_session_number|date_modified|date_acquisition|counts_into_average|grade_type_id|course_edition[course_id|term_id|course[id|name|ects_credits_simplified]|ects_credits_simplified]|course[id|name|ects_credits_simplified]";
 
     public static final class CreditSummary {
         public final String studentProgrammeId;

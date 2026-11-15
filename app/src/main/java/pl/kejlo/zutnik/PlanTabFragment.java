@@ -194,6 +194,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private PlanRepository.SearchParams currentSearchQuery = null;
 
     private android.animation.ObjectAnimator mRefreshAnimator;
+    private boolean syncIndicatorVisible;
 
     private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(3);
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -555,6 +556,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
         tvHeaderLabel = tabFind(R.id.tvHeaderLabel);
         tvPlanToolbarSubtitle = tabFind(R.id.tvPlanToolbarSubtitle);
         planSyncProgress = tabFind(R.id.planSyncProgress);
+        if (planSyncProgress != null) planSyncProgress.setVisibilityAfterHide(View.INVISIBLE);
         updatePlanDataFreshness(false);
 
         layoutTimeColumn = tabFind(R.id.layoutTimeColumn);
@@ -1427,11 +1429,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
             return;
         }
         updatePlanDataFreshness(false);
+        if (state.running && getVisiblePlanResult() != null) return;
         if (isPrimaryUsosPlan() && state.revision != renderedSyncRevision
                 && state.revision != pendingSyncRevision) {
             pendingSyncRevision = state.revision;
             handler.removeCallbacks(syncRevisionRefreshRunnable);
-            handler.postDelayed(syncRevisionRefreshRunnable, 150L);
+            handler.postDelayed(syncRevisionRefreshRunnable, 260L);
         }
     }
 
@@ -1503,20 +1506,21 @@ public class PlanTabFragment extends ZutnikTabFragment {
             return;
         }
         if (state == null || !state.running || currentSearchQuery != null) {
-            planSyncProgress.setVisibility(View.INVISIBLE);
+            if (syncIndicatorVisible) {
+                syncIndicatorVisible = false;
+                planSyncProgress.hide();
+            }
+            if (btnRefresh != null && !hasActiveVisiblePageLoad() && !pendingForceRefresh) {
+                btnRefresh.setEnabled(true);
+            }
             return;
         }
-        boolean indeterminate = state.total <= 0;
-        if (planSyncProgress.isIndeterminate() != indeterminate) {
-            // Material requires the indicator to be hidden when changing modes.
-            planSyncProgress.setVisibility(View.INVISIBLE);
-            planSyncProgress.setIndeterminate(indeterminate);
+        if (!syncIndicatorVisible) {
+            syncIndicatorVisible = true;
+            planSyncProgress.setIndeterminate(true);
+            planSyncProgress.show();
         }
-        if (!indeterminate) {
-            planSyncProgress.setMax(state.total);
-            planSyncProgress.setProgressCompat(Math.max(0, Math.min(state.completed, state.total)), false);
-        }
-        planSyncProgress.setVisibility(View.VISIBLE);
+        if (btnRefresh != null) btnRefresh.setEnabled(false);
     }
 
     private boolean hasActiveVisiblePageLoad() {
@@ -2114,9 +2118,12 @@ public class PlanTabFragment extends ZutnikTabFragment {
     private void startRefreshAnimation() {
         if (btnRefresh == null)
             return;
+        btnRefresh.setEnabled(false);
+        btnRefresh.animate().cancel();
+        if (!android.animation.ValueAnimator.areAnimatorsEnabled()) return;
         if (mRefreshAnimator == null) {
             mRefreshAnimator = android.animation.ObjectAnimator.ofFloat(btnRefresh, "rotation", 0f, 360f);
-            mRefreshAnimator.setDuration(1000);
+            mRefreshAnimator.setDuration(1600);
             mRefreshAnimator.setRepeatCount(android.animation.ObjectAnimator.INFINITE);
             mRefreshAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
         }
@@ -2126,10 +2133,19 @@ public class PlanTabFragment extends ZutnikTabFragment {
     }
 
     private void stopRefreshAnimation() {
+        if (btnRefresh == null) return;
         if (mRefreshAnimator != null && mRefreshAnimator.isStarted()) {
             mRefreshAnimator.cancel();
-            btnRefresh.setRotation(0f);
+            // Continue to the next full turn instead of snapping backwards to zero.
+            float rotation = btnRefresh.getRotation();
+            float end = ((float) Math.floor(rotation / 360f) + 1f) * 360f;
+            btnRefresh.animate().rotation(end)
+                    .setDuration(android.animation.ValueAnimator.areAnimatorsEnabled() ? 280L : 0L)
+                    .setInterpolator(new DecelerateInterpolator(1.5f))
+                    .withEndAction(() -> { if (btnRefresh != null) btnRefresh.setRotation(0f); })
+                    .start();
         }
+        btnRefresh.setEnabled(timetableStore == null || !timetableStore.getSyncState().running);
     }
 
     private void setupTimeColumn() {
@@ -2223,13 +2239,18 @@ public class PlanTabFragment extends ZutnikTabFragment {
             PlanRepository.PlanResult cached = getPlanFromCache(viewModeId, pageDate);
 
             if (cached != null) {
-                if (!keepRenderedPlan) clearPlanPageHolder(holder);
+                boolean firstContent = !keepRenderedPlan;
+                if (firstContent) clearPlanPageHolder(holder);
                 holder.renderedResult = cached;
                 holder.wasLoading = false;
                 if (isMonthMode()) {
                     renderMonthPage(holder, cached);
                 } else {
                     renderWeekPage(holder, cached);
+                }
+                if (firstContent && android.animation.ValueAnimator.areAnimatorsEnabled()) {
+                    holder.container.setAlpha(0.82f);
+                    holder.container.animate().alpha(1f).setDuration(320L).start();
                 }
             } else {
                 boolean failed = failedPlanPages.contains(new PlanKey(viewModeId, pageDate));
@@ -2413,6 +2434,11 @@ public class PlanTabFragment extends ZutnikTabFragment {
                 if (rendered == null) {
                     rendered = new RenderedEvent(event, createEventView(event, col.date));
                     day.body.addView(rendered.view);
+                    if (!day.events.isEmpty() && android.animation.ValueAnimator.areAnimatorsEnabled()) {
+                        rendered.view.setAlpha(0.65f);
+                        rendered.view.animate().alpha(1f).setDuration(320L)
+                                .setInterpolator(new DecelerateInterpolator()).start();
+                    }
                     layoutChanged = true;
                 } else {
                     if (!rendered.snapshot.sameContent(snapshot)) bindEventView((PlanEventBlockView) rendered.view, event);
@@ -2581,6 +2607,7 @@ public class PlanTabFragment extends ZutnikTabFragment {
         cancelPlanPageLoadingState(container);
         container.animate().cancel();
         container.clearAnimation();
+        container.setAlpha(1f);
         container.removeAllViews();
         holder.renderedResult = null;
         holder.weekColumns = null;

@@ -104,6 +104,9 @@ public final class UsosTimetableStore {
     private volatile boolean authFailed;
     private State state = State.empty();
     private boolean running;
+    private boolean manualRefreshInFlight;
+    private boolean fullRefreshInFlight;
+    static final long FULL_REFRESH_INTERVAL_MS = 2L * HOUR;
     private int completed;
     private int total;
     private String error = "";
@@ -165,8 +168,51 @@ public final class UsosTimetableStore {
         widgetRevision = state.revision;
     }
 
-    /** Inclusive range. Nonpartial short ranges are student-only, suitable for notification workers. */
+    public long getFullRefreshRemainingMs() {
+        return PlanSyncPolicy.remainingMs(snapshot().fullRefreshAt,
+                System.currentTimeMillis(), FULL_REFRESH_INTERVAL_MS);
+    }
+
+    /** Explicit settings action. The two-hour limit is committed only after a complete success. */
+    public String requestFullSync() {
+        synchronized (stateLock) {
+            if (!isCurrent()) return "session_changed";
+            if (running || manualRefreshInFlight) return "running";
+            if (!NetworkStatusHelper.isNetworkAvailable(context)) return "offline";
+            if (getFullRefreshRemainingMs() > 0L) return "cooldown";
+            if (rateLimitedLocked()) return "rate_limited";
+            prepareManualRefreshLocked(true);
+        }
+        startSync(LocalDate.now(), true, snapshot().version, null, null);
+        return "started";
+    }
+
     public Map<LocalDate, List<PlanEventRaw>> loadRange(LocalDate start, LocalDate end,
+            boolean allowNetwork, boolean forceRefresh, boolean partialAllowed, PlanDebug debug)
+            throws IOException, JSONException {
+        validateRange(start, end);
+        boolean reserved = forceRefresh && allowNetwork;
+        if (reserved && !reserveManualRefresh()) {
+            return cachedRange(snapshot(), start, end);
+        }
+        try {
+            return loadRangeInternal(start, end, allowNetwork, forceRefresh, partialAllowed, debug);
+        } catch (IOException | JSONException | RuntimeException failure) {
+            if (reserved) setError(failure instanceof RequestFailure
+                    ? ((RequestFailure) failure).reason : "sync_failed");
+            throw failure;
+        } finally {
+            boolean finished;
+            synchronized (stateLock) {
+                finished = reserved && !running && manualRefreshInFlight;
+                if (finished) finishManualRefreshLocked();
+            }
+            if (finished) persistSnapshot();
+        }
+    }
+
+    /** Inclusive range. Nonpartial short ranges are student-only, suitable for notification workers. */
+    private Map<LocalDate, List<PlanEventRaw>> loadRangeInternal(LocalDate start, LocalDate end,
             boolean allowNetwork, boolean forceRefresh, boolean partialAllowed, PlanDebug debug)
             throws IOException, JSONException {
         validateRange(start, end);
@@ -176,7 +222,6 @@ public final class UsosTimetableStore {
             return cachedRange(initial, start, end);
         }
         checkCurrent();
-        if (forceRefresh && !reserveManualRefresh()) return cachedRange(snapshot(), start, end);
         initial = snapshot();
         long baseline = initial.version;
         boolean shortRange = ChronoUnit.DAYS.between(start, end) < 14L;
@@ -269,15 +314,43 @@ public final class UsosTimetableStore {
 
     private boolean reserveManualRefresh() {
         synchronized (stateLock) {
-            long now = System.currentTimeMillis();
-            if (!isCurrent() || authFailed || running || !NetworkStatusHelper.isNetworkAvailable(context)
-                    || backedOff(state, "network", now)
-                    || fresh(state.manualRefreshAt, CachePolicy.MANUAL_REFRESH_COOLDOWN_MS, now)) return false;
-            state = new State(state.weeks, state.catalog, state.groups, state.retries,
-                    state.version + 1L, state.revision, now);
+            if (!isCurrent() || running || manualRefreshInFlight
+                    || !NetworkStatusHelper.isNetworkAvailable(context)
+                    || PlanSyncPolicy.remainingMs(state.manualRefreshAt, System.currentTimeMillis(),
+                            CachePolicy.MANUAL_REFRESH_COOLDOWN_MS) > 0L) return false;
+            if (rateLimitedLocked()) { setError("rate_limited"); return false; }
+            prepareManualRefreshLocked(false);
         }
-        persistSnapshot();
         return true;
+    }
+
+    private boolean rateLimitedLocked() {
+        Retry retry = state.retries.get("network");
+        return retry != null && retry.rateLimited && retry.nextAllowed > System.currentTimeMillis();
+    }
+
+    private void prepareManualRefreshLocked(boolean full) {
+        manualRefreshInFlight = true;
+        fullRefreshInFlight = full;
+        authFailed = false;
+        error = "";
+        fallbackUsed = false;
+        // Automatic retries retain backoff. An explicit user retry starts a fresh attempt.
+        state = new State(state.weeks, state.catalog, state.groups, Collections.emptyMap(),
+                state.version + 1L, state.revision, state.manualRefreshAt, state.fullRefreshAt);
+    }
+
+    private void finishManualRefreshLocked() {
+        if (!manualRefreshInFlight) return;
+        boolean success = isCurrent() && error.isEmpty() && !fallbackUsed;
+        long now = System.currentTimeMillis();
+        state = new State(state.weeks, state.catalog, state.groups, state.retries,
+                state.version + 1L, state.revision,
+                success ? now : 0L,
+                fullRefreshInFlight ? (success ? now : 0L) : state.fullRefreshAt);
+        if (success) NetworkRefreshPolicy.recordSuccess(context, NetworkRefreshPolicy.Module.PLAN, "usos_timetable");
+        manualRefreshInFlight = false;
+        fullRefreshInFlight = false;
     }
 
     private void startSync(LocalDate anchor, boolean force, long baseline, LocalDate start, LocalDate end) {
@@ -301,14 +374,18 @@ public final class UsosTimetableStore {
             generation = ++syncGeneration;
             completed = 0;
             total = 3;
-            error = "";
-            fallbackUsed = false;
+            if (!manualRefreshInFlight) {
+                error = "";
+                fallbackUsed = false;
+            }
             dispatchLocked();
         }
         SYNC_EXECUTOR.execute(() -> runSync(anchor, force, baseline, generation));
     }
 
     private void runSync(LocalDate anchor, boolean force, long baseline, long generation) {
+        final boolean full;
+        synchronized (stateLock) { full = fullRefreshInFlight; }
         try {
             syncWeek(monday(anchor), force, baseline);
             syncWeek(monday(anchor).plusWeeks(1), force, baseline);
@@ -322,7 +399,8 @@ public final class UsosTimetableStore {
             completeStep();
             checkContinuation();
             Catalog catalog = snapshot().catalog;
-            List<Term> terms = catalog == null ? Collections.emptyList() : upcomingTerms(catalog, anchor);
+            List<Term> terms = catalog == null ? Collections.emptyList()
+                    : full ? catalog.terms : upcomingTerms(catalog, anchor);
             int groupCount = 0;
             for (Term term : terms) groupCount += term.groups.size();
             synchronized (stateLock) {
@@ -334,15 +412,25 @@ public final class UsosTimetableStore {
                 for (Group group : term.groups) {
                     checkContinuation();
                     try {
-                        // The manual screen refresh verifies visible student weeks, not every
-                        // already-cached semester schedule. Explicit wide refreshes remain forced.
-                        ensureGroup(term, group, false, baseline, null);
+                        ensureGroup(term, group, full, baseline, null);
                     } catch (RequestFailure failure) {
                         if (failure.stop) throw failure;
                     } catch (JSONException ignored) {
                     }
                     completeStep();
                 }
+            }
+            if (full && catalog != null) {
+                // Include exams and one-off activities across every available semester.
+                java.util.Set<LocalDate> weeks = new java.util.TreeSet<>();
+                for (Term term : terms) {
+                    if (term.groups.isEmpty()) continue;
+                    for (LocalDate week = monday(term.start); !week.isAfter(term.finish); week = week.plusWeeks(1)) {
+                        weeks.add(week);
+                    }
+                }
+                synchronized (stateLock) { total += weeks.size(); dispatchLocked(); }
+                for (LocalDate week : weeks) syncWeek(week, true, baseline);
             }
             drainRequestedRanges(generation);
         } catch (RequestFailure failure) {
@@ -352,11 +440,16 @@ public final class UsosTimetableStore {
         } finally {
             synchronized (stateLock) {
                 if (syncGeneration == generation) {
+                    finishManualRefreshLocked();
                     running = false;
                     if (isCurrent()) dispatchLocked();
                 }
             }
+            persistSnapshot();
             refreshWidgetsIfChanged();
+            synchronized (stateLock) {
+                if (!pendingRanges.isEmpty() && !running) startSync(anchor, false, snapshot().version, null, null);
+            }
         }
     }
 
@@ -382,11 +475,6 @@ public final class UsosTimetableStore {
             synchronized (stateLock) {
                 if (!isCurrent()) return;
                 if (pendingRanges.isEmpty()) {
-                    // Close atomically with enqueueing, so a late screen request starts a new run.
-                    if (syncGeneration == generation) {
-                        running = false;
-                        dispatchLocked();
-                    }
                     return;
                 }
                 batch = new ArrayList<>(pendingRanges);
@@ -699,7 +787,7 @@ public final class UsosTimetableStore {
                     retries.remove("catalog");
                     retries.remove("network");
                     state = new State(state.weeks, catalog, state.groups, retries, version,
-                            state.revision + (changed ? 1L : 0L), state.manualRefreshAt);
+                            state.revision + (changed ? 1L : 0L), state.manualRefreshAt, state.fullRefreshAt);
                     dispatchLocked();
                 }
                 persistSnapshot();
@@ -748,7 +836,7 @@ public final class UsosTimetableStore {
                     retries.remove(retryKey);
                     retries.remove("network");
                     state = new State(state.weeks, state.catalog, groups, retries, version,
-                            state.revision + (changed ? 1L : 0L), state.manualRefreshAt);
+                            state.revision + (changed ? 1L : 0L), state.manualRefreshAt, state.fullRefreshAt);
                     dispatchLocked();
                 }
                 // Persist every complete raw response, including [], before moving to another group.
@@ -849,7 +937,7 @@ public final class UsosTimetableStore {
                 retries.remove("legacy");
             }
             state = new State(weeks, state.catalog, state.groups, retries, version,
-                    state.revision + (changed ? 1L : 0L), state.manualRefreshAt);
+                    state.revision + (changed ? 1L : 0L), state.manualRefreshAt, state.fullRefreshAt);
             dispatchLocked();
         }
         persistSnapshot();
@@ -871,7 +959,7 @@ public final class UsosTimetableStore {
             }
             if (failure.httpCode == 401) authFailed = true;
             state = new State(state.weeks, state.catalog, state.groups, retries,
-                    state.version + 1L, state.revision, state.manualRefreshAt);
+                    state.version + 1L, state.revision, state.manualRefreshAt, state.fullRefreshAt);
             error = failure.reason;
             dispatchLocked();
         }
@@ -883,7 +971,7 @@ public final class UsosTimetableStore {
         long delay = Math.max(retryDelayMillis(failures), failure.retryAfterMs);
         long deadline = delay > Long.MAX_VALUE - now ? Long.MAX_VALUE : now + delay;
         if (previous != null) deadline = Math.max(deadline, previous.nextAllowed);
-        return new Retry(now, deadline, failures);
+        return new Retry(now, deadline, failures, failure.httpCode == 429);
     }
 
     static long retryDelayMillis(int failures) {
@@ -1251,13 +1339,15 @@ public final class UsosTimetableStore {
                     String key = retryKeys.next();
                     JSONObject retry = retriesJson.getJSONObject(key);
                     retries.put(key, new Retry(retry.getLong("failed_at"), retry.getLong("next_allowed"),
-                            Math.max(1, Math.min(32, retry.optInt("failures", 1)))));
+                            Math.max(1, Math.min(32, retry.optInt("failures", 1))),
+                            retry.optBoolean("rate_limited", false)));
                 }
             }
             synchronized (stateLock) {
                 if (!matchesSession(ZutnikSession.getInstance())) return;
                 state = new State(weeks, catalog, groups, retries, 0L, Math.max(0L, root.optLong("revision", 0L)),
-                        Math.max(0L, root.optLong("manual_refresh_at", 0L)));
+                        Math.max(0L, root.optLong("manual_success_at", 0L)),
+                        Math.max(0L, root.optLong("full_success_at", 0L)));
             }
         } catch (IOException | JSONException | IllegalArgumentException ignored) {
             // Corrupt, unavailable-key and wrong-owner caches are misses, never successful empty ranges.
@@ -1271,7 +1361,8 @@ public final class UsosTimetableStore {
             root.put("version", 1);
             root.put("owner", owner);
             root.put("revision", snapshot.revision);
-            root.put("manual_refresh_at", snapshot.manualRefreshAt);
+            root.put("manual_success_at", snapshot.manualRefreshAt);
+            root.put("full_success_at", snapshot.fullRefreshAt);
             JSONObject weeks = new JSONObject();
             for (Map.Entry<LocalDate, Week> entry : snapshot.weeks.entrySet()) {
                 Week week = entry.getValue();
@@ -1303,6 +1394,7 @@ public final class UsosTimetableStore {
                 retry.put("failed_at", entry.getValue().failedAt);
                 retry.put("next_allowed", entry.getValue().nextAllowed);
                 retry.put("failures", entry.getValue().failures);
+                retry.put("rate_limited", entry.getValue().rateLimited);
                 retries.put(entry.getKey(), retry);
             }
             root.put("retries", retries);
@@ -1452,6 +1544,10 @@ public final class UsosTimetableStore {
         synchronized (stateLock) {
             if (!isCurrent()) return;
             error = reason;
+            if ("cache_write_failed".equals(reason)) {
+                state = new State(state.weeks, state.catalog, state.groups, state.retries,
+                        state.version + 1L, state.revision, 0L, 0L);
+            }
             dispatchLocked();
         }
     }
@@ -1690,11 +1786,13 @@ public final class UsosTimetableStore {
         final long failedAt;
         final long nextAllowed;
         final int failures;
+        final boolean rateLimited;
 
-        Retry(long failedAt, long nextAllowed, int failures) {
+        Retry(long failedAt, long nextAllowed, int failures, boolean rateLimited) {
             this.failedAt = failedAt;
             this.nextAllowed = nextAllowed;
             this.failures = failures;
+            this.rateLimited = rateLimited;
         }
     }
 
@@ -1720,9 +1818,10 @@ public final class UsosTimetableStore {
         final long version;
         final long revision;
         final long manualRefreshAt;
+        final long fullRefreshAt;
 
         State(Map<LocalDate, Week> weeks, Catalog catalog, Map<String, Activities> groups,
-              Map<String, Retry> retries, long version, long revision, long manualRefreshAt) {
+              Map<String, Retry> retries, long version, long revision, long manualRefreshAt, long fullRefreshAt) {
             this.weeks = Collections.unmodifiableMap(new HashMap<>(weeks));
             this.catalog = catalog;
             this.groups = Collections.unmodifiableMap(new HashMap<>(groups));
@@ -1730,11 +1829,12 @@ public final class UsosTimetableStore {
             this.version = version;
             this.revision = revision;
             this.manualRefreshAt = manualRefreshAt;
+            this.fullRefreshAt = fullRefreshAt;
         }
 
         static State empty() {
             return new State(Collections.emptyMap(), null, Collections.emptyMap(),
-                    Collections.emptyMap(), 0L, 0L, 0L);
+                    Collections.emptyMap(), 0L, 0L, 0L, 0L);
         }
     }
 }

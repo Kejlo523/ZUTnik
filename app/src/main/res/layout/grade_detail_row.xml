@@ -96,6 +96,19 @@
                 android:maxLines="1"
                 android:textColor="?attr/mzMuted"
                 android:textSize="11sp" />
+            <TextView
+                android:id="@+id/detailDistribution"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:focusable="true"
+                android:clickable="true"
+                android:text="@string/grades_distribution_title"
+                android:textColor="?attr/mzPrimary"
+                android:textSize="12sp"
+                android:visibility="gone" />
         </LinearLayout>
 
     </LinearLayout>
