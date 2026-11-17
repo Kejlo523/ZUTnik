@@ -15,7 +15,7 @@ import java.util.List;
 public class FinanceRepository {
 
     private static final String PREFS_FINANCE_CACHE = "zutnik_finance_cache";
-    private static final String KEY_FINANCE_CACHE_PREFIX = "finance_snapshot_";
+    private static final String KEY_FINANCE_CACHE_PREFIX = "finance_snapshot_v4_";
     private static final long FINANCE_TTL_MS = CachePolicy.FINANCE_TTL_MS;
 
     private final Context appContext;
@@ -134,90 +134,29 @@ public class FinanceRepository {
     }
 
     private List<FinanceRecord> loadUsosPayments() throws Exception {
-        JSONArray items = UsosApi.getArray("services/payments/user_payments", null);
-        List<FinanceRecord> records = new ArrayList<>();
-        if (items == null) {
-            return records;
+        ZutnikSession session = ZutnikSession.getInstance();
+        String user = session.getUserId();
+        String token = session.getUsosAccessToken();
+        String secret = session.getUsosAccessTokenSecret();
+        java.util.Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("fields", UsosFinanceMapper.PAYMENT_FIELDS);
+        JSONArray payments = new JSONArray(UsosApi.getRaw("services/payments/user_payments", token, secret, params));
+        params.put("fields", UsosFinanceMapper.REMITTANCE_FIELDS);
+        JSONArray remittances = new JSONArray(UsosApi.getRaw("services/payments/user_remittances", token, secret, params));
+        if (session != ZutnikSession.getInstance()
+                || !java.util.Objects.equals(user, session.getUserId())
+                || !java.util.Objects.equals(token, session.getUsosAccessToken())) {
+            throw new IOException("Session changed");
         }
-
-        for (int i = 0; i < items.length(); i++) {
-            JSONObject item = items.optJSONObject(i);
-            if (item == null) {
-                continue;
-            }
-
-            FinanceRecord record = new FinanceRecord();
-            record.recordId = FinanceRecord.normalizeText(item.optString("id", null));
-            record.title = firstNonEmpty(
-                    extractLocalizedOrString(item, "name"),
-                    extractLocalizedOrString(item, "title"),
-                    item.optString("id", null));
-            record.amountText = FinanceRecord.normalizeText(item.optString("amount", null));
-            record.dueDateText = FinanceRecord.normalizeText(item.optString("due_date", null));
-            record.paidDateText = null;
-            record.balanceText = null;
-            record.accountText = null;
-
-            record.amountValue = FinanceRecord.parseAmount(record.amountText);
-            boolean isPaid = isUsosPaymentPaid(item);
-            record.paidText = isPaid ? record.amountText : "0";
-            record.paidValue = isPaid ? record.amountValue : 0.0d;
-            record.balanceValue = isPaid ? 0.0d : -record.amountValue;
-            record.balanceText = isPaid ? "0" : formatOutstandingBalance(record.amountText);
-            records.add(record);
-        }
-
-        return records;
-    }
-
-    private boolean isUsosPaymentPaid(JSONObject item) {
-        JSONObject statusObj = item.optJSONObject("status");
-        String statusSymbol = statusObj != null
-                ? statusObj.optString("symbol", null)
-                : item.optString("status", null);
-        return "paid".equalsIgnoreCase(statusSymbol)
-                || "1".equals(statusSymbol)
-                || Boolean.TRUE.equals(item.opt("is_paid"));
-    }
-
-    private String extractLocalizedOrString(JSONObject obj, String key) {
-        if (obj == null) {
-            return null;
-        }
-        JSONObject localized = obj.optJSONObject(key);
-        if (localized != null) {
-            String value = localized.optString("pl", localized.optString("en", ""));
-            if (!value.isEmpty()) {
-                return value;
-            }
-        }
-        String plain = obj.optString(key, null);
-        return plain == null || plain.trim().isEmpty() ? null : plain.trim();
-    }
-
-    private String firstNonEmpty(String... values) {
-        if (values == null) {
-            return null;
-        }
-        for (String value : values) {
-            if (value != null && !value.trim().isEmpty()) {
-                return value.trim();
-            }
-        }
-        return null;
-    }
-
-    private String formatOutstandingBalance(String amountText) {
-        if (amountText == null || amountText.trim().isEmpty()) {
-            return null;
-        }
-        String normalized = amountText.trim();
-        return normalized.startsWith("-") ? normalized : "-" + normalized;
+        return UsosFinanceMapper.map(payments, remittances,
+                appContext.getString(R.string.finance_payment_title),
+                appContext.getString(R.string.finance_remittance_title));
     }
 
     private String buildFinanceCacheKey() {
         ZutnikSession session = ZutnikSession.getInstance();
         StringBuilder sb = new StringBuilder(KEY_FINANCE_CACHE_PREFIX);
+        sb.append(session.getUserId()).append('_');
         sb.append(session.isDemoLogin() ? "demo" : "usos").append('_');
 
         String activeId = session.getActiveStudyId();
@@ -244,14 +183,19 @@ public class FinanceRepository {
 
         SharedPreferences prefs = appContext.getSharedPreferences(PREFS_FINANCE_CACHE, Context.MODE_PRIVATE);
         String raw = SecureLocalData.readString(appContext, prefs, cacheKey, null);
+        boolean legacy = false;
         if (raw == null || raw.trim().isEmpty()) {
-            return null;
+            raw = SecureLocalData.readString(appContext, prefs,
+                    cacheKey.replace("finance_snapshot_v4_", "finance_snapshot_v2_"), null);
+            legacy = raw != null;
         }
+        if (raw == null || raw.trim().isEmpty()) return null;
 
         try {
             JSONObject root = new JSONObject(raw);
-            long fetchedAt = root.optLong("timestamp", 0L);
-            if (!ignoreTtl && fetchedAt > 0L) {
+            long fetchedAt = legacy ? 0L : root.optLong("timestamp", 0L);
+            if (!ignoreTtl) {
+                if (fetchedAt <= 0L) return null;
                 long age = System.currentTimeMillis() - fetchedAt;
                 if (age > FINANCE_TTL_MS) {
                     return null;
@@ -266,11 +210,16 @@ public class FinanceRepository {
                     if (item == null) {
                         continue;
                     }
-                    records.add(FinanceRecord.fromJson(item));
+                    FinanceRecord record = FinanceRecord.fromJson(item);
+                    if (legacy && !ZutnikSession.getInstance().isDemoLogin()
+                            && record.paidText == null && record.paidDateText == null) {
+                        UsosFinanceMapper.repairLegacyPayment(record);
+                    }
+                    records.add(record);
                 }
             }
             return new FinanceSnapshot(records, fetchedAt, true);
-        } catch (JSONException e) {
+        } catch (JSONException | NumberFormatException e) {
             return null;
         }
     }

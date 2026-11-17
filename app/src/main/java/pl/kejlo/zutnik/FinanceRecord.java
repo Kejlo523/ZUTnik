@@ -28,17 +28,22 @@ public class FinanceRecord {
     public String recordId;
     public String title;
     public String amountText;
+    public String chargeText;
     public String paidText;
     public String dueDateText;
     public String paidDateText;
     public String balanceText;
     public String accountText;
+    public String currency = "PLN";
+    public boolean isPayment;
+    public Status statusOverride;
 
     public double amountValue;
     public double paidValue;
     public double balanceValue;
 
     public Status getStatus() {
+        if (statusOverride != null) return statusOverride;
         if (balanceValue < -0.0001d) {
             return Status.DUE;
         }
@@ -52,6 +57,9 @@ public class FinanceRecord {
     }
 
     public boolean isBookedInSystem() {
+        // Payment settlements include debit corrections, not just incoming money.
+        // Only actual remittance records may trigger a "payment booked" notification.
+        if (isPayment) return false;
         Status status = getStatus();
         return status == Status.PAID || status == Status.OVERPAID;
     }
@@ -117,6 +125,36 @@ public class FinanceRecord {
         return normalized;
     }
 
+    public String formatMoney(String value) {
+        String normalized = normalizeText(value);
+        if (normalized == null) return null;
+        String code = normalizeCurrency(currency);
+        String suffix = "PLN".equals(code) ? "zł" : code;
+        String numeric = normalized.replace("zł", "").replace("zl", "")
+                .replace(" ", "").replace("\u00a0", "").replace("\u202f", "").trim().replace(',', '.');
+        try {
+            java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(Locale.getDefault());
+            format.setMinimumFractionDigits(2);
+            format.setMaximumFractionDigits(2);
+            return format.format(new java.math.BigDecimal(numeric)) + (suffix.isEmpty() ? "" : " " + suffix);
+        } catch (NumberFormatException invalid) {
+            return null;
+        }
+    }
+
+    /** Both live API objects and JSON strings saved by older builds must stay out of the UI. */
+    static String normalizeCurrency(Object value) {
+        if (value instanceof JSONObject) return normalizeCurrency(((JSONObject) value).opt("id"));
+        if (!(value instanceof String)) return "";
+        String text = ((String) value).trim();
+        if (text.startsWith("{")) {
+            try { return normalizeCurrency(new JSONObject(text)); }
+            catch (JSONException invalid) { return ""; }
+        }
+        if ("zł".equalsIgnoreCase(text) || "zl".equalsIgnoreCase(text)) return "PLN";
+        return text.matches("[A-Za-z]{3}") ? text.toUpperCase(Locale.ROOT) : "";
+    }
+
     public boolean matchesFilter(Status filter) {
         if (filter == null) {
             return true;
@@ -141,6 +179,8 @@ public class FinanceRecord {
                 + normalizeKeyPart(getSafeTitle()) + "|"
                 + normalizeKeyPart(amountText) + "|"
                 + normalizeKeyPart(dueDateText) + "|"
+                + normalizeKeyPart(paidDateText) + "|"
+                + normalizeKeyPart(currency) + "|"
                 + normalizeKeyPart(getCopyableAccount());
     }
 
@@ -184,11 +224,15 @@ public class FinanceRecord {
         obj.put("recordId", recordId);
         obj.put("title", title);
         obj.put("amountText", amountText);
+        obj.put("chargeText", chargeText);
         obj.put("paidText", paidText);
         obj.put("dueDateText", dueDateText);
         obj.put("paidDateText", paidDateText);
         obj.put("balanceText", balanceText);
         obj.put("accountText", accountText);
+        obj.put("currency", currency);
+        obj.put("isPayment", isPayment);
+        obj.put("statusOverride", statusOverride == null ? null : statusOverride.name());
         obj.put("amountValue", amountValue);
         obj.put("paidValue", paidValue);
         obj.put("balanceValue", balanceValue);
@@ -200,11 +244,17 @@ public class FinanceRecord {
         record.recordId = normalizeText(obj.optString("recordId", null));
         record.title = normalizeText(obj.optString("title", null));
         record.amountText = normalizeText(obj.optString("amountText", null));
+        record.chargeText = normalizeText(obj.optString("chargeText", null));
         record.paidText = normalizeText(obj.optString("paidText", null));
         record.dueDateText = normalizeText(obj.optString("dueDateText", null));
         record.paidDateText = normalizeText(obj.optString("paidDateText", null));
         record.balanceText = normalizeText(obj.optString("balanceText", null));
         record.accountText = normalizeText(obj.optString("accountText", null));
+        record.currency = normalizeCurrency(obj.has("currency") ? obj.opt("currency") : "PLN");
+        record.isPayment = obj.optBoolean("isPayment", false);
+        try {
+            record.statusOverride = Status.valueOf(obj.optString("statusOverride", ""));
+        } catch (IllegalArgumentException ignored) { }
         record.amountValue = obj.optDouble("amountValue", parseAmount(record.amountText));
         record.paidValue = obj.optDouble("paidValue", parseAmount(record.paidText));
         record.balanceValue = obj.optDouble("balanceValue", parseAmount(record.balanceText));

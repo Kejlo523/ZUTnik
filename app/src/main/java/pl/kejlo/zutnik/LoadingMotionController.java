@@ -17,7 +17,7 @@ import java.util.WeakHashMap;
 
 final class LoadingMotionController {
 
-    private static final long SKELETON_DURATION_MS = 1120L;
+    private static final long SKELETON_DURATION_MS = 2400L;
     private static final long REVEAL_DURATION_MS = 240L;
     private static final Map<View, ValueAnimator> SKELETON_ANIMATORS = new WeakHashMap<>();
     private static final Map<View, ObjectAnimator> SPIN_ANIMATORS = new WeakHashMap<>();
@@ -94,13 +94,14 @@ final class LoadingMotionController {
         animator.setDuration(SKELETON_DURATION_MS);
         animator.setRepeatCount(ValueAnimator.INFINITE);
         animator.setRepeatMode(ValueAnimator.RESTART);
+        animator.setInterpolator(new LinearInterpolator());
         animator.addUpdateListener(valueAnimator -> {
             float progress = (float) valueAnimator.getAnimatedValue();
             int count = Math.max(1, blocks.size());
             for (int i = 0; i < blocks.size(); i++) {
                 float phase = progress + (i / (float) count) * 0.7f;
                 float wave = (float) ((Math.sin(phase * Math.PI * 2.0 - Math.PI / 2.0) + 1.0) * 0.5);
-                blocks.get(i).setAlpha(0.58f + wave * 0.38f);
+                blocks.get(i).setAlpha(0.78f + wave * 0.16f);
             }
         });
         animator.start();

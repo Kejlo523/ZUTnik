@@ -73,10 +73,15 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
         FinanceRecord item = items.get(position);
         holder.titleView.setText(item.getSafeTitle());
         bindStatusChip(holder, item);
+        holder.amountLabelView.setText(item.isPayment
+                ? R.string.finance_label_outstanding : R.string.finance_label_amount);
+        holder.balanceLabelView.setText(item.isPayment
+                ? R.string.finance_label_settlements : R.string.finance_label_balance);
+        bindMoneyRow(holder.chargeRow, holder.chargeValueView, item.formatMoney(item.chargeText));
 
-        bindMoneyCard(holder.amountCard, holder.amountValueView, item.amountText);
-        bindMoneyCard(holder.balanceCard, holder.balanceValueView, item.balanceText);
-        bindMoneyRow(holder.paidRow, holder.paidValueView, item.paidText);
+        bindMoneyCard(holder.amountCard, holder.amountValueView, item.formatMoney(item.amountText));
+        bindMoneyCard(holder.balanceCard, holder.balanceValueView, item.formatMoney(item.balanceText));
+        bindMoneyRow(holder.paidRow, holder.paidValueView, item.formatMoney(item.paidText));
         bindTextRow(holder.dueDateRow, holder.dueDateValueView, item.dueDateText);
         bindTextRow(holder.paidDateRow, holder.paidDateValueView, item.paidDateText);
         bindBalanceColor(holder, item);
@@ -149,11 +154,11 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
     }
 
     private void bindMoneyRow(@NonNull View row, @NonNull android.widget.TextView valueView, String value) {
-        bindTextRow(row, valueView, FinanceRecord.formatMoneyText(value));
+        bindTextRow(row, valueView, value);
     }
 
     private void bindMoneyCard(@NonNull View card, @NonNull android.widget.TextView valueView, String value) {
-        String formatted = FinanceRecord.formatMoneyText(value);
+        String formatted = FinanceRecord.normalizeText(value);
         if (formatted == null || formatted.trim().isEmpty()) {
             card.setVisibility(View.GONE);
             valueView.setText("");
@@ -164,7 +169,8 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
     }
 
     private void updateMetaVisibility(@NonNull ViewHolder holder) {
-        boolean hasMeta = holder.paidRow.getVisibility() == View.VISIBLE
+        boolean hasMeta = holder.chargeRow.getVisibility() == View.VISIBLE
+                || holder.paidRow.getVisibility() == View.VISIBLE
                 || holder.dueDateRow.getVisibility() == View.VISIBLE
                 || holder.paidDateRow.getVisibility() == View.VISIBLE;
         holder.metaContainer.setVisibility(hasMeta ? View.VISIBLE : View.GONE);
@@ -209,11 +215,15 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
         return Objects.equals(oldItem.recordId, newItem.recordId)
                 && Objects.equals(oldItem.title, newItem.title)
                 && Objects.equals(oldItem.amountText, newItem.amountText)
+                && Objects.equals(oldItem.chargeText, newItem.chargeText)
                 && Objects.equals(oldItem.paidText, newItem.paidText)
                 && Objects.equals(oldItem.dueDateText, newItem.dueDateText)
                 && Objects.equals(oldItem.paidDateText, newItem.paidDateText)
                 && Objects.equals(oldItem.balanceText, newItem.balanceText)
                 && Objects.equals(oldItem.accountText, newItem.accountText)
+                && Objects.equals(oldItem.currency, newItem.currency)
+                && oldItem.isPayment == newItem.isPayment
+                && oldItem.getStatus() == newItem.getStatus()
                 && Double.compare(oldItem.amountValue, newItem.amountValue) == 0
                 && Double.compare(oldItem.paidValue, newItem.paidValue) == 0
                 && Double.compare(oldItem.balanceValue, newItem.balanceValue) == 0;
@@ -224,8 +234,12 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
         final android.widget.TextView statusChipView;
         final View amountCard;
         final android.widget.TextView amountValueView;
+        final android.widget.TextView amountLabelView;
         final View balanceCard;
         final android.widget.TextView balanceValueView;
+        final android.widget.TextView balanceLabelView;
+        final View chargeRow;
+        final android.widget.TextView chargeValueView;
         final View metaContainer;
         final View paidRow;
         final android.widget.TextView paidValueView;
@@ -244,8 +258,12 @@ public class FinanceAdapter extends RecyclerView.Adapter<FinanceAdapter.ViewHold
             statusChipView = itemView.findViewById(R.id.financeStatusChip);
             amountCard = itemView.findViewById(R.id.financeAmountCard);
             amountValueView = itemView.findViewById(R.id.financeAmountValue);
+            amountLabelView = itemView.findViewById(R.id.financeAmountLabel);
             balanceCard = itemView.findViewById(R.id.financeBalanceCard);
             balanceValueView = itemView.findViewById(R.id.financeBalanceValue);
+            balanceLabelView = itemView.findViewById(R.id.financeBalanceLabel);
+            chargeRow = itemView.findViewById(R.id.financeChargeRow);
+            chargeValueView = itemView.findViewById(R.id.financeChargeValue);
             metaContainer = itemView.findViewById(R.id.financeMetaContainer);
             paidRow = itemView.findViewById(R.id.financePaidRow);
             paidValueView = itemView.findViewById(R.id.financePaidValue);

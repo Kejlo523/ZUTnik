@@ -208,6 +208,8 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             h.finalRow.setVisibility(View.GONE);
         }
 
+        h.distribution.setVisibility(GradeDistributionDialog.available(g.finalGrade) ? View.VISIBLE : View.GONE);
+        h.distribution.setOnClickListener(v -> GradeDistributionDialog.show(ctx, g.finalGrade));
         bindPreview(ctx, h.previewRow, g);
         h.expandIcon.setVisibility(g.others.isEmpty() ? View.GONE : View.VISIBLE);
 
@@ -217,6 +219,8 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private void bindGrade(GradeViewHolder h, Grade g) {
         Context ctx = h.itemView.getContext();
+        h.distribution.setVisibility(GradeDistributionDialog.available(g) ? View.VISIBLE : View.GONE);
+        h.distribution.setOnClickListener(v -> GradeDistributionDialog.show(ctx, g));
 
         String rawGrade = GradesTextUtils.clean(g != null ? g.grade : "");
         String correction = GradesCorrectionHelper.correctionLabel(g);
@@ -322,6 +326,11 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             pill.setContentDescription(pill.getContentDescription() + ", " + correction);
         }
         item.addView(pill);
+        if (GradeDistributionDialog.available(grade)) {
+            item.setOnClickListener(v -> GradeDistributionDialog.show(ctx, grade));
+            item.setContentDescription(label + ", " + ctx.getString(R.string.grades_distribution_title));
+            item.setFocusable(true);
+        }
         addPreviewCorrectionSlot(ctx, item, correction, reserveCorrectionSlot);
         return item;
     }
@@ -576,6 +585,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         TextView finalPill;
         TextView finalLabel;
         LinearLayout previewRow;
+        TextView distribution;
         ImageView expandIcon;
         View root;
 
@@ -587,6 +597,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             finalPill = v.findViewById(R.id.groupFinalPill);
             finalLabel = v.findViewById(R.id.groupFinalLabel);
             previewRow = v.findViewById(R.id.groupPreviewRow);
+            distribution = v.findViewById(R.id.groupDistribution);
             expandIcon = v.findViewById(R.id.groupExpandIcon);
         }
     }
@@ -597,6 +608,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
         TextView correction;
         TextView date;
         TextView teacher;
+        TextView distribution;
 
         GradeViewHolder(@NonNull View v) {
             super(v);
@@ -605,6 +617,7 @@ public class GroupedGradesAdapter extends RecyclerView.Adapter<RecyclerView.View
             correction = v.findViewById(R.id.detailCorrection);
             date = v.findViewById(R.id.detailDate);
             teacher = v.findViewById(R.id.detailTeacher);
+            distribution = v.findViewById(R.id.detailDistribution);
         }
     }
 }

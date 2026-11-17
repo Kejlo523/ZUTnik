@@ -152,7 +152,7 @@ public class UsosOAuthCallbackActivity extends PhoneAwareActivity {
                     Intent i = AppShortcutRouter.createMainIntent(
                             UsosOAuthCallbackActivity.this,
                             AppShortcutRouter.consumePending(UsosOAuthCallbackActivity.this));
-                    i.putExtra(MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION, true);
+                    i.putExtra(MainShellActivity.EXTRA_REQUEST_NOTIF_PERMISSION, false);
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(i);
                     finish();

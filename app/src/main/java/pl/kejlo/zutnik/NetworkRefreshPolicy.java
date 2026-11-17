@@ -169,7 +169,8 @@ public final class NetworkRefreshPolicy {
         }
 
         if (mode == Mode.MANUAL) {
-            long lastManual = prefs(appContext).getLong(key(KEY_LAST_MANUAL_PREFIX, module, scope), 0L);
+            long lastManual = prefs(appContext).getLong(key(
+                    module == Module.PLAN ? KEY_LAST_SUCCESS_PREFIX : KEY_LAST_MANUAL_PREFIX, module, scope), 0L);
             if (lastManual > 0L && (now - lastManual) < CachePolicy.MANUAL_REFRESH_COOLDOWN_MS) {
                 return deny("manual_cooldown", cacheAgeMs);
             }

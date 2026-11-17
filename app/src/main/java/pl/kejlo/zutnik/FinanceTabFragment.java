@@ -28,7 +28,6 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.text.DateFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -399,28 +398,35 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
     }
 
     private void updateSummary(List<FinanceRecord> records) {
-        double dueTotal = 0.0d;
-        double paidTotal = 0.0d;
-        double overpaidTotal = 0.0d;
+        java.util.Map<String, double[]> totals = new java.util.LinkedHashMap<>();
         int openItems = 0;
-
+        boolean incomplete = false;
         for (FinanceRecord record : records) {
-            if (record == null) {
-                continue;
-            }
-            paidTotal += Math.max(0.0d, record.paidValue);
+            if (record == null) continue;
+            incomplete |= record.isPayment && record.getStatus() == FinanceRecord.Status.UNKNOWN;
+            double[] total = totals.computeIfAbsent(FinanceRecord.normalizeCurrency(record.currency), key -> new double[3]);
+            total[1] += Math.max(0d, record.paidValue);
             if (record.getStatus() == FinanceRecord.Status.DUE) {
-                dueTotal += Math.abs(record.balanceValue);
+                total[0] += Math.abs(record.balanceValue);
                 openItems++;
             } else if (record.getStatus() == FinanceRecord.Status.OVERPAID) {
-                overpaidTotal += record.balanceValue;
+                total[2] += record.balanceValue;
             }
         }
+        if (totals.isEmpty()) totals.put("PLN", new double[3]);
+        summaryDueValue.setText(incomplete ? getString(R.string.common_dash) : formatCurrencyTotals(totals, 0));
+        summaryPaidValue.setText(formatCurrencyTotals(totals, 1));
+        summaryOpenCountValue.setText(incomplete ? getString(R.string.common_dash) : String.valueOf(openItems));
+        summaryOverpaidValue.setText(incomplete ? getString(R.string.common_dash) : formatCurrencyTotals(totals, 2));
+    }
 
-        summaryDueValue.setText(formatMoney(dueTotal));
-        summaryPaidValue.setText(formatMoney(paidTotal));
-        summaryOpenCountValue.setText(String.valueOf(openItems));
-        summaryOverpaidValue.setText(formatMoney(overpaidTotal));
+    private String formatCurrencyTotals(java.util.Map<String, double[]> totals, int index) {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        for (java.util.Map.Entry<String, double[]> entry : totals.entrySet()) {
+            lines.add(String.format(java.util.Locale.getDefault(), "%.2f %s",
+                    entry.getValue()[index], "PLN".equals(entry.getKey()) ? "zł" : entry.getKey()));
+        }
+        return android.text.TextUtils.join("\n", lines);
     }
 
     private String getEmptyStateText() {
@@ -482,13 +488,6 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
         }
     }
 
-    private String formatMoney(double value) {
-        NumberFormat nf = NumberFormat.getNumberInstance(Locale.getDefault());
-        nf.setMaximumFractionDigits(2);
-        nf.setMinimumFractionDigits(Math.abs(value - Math.rint(value)) > 0.0001d ? 2 : 0);
-        return getString(R.string.finance_money_value, nf.format(value));
-    }
-
     private String getCurrentStudyScopeKey() {
         ZutnikSession session = ZutnikSession.getInstance();
         String activeId = session.getActiveStudyId();
@@ -515,10 +514,14 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
         lines.add(record.getSafeTitle());
 
         if (record.amountText != null) {
-            lines.add(getString(R.string.finance_line_amount, FinanceRecord.formatMoneyText(record.amountText)));
+            lines.add(getString(record.isPayment ? R.string.finance_line_outstanding : R.string.finance_line_amount,
+                    record.formatMoney(record.amountText)));
+        }
+        if (record.chargeText != null) {
+            lines.add(getString(R.string.finance_line_charge, record.formatMoney(record.chargeText)));
         }
         if (record.paidText != null) {
-            lines.add(getString(R.string.finance_line_paid, FinanceRecord.formatMoneyText(record.paidText)));
+            lines.add(getString(R.string.finance_line_paid, record.formatMoney(record.paidText)));
         }
         if (record.dueDateText != null) {
             lines.add(getString(R.string.finance_line_due_date, record.dueDateText));
@@ -527,7 +530,8 @@ public class FinanceTabFragment extends ZutnikTabFragment implements FinanceAdap
             lines.add(getString(R.string.finance_line_paid_date, record.paidDateText));
         }
         if (record.balanceText != null) {
-            lines.add(getString(R.string.finance_line_balance, FinanceRecord.formatMoneyText(record.balanceText)));
+            lines.add(getString(record.isPayment ? R.string.finance_line_settlements : R.string.finance_line_balance,
+                    record.formatMoney(record.balanceText)));
         }
         if (record.hasAccount()) {
             lines.add(getString(R.string.finance_line_account, record.getCopyableAccount()));

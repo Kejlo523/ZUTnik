@@ -93,5 +93,18 @@
                 tools:visibility="visible" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/colDistribution"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:focusable="true"
+            android:clickable="true"
+            android:text="@string/grades_distribution_title"
+            android:textSize="12sp"
+            android:textColor="?attr/mzPrimary"
+            android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

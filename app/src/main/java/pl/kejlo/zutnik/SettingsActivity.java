@@ -50,6 +50,12 @@ import java.util.concurrent.Executors;
 public class SettingsActivity extends PhoneAwareActivity {
 
     private Spinner spinnerLanguage;
+    private UsosTimetableStore planSyncStore;
+    private boolean requestedFullPlanSync;
+    private final Runnable fullSyncCooldownTick = () -> {
+        if (planSyncStore != null) updateFullPlanSyncUi(planSyncStore.getSyncState());
+    };
+    private final UsosTimetableStore.Listener planSyncListener = state -> updateFullPlanSyncUi(state);
     private SwitchMaterial switchNotifMaster;
     private SwitchMaterial switchNotifGrades;
     private SwitchMaterial switchNotifFinance;
@@ -232,6 +238,59 @@ public class SettingsActivity extends PhoneAwareActivity {
         setupNotificationSettings();
         setupPrivacySettings();
         setupSettingsBackupButtons();
+        setupFullPlanSync();
+    }
+
+    private void setupFullPlanSync() {
+        View button = findViewById(R.id.btnFullPlanSync);
+        if (button == null) return;
+        if (!ZutnikSession.getInstance().isUsosLogin()) {
+            button.setEnabled(false);
+            ((android.widget.TextView) findViewById(R.id.tvFullPlanSyncStatus))
+                    .setText(R.string.settings_plan_sync_usos_only);
+            return;
+        }
+        planSyncStore = UsosTimetableStore.get(this);
+        planSyncStore.addListener(planSyncListener);
+        button.setOnClickListener(v -> {
+            String result = planSyncStore.requestFullSync();
+            requestedFullPlanSync = "started".equals(result);
+            if ("rate_limited".equals(result)) {
+                Toast.makeText(this, R.string.settings_plan_sync_rate_limited, Toast.LENGTH_LONG).show();
+            }
+            if ("offline".equals(result)) {
+                Toast.makeText(this, R.string.settings_plan_sync_offline, Toast.LENGTH_LONG).show();
+            }
+            updateFullPlanSyncUi(planSyncStore.getSyncState());
+        });
+        updateFullPlanSyncUi(planSyncStore.getSyncState());
+    }
+
+    private void updateFullPlanSyncUi(UsosTimetableStore.SyncState state) {
+        if (isFinishing() || isDestroyed()) return;
+        View button = findViewById(R.id.btnFullPlanSync);
+        android.widget.TextView status = findViewById(R.id.tvFullPlanSyncStatus);
+        if (button == null || status == null || planSyncStore == null) return;
+        mainHandler.removeCallbacks(fullSyncCooldownTick);
+        long remaining = planSyncStore.getFullRefreshRemainingMs();
+        if (!state.running && remaining > 0L) {
+            mainHandler.postDelayed(fullSyncCooldownTick, Math.min(60000L, remaining));
+        }
+        button.setEnabled(!state.running && remaining == 0L);
+        if (state.running) {
+            status.setText(getString(R.string.plan_sync_progress, state.completed, state.total));
+        } else if (!state.error.isEmpty()) {
+            status.setText(R.string.settings_plan_sync_error);
+        } else if (remaining > 0L) {
+            status.setText(getString(R.string.settings_plan_sync_cooldown, (remaining + 59999L) / 60000L));
+        } else {
+            status.setText(R.string.settings_plan_sync_ready);
+        }
+        if (requestedFullPlanSync && !state.running) {
+            requestedFullPlanSync = false;
+            Toast.makeText(this, state.error.isEmpty() ? R.string.settings_plan_sync_success
+                    : R.string.settings_plan_sync_error, Toast.LENGTH_LONG).show();
+        }
     }
 
     private void setupSettingsBackupLaunchers() {
@@ -785,6 +844,7 @@ public class SettingsActivity extends PhoneAwareActivity {
     protected void onResume() {
         super.onResume();
         ThemeManager.applySystemBars(this);
+        if (planSyncStore != null) updateFullPlanSyncUi(planSyncStore.getSyncState());
     }
 
     @Override
@@ -843,6 +903,7 @@ public class SettingsActivity extends PhoneAwareActivity {
 
     @Override
     protected void onDestroy() {
+        if (planSyncStore != null) planSyncStore.removeListener(planSyncListener);
         mainHandler.removeCallbacksAndMessages(null);
         settingsIoExecutor.shutdownNow();
         super.onDestroy();

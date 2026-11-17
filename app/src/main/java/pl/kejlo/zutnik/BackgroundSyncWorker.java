@@ -892,7 +892,7 @@ public class BackgroundSyncWorker extends Worker {
         }
 
         String dueDate = formatDate(record != null ? record.getDueDate() : null);
-        String amount = FinanceRecord.formatMoneyText(record != null ? record.amountText : null);
+        String amount = record != null ? record.formatMoney(record.amountText) : null;
         if (amount == null || amount.isEmpty()) {
             return context.getString(R.string.notif_finance_due_line, title, dueDate);
         }
@@ -905,9 +905,9 @@ public class BackgroundSyncWorker extends Worker {
             title = context.getString(R.string.notif_finance_item_fallback);
         }
 
-        String amount = FinanceRecord.formatMoneyText(record != null ? record.paidText : null);
+        String amount = record != null ? record.formatMoney(record.paidText) : null;
         if (amount == null || amount.isEmpty()) {
-            amount = FinanceRecord.formatMoneyText(record != null ? record.amountText : null);
+            amount = record != null ? record.formatMoney(record.amountText) : null;
         }
         if (amount == null || amount.isEmpty()) {
             return context.getString(R.string.notif_finance_booked_line, title);

@@ -28,6 +28,10 @@
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/planSyncProgress"
+        app:showDelay="180"
+        app:minHideDelay="500"
+        app:showAnimationBehavior="outward"
+        app:hideAnimationBehavior="inward"
         android:layout_width="match_parent"
         android:layout_height="2dp"
         android:layout_marginTop="3dp"
