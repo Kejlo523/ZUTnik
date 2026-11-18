@@ -204,6 +204,32 @@ public final class PlanCalendarExportHelper {
         return inserted;
     }
 
+    public boolean insertEvent(DeviceCalendarInfo calendarInfo, LocalDate date, PlanRepository.PlanEventUi event) {
+        if (calendarInfo == null || date == null || event == null) {
+            return false;
+        }
+        ContentResolver resolver = appContext.getContentResolver();
+        CalendarKind calendarKind = resolveCalendarKind(calendarInfo);
+        List<EventColorOption> colorOptions = loadEventColorOptions(calendarInfo, calendarKind);
+        ContentValues values = buildEventValues(
+                calendarInfo,
+                calendarKind,
+                new CalendarExportEvent(date, event),
+                colorOptions);
+        try {
+            Uri insertedUri = resolver.insert(CalendarContract.Events.CONTENT_URI, values);
+            if (insertedUri == null) {
+                return false;
+            }
+            maybeUpdateInsertedEventColor(resolver, insertedUri, values);
+            resolver.notifyChange(CalendarContract.Events.CONTENT_URI, null);
+            return true;
+        } catch (Exception error) {
+            android.util.Log.w("PlanCalendarExport", "Single event insert failed", error);
+            return false;
+        }
+    }
+
     public int clearImportedEventsFromCalendar(DeviceCalendarInfo calendarInfo) {
         if (calendarInfo == null) {
             return 0;

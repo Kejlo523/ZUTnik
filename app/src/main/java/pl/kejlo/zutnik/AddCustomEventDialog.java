@@ -100,7 +100,6 @@ public class AddCustomEventDialog extends DialogFragment {
     private String detailsTeacher = "";
     private String detailsTypeLabel = "";
     private String detailsTypeClass = "";
-
     public interface OnEventSavedListener {
         void onEventSaved(CustomPlanEvent event);
     }

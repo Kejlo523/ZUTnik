@@ -86,35 +86,76 @@ final class GradeDistributionDialog {
 
     private static void addBar(Context context, LinearLayout chart, GradeDistribution.Entry entry, String ownGrade) {
         boolean own = GradeDistribution.sameSymbol(entry.symbol, ownGrade);
+        int primary = ThemeManager.resolveColor(context, R.attr.mzPrimary);
         LinearLayout row = new LinearLayout(context);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(0, dp(context, 8), 0, dp(context, 8));
-        String percent = String.format(java.util.Locale.getDefault(), "%.1f%%", entry.percentage);
-        row.setContentDescription(context.getString(R.string.grades_distribution_bar, entry.symbol, percent)
-                + (own ? ", " + context.getString(R.string.grades_distribution_yours) : ""));
+        row.setMinimumHeight(dp(context, 48));
+        row.setPadding(dp(context, 8), dp(context, 8), dp(context, 10), dp(context, 8));
+        if (own) {
+            android.graphics.drawable.GradientDrawable highlight = new android.graphics.drawable.GradientDrawable();
+            highlight.setCornerRadius(dp(context, 12));
+            highlight.setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(primary, 28));
+            row.setBackground(highlight);
+        }
+        String percent = String.format(java.util.Locale.getDefault(), "%.0f%%", entry.percentage);
+        String description = context.getString(R.string.grades_distribution_bar, entry.symbol, percent);
+        if (own) {
+            description = description + ", " + context.getString(R.string.grades_distribution_yours);
+        }
+        row.setContentDescription(description);
         row.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-        TextView symbol = label(context, entry.symbol.replace('.', ','), 14, own ? R.attr.mzPrimary : R.attr.mzText);
-        if (own) symbol.setTypeface(null, android.graphics.Typeface.BOLD);
-        row.addView(symbol, new LinearLayout.LayoutParams(dp(context, 40), LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        TextView symbol = label(context, entry.symbol.replace('.', ','), 15, own ? R.attr.mzPrimary : R.attr.mzText);
+        symbol.setGravity(Gravity.CENTER);
+        symbol.setTypeface(null, android.graphics.Typeface.BOLD);
+        android.graphics.drawable.GradientDrawable badge = new android.graphics.drawable.GradientDrawable();
+        badge.setCornerRadius(dp(context, 10));
+        badge.setColor(own
+                ? primary
+                : ThemeManager.resolveColor(context, R.attr.mzCardSoft));
+        symbol.setBackground(badge);
+        if (own) {
+            int onBadge = androidx.core.graphics.ColorUtils.calculateLuminance(primary) > 0.55d
+                    ? ThemeManager.resolveColor(context, R.attr.mzText)
+                    : 0xFFFFFFFF;
+            symbol.setTextColor(onBadge);
+        }
+        LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(dp(context, 44), dp(context, 36));
+        badgeParams.setMarginEnd(dp(context, 10));
+        row.addView(symbol, badgeParams);
+
         LinearProgressIndicator bar = new LinearProgressIndicator(context);
         bar.setIndeterminate(false);
         bar.setMax(1000);
-        bar.setTrackThickness(dp(context, 8));
-        bar.setTrackCornerRadius(dp(context, 4));
+        bar.setTrackThickness(dp(context, 10));
+        bar.setTrackCornerRadius(dp(context, 8));
         bar.setTrackColor(ThemeManager.resolveColor(context, R.attr.mzCardSoft));
-        int primary = ThemeManager.resolveColor(context, R.attr.mzPrimary);
         bar.setIndicatorColor(own ? primary : androidx.core.graphics.ColorUtils.blendARGB(
-                ThemeManager.resolveColor(context, R.attr.mzCardSoft), primary, 0.5f));
-        LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(0, dp(context, 12), 1f);
-        barParams.setMarginEnd(dp(context, 12));
+                ThemeManager.resolveColor(context, R.attr.mzCardSoft), primary, 0.55f));
+        LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(0, dp(context, 14), 1f);
+        barParams.setMarginEnd(dp(context, 10));
         row.addView(bar, barParams);
-        TextView value = label(context, percent, 13, own ? R.attr.mzPrimary : R.attr.mzMuted);
+
+        LinearLayout valueColumn = new LinearLayout(context);
+        valueColumn.setOrientation(LinearLayout.VERTICAL);
+        valueColumn.setGravity(Gravity.END);
+        TextView value = label(context, percent, 14, own ? R.attr.mzPrimary : R.attr.mzText);
+        value.setTypeface(null, android.graphics.Typeface.BOLD);
         value.setGravity(Gravity.END);
-        row.addView(value, new LinearLayout.LayoutParams(dp(context, 64), LinearLayout.LayoutParams.WRAP_CONTENT));
+        valueColumn.addView(value);
+        if (own) {
+            TextView yours = label(context, context.getString(R.string.grades_distribution_yours), 11, R.attr.mzPrimary);
+            yours.setGravity(Gravity.END);
+            valueColumn.addView(yours);
+        }
+        row.addView(valueColumn, new LinearLayout.LayoutParams(dp(context, 72), LinearLayout.LayoutParams.WRAP_CONTENT));
         symbol.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         bar.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        value.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        chart.addView(row);
+        valueColumn.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        rowParams.bottomMargin = dp(context, 6);
+        chart.addView(row, rowParams);
         int target = (int) Math.round(entry.percentage * 10d);
         bar.post(() -> bar.setProgressCompat(target, ValueAnimator.areAnimatorsEnabled()));
     }

@@ -105,22 +105,36 @@ public class AddEditTileDialog extends DialogFragment {
                 0xFFE0E0E0 // Light
         };
 
+        final java.util.List<View> colorSwatches = new ArrayList<>();
+        final java.util.List<Integer> colorSwatchValues = new ArrayList<>();
+        final Runnable[] refreshSwatches = { () -> { } };
+        refreshSwatches[0] = () -> {
+            int primary = ThemeManager.resolveColor(requireContext(), R.attr.mzPrimary);
+            int border = ThemeManager.resolveColor(requireContext(), R.attr.mzBorderSoft);
+            for (int i = 0; i < colorSwatches.size(); i++) {
+                View swatch = colorSwatches.get(i);
+                int swatchColor = colorSwatchValues.get(i);
+                boolean chosen = swatchColor == selectedColor;
+                android.graphics.drawable.GradientDrawable drawable =
+                        (android.graphics.drawable.GradientDrawable) swatch.getBackground();
+                drawable.setStroke(dpToPx(chosen ? 2 : 1), chosen ? primary : border);
+            }
+        };
+
         for (int color : palette) {
             View cView = new View(requireContext());
-            android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(dpToPx(36),
-                    dpToPx(36));
-            lp.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+            android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(dpToPx(22),
+                    dpToPx(22));
+            lp.setMargins(0, dpToPx(2), dpToPx(8), dpToPx(2));
             cView.setLayoutParams(lp);
 
             android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
             gd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-            if (color == 0) {
-                gd.setColor(themeDefaultColor);
-                gd.setStroke(dpToPx(2), ThemeManager.resolveColor(requireContext(), R.attr.mzPrimary));
-            } else {
-                gd.setColor(color);
-            }
+            gd.setColor(color == 0 ? themeDefaultColor : color);
             cView.setBackground(gd);
+            cView.setContentDescription(getString(color == 0
+                    ? R.string.dialog_add_edit_tile_color_default
+                    : R.string.dialog_add_edit_tile_label_color));
 
             cView.setOnClickListener(v -> {
                 selectedColor = color;
@@ -130,10 +144,14 @@ public class AddEditTileDialog extends DialogFragment {
                 seekSat.setProgress(Math.round(hsv[1] * 100f));
                 seekVal.setProgress(Math.round(hsv[2] * 100f));
                 previewDrawable.setColor(applied);
+                refreshSwatches[0].run();
                 updateTilePreview[0].run();
             });
+            colorSwatches.add(cView);
+            colorSwatchValues.add(color);
             containerColors.addView(cView);
         }
+        refreshSwatches[0].run();
 
         btnColorDefault.setOnClickListener(v -> {
             selectedColor = 0;
@@ -142,6 +160,7 @@ public class AddEditTileDialog extends DialogFragment {
             seekSat.setProgress(Math.round(hsv[1] * 100f));
             seekVal.setProgress(Math.round(hsv[2] * 100f));
             previewDrawable.setColor(themeDefaultColor);
+            refreshSwatches[0].run();
             updateTilePreview[0].run();
         });
 
@@ -160,6 +179,7 @@ public class AddEditTileDialog extends DialogFragment {
                 hsv[2] = seekVal.getProgress() / 100f;
                 selectedColor = android.graphics.Color.HSVToColor(hsv);
                 previewDrawable.setColor(selectedColor);
+                refreshSwatches[0].run();
                 updateTilePreview[0].run();
             }
 
@@ -303,6 +323,7 @@ public class AddEditTileDialog extends DialogFragment {
             seekSat.setProgress(Math.round(hsv[1] * 100f));
             seekVal.setProgress(Math.round(hsv[2] * 100f));
             previewDrawable.setColor(applied);
+            refreshSwatches[0].run();
 
             String currentType = tileToEdit.actionType;
             if (Tile.ACTION_ACTIVITY.equals(currentType) && tileToEdit.actionData != null) {
@@ -344,6 +365,7 @@ public class AddEditTileDialog extends DialogFragment {
             seekSat.setProgress(Math.round(hsv[1] * 100f));
             seekVal.setProgress(Math.round(hsv[2] * 100f));
             previewDrawable.setColor(themeDefaultColor);
+            refreshSwatches[0].run();
         }
 
         updateTilePreview[0].run();

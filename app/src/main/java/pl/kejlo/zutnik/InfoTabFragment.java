@@ -691,9 +691,18 @@ public class InfoTabFragment extends ZutnikTabFragment {
         if (tv == null) {
             return;
         }
-        if (value == null || value.trim().isEmpty()) {
+        boolean empty = value == null || value.trim().isEmpty();
+        View parent = tv.getParent() instanceof View ? (View) tv.getParent() : null;
+        boolean metric = parent != null && "infoMetric".equals(String.valueOf(parent.getTag()));
+        if (empty) {
             tv.setVisibility(View.GONE);
+            if (metric) {
+                parent.setVisibility(View.GONE);
+            }
         } else {
+            if (metric) {
+                parent.setVisibility(View.VISIBLE);
+            }
             tv.setVisibility(View.VISIBLE);
             tv.setText(value);
         }
@@ -709,14 +718,30 @@ public class InfoTabFragment extends ZutnikTabFragment {
         if (isEmpty) {
             tv.setTextColor(ThemeManager.resolveColor(requireContext(), R.attr.mzMuted));
             tv.setTextSize(HISTORY_EMPTY_TEXT_SIZE_SP);
-        } else {
-            tv.setTextColor(ThemeManager.resolveColor(requireContext(), R.attr.mzText));
-            tv.setTextSize(HISTORY_TEXT_SIZE_SP);
-            int padV = dpToPx(HISTORY_ITEM_VERTICAL_PADDING_DP);
-            tv.setPadding(0, padV, 0, padV);
+            historyContainer.addView(tv);
+            return;
         }
 
-        historyContainer.addView(tv);
+        LinearLayout row = new LinearLayout(requireContext());
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        int padV = dpToPx(HISTORY_ITEM_VERTICAL_PADDING_DP);
+        row.setPadding(0, padV, 0, padV);
+
+        View dot = new View(requireContext());
+        android.graphics.drawable.GradientDrawable mark = new android.graphics.drawable.GradientDrawable();
+        mark.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        mark.setColor(ThemeManager.resolveColor(requireContext(), R.attr.mzPrimary));
+        dot.setBackground(mark);
+        int dotSize = dpToPx(8);
+        LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dotSize, dotSize);
+        dotParams.setMarginEnd(dpToPx(10));
+        row.addView(dot, dotParams);
+
+        tv.setTextColor(ThemeManager.resolveColor(requireContext(), R.attr.mzText));
+        tv.setTextSize(HISTORY_TEXT_SIZE_SP);
+        row.addView(tv, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        historyContainer.addView(row);
     }
 
     private int dpToPx(float dp) {
