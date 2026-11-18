@@ -159,6 +159,13 @@
   <string name="info_label_semester">Semestr:</string>
   <string name="info_ects_title">Postęp ECTS</string>
   <string name="info_label_ects_programme">Na kierunku:</string>
+  <string name="info_caption_ects_programme">Na kierunku</string>
+  <string name="info_caption_ects_overall">Łącznie</string>
+  <string name="info_caption_album">Album</string>
+  <string name="info_caption_year">Rok</string>
+  <string name="info_caption_semester">Semestr</string>
+  <string name="info_caption_valid_until">Ważna do</string>
+  <string name="info_caption_number">Numer</string>
   <string name="info_label_ects_overall">Łącznie:</string>
   <string name="info_els_title">Legitymacja ELS</string>
   <string name="info_label_els_status">Status:</string>
@@ -698,6 +705,10 @@
   <string name="plan_quick_notes_hint">Np. forma, sala, uwagi</string>
   <string name="plan_quick_details_title">Szczegóły</string>
   <string name="plan_quick_btn_save">Zapisz</string>
+  <string name="plan_tile_color_label">Kolor kafelka</string>
+  <string name="plan_add_to_calendar">Dodaj do kalendarza</string>
+  <string name="plan_add_to_calendar_done">Dodano do kalendarza</string>
+  <string name="plan_add_to_calendar_failed">Nie udało się dodać do kalendarza</string>
   <string name="plan_quick_btn_cancel">Anuluj</string>
   <string name="plan_quick_error_subject">Podaj nazwę przedmiotu</string>
   <string name="plan_quick_error_type">Wybierz typ wydarzenia</string>
@@ -800,6 +811,8 @@
     <string name="settings_plan_sync_offline">Połącz się z internetem, aby zsynchronizować cały plan.</string>
     <string name="settings_plan_sync_usos_only">Pełna synchronizacja jest dostępna po zalogowaniu do USOS.</string>
     <string name="grades_distribution_title">Rozkład ocen</string>
+    <string name="grades_distribution_open">Rozkład</string>
+    <string name="grades_distribution_open_final">Rozkład końcowy</string>
     <string name="grades_distribution_final_action">Rozkład ocen końcowych</string>
     <string name="grades_distribution_desc">Procent osób z daną oceną końcową w tym protokole. Twoja ocena jest wyróżniona.</string>
     <string name="grades_distribution_demo">Przykładowy rozkład ocen w trybie demo. Twoja ocena jest wyróżniona.</string>
@@ -808,7 +821,7 @@
     <string name="grades_distribution_error">Nie udało się pobrać rozkładu ocen. Spróbuj ponownie.</string>
     <string name="grades_distribution_retry">Spróbuj ponownie</string>
     <string name="grades_distribution_cached">Zapisany rozkład ocen · może nie uwzględniać ostatnich zmian.</string>
-    <string name="grades_distribution_bar">Ocena %1$s: %2$s osób</string>
+    <string name="grades_distribution_bar">Ocena %1$s, %2$s</string>
     <string name="grades_distribution_yours">Twoja ocena</string>
     <string name="settings_plan_sync_rate_limited">USOS ograniczył liczbę zapytań. Spróbuj po przerwie wyznaczonej przez serwer.</string>
     <string name="finance_label_outstanding">Pozostało do zapłaty</string>

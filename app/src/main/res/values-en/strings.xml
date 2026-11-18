@@ -125,6 +125,13 @@
   <string name="info_study_switch_label">Field / study programme</string>
   <string name="info_current_studies_title">Current studies</string>
   <string name="info_label_album">Student ID number:</string>
+  <string name="info_caption_ects_programme">On this programme</string>
+  <string name="info_caption_ects_overall">Overall</string>
+  <string name="info_caption_album">Student ID</string>
+  <string name="info_caption_year">Year</string>
+  <string name="info_caption_semester">Semester</string>
+  <string name="info_caption_valid_until">Valid until</string>
+  <string name="info_caption_number">Number</string>
   <string name="info_label_faculty">Faculty:</string>
   <string name="info_label_field">Field of study:</string>
   <string name="info_label_form">Form:</string>
@@ -491,6 +498,10 @@
   <string name="plan_quick_notes_hint">E.g. form, room, notes</string>
   <string name="plan_quick_details_title">Details</string>
   <string name="plan_quick_btn_save">Save</string>
+  <string name="plan_tile_color_label">Tile color</string>
+  <string name="plan_add_to_calendar">Add to calendar</string>
+  <string name="plan_add_to_calendar_done">Added to calendar</string>
+  <string name="plan_add_to_calendar_failed">Could not add to calendar</string>
   <string name="plan_quick_btn_cancel">Cancel</string>
   <string name="plan_quick_error_subject">Enter a subject name</string>
   <string name="plan_quick_error_type">Select an event type</string>
@@ -619,6 +630,8 @@
     <string name="settings_plan_sync_offline">Connect to the internet to sync the entire timetable.</string>
     <string name="settings_plan_sync_usos_only">Full sync is available when signed in to USOS.</string>
     <string name="grades_distribution_title">Grade distribution</string>
+    <string name="grades_distribution_open">Distribution</string>
+    <string name="grades_distribution_open_final">Final distribution</string>
     <string name="grades_distribution_final_action">Final grade distribution</string>
     <string name="grades_distribution_desc">Percentage of people with each final grade in this exam report. Your grade is highlighted.</string>
     <string name="grades_distribution_demo">Example grade distribution in demo mode. Your grade is highlighted.</string>
@@ -627,7 +640,7 @@
     <string name="grades_distribution_error">Could not load the grade distribution. Try again.</string>
     <string name="grades_distribution_retry">Try again</string>
     <string name="grades_distribution_cached">Saved grade distribution · recent changes may not be included.</string>
-    <string name="grades_distribution_bar">Grade %1$s: %2$s of people</string>
+    <string name="grades_distribution_bar">Grade %1$s, %2$s</string>
     <string name="grades_distribution_yours">Your grade</string>
     <string name="settings_plan_sync_rate_limited">USOS has limited requests. Try again after the server retry interval.</string>
     <string name="finance_label_outstanding">Remaining to pay</string>
